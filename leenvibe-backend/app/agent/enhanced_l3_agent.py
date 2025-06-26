@@ -16,6 +16,7 @@ from ..services.project_indexer import project_indexer
 from ..services.graph_service import graph_service
 from ..services.graph_query_service import graph_query_service
 from ..services.visualization_service import visualization_service
+from ..services.file_monitor_service import file_monitor_service
 from ..models.ast_models import (
     ProjectIndex, ProjectContext, ASTContext, Symbol, Reference,
     SymbolType, ImpactAnalysis, RefactoringSuggestion
@@ -26,6 +27,10 @@ from ..models.graph_models import (
 from ..models.visualization_models import (
     DiagramType, DiagramTheme, DiagramLayout, DiagramConfiguration,
     DiagramGenerationRequest, DiagramExportFormat
+)
+from ..models.monitoring_models import (
+    MonitoringConfiguration, MonitoringSession, FileChange,
+    ChangeNotification, MonitoringMetrics
 )
 
 logger = logging.getLogger(__name__)
@@ -62,7 +67,11 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             "find_hotspots": self._find_hotspots_tool,
             "visualize_graph": self._visualize_graph_tool,
             "generate_diagram": self._generate_diagram_tool,
-            "list_diagram_types": self._list_diagram_types_tool
+            "list_diagram_types": self._list_diagram_types_tool,
+            "start_monitoring": self._start_monitoring_tool,
+            "stop_monitoring": self._stop_monitoring_tool,
+            "get_monitoring_status": self._get_monitoring_status_tool,
+            "get_recent_changes": self._get_recent_changes_tool
         })
     
     async def initialize(self):
@@ -301,6 +310,32 @@ class EnhancedL3CodingAgent(L3CodingAgent):
                     return result["data"]["summary"]
                 else:
                     return f"Error finding hotspots: {result['message']}"
+            
+            # Real-time monitoring commands
+            elif any(keyword in user_lower for keyword in ["start monitoring", "monitor", "watch files"]):
+                result = await self._start_monitoring_tool()
+                if result["status"] == "success":
+                    return result["data"]["summary"]
+                else:
+                    return f"Error starting monitoring: {result['message']}"
+            
+            elif any(keyword in user_lower for keyword in ["stop monitoring", "stop watching"]):
+                result = await self._stop_monitoring_tool()
+                if result["status"] == "success":
+                    return result["data"]["summary"]
+                else:
+                    return f"Error stopping monitoring: {result['message']}"
+            
+            elif any(keyword in user_lower for keyword in ["monitoring status", "watch status", "recent changes"]):
+                if "changes" in user_lower:
+                    result = await self._get_recent_changes_tool()
+                else:
+                    result = await self._get_monitoring_status_tool()
+                
+                if result["status"] == "success":
+                    return result["data"]["summary"]
+                else:
+                    return f"Error getting monitoring info: {result['message']}"
             
             # Graph visualization and diagrams
             elif any(keyword in user_lower for keyword in ["visualize", "diagram", "graph", "chart"]):
@@ -1318,7 +1353,372 @@ Use it to understand:
             "visualization_capabilities": [
                 "interactive_diagrams", "multiple_diagram_types", "theme_support",
                 "mermaid_generation", "export_formats"
-            ]
+            ],
+            "monitoring_capabilities": [
+                "real_time_file_monitoring", "change_detection", "impact_analysis",
+                "debouncing", "content_analysis", "session_management"
+            ],
+            "monitoring_active": self.dependencies.session_data.get("monitoring_session_id") is not None
         })
         
         return base_summary
+    
+    async def _start_monitoring_tool(self, workspace_path: Optional[str] = None) -> Dict[str, Any]:
+        """Start real-time file monitoring for the workspace"""
+        try:
+            workspace = workspace_path or self.dependencies.workspace_path
+            session_id = f"monitor_{self.dependencies.client_id}_{int(time.time())}"
+            project_id = f"project_{hash(workspace)}"
+            
+            # Create monitoring configuration
+            config = MonitoringConfiguration(
+                workspace_path=workspace,
+                watch_patterns=["**/*.py", "**/*.js", "**/*.ts", "**/*.tsx", "**/*.swift"],
+                ignore_patterns=["**/__pycache__/**", "**/node_modules/**", "**/.git/**"],
+                debounce_delay_ms=500,
+                enable_content_analysis=True,
+                enable_impact_analysis=True
+            )
+            
+            # Start monitoring
+            success = await file_monitor_service.start_monitoring(
+                session_id=session_id,
+                project_id=project_id,
+                client_id=self.dependencies.client_id,
+                config=config
+            )
+            
+            if success:
+                # Store session ID for later reference
+                self.dependencies.session_data["monitoring_session_id"] = session_id
+                
+                summary = f"""🔍 Real-time File Monitoring Started!
+                
+📁 Workspace: {Path(workspace).name}
+🎯 Session ID: {session_id}
+👀 Watching: Python, JavaScript, TypeScript, Swift files
+⚡ Features:
+• Real-time change detection
+• Impact analysis for modifications
+• Smart debouncing (500ms)
+• Content analysis enabled
+
+🔔 You'll receive notifications for:
+• File modifications and creations
+• High-impact changes
+• Circular dependency introduction
+• Architecture pattern violations
+
+📊 Use 'get monitoring status' to check activity
+🛑 Use 'stop monitoring' to end session"""
+                
+                data = {
+                    "session_id": session_id,
+                    "workspace_path": workspace,
+                    "configuration": config.dict(),
+                    "status": "active",
+                    "summary": summary
+                }
+                
+                return {
+                    "status": "success",
+                    "type": "monitoring_started",
+                    "data": data,
+                    "message": f"File monitoring started for {Path(workspace).name}",
+                    "confidence": 0.95
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": "Failed to start file monitoring",
+                    "confidence": 0.0
+                }
+                
+        except Exception as e:
+            logger.error(f"Error starting monitoring: {e}")
+            return {
+                "status": "error",
+                "message": f"Monitoring startup failed: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _stop_monitoring_tool(self) -> Dict[str, Any]:
+        """Stop the active file monitoring session"""
+        try:
+            session_id = self.dependencies.session_data.get("monitoring_session_id")
+            
+            if not session_id:
+                return {
+                    "status": "error",
+                    "message": "No active monitoring session found",
+                    "confidence": 0.0
+                }
+            
+            # Get session info before stopping
+            session = file_monitor_service.get_session(session_id)
+            
+            # Stop monitoring
+            success = await file_monitor_service.stop_monitoring(session_id)
+            
+            if success:
+                # Clear session ID
+                self.dependencies.session_data.pop("monitoring_session_id", None)
+                
+                # Generate summary
+                if session:
+                    duration_min = (datetime.now() - session.started_at).total_seconds() / 60 if session.started_at else 0
+                    summary = f"""✅ File Monitoring Stopped
+                    
+📊 Session Summary:
+• Duration: {duration_min:.1f} minutes  
+• Changes detected: {session.total_changes_detected}
+• Files analyzed: {session.total_files_analyzed}
+• Errors: {session.total_errors}
+
+📁 Workspace: {Path(session.configuration.workspace_path).name}
+🎯 Session: {session_id}
+
+Thank you for using real-time monitoring! 
+Start again with 'start monitoring' when needed."""
+                else:
+                    summary = f"✅ Monitoring session {session_id} stopped successfully"
+                
+                data = {
+                    "session_id": session_id,
+                    "summary": summary,
+                    "session_stats": session.dict() if session else None
+                }
+                
+                return {
+                    "status": "success",
+                    "type": "monitoring_stopped",
+                    "data": data,
+                    "message": "File monitoring stopped successfully",
+                    "confidence": 0.95
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": "Failed to stop monitoring session",
+                    "confidence": 0.0
+                }
+                
+        except Exception as e:
+            logger.error(f"Error stopping monitoring: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to stop monitoring: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _get_monitoring_status_tool(self) -> Dict[str, Any]:
+        """Get the status of the current monitoring session"""
+        try:
+            session_id = self.dependencies.session_data.get("monitoring_session_id")
+            
+            if not session_id:
+                return {
+                    "status": "success",
+                    "type": "monitoring_status",
+                    "data": {
+                        "active": False,
+                        "summary": "📡 No active monitoring session\n\nUse 'start monitoring' to begin real-time file tracking."
+                    },
+                    "message": "No active monitoring session",
+                    "confidence": 1.0
+                }
+            
+            # Get session and metrics
+            session = file_monitor_service.get_session(session_id)
+            metrics = file_monitor_service.get_metrics(session_id)
+            
+            if not session:
+                # Clean up stale session ID
+                self.dependencies.session_data.pop("monitoring_session_id", None)
+                return {
+                    "status": "error",
+                    "message": "Monitoring session no longer exists",
+                    "confidence": 0.0
+                }
+            
+            # Calculate uptime
+            uptime_seconds = (datetime.now() - session.started_at).total_seconds() if session.started_at else 0
+            uptime_str = f"{uptime_seconds//3600:.0f}h {(uptime_seconds%3600)//60:.0f}m"
+            
+            # Generate status summary
+            status_icon = {
+                MonitoringStatus.ACTIVE: "🟢",
+                MonitoringStatus.PAUSED: "🟡", 
+                MonitoringStatus.STOPPED: "🔴",
+                MonitoringStatus.ERROR: "❌"
+            }.get(session.status, "⚪")
+            
+            summary = f"""{status_icon} Monitoring Status: {session.status.value.upper()}
+            
+📊 Session Metrics:
+• Uptime: {uptime_str}
+• Changes detected: {session.total_changes_detected}
+• Files analyzed: {session.total_files_analyzed}
+• Errors: {session.total_errors}
+
+📁 Workspace: {Path(session.configuration.workspace_path).name}
+🎯 Session: {session_id}"""
+            
+            if metrics:
+                summary += f"""
+
+⚡ Performance:
+• Changes/min: {metrics.changes_per_minute:.1f}
+• Avg analysis time: {metrics.average_analysis_time_ms:.1f}ms
+• Queue depth: {metrics.queue_depth}"""
+            
+            if session.last_activity:
+                last_activity = (datetime.now() - session.last_activity).total_seconds()
+                if last_activity < 60:
+                    summary += f"\n🕐 Last activity: {last_activity:.0f}s ago"
+                elif last_activity < 3600:
+                    summary += f"\n🕐 Last activity: {last_activity//60:.0f}m ago"
+                else:
+                    summary += f"\n🕐 Last activity: {last_activity//3600:.0f}h ago"
+            
+            summary += """
+
+💡 Commands:
+• 'get recent changes' - View latest file modifications
+• 'stop monitoring' - End current session
+• 'pause monitoring' - Temporarily pause monitoring"""
+            
+            data = {
+                "active": session.status == MonitoringStatus.ACTIVE,
+                "session_id": session_id,
+                "status": session.status,
+                "uptime_seconds": uptime_seconds,
+                "total_changes": session.total_changes_detected,
+                "total_files_analyzed": session.total_files_analyzed,
+                "total_errors": session.total_errors,
+                "workspace_path": session.configuration.workspace_path,
+                "last_activity": session.last_activity,
+                "metrics": metrics.dict() if metrics else None,
+                "summary": summary
+            }
+            
+            return {
+                "status": "success",
+                "type": "monitoring_status",
+                "data": data,
+                "message": f"Monitoring session {session.status.value}",
+                "confidence": 0.95
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting monitoring status: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to get monitoring status: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _get_recent_changes_tool(self, limit: int = 10) -> Dict[str, Any]:
+        """Get recent file changes from the monitoring session"""
+        try:
+            session_id = self.dependencies.session_data.get("monitoring_session_id")
+            
+            if not session_id:
+                return {
+                    "status": "error",
+                    "message": "No active monitoring session",
+                    "confidence": 0.0
+                }
+            
+            # Get recent changes
+            changes = await file_monitor_service.get_recent_changes(session_id, limit)
+            
+            if not changes:
+                return {
+                    "status": "success",
+                    "type": "recent_changes",
+                    "data": {
+                        "changes": [],
+                        "summary": "📝 No recent file changes detected\n\nFiles are being monitored, but no modifications have occurred recently."
+                    },
+                    "message": "No recent changes",
+                    "confidence": 1.0
+                }
+            
+            # Generate summary
+            summary_parts = [f"📝 Recent File Changes ({len(changes)} total):\n"]
+            
+            for i, change in enumerate(changes[:limit], 1):
+                file_name = Path(change.file_path).name
+                time_ago = (datetime.now() - change.timestamp).total_seconds()
+                
+                if time_ago < 60:
+                    time_str = f"{time_ago:.0f}s ago"
+                elif time_ago < 3600:
+                    time_str = f"{time_ago//60:.0f}m ago"
+                else:
+                    time_str = f"{time_ago//3600:.0f}h ago"
+                
+                # Change type icons
+                change_icon = {
+                    ChangeType.CREATED: "🆕",
+                    ChangeType.MODIFIED: "✏️",
+                    ChangeType.DELETED: "🗑️",
+                    ChangeType.MOVED: "📦",
+                    ChangeType.RENAMED: "🏷️"
+                }.get(change.change_type, "📄")
+                
+                summary_parts.append(f"{i}. {change_icon} {file_name}")
+                summary_parts.append(f"   {change.change_type.value} {time_str}")
+                
+                # Add line change info if available
+                if change.lines_added or change.lines_removed:
+                    summary_parts.append(f"   +{change.lines_added} -{change.lines_removed} lines")
+                
+                if change.language:
+                    summary_parts.append(f"   Language: {change.language}")
+                
+                summary_parts.append("")
+            
+            if len(changes) > limit:
+                summary_parts.append(f"... and {len(changes) - limit} more changes")
+            
+            # Process changes for response
+            changes_data = []
+            for change in changes:
+                changes_data.append({
+                    "id": change.id,
+                    "file_path": change.file_path,
+                    "file_name": Path(change.file_path).name,
+                    "change_type": change.change_type,
+                    "timestamp": change.timestamp,
+                    "lines_added": change.lines_added,
+                    "lines_removed": change.lines_removed,
+                    "lines_modified": change.lines_modified,
+                    "language": change.language,
+                    "is_binary": change.is_binary,
+                    "file_size": change.file_size
+                })
+            
+            data = {
+                "changes": changes_data,
+                "total_changes": len(changes),
+                "showing": min(limit, len(changes)),
+                "summary": "\n".join(summary_parts)
+            }
+            
+            return {
+                "status": "success",
+                "type": "recent_changes",
+                "data": data,
+                "message": f"Retrieved {len(changes)} recent changes",
+                "confidence": 0.95
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting recent changes: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to get recent changes: {str(e)}",
+                "confidence": 0.0
+            }
