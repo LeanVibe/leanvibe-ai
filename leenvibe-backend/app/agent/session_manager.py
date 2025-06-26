@@ -12,7 +12,7 @@ from pathlib import Path
 import json
 from dataclasses import asdict
 
-from .l3_coding_agent import L3CodingAgent, AgentDependencies
+from .enhanced_l3_agent import EnhancedL3CodingAgent as L3CodingAgent, AgentDependencies
 
 logger = logging.getLogger(__name__)
 

@@ -78,7 +78,93 @@ async def get_session_state(client_id: str):
     if not agent:
         return {"error": "Session not found", "client_id": client_id}
     
-    return {"state": agent.get_state_summary(), "client_id": client_id}
+    # Use enhanced state summary if available
+    if hasattr(agent, 'get_enhanced_state_summary'):
+        state = agent.get_enhanced_state_summary()
+    else:
+        state = agent.get_state_summary()
+    
+    return {"state": state, "client_id": client_id}
+
+@app.get("/ast/project/{client_id}/analysis")
+async def get_project_analysis(client_id: str):
+    """Get AST-powered project analysis"""
+    agent = await session_manager.get_session(client_id)
+    if not agent or not hasattr(agent, '_analyze_project_tool'):
+        return {"error": "Enhanced agent not available", "client_id": client_id}
+    
+    result = await agent._analyze_project_tool()
+    return {"analysis": result, "client_id": client_id}
+
+@app.get("/ast/symbols/{client_id}/{symbol_name}")
+async def find_symbol_references(client_id: str, symbol_name: str):
+    """Find references to a symbol"""
+    agent = await session_manager.get_session(client_id)
+    if not agent or not hasattr(agent, '_find_references_tool'):
+        return {"error": "Enhanced agent not available", "client_id": client_id}
+    
+    result = await agent._find_references_tool(symbol_name)
+    return {"references": result, "client_id": client_id}
+
+@app.get("/ast/complexity/{client_id}")
+async def get_complexity_analysis(client_id: str):
+    """Get code complexity analysis"""
+    agent = await session_manager.get_session(client_id)
+    if not agent or not hasattr(agent, '_check_complexity_tool'):
+        return {"error": "Enhanced agent not available", "client_id": client_id}
+    
+    result = await agent._check_complexity_tool()
+    return {"complexity": result, "client_id": client_id}
+
+@app.get("/graph/architecture/{client_id}")
+async def get_architecture_patterns(client_id: str):
+    """Detect architecture patterns in the project"""
+    agent = await session_manager.get_session(client_id)
+    if not agent or not hasattr(agent, '_detect_architecture_tool'):
+        return {"error": "Enhanced agent not available", "client_id": client_id}
+    
+    result = await agent._detect_architecture_tool()
+    return {"architecture": result, "client_id": client_id}
+
+@app.get("/graph/circular-deps/{client_id}")
+async def get_circular_dependencies(client_id: str):
+    """Find circular dependencies in the project"""
+    agent = await session_manager.get_session(client_id)
+    if not agent or not hasattr(agent, '_find_circular_dependencies_tool'):
+        return {"error": "Enhanced agent not available", "client_id": client_id}
+    
+    result = await agent._find_circular_dependencies_tool()
+    return {"circular_dependencies": result, "client_id": client_id}
+
+@app.get("/graph/coupling/{client_id}")
+async def get_coupling_analysis(client_id: str):
+    """Analyze coupling between components"""
+    agent = await session_manager.get_session(client_id)
+    if not agent or not hasattr(agent, '_analyze_coupling_tool'):
+        return {"error": "Enhanced agent not available", "client_id": client_id}
+    
+    result = await agent._analyze_coupling_tool()
+    return {"coupling": result, "client_id": client_id}
+
+@app.get("/graph/hotspots/{client_id}")
+async def get_code_hotspots(client_id: str):
+    """Find code hotspots (critical, highly connected code)"""
+    agent = await session_manager.get_session(client_id)
+    if not agent or not hasattr(agent, '_find_hotspots_tool'):
+        return {"error": "Enhanced agent not available", "client_id": client_id}
+    
+    result = await agent._find_hotspots_tool()
+    return {"hotspots": result, "client_id": client_id}
+
+@app.get("/graph/visualization/{client_id}")
+async def get_graph_visualization(client_id: str):
+    """Generate graph visualization data"""
+    agent = await session_manager.get_session(client_id)
+    if not agent or not hasattr(agent, '_visualize_graph_tool'):
+        return {"error": "Enhanced agent not available", "client_id": client_id}
+    
+    result = await agent._visualize_graph_tool()
+    return {"visualization": result, "client_id": client_id}
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
