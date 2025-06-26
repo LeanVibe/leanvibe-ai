@@ -9,10 +9,12 @@ import logging
 import time
 from typing import Dict, Any, List, Optional
 from pathlib import Path
+from datetime import datetime
 
 from .l3_coding_agent import L3CodingAgent, AgentDependencies, AgentState
 from ..services.ast_service import ast_service
 from ..services.project_indexer import project_indexer
+from ..services.incremental_indexer import incremental_indexer
 from ..services.graph_service import graph_service
 from ..services.graph_query_service import graph_query_service
 from ..services.visualization_service import visualization_service
@@ -71,7 +73,9 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             "start_monitoring": self._start_monitoring_tool,
             "stop_monitoring": self._stop_monitoring_tool,
             "get_monitoring_status": self._get_monitoring_status_tool,
-            "get_recent_changes": self._get_recent_changes_tool
+            "get_recent_changes": self._get_recent_changes_tool,
+            "get_indexer_metrics": self._get_indexer_metrics_tool,
+            "refresh_project_index": self._refresh_project_index_tool
         })
     
     async def initialize(self):
@@ -132,8 +136,10 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             logger.info("Updating project index...")
             workspace_path = self.dependencies.workspace_path
             
-            # Index the project (async in background for large projects)
-            self.project_index = await project_indexer.index_project(workspace_path)
+            # Index the project using incremental indexer for better performance
+            self.project_index = await incremental_indexer.get_or_create_project_index(
+                workspace_path, force_full_reindex=force_refresh
+            )
             self.last_index_update = current_time
             
             # Store project in graph database
@@ -336,6 +342,22 @@ class EnhancedL3CodingAgent(L3CodingAgent):
                     return result["data"]["summary"]
                 else:
                     return f"Error getting monitoring info: {result['message']}"
+            
+            # Indexer metrics and management
+            elif any(keyword in user_lower for keyword in ["indexer metrics", "indexer performance", "cache stats"]):
+                result = await self._get_indexer_metrics_tool()
+                if result["status"] == "success":
+                    return result["data"]["summary"]
+                else:
+                    return f"Error getting indexer metrics: {result['message']}"
+            
+            elif any(keyword in user_lower for keyword in ["refresh index", "refresh project", "reindex project"]):
+                force_full = "full" in user_lower or "force" in user_lower
+                result = await self._refresh_project_index_tool(force_full)
+                if result["status"] == "success":
+                    return result["data"]["summary"]
+                else:
+                    return f"Error refreshing index: {result['message']}"
             
             # Graph visualization and diagrams
             elif any(keyword in user_lower for keyword in ["visualize", "diagram", "graph", "chart"]):
@@ -1358,7 +1380,12 @@ Use it to understand:
                 "real_time_file_monitoring", "change_detection", "impact_analysis",
                 "debouncing", "content_analysis", "session_management"
             ],
-            "monitoring_active": self.dependencies.session_data.get("monitoring_session_id") is not None
+            "monitoring_active": self.dependencies.session_data.get("monitoring_session_id") is not None,
+            "indexing_capabilities": [
+                "incremental_indexing", "smart_caching", "file_change_integration",
+                "performance_optimization", "cache_persistence", "metrics_tracking"
+            ],
+            "indexer_metrics": incremental_indexer.get_metrics()
         })
         
         return base_summary
@@ -1720,5 +1747,138 @@ Start again with 'start monitoring' when needed."""
             return {
                 "status": "error",
                 "message": f"Failed to get recent changes: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _get_indexer_metrics_tool(self) -> Dict[str, Any]:
+        """Get incremental indexer performance metrics"""
+        try:
+            metrics = incremental_indexer.get_metrics()
+            
+            summary = f"""📊 Incremental Indexer Performance Metrics:
+
+🚀 Performance:
+• Incremental updates: {metrics['incremental_updates']}
+• Files reanalyzed: {metrics['files_reanalyzed']}
+• Symbols updated: {metrics['symbols_updated']}
+• Total indexing time: {metrics['total_indexing_time']:.2f}s
+
+💾 Cache Performance:
+• Cache hits: {metrics['cache_hits']}
+• Cache misses: {metrics['cache_misses']}
+• Hit rate: {metrics['cache_hits'] / max(metrics['cache_hits'] + metrics['cache_misses'], 1) * 100:.1f}%
+
+⚡ Efficiency:
+• Avg time per update: {metrics['total_indexing_time'] / max(metrics['incremental_updates'], 1):.2f}s
+• Files per update: {metrics['files_reanalyzed'] / max(metrics['incremental_updates'], 1):.1f}
+• Symbols per update: {metrics['symbols_updated'] / max(metrics['incremental_updates'], 1):.1f}
+
+💡 Status:
+• Project indexed: {'Yes' if self.project_index else 'No'}
+• Last update: {datetime.fromtimestamp(self.last_index_update).strftime('%H:%M:%S') if self.last_index_update else 'Never'}
+• Files indexed: {self.project_index.supported_files if self.project_index else 0}
+• Total symbols: {len(self.project_index.symbols) if self.project_index else 0}
+
+🔧 Commands:
+• 'refresh project index' - Force full reindex
+• 'analyze project' - Get project analysis
+• 'start monitoring' - Enable real-time updates"""
+            
+            data = {
+                "metrics": metrics,
+                "project_indexed": self.project_index is not None,
+                "last_update": self.last_index_update,
+                "files_indexed": self.project_index.supported_files if self.project_index else 0,
+                "total_symbols": len(self.project_index.symbols) if self.project_index else 0,
+                "summary": summary
+            }
+            
+            return {
+                "status": "success",
+                "type": "indexer_metrics",
+                "data": data,
+                "message": f"Retrieved indexer metrics: {metrics['incremental_updates']} updates, {metrics['cache_hits']} cache hits",
+                "confidence": 1.0
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting indexer metrics: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to get indexer metrics: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _refresh_project_index_tool(self, force_full: bool = True) -> Dict[str, Any]:
+        """Force refresh the project index"""
+        try:
+            start_time = time.time()
+            workspace_path = self.dependencies.workspace_path
+            
+            logger.info(f"Force refreshing project index: {workspace_path}")
+            
+            # Clear cache if doing full refresh
+            if force_full:
+                await incremental_indexer.clear_cache(workspace_path)
+            
+            # Force reindex
+            self.project_index = await incremental_indexer.get_or_create_project_index(
+                workspace_path, force_full_reindex=force_full
+            )
+            self.last_index_update = time.time()
+            
+            # Update graph database
+            if graph_service.initialized and self.project_index:
+                project_id = f"project_{hash(workspace_path)}"
+                await graph_service.store_project_graph(self.project_index, workspace_path)
+            
+            # Update project context
+            if self.project_context:
+                self.project_context.project_index = self.project_index
+                await self._update_project_context()
+            
+            refresh_time = time.time() - start_time
+            
+            summary = f"""🔄 Project Index Refreshed Successfully!
+
+📊 Updated Index:
+• Files analyzed: {self.project_index.supported_files}
+• Total symbols: {len(self.project_index.symbols)}
+• Parsing errors: {self.project_index.parsing_errors}
+• Refresh time: {refresh_time:.2f}s
+
+🔧 Index Type: {'Full reindex' if force_full else 'Incremental update'}
+📁 Workspace: {Path(workspace_path).name}
+🕐 Timestamp: {datetime.now().strftime('%H:%M:%S')}
+
+💾 Cache Status: {'Cleared and rebuilt' if force_full else 'Updated'}
+🔗 Graph Database: {'Updated' if graph_service.initialized else 'Not available'}
+
+✅ Project is now up-to-date and ready for analysis!"""
+            
+            data = {
+                "workspace_path": workspace_path,
+                "files_analyzed": self.project_index.supported_files,
+                "total_symbols": len(self.project_index.symbols),
+                "parsing_errors": self.project_index.parsing_errors,
+                "refresh_time": refresh_time,
+                "index_type": "full" if force_full else "incremental",
+                "timestamp": time.time(),
+                "summary": summary
+            }
+            
+            return {
+                "status": "success",
+                "type": "index_refresh",
+                "data": data,
+                "message": f"Project index refreshed: {self.project_index.supported_files} files, {len(self.project_index.symbols)} symbols",
+                "confidence": 0.95
+            }
+            
+        except Exception as e:
+            logger.error(f"Error refreshing project index: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to refresh project index: {str(e)}",
                 "confidence": 0.0
             }

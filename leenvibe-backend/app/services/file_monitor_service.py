@@ -29,6 +29,7 @@ from ..models.ast_models import LanguageType
 from ..services.ast_service import ast_service
 from ..services.project_indexer import project_indexer
 from ..services.graph_query_service import graph_query_service
+from ..services.incremental_indexer import incremental_indexer
 
 logger = logging.getLogger(__name__)
 
@@ -372,6 +373,10 @@ class FileMonitorService:
             # Check for alerts
             await self._check_for_alerts(session_id, change, impact_assessment)
             
+            # Trigger incremental index update for code files
+            if change.is_code_file() and session.configuration.enable_content_analysis:
+                await self._trigger_incremental_index_update(session_id, change)
+            
         except Exception as e:
             logger.error(f"Error analyzing change: {e}")
             session.total_errors += 1
@@ -564,6 +569,44 @@ class FileMonitorService:
                 
         except Exception as e:
             logger.error(f"Error checking for alerts: {e}")
+    
+    async def _trigger_incremental_index_update(self, session_id: str, change: FileChange):
+        """Trigger incremental index update for changed file"""
+        try:
+            session = self.sessions.get(session_id)
+            if not session:
+                return
+            
+            workspace_path = session.configuration.workspace_path
+            
+            # Batch changes for better performance
+            recent_changes = [c for c in session.recent_changes[:10] 
+                             if c.is_code_file() and 
+                             (datetime.now() - c.timestamp).total_seconds() < 60]  # Last minute
+            
+            if len(recent_changes) >= 5:  # Batch threshold
+                logger.debug(f"Batching {len(recent_changes)} changes for incremental index update")
+                updated_index = await incremental_indexer.update_from_file_changes(
+                    workspace_path, recent_changes
+                )
+                
+                if updated_index:
+                    # Store updated index in session for agent access
+                    session.configuration.workspace_path = workspace_path
+                    logger.info(f"Updated project index: {updated_index.supported_files} files, "
+                               f"{len(updated_index.symbols)} symbols")
+            else:
+                # Single file update
+                logger.debug(f"Queuing single file change for incremental index: {change.file_path}")
+                updated_index = await incremental_indexer.update_from_file_changes(
+                    workspace_path, [change]
+                )
+                
+                if updated_index:
+                    logger.debug(f"Updated project index for single file change")
+        
+        except Exception as e:
+            logger.error(f"Error triggering incremental index update: {e}")
     
     def register_notification_callback(self, session_id: str, callback: Callable):
         """Register a callback for change notifications"""
