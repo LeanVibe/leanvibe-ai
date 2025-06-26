@@ -1,0 +1,42 @@
+{
+  "project": "DynaStory",
+  "automatic_triggers": {
+    "context_usage_threshold": 85,
+    "after_major_task": true,
+    "before_sleep_cycle": true,
+    "after_error_recovery": true,
+    "periodic_interval_hours": 4
+  },
+  "focus_areas": [
+    "voice synthesis optimization",
+    "external story integration",
+    "child safety compliance",
+    "performance benchmarks",
+    "error pattern analysis",
+    "test coverage improvement",
+    "UI/UX accessibility",
+    "memory efficiency"
+  ],
+  "integration_points": {
+    "pre_commit": {
+      "enabled": true,
+      "depth": "light",
+      "focus": "code quality"
+    },
+    "post_error": {
+      "enabled": true,
+      "depth": "deep",
+      "focus": "error patterns"
+    },
+    "milestone_completion": {
+      "enabled": true,
+      "depth": "full",
+      "focus": "project progress"
+    }
+  },
+  "session_preferences": {
+    "save_insights": true,
+    "aggregate_patterns": true,
+    "notify_improvements": true
+  }
+}

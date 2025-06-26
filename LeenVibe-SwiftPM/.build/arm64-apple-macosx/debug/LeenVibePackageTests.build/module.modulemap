@@ -1,0 +1,4 @@
+module LeenVibePackageTests {
+    header "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibePackageTests.build/LeenVibePackageTests-Swift.h"
+    requires objc
+}

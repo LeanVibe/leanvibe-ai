@@ -1,0 +1,33 @@
+{
+  "": {
+    "swift-dependencies": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/master.swiftdeps"
+  },
+  "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/Sources/LeenVibe/LeenVibeApp.swift": {
+    "dependencies": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/LeenVibeApp.d",
+    "object": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/LeenVibeApp.swift.o",
+    "swiftmodule": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/LeenVibeApp~partial.swiftmodule",
+    "swift-dependencies": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/LeenVibeApp.swiftdeps",
+    "diagnostics": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/LeenVibeApp.dia"
+  },
+  "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/Sources/LeenVibe/Models/AgentMessage.swift": {
+    "dependencies": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/AgentMessage.d",
+    "object": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/AgentMessage.swift.o",
+    "swiftmodule": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/AgentMessage~partial.swiftmodule",
+    "swift-dependencies": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/AgentMessage.swiftdeps",
+    "diagnostics": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/AgentMessage.dia"
+  },
+  "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/Sources/LeenVibe/Services/WebSocketService.swift": {
+    "dependencies": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/WebSocketService.d",
+    "object": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/WebSocketService.swift.o",
+    "swiftmodule": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/WebSocketService~partial.swiftmodule",
+    "swift-dependencies": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/WebSocketService.swiftdeps",
+    "diagnostics": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/WebSocketService.dia"
+  },
+  "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/Sources/LeenVibe/Views/ContentView.swift": {
+    "dependencies": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/ContentView.d",
+    "object": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/ContentView.swift.o",
+    "swiftmodule": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/ContentView~partial.swiftmodule",
+    "swift-dependencies": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/ContentView.swiftdeps",
+    "diagnostics": "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/.build/arm64-apple-macosx/debug/LeenVibe.build/ContentView.dia"
+  }
+}
