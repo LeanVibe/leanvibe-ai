@@ -26,6 +26,7 @@ from ..models.monitoring_models import FileChange, ChangeType
 from .project_indexer import project_indexer
 from .ast_service import ast_service
 from .graph_service import graph_service
+from .cache_invalidation_service import cache_invalidation_service
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,16 @@ class IncrementalProjectIndexer:
             "total_indexing_time": 0.0
         }
         
+        # Register with cache invalidation service
+        self._register_with_cache_service()
+    
+    def _register_with_cache_service(self):
+        """Register this indexer with the cache invalidation service"""
+        try:
+            cache_invalidation_service.register_cache_handler(self)
+        except Exception as e:
+            logger.warning(f"Could not register with cache invalidation service: {e}")
+        
     async def get_or_create_project_index(
         self,
         workspace_path: str,
@@ -117,12 +128,18 @@ class IncrementalProjectIndexer:
                     workspace_path, include_patterns, exclude_patterns
                 )
                 await self._save_cache(workspace_path, project_index)
+                
+                # Build dependency graph for cache invalidation service
+                await cache_invalidation_service.build_dependency_graph(project_index)
             else:
                 logger.info("Performing incremental project update")
                 project_index = await self._incremental_update(
                     workspace_path, cache, include_patterns, exclude_patterns
                 )
                 await self._save_cache(workspace_path, project_index)
+                
+                # Update dependency graph for cache invalidation service
+                await cache_invalidation_service.build_dependency_graph(project_index)
             
             # Update metrics
             indexing_time = time.time() - start_time
@@ -188,6 +205,14 @@ class IncrementalProjectIndexer:
             
             # Save updated cache
             await self._save_cache(workspace_path, project_index)
+            
+            # Trigger cache invalidation for changed files
+            if updated_files or removed_files:
+                logger.debug(f"Triggering cache invalidation for {len(file_changes)} file changes")
+                await cache_invalidation_service.invalidate_multiple_files(file_changes)
+                
+                # Update dependency graph with new project index
+                await cache_invalidation_service.build_dependency_graph(project_index)
             
             # Update metrics
             self.metrics["incremental_updates"] += 1

@@ -30,6 +30,7 @@ from ..services.ast_service import ast_service
 from ..services.project_indexer import project_indexer
 from ..services.graph_query_service import graph_query_service
 from ..services.incremental_indexer import incremental_indexer
+from ..services.cache_invalidation_service import cache_invalidation_service
 
 logger = logging.getLogger(__name__)
 
@@ -376,6 +377,11 @@ class FileMonitorService:
             # Trigger incremental index update for code files
             if change.is_code_file() and session.configuration.enable_content_analysis:
                 await self._trigger_incremental_index_update(session_id, change)
+                
+                # Trigger cache invalidation for the changed file
+                await cache_invalidation_service.invalidate_file_cache(
+                    change.file_path, change.change_type, propagate=True
+                )
             
         except Exception as e:
             logger.error(f"Error analyzing change: {e}")
