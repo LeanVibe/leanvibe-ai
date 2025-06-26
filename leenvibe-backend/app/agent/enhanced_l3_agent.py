@@ -15,12 +15,17 @@ from ..services.ast_service import ast_service
 from ..services.project_indexer import project_indexer
 from ..services.graph_service import graph_service
 from ..services.graph_query_service import graph_query_service
+from ..services.visualization_service import visualization_service
 from ..models.ast_models import (
     ProjectIndex, ProjectContext, ASTContext, Symbol, Reference,
     SymbolType, ImpactAnalysis, RefactoringSuggestion
 )
 from ..models.graph_models import (
     GraphNode, GraphVisualizationData, ArchitecturePattern
+)
+from ..models.visualization_models import (
+    DiagramType, DiagramTheme, DiagramLayout, DiagramConfiguration,
+    DiagramGenerationRequest, DiagramExportFormat
 )
 
 logger = logging.getLogger(__name__)
@@ -55,7 +60,9 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             "find_circular_deps": self._find_circular_dependencies_tool,
             "analyze_coupling": self._analyze_coupling_tool,
             "find_hotspots": self._find_hotspots_tool,
-            "visualize_graph": self._visualize_graph_tool
+            "visualize_graph": self._visualize_graph_tool,
+            "generate_diagram": self._generate_diagram_tool,
+            "list_diagram_types": self._list_diagram_types_tool
         })
     
     async def initialize(self):
@@ -237,6 +244,14 @@ class EnhancedL3CodingAgent(L3CodingAgent):
                     else:
                         return f"Error exploring symbol: {result['message']}"
             
+            # Diagram types inquiry
+            elif any(keyword in user_lower for keyword in ["diagram types", "available diagrams", "what diagrams"]):
+                result = await self._list_diagram_types_tool()
+                if result["status"] == "success":
+                    return result["data"]["summary"]
+                else:
+                    return f"Error listing diagram types: {result['message']}"
+            
             # Reference finding
             elif "references" in user_lower or "where is" in user_lower:
                 # Extract symbol name from query
@@ -287,9 +302,22 @@ class EnhancedL3CodingAgent(L3CodingAgent):
                 else:
                     return f"Error finding hotspots: {result['message']}"
             
-            # Graph visualization
+            # Graph visualization and diagrams
             elif any(keyword in user_lower for keyword in ["visualize", "diagram", "graph", "chart"]):
-                result = await self._visualize_graph_tool()
+                # Check for specific diagram type requests
+                if "dependency" in user_lower or "deps" in user_lower:
+                    result = await self._generate_diagram_tool(DiagramType.DEPENDENCY_GRAPH)
+                elif "hotspot" in user_lower or "critical" in user_lower:
+                    result = await self._generate_diagram_tool(DiagramType.HOTSPOT_HEATMAP)
+                elif "circular" in user_lower or "cycle" in user_lower:
+                    result = await self._generate_diagram_tool(DiagramType.CIRCULAR_DEPENDENCIES)
+                elif "coupling" in user_lower:
+                    result = await self._generate_diagram_tool(DiagramType.COUPLING_ANALYSIS)
+                elif "architecture" in user_lower or "overview" in user_lower:
+                    result = await self._generate_diagram_tool(DiagramType.ARCHITECTURE_OVERVIEW)
+                else:
+                    result = await self._visualize_graph_tool()
+                
                 if result["status"] == "success":
                     return result["data"]["summary"]
                 else:
@@ -1092,6 +1120,181 @@ Use it to understand:
                 "confidence": 0.0
             }
     
+    async def _generate_diagram_tool(
+        self, 
+        diagram_type: DiagramType = DiagramType.ARCHITECTURE_OVERVIEW,
+        theme: DiagramTheme = DiagramTheme.LIGHT,
+        max_nodes: int = 50
+    ) -> Dict[str, Any]:
+        """Generate interactive diagram using advanced visualization service"""
+        try:
+            workspace_path = self.dependencies.workspace_path
+            project_id = f"project_{hash(workspace_path)}"
+            
+            # Create diagram configuration
+            config = DiagramConfiguration(
+                diagram_type=diagram_type,
+                theme=theme,
+                layout=DiagramLayout.TOP_DOWN,
+                max_nodes=max_nodes,
+                interactive=True,
+                show_labels=True
+            )
+            
+            # Create generation request
+            request = DiagramGenerationRequest(
+                project_id=project_id,
+                configuration=config,
+                export_format=DiagramExportFormat.MERMAID,
+                include_metadata=True,
+                cache_result=True
+            )
+            
+            # Generate diagram
+            response = await visualization_service.generate_diagram(request)
+            
+            # Create summary based on diagram type
+            diagram_type_names = {
+                DiagramType.ARCHITECTURE_OVERVIEW: "Architecture Overview",
+                DiagramType.DEPENDENCY_GRAPH: "Dependency Graph",
+                DiagramType.HOTSPOT_HEATMAP: "Code Hotspots Heatmap",
+                DiagramType.CIRCULAR_DEPENDENCIES: "Circular Dependencies",
+                DiagramType.COUPLING_ANALYSIS: "Coupling Analysis"
+            }
+            
+            diagram_name = diagram_type_names.get(diagram_type, "Interactive Diagram")
+            
+            summary = f"""📊 {diagram_name} Generated Successfully!
+
+🔗 Diagram Details:
+• {response.node_count} nodes (components, files, symbols)
+• {response.edge_count} relationships
+• Generated in {response.generation_time_ms}ms
+• Interactive features enabled
+
+📈 This diagram provides:
+"""
+            
+            # Add diagram-specific insights
+            if diagram_type == DiagramType.ARCHITECTURE_OVERVIEW:
+                summary += """• High-level system architecture view
+• Component relationships and dependencies
+• Pattern recognition and design insights
+• Navigation aid for understanding code structure"""
+            elif diagram_type == DiagramType.DEPENDENCY_GRAPH:
+                summary += """• File and module dependency visualization
+• Import relationship mapping
+• Dependency chain analysis
+• Potential circular dependency identification"""
+            elif diagram_type == DiagramType.HOTSPOT_HEATMAP:
+                summary += """• Critical code component identification
+• High-connection point visualization
+• Risk assessment for changes
+• Focus areas for testing and documentation"""
+            elif diagram_type == DiagramType.CIRCULAR_DEPENDENCIES:
+                summary += """• Circular dependency cycle detection
+• File interdependency issues
+• Refactoring opportunity identification
+• Architecture improvement guidance"""
+            elif diagram_type == DiagramType.COUPLING_ANALYSIS:
+                summary += """• Component coupling strength analysis
+• Dependency density visualization
+• Refactoring priority identification
+• Architecture quality assessment"""
+            
+            summary += f"""
+
+🎨 Interactive Features:
+• Click nodes for detailed information
+• Zoom and pan for large diagrams
+• Filter and search capabilities
+• Export options (SVG, PNG, PDF)
+
+💡 Use this diagram to understand your codebase structure and identify improvement opportunities!"""
+            
+            data = {
+                "diagram_id": response.diagram_id,
+                "diagram_type": diagram_type,
+                "mermaid_content": response.mermaid_diagram.content if response.mermaid_diagram else None,
+                "full_mermaid": response.mermaid_diagram.get_full_content() if response.mermaid_diagram else None,
+                "node_count": response.node_count,
+                "edge_count": response.edge_count,
+                "generation_time_ms": response.generation_time_ms,
+                "summary": summary,
+                "metadata": response.metadata
+            }
+            
+            return {
+                "status": "success",
+                "type": "diagram_generation",
+                "data": data,
+                "message": f"Generated {diagram_name} with {response.node_count} nodes",
+                "confidence": 0.95
+            }
+            
+        except Exception as e:
+            logger.error(f"Error generating diagram: {e}")
+            return {
+                "status": "error",
+                "message": f"Diagram generation failed: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _list_diagram_types_tool(self) -> Dict[str, Any]:
+        """List available diagram types and their descriptions"""
+        try:
+            diagram_types = await visualization_service.get_diagram_types()
+            
+            summary_parts = ["📊 Available Diagram Types:\n"]
+            
+            for i, diagram_info in enumerate(diagram_types, 1):
+                summary_parts.append(f"{i}. **{diagram_info['name']}**")
+                summary_parts.append(f"   {diagram_info['description']}")
+                summary_parts.append(f"   Recommended max nodes: {diagram_info['max_recommended_nodes']}")
+                summary_parts.append("")
+            
+            summary_parts.extend([
+                "🎨 Themes Available:",
+                "• Light (default) - Clean, professional appearance",
+                "• Dark - Dark mode for reduced eye strain", 
+                "• Neutral - Grayscale, minimalist design",
+                "• Colorful - Vibrant, high-contrast colors",
+                "",
+                "📐 Layout Options:",
+                "• Top-Down (TD) - Hierarchical flow from top to bottom",
+                "• Left-Right (LR) - Horizontal flow, good for wide diagrams",
+                "",
+                "💡 To generate a specific diagram, say:",
+                "• 'Show me the architecture diagram'",
+                "• 'Generate dependency graph'", 
+                "• 'Create hotspot heatmap'",
+                "• 'Visualize circular dependencies'",
+                "• 'Display coupling analysis'"
+            ])
+            
+            data = {
+                "diagram_types": diagram_types,
+                "themes": ["light", "dark", "neutral", "colorful"],
+                "layouts": ["TD", "LR"],
+                "summary": "\n".join(summary_parts)
+            }
+            
+            return {
+                "status": "success",
+                "type": "diagram_types_list",
+                "data": data,
+                "message": f"Listed {len(diagram_types)} available diagram types",
+                "confidence": 1.0
+            }
+            
+        except Exception as e:
+            logger.error(f"Error listing diagram types: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to list diagram types: {str(e)}",
+                "confidence": 0.0
+            }
+    
     def get_enhanced_state_summary(self) -> Dict[str, Any]:
         """Get enhanced state summary with AST and graph information"""
         base_summary = self.get_state_summary()
@@ -1111,6 +1314,10 @@ Use it to understand:
             "graph_capabilities": [
                 "architecture_detection", "circular_dependency_analysis",
                 "coupling_analysis", "hotspot_detection", "graph_visualization"
+            ],
+            "visualization_capabilities": [
+                "interactive_diagrams", "multiple_diagram_types", "theme_support",
+                "mermaid_generation", "export_formats"
             ]
         })
         

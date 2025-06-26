@@ -166,6 +166,56 @@ async def get_graph_visualization(client_id: str):
     result = await agent._visualize_graph_tool()
     return {"visualization": result, "client_id": client_id}
 
+@app.get("/visualization/types")
+async def get_diagram_types():
+    """Get available diagram types"""
+    from app.services.visualization_service import visualization_service
+    diagram_types = await visualization_service.get_diagram_types()
+    return {"diagram_types": diagram_types}
+
+@app.post("/visualization/{client_id}/generate")
+async def generate_diagram(client_id: str, request: dict):
+    """Generate interactive diagram"""
+    agent = await session_manager.get_session(client_id)
+    if not agent or not hasattr(agent, '_generate_diagram_tool'):
+        return {"error": "Enhanced agent not available", "client_id": client_id}
+    
+    from app.models.visualization_models import DiagramType, DiagramTheme
+    
+    # Extract parameters from request
+    diagram_type = DiagramType(request.get("diagram_type", "architecture_overview"))
+    theme = DiagramTheme(request.get("theme", "light"))
+    max_nodes = min(request.get("max_nodes", 50), 200)  # Limit max nodes
+    
+    result = await agent._generate_diagram_tool(diagram_type, theme, max_nodes)
+    return {"diagram": result, "client_id": client_id}
+
+@app.get("/visualization/{client_id}/diagram/{diagram_type}")
+async def get_specific_diagram(client_id: str, diagram_type: str, theme: str = "light", max_nodes: int = 50):
+    """Generate a specific type of diagram"""
+    agent = await session_manager.get_session(client_id)
+    if not agent or not hasattr(agent, '_generate_diagram_tool'):
+        return {"error": "Enhanced agent not available", "client_id": client_id}
+    
+    from app.models.visualization_models import DiagramType, DiagramTheme
+    
+    try:
+        dtype = DiagramType(diagram_type)
+        dtheme = DiagramTheme(theme)
+        max_nodes = min(max_nodes, 200)  # Safety limit
+        
+        result = await agent._generate_diagram_tool(dtype, dtheme, max_nodes)
+        return {"diagram": result, "client_id": client_id}
+    except ValueError as e:
+        return {"error": f"Invalid diagram type or theme: {e}", "client_id": client_id}
+
+@app.get("/visualization/cache/stats")
+async def get_visualization_cache_stats():
+    """Get visualization service cache statistics"""
+    from app.services.visualization_service import visualization_service
+    stats = visualization_service.get_cache_stats()
+    return {"cache_stats": stats}
+
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     """WebSocket endpoint for L3 agent communication"""
