@@ -1,18 +1,21 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import logging
 import asyncio
 import json
-from .services.ai_service import AIService
+from .services.enhanced_ai_service import EnhancedAIService
 from .core.connection_manager import ConnectionManager
 from .agent.session_manager import SessionManager
+from .services.event_streaming_service import event_streaming_service
+from .models.event_models import ClientPreferences, EventType
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create FastAPI app
-app = FastAPI(title="LeenVibe L3 Agent", version="0.1.0")
+app = FastAPI(title="LeenVibe L3 Agent", version="0.2.0")
 
 # Configure CORS for iOS communication
 app.add_middleware(
@@ -23,41 +26,103 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize services
-ai_service = AIService()
+# Initialize services with enhanced AI and event streaming
+ai_service = EnhancedAIService()
 connection_manager = ConnectionManager()
 session_manager = SessionManager()
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-    logger.info("Starting LeenVibe backend with L3 Agent...")
+    logger.info("Starting LeenVibe backend with L3 Agent and event streaming...")
     await ai_service.initialize()
     await session_manager.start()
+    await event_streaming_service.start()
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
     logger.info("Shutting down LeenVibe backend...")
     await session_manager.stop()
+    await event_streaming_service.stop()
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
     session_stats = session_manager.get_stats()
+    streaming_stats = event_streaming_service.get_stats()
     return {
         "status": "healthy", 
         "service": "leenvibe-backend", 
         "version": "0.2.0",
         "ai_ready": ai_service.is_initialized,
         "agent_framework": "pydantic.ai",
-        "sessions": session_stats
+        "sessions": session_stats,
+        "event_streaming": streaming_stats
     }
 
 @app.get("/")
 async def root():
     """Root endpoint"""
     return {"message": "LeenVibe L3 Coding Agent", "version": "0.2.0", "framework": "pydantic.ai"}
+
+# Event Streaming Endpoints
+
+@app.get("/streaming/stats")
+async def get_streaming_stats():
+    """Get event streaming service statistics"""
+    return event_streaming_service.get_stats()
+
+@app.get("/streaming/clients")
+async def get_streaming_clients():
+    """Get information about connected streaming clients"""
+    return event_streaming_service.get_client_info()
+
+@app.get("/streaming/clients/{client_id}/preferences")
+async def get_client_preferences(client_id: str):
+    """Get notification preferences for a specific client"""
+    client_info = event_streaming_service.get_client_info()
+    if client_id not in client_info:
+        raise HTTPException(status_code=404, detail="Client not found")
+    return client_info[client_id]["preferences"]
+
+@app.put("/streaming/clients/{client_id}/preferences")
+async def update_client_preferences(client_id: str, preferences: ClientPreferences):
+    """Update notification preferences for a specific client"""
+    try:
+        event_streaming_service.update_client_preferences(client_id, preferences)
+        connection_manager.update_client_preferences(client_id, preferences)
+        return {"success": True, "client_id": client_id, "preferences": preferences.dict()}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to update preferences: {str(e)}")
+
+@app.post("/streaming/test-event")
+async def emit_test_event(event_data: dict):
+    """Emit a test event for debugging purposes"""
+    from .models.event_models import EventData, EventType, EventPriority, NotificationChannel
+    from datetime import datetime
+    
+    try:
+        test_event = EventData(
+            event_id=f"test_{int(asyncio.get_event_loop().time() * 1000)}",
+            event_type=EventType(event_data.get("event_type", "system_ready")),
+            priority=EventPriority(event_data.get("priority", "medium")),
+            channel=NotificationChannel(event_data.get("channel", "system")),
+            timestamp=datetime.now(),
+            source="test_endpoint",
+            data=event_data.get("data", {}),
+            metadata={"test": True}
+        )
+        
+        await event_streaming_service.emit_event(test_event)
+        return {"success": True, "event_id": test_event.event_id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to emit test event: {str(e)}")
+
+@app.get("/connections")
+async def get_connections():
+    """Get information about all WebSocket connections"""
+    return connection_manager.get_connection_info()
 
 @app.get("/sessions")
 async def list_sessions():
