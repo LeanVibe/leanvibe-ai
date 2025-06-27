@@ -207,15 +207,26 @@ graph TB
 
 ## Next Steps: Sprint 2.3 Implementation
 
-### Sprint 2.3: Real-time Terminal Notifications (Current)
-**Current Status**: Ready to Start
-**Objective**: Add real-time terminal notifications with event streaming
-**Tasks**:
-1. Enhance monitor command with notification overlays
-2. Add desktop notification support for critical events
-3. Implement smart notification throttling and deduplication
-4. Add notification history and replay functionality
-5. Create notification configuration management
+### Sprint 2.3: Real-time Terminal Notifications (Current) 
+**Current Status**: Ready to Start  
+**Objective**: Transform CLI into live, reactive monitoring system  
+**Duration**: 2 weeks  
+
+**📋 Detailed Plan**: See [SPRINT-2.3-PLAN.md](./SPRINT-2.3-PLAN.md) for comprehensive implementation details
+
+**Key Deliverables**:
+1. **Background Notification Service**: Non-intrusive real-time notifications while using CLI
+2. **Desktop Notifications**: Cross-platform critical event alerts (macOS/Linux/Windows)  
+3. **Enhanced Monitor Command**: Live metrics dashboard with notification overlays
+4. **Smart Filtering**: Intelligent throttling and deduplication to prevent notification spam
+5. **Configuration Management**: Comprehensive notification preferences and customization
+
+**Technical Architecture**:
+- Background async service for continuous event monitoring
+- Non-blocking notification overlays that don't interrupt CLI commands  
+- Cross-platform desktop notifications using native OS APIs
+- Smart event filtering with configurable priorities and throttling
+- Live metrics dashboard with sparkline charts and real-time health indicators
 
 ### Sprint 2.4: YAML Configuration Management (Next)
 **Objective**: Simple, flexible configuration system
