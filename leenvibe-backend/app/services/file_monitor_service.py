@@ -31,6 +31,7 @@ from ..services.project_indexer import project_indexer
 from ..services.graph_query_service import graph_query_service
 from ..services.incremental_indexer import incremental_indexer
 from ..services.cache_invalidation_service import cache_invalidation_service
+from ..services.incremental_graph_service import incremental_graph_service
 
 logger = logging.getLogger(__name__)
 
@@ -601,6 +602,9 @@ class FileMonitorService:
                     session.configuration.workspace_path = workspace_path
                     logger.info(f"Updated project index: {updated_index.supported_files} files, "
                                f"{len(updated_index.symbols)} symbols")
+                    
+                    # Trigger incremental graph update
+                    await self._trigger_graph_update(session_id, recent_changes, updated_index)
             else:
                 # Single file update
                 logger.debug(f"Queuing single file change for incremental index: {change.file_path}")
@@ -613,6 +617,27 @@ class FileMonitorService:
         
         except Exception as e:
             logger.error(f"Error triggering incremental index update: {e}")
+    
+    async def _trigger_graph_update(self, session_id: str, changes: List[FileChange], updated_index: Optional[Any] = None):
+        """Trigger incremental graph update for file changes"""
+        try:
+            session = self.sessions.get(session_id)
+            if not session:
+                return
+            
+            # Process changes for graph updates
+            for change in changes:
+                if change.is_code_file():
+                    await incremental_graph_service.process_file_changes(
+                        session.configuration.workspace_path,
+                        [change],
+                        updated_index
+                    )
+                    
+            logger.debug(f"Triggered graph updates for {len(changes)} file changes")
+            
+        except Exception as e:
+            logger.error(f"Error triggering graph update: {e}")
     
     def register_notification_callback(self, session_id: str, callback: Callable):
         """Register a callback for change notifications"""
