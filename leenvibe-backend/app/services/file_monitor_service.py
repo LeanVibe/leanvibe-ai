@@ -32,6 +32,7 @@ from ..services.graph_query_service import graph_query_service
 from ..services.incremental_indexer import incremental_indexer
 from ..services.cache_invalidation_service import cache_invalidation_service
 from ..services.incremental_graph_service import incremental_graph_service
+from ..services.symbol_dependency_tracker import symbol_dependency_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -633,11 +634,52 @@ class FileMonitorService:
                         [change],
                         updated_index
                     )
+            
+            # Process changes for symbol dependency tracking
+            await self._trigger_symbol_dependency_update(session_id, changes)
                     
             logger.debug(f"Triggered graph updates for {len(changes)} file changes")
             
         except Exception as e:
             logger.error(f"Error triggering graph update: {e}")
+    
+    async def _trigger_symbol_dependency_update(self, session_id: str, changes: List[FileChange]):
+        """Trigger symbol dependency tracking update for file changes"""
+        try:
+            session = self.sessions.get(session_id)
+            if not session:
+                return
+            
+            # Process changes for symbol dependency tracking
+            impact_analyses = await symbol_dependency_tracker.process_file_changes(changes)
+            
+            # Log significant impacts
+            for analysis in impact_analyses:
+                if analysis.impact_score > 0.5:  # Significant impact threshold
+                    logger.info(f"Significant symbol impact detected: {analysis.symbol_id} "
+                              f"(score: {analysis.impact_score:.2f}, type: {analysis.change_type})")
+                    
+                    # Create alert for high-impact changes
+                    if analysis.impact_score > 1.0:
+                        alert = MonitoringAlert(
+                            id=f"symbol_impact_{analysis.symbol_id}",
+                            session_id=session_id,
+                            alert_type="symbol_dependency_impact",
+                            severity="medium" if analysis.impact_score < 3.0 else "high",
+                            title=f"Symbol dependency impact detected",
+                            description=f"Symbol {analysis.symbol_id} change affects {len(analysis.directly_affected)} direct and {len(analysis.indirectly_affected)} indirect dependencies",
+                            affected_files=[symbol_dependency_tracker.symbols[analysis.symbol_id].file_path] if analysis.symbol_id in symbol_dependency_tracker.symbols else [],
+                            risk_factors=[f"Impact score: {analysis.impact_score:.2f}"] + analysis.warnings,
+                            recommended_actions=analysis.suggestions
+                        )
+                        
+                        logger.warning(f"Symbol dependency alert for session {session_id}: {alert.title}")
+            
+            logger.debug(f"Processed symbol dependency updates for {len(changes)} changes, "
+                        f"generated {len(impact_analyses)} impact analyses")
+            
+        except Exception as e:
+            logger.error(f"Error triggering symbol dependency update: {e}")
     
     def register_notification_callback(self, session_id: str, callback: Callable):
         """Register a callback for change notifications"""
