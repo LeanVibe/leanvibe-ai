@@ -14,7 +14,7 @@ from datetime import datetime
 from .l3_coding_agent import L3CodingAgent, AgentDependencies, AgentState
 from .ast_context_provider import ASTContextProvider
 from ..services.ast_service import ast_service
-from ..services.mock_mlx_service import mock_mlx_service
+from ..services.real_mlx_service import real_mlx_service
 from ..services.project_indexer import project_indexer
 from ..services.incremental_indexer import incremental_indexer
 from ..services.graph_service import graph_service
@@ -116,7 +116,7 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             await graph_service.initialize()
             
             # Initialize MLX service for AI-powered assistance
-            await mock_mlx_service.initialize()
+            await real_mlx_service.initialize()
             
             # Initialize project context
             await self._initialize_project_context()
@@ -2601,7 +2601,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
             
             # Generate MLX response
-            response = await mock_mlx_service.generate_code_completion(context, "suggest")
+            response = await real_mlx_service.generate_code_completion(context, "suggest")
             
             if response["status"] != "success":
                 return f"Error generating suggestions: {response.get('error', 'Unknown error')}"
@@ -2656,7 +2656,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
             
             # Generate MLX response
-            response = await mock_mlx_service.generate_code_completion(context, "explain")
+            response = await real_mlx_service.generate_code_completion(context, "explain")
             
             if response["status"] != "success":
                 return f"Error generating explanation: {response.get('error', 'Unknown error')}"
@@ -2709,7 +2709,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
             
             # Generate MLX response
-            response = await mock_mlx_service.generate_code_completion(context, "refactor")
+            response = await real_mlx_service.generate_code_completion(context, "refactor")
             
             if response["status"] != "success":
                 return f"Error generating refactoring suggestions: {response.get('error', 'Unknown error')}"
@@ -2763,7 +2763,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
             
             # Generate MLX response
-            response = await mock_mlx_service.generate_code_completion(context, "debug")
+            response = await real_mlx_service.generate_code_completion(context, "debug")
             
             if response["status"] != "success":
                 return f"Error generating debug analysis: {response.get('error', 'Unknown error')}"
@@ -2817,7 +2817,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
             
             # Generate MLX response
-            response = await mock_mlx_service.generate_code_completion(context, "optimize")
+            response = await real_mlx_service.generate_code_completion(context, "optimize")
             
             if response["status"] != "success":
                 return f"Error generating optimization suggestions: {response.get('error', 'Unknown error')}"

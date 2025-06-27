@@ -339,7 +339,6 @@ Mock generation successful!"""
 ---
 *Model: Mock (Development)*
 *Mode: {self.deployment_mode}*
-*Inference time: {inference_time:.2f}s*
 *Note: This is a mock response. Enable MLX-LM for real model inference.*
 """
     
