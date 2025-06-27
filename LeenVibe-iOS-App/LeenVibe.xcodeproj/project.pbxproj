@@ -13,9 +13,9 @@
 		3F7B6A312B12345C000B1234 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F7B6A302B12345C000B1234 /* Preview Assets.xcassets */; };
 		3F7B6A392B123456000B1234 /* WebSocketService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7B6A382B123456000B1234 /* WebSocketService.swift */; };
 		3F7B6A3B2B123457000B1234 /* AgentMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7B6A3A2B123457000B1234 /* AgentMessage.swift */; };
-		3F7B6A3E2B123458000B1234 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 3F7B6A3D2B123458000B1234 /* Starscream */; };
 		3F7B6A402B123459000B1234 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7B6A3F2B123459000B1234 /* QRScannerView.swift */; };
 		3F7B6A422B12345A000B1234 /* ConnectionStorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7B6A412B12345A000B1234 /* ConnectionStorageManager.swift */; };
+		3F7B6A432B12345B000B1234 /* Starscream in Frameworks */ = {isa = PBXBuildFile; productRef = 3F7B6A442B12345B000B1234 /* Starscream */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,7 +35,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3F7B6A3E2B123458000B1234 /* Starscream in Frameworks */,
+				3F7B6A432B12345B000B1234 /* Starscream in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -122,7 +122,7 @@
 			);
 			name = LeenVibe;
 			packageProductDependencies = (
-				3F7B6A3D2B123458000B1234 /* Starscream */,
+				3F7B6A442B12345B000B1234 /* Starscream */,
 			);
 			productName = LeenVibe;
 			productReference = 3F7B6A262B12345A000B1234 /* LeenVibe.app */;
@@ -153,7 +153,7 @@
 			);
 			mainGroup = 3F7B6A1D2B12345A000B1234;
 			packageReferences = (
-				3F7B6A3C2B123458000B1234 /* XCRemoteSwiftPackageReference "Starscream" */,
+				3F7B6A452B12345B000B1234 /* XCRemoteSwiftPackageReference "Starscream" */,
 			);
 			productRefGroup = 3F7B6A272B12345A000B1234 /* Products */;
 			projectDirPath = "";
@@ -398,7 +398,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		3F7B6A3C2B123458000B1234 /* XCRemoteSwiftPackageReference "Starscream" */ = {
+		3F7B6A452B12345B000B1234 /* XCRemoteSwiftPackageReference "Starscream" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/daltoniam/Starscream.git";
 			requirement = {
@@ -409,9 +409,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		3F7B6A3D2B123458000B1234 /* Starscream */ = {
+		3F7B6A442B12345B000B1234 /* Starscream */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3F7B6A3C2B123458000B1234 /* XCRemoteSwiftPackageReference "Starscream" */;
+			package = 3F7B6A452B12345B000B1234 /* XCRemoteSwiftPackageReference "Starscream" */;
 			productName = Starscream;
 		};
 /* End XCSwiftPackageProductDependency section */

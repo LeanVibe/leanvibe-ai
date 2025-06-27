@@ -82,7 +82,7 @@ struct ContentView: View {
             
             Spacer()
             
-            if let error = webSocketService.lastError {
+            if webSocketService.lastError != nil {
                 Button("⚠️") {
                     // Show error details
                 }
@@ -449,11 +449,11 @@ struct SettingsView: View {
                         }
                     }
                     
-                    if let error = webSocketService.lastError {
+                    if let lastError = webSocketService.lastError {
                         HStack {
                             Text("Last Error")
                             Spacer()
-                            Text(error)
+                            Text(lastError)
                                 .foregroundColor(.red)
                                 .font(.caption)
                         }
