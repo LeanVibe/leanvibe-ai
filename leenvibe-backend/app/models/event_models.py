@@ -86,8 +86,8 @@ class EventData:
     channel: NotificationChannel
     timestamp: datetime
     source: str  # Component that generated the event
-    data: Dict[str, Any] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    # data: Dict[str, Any] = field(default_factory=dict)
+    # metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -95,9 +95,9 @@ class FileChangeEvent(EventData):
     """File system change event"""
     file_path: str
     change_type: str  # created, modified, deleted, renamed
-    old_path: Optional[str] = None  # For rename operations
     file_size: Optional[int] = None
     modified_time: Optional[datetime] = None
+    old_path: Optional[str] = None  # For rename operations
 
 
 @dataclass
@@ -118,10 +118,10 @@ class ViolationEvent(EventData):
     violation_type: str
     severity: str
     file_path: str
-    symbol_name: Optional[str] = None
-    line_number: Optional[int] = None
     description: str
     suggestion: Optional[str] = None
+    symbol_name: Optional[str] = None
+    line_number: Optional[int] = None
     confidence_score: float = 0.0
 
 

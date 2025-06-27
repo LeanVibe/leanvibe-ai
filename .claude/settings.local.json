@@ -68,7 +68,9 @@
       "Bash(gh run view:*)",
       "Bash(yamllint:*)",
       "Bash(true)",
-      "Bash(uv add:*)"
+      "Bash(uv add:*)",
+      "Bash(uv run:*)",
+      "Bash(uv sync:*)"
     ],
     "deny": []
   }

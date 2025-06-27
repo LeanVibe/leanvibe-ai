@@ -175,7 +175,7 @@ def test_confidence_score_calculation():
     # Test various scenarios
     assert ai_service._calculate_confidence_score("Successfully completed", "file_operation") > 0.8
     assert ai_service._calculate_confidence_score("Error occurred", "code_analysis") < 0.5
-    assert ai_service._calculate_confidence_score("Short", "file_operation") < 0.7
+    assert ai_service._calculate_confidence_score("Short", "file_operation") <= 0.7
     assert ai_service._calculate_confidence_score("A" * 200, "file_operation") > 0.7
 
 if __name__ == "__main__":

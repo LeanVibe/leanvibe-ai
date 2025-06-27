@@ -1,0 +1,49 @@
+{
+  "" : {
+    "diagnostics" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibe-master.dia",
+    "emit-module-dependencies" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibe-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibe-master-emit-module.dia",
+    "pch" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibe-master-Bridging-header.pch",
+    "swift-dependencies" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibe-master.swiftdeps"
+  },
+  "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/Sources/LeenVibe/LeenVibeApp.swift" : {
+    "const-values" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibeApp.swiftconstvalues",
+    "dependencies" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibeApp.d",
+    "diagnostics" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibeApp.dia",
+    "index-unit-output-path" : "/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibeApp.o",
+    "llvm-bc" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibeApp.bc",
+    "object" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibeApp.o",
+    "swift-dependencies" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibeApp.swiftdeps",
+    "swiftmodule" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/LeenVibeApp~partial.swiftmodule"
+  },
+  "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/Sources/LeenVibe/Models/AgentMessage.swift" : {
+    "const-values" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/AgentMessage.swiftconstvalues",
+    "dependencies" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/AgentMessage.d",
+    "diagnostics" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/AgentMessage.dia",
+    "index-unit-output-path" : "/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/AgentMessage.o",
+    "llvm-bc" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/AgentMessage.bc",
+    "object" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/AgentMessage.o",
+    "swift-dependencies" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/AgentMessage.swiftdeps",
+    "swiftmodule" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/AgentMessage~partial.swiftmodule"
+  },
+  "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/Sources/LeenVibe/Services/WebSocketService.swift" : {
+    "const-values" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/WebSocketService.swiftconstvalues",
+    "dependencies" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/WebSocketService.d",
+    "diagnostics" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/WebSocketService.dia",
+    "index-unit-output-path" : "/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/WebSocketService.o",
+    "llvm-bc" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/WebSocketService.bc",
+    "object" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/WebSocketService.o",
+    "swift-dependencies" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/WebSocketService.swiftdeps",
+    "swiftmodule" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/WebSocketService~partial.swiftmodule"
+  },
+  "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/Sources/LeenVibe/Views/ContentView.swift" : {
+    "const-values" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/ContentView.dia",
+    "index-unit-output-path" : "/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/bogdan/work/leanvibe-ai/LeenVibe-SwiftPM/build/Build/Intermediates.noindex/LeenVibe.build/Debug-iphonesimulator/LeenVibe.build/Objects-normal/arm64/ContentView~partial.swiftmodule"
+  }
+}

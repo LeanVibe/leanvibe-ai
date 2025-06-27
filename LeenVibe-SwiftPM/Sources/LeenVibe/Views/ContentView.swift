@@ -20,8 +20,11 @@ public struct ContentView: View {
                 inputSection
             }
             .navigationTitle("LeenVibe Agent")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarLeading) {
                     connectionButton
                 }
@@ -29,6 +32,14 @@ public struct ContentView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     settingsButton
                 }
+                #else
+                ToolbarItem(placement: .primaryAction) {
+                    connectionButton
+                }
+                ToolbarItem(placement: .secondaryAction) {
+                    settingsButton
+                }
+                #endif
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView(webSocketService: webSocketService)
@@ -57,7 +68,7 @@ public struct ContentView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(Color(.systemGray6))
+        .background(Color.gray.opacity(0.1))
     }
     
     private var messagesScrollView: some View {
@@ -113,7 +124,7 @@ public struct ContentView: View {
                 CommandSuggestion(command: "/help", description: "Show all commands")
             }
             .padding()
-            .background(Color(.systemGray6))
+            .background(Color.gray.opacity(0.1))
             .cornerRadius(12)
         }
         .padding()
@@ -305,7 +316,7 @@ public struct MessageBubble: View {
             case .status:
                 return .green.opacity(0.1)
             default:
-                return Color(.systemGray5)
+                return Color.gray.opacity(0.1)
             }
         }
     }
@@ -388,13 +399,23 @@ public struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()
                     }
                 }
+                #else
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+                #endif
             }
         }
     }

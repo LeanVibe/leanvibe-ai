@@ -47,14 +47,14 @@ LeenVibe has evolved into a sophisticated enterprise-grade codebase analysis pla
 - Reconnection handling with state synchronization
 **Success Criteria**: < 100ms notification latency, graceful reconnection
 
-#### Sprint 2: CLI Tool Development (3 weeks)  
-**Goal**: Terminal-native interface (inspired by Claude Code CLI)
-- Click/Typer framework with advanced command structure
-- WebSocket client for seamless backend communication
-- Session management with persistence across restarts
-- Core commands: analyze, monitor, visualize, status
-- vim/tmux integration with real-time notifications
-**Success Criteria**: < 500ms CLI response time, terminal workflow integration
+#### Sprint 2: Pragmatic CLI Tool Development (3 weeks) ✅ REFINED SCOPE
+**Goal**: Minimal viable CLI leveraging existing sophisticated backend
+- **80/20 Approach**: Focus on high-value, low-effort features
+- Click framework with WebSocket client to existing backend
+- Essential commands: status, analyze, monitor, query
+- Real-time terminal notifications using existing event streaming
+- Simple YAML configuration management
+**Success Criteria**: Functional CLI showcasing backend capabilities, < 500ms response time
 
 #### Sprint 3: iOS Companion App (2 weeks)
 **Goal**: Mobile monitoring and control interface
@@ -89,6 +89,26 @@ LeenVibe has evolved into a sophisticated enterprise-grade codebase analysis pla
 - Environment-specific configuration management
 **Success Criteria**: Security audit passed, production deployment ready
 
+## Sprint 2 Strategic Refinement
+
+### 80/20 Analysis Applied
+**High Value, Low Effort** (Implemented in Sprint 2):
+- CLI framework with WebSocket client connection
+- Essential commands leveraging existing backend services  
+- Real-time notifications using existing event streaming
+- Simple configuration management
+- Project-aware integration
+
+**High Effort, Lower Immediate Value** (Deferred to Future Sprints):
+- Session persistence across restarts → Sprint 3
+- Multi-file editing with permissions → Sprint 3
+- Vim/tmux plugin integration → Sprint 4
+- ASCII visualization rendering → Sprint 4
+- Advanced installation/distribution → Sprint 6
+
+### Strategic Focus
+Rather than building complex CLI features from scratch, Sprint 2 leverages the sophisticated backend infrastructure already built to deliver immediate user value through a minimal viable interface.
+
 ## Current Implementation Status
 
 ### ✅ Foundation Complete (Advanced Infrastructure)
@@ -102,12 +122,13 @@ LeenVibe has evolved into a sophisticated enterprise-grade codebase analysis pla
 - **Visualization**: Mermaid.js with interactive features and multiple diagram types
 - **L3 Agent**: Context-aware AI with project understanding
 
-### 🔄 Sprint 1 In Progress (Real-Time Communication)
-**Current Focus**:
-- WebSocket event streaming implementation (in progress)
-- Notification priority system design
-- Client preference management architecture
-- Reconnection handling with state preservation
+### ✅ Sprint 1 Complete (Real-Time Communication System)
+**Implemented Features**:
+- WebSocket event streaming with smart filtering
+- Notification priority system with client-specific preferences
+- Batch delivery and compression for efficiency
+- Reconnection handling with state synchronization and missed event replay
+- Event streaming service with comprehensive monitoring
 
 ### 📋 Remaining Sprints Overview
 - **Sprint 2**: CLI tool with terminal-native interface

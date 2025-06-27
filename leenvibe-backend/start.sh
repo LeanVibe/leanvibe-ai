@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# LeenVibe Backend Startup Script
+# LeenVibe Backend Startup Script with QR Code Connection
 
 echo "🚀 Starting LeenVibe Backend..."
 
@@ -22,11 +22,17 @@ if [[ $(uname -m) == "arm64" ]]; then
     uv sync --extra mlx
 fi
 
+# Print QR code and connection info
+echo "🔍 Detecting network configuration..."
+uv run python -c "
+import sys
+sys.path.append('app')
+from utils.connection_service import print_startup_qr
+print_startup_qr(8000)
+"
+
 # Start the server using uv
 echo "🌟 Starting FastAPI server..."
-echo "Backend will be available at: http://localhost:8000"
-echo "WebSocket endpoint: ws://localhost:8000/ws/{client_id}"
-echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
 

@@ -4,10 +4,13 @@ from pydantic import BaseModel
 import logging
 import asyncio
 import json
+import os
+from datetime import datetime
 from .services.enhanced_ai_service import EnhancedAIService
 from .core.connection_manager import ConnectionManager
 from .agent.session_manager import SessionManager
 from .services.event_streaming_service import event_streaming_service
+from .services.reconnection_service import reconnection_service, handle_client_reconnection, client_heartbeat
 from .models.event_models import ClientPreferences, EventType
 
 # Configure logging
@@ -34,10 +37,11 @@ session_manager = SessionManager()
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-    logger.info("Starting LeenVibe backend with L3 Agent and event streaming...")
+    logger.info("Starting LeenVibe backend with L3 Agent, event streaming, and reconnection handling...")
     await ai_service.initialize()
     await session_manager.start()
     await event_streaming_service.start()
+    await reconnection_service.start()
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -45,6 +49,7 @@ async def shutdown_event():
     logger.info("Shutting down LeenVibe backend...")
     await session_manager.stop()
     await event_streaming_service.stop()
+    await reconnection_service.stop()
 
 @app.get("/health")
 async def health_check():
@@ -123,6 +128,34 @@ async def emit_test_event(event_data: dict):
 async def get_connections():
     """Get information about all WebSocket connections"""
     return connection_manager.get_connection_info()
+
+# Reconnection Endpoints
+
+@app.get("/reconnection/sessions")
+async def get_reconnection_sessions():
+    """Get information about all client reconnection sessions"""
+    return reconnection_service.get_all_sessions_info()
+
+@app.get("/reconnection/sessions/{client_id}")
+async def get_client_session_info(client_id: str):
+    """Get reconnection session information for a specific client"""
+    session_info = reconnection_service.get_client_session_info(client_id)
+    if session_info is None:
+        raise HTTPException(status_code=404, detail="Client session not found")
+    return session_info
+
+@app.post("/reconnection/heartbeat/{client_id}")
+async def client_heartbeat_endpoint(client_id: str):
+    """Update client heartbeat timestamp"""
+    client_heartbeat(client_id)
+    return {"success": True, "client_id": client_id, "timestamp": datetime.now().isoformat()}
+
+@app.post("/reconnection/simulate-disconnect/{client_id}")
+async def simulate_client_disconnect(client_id: str):
+    """Simulate client disconnection for testing purposes"""
+    from .services.reconnection_service import client_disconnected
+    client_disconnected(client_id)
+    return {"success": True, "client_id": client_id, "simulated": True}
 
 @app.get("/sessions")
 async def list_sessions():
@@ -283,15 +316,63 @@ async def get_visualization_cache_stats():
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    """WebSocket endpoint for L3 agent communication"""
-    await connection_manager.connect(websocket, client_id)
-    logger.info(f"L3 Agent client {client_id} connected")
+    """WebSocket endpoint for L3 agent communication with reconnection support"""
+    
+    # Check for reconnection scenario
+    is_reconnection = client_id in reconnection_service.client_sessions
+    reconnection_data = None
+    
+    if is_reconnection:
+        # Handle reconnection with state synchronization
+        from .models.event_models import ConnectionState
+        
+        # Create temporary connection state for reconnection
+        temp_preferences = reconnection_service.client_sessions[client_id].preferences_snapshot
+        if temp_preferences:
+            from .models.event_models import ClientPreferences
+            preferences = ClientPreferences(**temp_preferences)
+        else:
+            preferences = None
+            
+        temp_connection_state = ConnectionState(
+            client_id=client_id,
+            connected_at=datetime.now(),
+            preferences=preferences or connection_manager._create_default_preferences(client_id, websocket),
+            sequence_number=reconnection_service.client_sessions[client_id].sequence_number,
+            last_activity=datetime.now()
+        )
+        
+        reconnection_data = await reconnection_service.client_reconnected(client_id, temp_connection_state)
+        logger.info(f"Client {client_id} reconnecting - {reconnection_data['missed_events_count']} missed events")
+        
+        await connection_manager.connect(websocket, client_id, is_reconnection=True)
+        
+        # Send reconnection info to client
+        await websocket.send_text(json.dumps({
+            "type": "reconnection_sync",
+            "data": reconnection_data,
+            "timestamp": datetime.now().isoformat()
+        }))
+        
+    else:
+        # Handle new connection
+        await connection_manager.connect(websocket, client_id)
+        logger.info(f"L3 Agent client {client_id} connected (new session)")
     
     try:
         while True:
             data = await websocket.receive_text()
             try:
                 message = json.loads(data)
+                
+                # Handle heartbeat messages
+                if message.get("type") == "heartbeat":
+                    client_heartbeat(client_id)
+                    await websocket.send_text(json.dumps({
+                        "type": "heartbeat_ack",
+                        "timestamp": datetime.now().isoformat()
+                    }))
+                    continue
                 
                 # Extract message content and workspace
                 content = message.get("content", "")

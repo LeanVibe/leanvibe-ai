@@ -4,8 +4,9 @@ import logging
 import json
 from datetime import datetime
 
-from ..models.event_models import ClientPreferences, NotificationChannel, EventPriority
+from ..models.event_models import ClientPreferences, NotificationChannel, EventPriority, ConnectionState
 from ..services.event_streaming_service import event_streaming_service
+from ..services.reconnection_service import reconnection_service, register_client_session, client_disconnected
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +18,8 @@ class ConnectionManager:
         self.client_info: Dict[str, Dict] = {}
         self._streaming_enabled = True
     
-    async def connect(self, websocket: WebSocket, client_id: str, preferences: Optional[ClientPreferences] = None):
-        """Accept a new WebSocket connection with event streaming"""
+    async def connect(self, websocket: WebSocket, client_id: str, preferences: Optional[ClientPreferences] = None, is_reconnection: bool = False):
+        """Accept a new WebSocket connection with event streaming and reconnection handling"""
         await websocket.accept()
         self.active_connections[client_id] = websocket
         
@@ -27,18 +28,33 @@ class ConnectionManager:
             "connected_at": datetime.now().isoformat(),
             "user_agent": websocket.headers.get("user-agent", "unknown"),
             "client_type": self._detect_client_type(websocket.headers.get("user-agent", "")),
-            "streaming_enabled": True
+            "streaming_enabled": True,
+            "is_reconnection": is_reconnection
         }
         
         # Set up default preferences if not provided
         if preferences is None:
             preferences = self._create_default_preferences(client_id, websocket)
         
+        # Create connection state for reconnection tracking
+        connection_state = ConnectionState(
+            client_id=client_id,
+            connected_at=datetime.now(),
+            last_seen=datetime.now(),
+            preferences=preferences,
+            sequence_number=0,  # Will be updated during reconnection
+            last_activity=datetime.now()
+        )
+        
         # Register with event streaming service
         if self._streaming_enabled:
             event_streaming_service.register_client(client_id, websocket, preferences)
         
-        logger.info(f"Client {client_id} connected with streaming. Total connections: {len(self.active_connections)}")
+        # Register session for reconnection tracking
+        register_client_session(client_id, connection_state)
+        
+        connection_type = "reconnected" if is_reconnection else "new"
+        logger.info(f"Client {client_id} {connection_type} connection with streaming. Total connections: {len(self.active_connections)}")
     
     def disconnect(self, client_id: str):
         """Remove a WebSocket connection and clean up streaming"""
@@ -50,6 +66,9 @@ class ConnectionManager:
         # Unregister from event streaming
         if self._streaming_enabled:
             event_streaming_service.unregister_client(client_id)
+        
+        # Mark client as disconnected for reconnection service
+        client_disconnected(client_id)
         
         logger.info(f"Client {client_id} disconnected. Total connections: {len(self.active_connections)}")
     

@@ -263,9 +263,13 @@ class EventStreamingService:
     async def _deliver_event(self, event: EventData):
         """Deliver an event to all eligible clients"""
         delivery_tasks = []
+        disconnected_clients = []
         
         for client_id, client_state in self.clients.items():
-            if not client_state.active:
+            # Check if client is currently connected
+            if not client_state.active or client_id not in self.websocket_connections:
+                # Track missed event for disconnected clients
+                disconnected_clients.append(client_id)
                 continue
             
             # Check if event should be delivered to this client
@@ -277,8 +281,28 @@ class EventStreamingService:
                 self._deliver_to_client(client_id, event, client_state)
             )
         
+        # Track missed events for disconnected clients that should receive this event
+        if disconnected_clients:
+            self._track_missed_events(event, disconnected_clients)
+        
         if delivery_tasks:
             await asyncio.gather(*delivery_tasks, return_exceptions=True)
+    
+    def _track_missed_events(self, event: EventData, disconnected_clients: List[str]):
+        """Track missed events for disconnected clients"""
+        try:
+            # Import here to avoid circular imports
+            from .reconnection_service import track_missed_event_for_client
+            
+            for client_id in disconnected_clients:
+                # Only track if the client has preferences that would want this event
+                if client_id in self.clients:
+                    client_state = self.clients[client_id]
+                    if self.event_filter.should_deliver(event, client_state.preferences):
+                        track_missed_event_for_client(client_id, event)
+                        logger.debug(f"Tracked missed event {event.event_type.value} for disconnected client {client_id}")
+        except Exception as e:
+            logger.error(f"Error tracking missed events: {e}")
     
     async def _deliver_to_client(self, client_id: str, event: EventData, client_state: ConnectionState):
         """Deliver an event to a specific client"""
