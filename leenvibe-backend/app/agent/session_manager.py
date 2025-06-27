@@ -13,6 +13,7 @@ import json
 from dataclasses import asdict
 
 from .enhanced_l3_agent import EnhancedL3CodingAgent as L3CodingAgent, AgentDependencies
+from ..services.cache_warming_service import cache_warming_service
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,9 @@ class SessionManager:
                 "interaction_count": 0
             }
             
+            # Track project access for cache warming
+            cache_warming_service.track_project_access(workspace_path, client_id)
+            
             logger.info(f"Created new session for client: {client_id}")
             return agent
             
@@ -151,6 +155,10 @@ class SessionManager:
         try:
             if client_id not in self.sessions:
                 return False
+            
+            # Track session end for cache warming
+            workspace_path = self.session_metadata[client_id].get("workspace_path", ".")
+            cache_warming_service.track_session_end(client_id, workspace_path)
             
             # Save session before deletion (for recovery)
             await self._save_session(client_id)

@@ -27,6 +27,7 @@ from .project_indexer import project_indexer
 from .ast_service import ast_service
 from .graph_service import graph_service
 from .cache_invalidation_service import cache_invalidation_service
+from .cache_warming_service import cache_warming_service
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +149,17 @@ class IncrementalProjectIndexer:
             logger.info(f"Project indexing completed in {indexing_time:.2f}s "
                        f"({project_index.supported_files} files, "
                        f"{len(project_index.symbols)} symbols)")
+            
+            # Track project access for cache warming
+            cache_warming_service.track_project_access(
+                workspace_path, 
+                "indexer",
+                {
+                    "files_accessed": project_index.supported_files,
+                    "symbols_queried": len(project_index.symbols),
+                    "analysis_requests": 1
+                }
+            )
             
             return project_index
             
@@ -602,6 +614,22 @@ class IncrementalProjectIndexer:
                 logger.info("Cleared all project index caches")
         except Exception as e:
             logger.error(f"Error clearing cache: {e}")
+    
+    async def trigger_intelligent_warming(self):
+        """Trigger intelligent cache warming for frequently accessed projects"""
+        try:
+            candidates = cache_warming_service.get_warming_candidates(limit=5)
+            
+            for candidate in candidates:
+                project_path = candidate["project_path"]
+                await cache_warming_service.queue_warming_task(project_path)
+            
+            logger.info(f"Triggered warming for {len(candidates)} projects")
+            return len(candidates)
+            
+        except Exception as e:
+            logger.error(f"Error triggering intelligent warming: {e}")
+            return 0
 
 
 # Global instance

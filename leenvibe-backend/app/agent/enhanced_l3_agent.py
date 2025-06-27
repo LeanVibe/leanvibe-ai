@@ -19,6 +19,7 @@ from ..services.graph_service import graph_service
 from ..services.graph_query_service import graph_query_service
 from ..services.visualization_service import visualization_service
 from ..services.file_monitor_service import file_monitor_service
+from ..services.cache_warming_service import cache_warming_service
 from ..models.ast_models import (
     ProjectIndex, ProjectContext, ASTContext, Symbol, Reference,
     SymbolType, ImpactAnalysis, RefactoringSuggestion
@@ -75,7 +76,11 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             "get_monitoring_status": self._get_monitoring_status_tool,
             "get_recent_changes": self._get_recent_changes_tool,
             "get_indexer_metrics": self._get_indexer_metrics_tool,
-            "refresh_project_index": self._refresh_project_index_tool
+            "refresh_project_index": self._refresh_project_index_tool,
+            "get_warming_candidates": self._get_warming_candidates_tool,
+            "trigger_cache_warming": self._trigger_cache_warming_tool,
+            "get_warming_metrics": self._get_warming_metrics_tool,
+            "set_warming_strategy": self._set_warming_strategy_tool
         })
     
     async def initialize(self):
@@ -1880,5 +1885,294 @@ Start again with 'start monitoring' when needed."""
             return {
                 "status": "error",
                 "message": f"Failed to refresh project index: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _get_warming_candidates_tool(self, limit: int = 10) -> Dict[str, Any]:
+        """Get projects that are candidates for cache warming"""
+        try:
+            candidates = cache_warming_service.get_warming_candidates(limit)
+            
+            if not candidates:
+                return {
+                    "status": "success",
+                    "type": "warming_candidates",
+                    "data": {
+                        "candidates": [],
+                        "summary": "🎯 No cache warming candidates found\n\nThis means either:\n• No projects have sufficient usage patterns\n• All frequently accessed projects are already warmed\n• Cache warming tracking needs more usage data"
+                    },
+                    "message": "No warming candidates available",
+                    "confidence": 1.0
+                }
+            
+            # Generate summary
+            summary_parts = [f"🎯 Cache Warming Candidates ({len(candidates)} found):\n"]
+            
+            for i, candidate in enumerate(candidates[:limit], 1):
+                project_name = Path(candidate["project_path"]).name
+                warming_score = candidate["warming_score"]
+                access_count = candidate["access_count"]
+                session_time = candidate["total_session_time"]
+                
+                score_icon = "🔥" if warming_score > 0.8 else "🟡" if warming_score > 0.6 else "🟢"
+                
+                summary_parts.append(f"{i}. {score_icon} {project_name}")
+                summary_parts.append(f"   Score: {warming_score:.2f} | Accesses: {access_count} | Time: {session_time/60:.1f}m")
+                summary_parts.append(f"   Files accessed: {candidate['files_accessed']}")
+                summary_parts.append("")
+            
+            summary_parts.extend([
+                "🎯 Warming Score Legend:",
+                "🔥 High priority (>0.8) - Frequently used, recent activity",
+                "🟡 Medium priority (0.6-0.8) - Good usage patterns",
+                "🟢 Low priority (<0.6) - Occasional usage",
+                "",
+                "💡 Use 'trigger cache warming' to start warming these projects"
+            ])
+            
+            data = {
+                "candidates": candidates,
+                "total_candidates": len(candidates),
+                "showing": min(limit, len(candidates)),
+                "summary": "\n".join(summary_parts)
+            }
+            
+            return {
+                "status": "success",
+                "type": "warming_candidates",
+                "data": data,
+                "message": f"Found {len(candidates)} cache warming candidates",
+                "confidence": 0.9
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting warming candidates: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to get warming candidates: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _trigger_cache_warming_tool(self, project_path: Optional[str] = None) -> Dict[str, Any]:
+        """Trigger cache warming for specific project or top candidates"""
+        try:
+            if project_path:
+                # Warm specific project
+                project_path = str(Path(project_path).absolute())
+                success = await cache_warming_service.queue_warming_task(project_path)
+                
+                if success:
+                    return {
+                        "status": "success",
+                        "type": "cache_warming_triggered",
+                        "data": {
+                            "project_path": project_path,
+                            "summary": f"🔥 Cache warming queued for: {Path(project_path).name}\n\nThe project will be warmed in the background based on priority.\nUse 'get warming metrics' to check progress."
+                        },
+                        "message": f"Cache warming queued for {Path(project_path).name}",
+                        "confidence": 0.9
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "message": f"Failed to queue warming for {Path(project_path).name}",
+                        "confidence": 0.0
+                    }
+            else:
+                # Trigger intelligent warming for all candidates
+                warmed_count = await incremental_indexer.trigger_intelligent_warming()
+                
+                summary = f"""🚀 Intelligent Cache Warming Triggered!
+
+🎯 Action Taken:
+• Queued {warmed_count} projects for background warming
+• Projects selected based on usage patterns and priority scores
+• Warming will proceed automatically based on strategy settings
+
+⚡ Strategy: {cache_warming_service.current_strategy}
+📊 Background warming is now active
+
+💡 Use 'get warming metrics' to monitor progress
+🔧 Use 'set warming strategy' to adjust warming behavior"""
+                
+                data = {
+                    "projects_queued": warmed_count,
+                    "strategy": cache_warming_service.current_strategy,
+                    "summary": summary
+                }
+                
+                return {
+                    "status": "success",
+                    "type": "intelligent_warming_triggered",
+                    "data": data,
+                    "message": f"Triggered intelligent warming for {warmed_count} projects",
+                    "confidence": 0.95
+                }
+                
+        except Exception as e:
+            logger.error(f"Error triggering cache warming: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to trigger cache warming: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _get_warming_metrics_tool(self) -> Dict[str, Any]:
+        """Get cache warming performance metrics"""
+        try:
+            metrics = cache_warming_service.get_metrics()
+            
+            if not metrics:
+                return {
+                    "status": "error",
+                    "message": "No warming metrics available",
+                    "confidence": 0.0
+                }
+            
+            # Calculate success rate
+            total_tasks = metrics["total_warming_tasks"]
+            success_rate = (metrics["successful_warmings"] / max(total_tasks, 1)) * 100
+            
+            summary = f"""📊 Cache Warming Performance Metrics:
+
+🚀 Warming Activity:
+• Total warming tasks: {total_tasks}
+• Successful warmings: {metrics["successful_warmings"]}
+• Failed warmings: {metrics["failed_warmings"]}
+• Success rate: {success_rate:.1f}%
+
+⚡ Performance:
+• Average warming time: {metrics["average_warming_time"]:.2f}s
+• Background warming: {'Active' if metrics["background_warming_active"] else 'Inactive'}
+
+📈 Usage Tracking:
+• Projects tracked: {metrics["total_projects_tracked"]}
+• Queue size: {metrics["queue_size"]}
+• Active tasks: {metrics["active_tasks"]}
+• Completed tasks: {metrics["completed_tasks"]}
+
+🎯 Strategy Configuration:
+• Current strategy: {metrics["current_strategy"]}
+• Max concurrent: {metrics["strategy_config"]["max_concurrent_warming"]}
+• Warming interval: {metrics["strategy_config"]["warming_interval_hours"]}h
+
+💡 Commands:
+• 'get warming candidates' - See projects ready for warming
+• 'trigger cache warming' - Start intelligent warming
+• 'set warming strategy aggressive/balanced/conservative' - Adjust behavior"""
+            
+            data = {
+                "metrics": metrics,
+                "success_rate": success_rate,
+                "total_tasks": total_tasks,
+                "strategy": metrics["current_strategy"],
+                "summary": summary
+            }
+            
+            return {
+                "status": "success",
+                "type": "warming_metrics",
+                "data": data,
+                "message": f"Cache warming metrics: {total_tasks} tasks, {success_rate:.1f}% success rate",
+                "confidence": 1.0
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting warming metrics: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to get warming metrics: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _set_warming_strategy_tool(self, strategy: str) -> Dict[str, Any]:
+        """Set the cache warming strategy"""
+        try:
+            # Validate strategy
+            valid_strategies = ["aggressive", "balanced", "conservative"]
+            if strategy not in valid_strategies:
+                return {
+                    "status": "error",
+                    "message": f"Invalid strategy '{strategy}'. Valid options: {', '.join(valid_strategies)}",
+                    "confidence": 0.0
+                }
+            
+            # Set the strategy
+            success = cache_warming_service.set_warming_strategy(strategy)
+            
+            if success:
+                # Get strategy details
+                strategy_config = cache_warming_service.strategies[strategy]
+                
+                summary = f"""🎯 Cache Warming Strategy Set: {strategy.upper()}
+
+⚙️ Strategy Configuration:
+• Min access count: {strategy_config.min_access_count}
+• Min session time: {strategy_config.min_total_session_time}s
+• Warming interval: {strategy_config.warming_interval_hours}h
+• Max concurrent: {strategy_config.max_concurrent_warming}
+• Warming timeout: {strategy_config.warming_timeout_minutes}m
+
+🔄 Weighting:
+• Recency: {strategy_config.recency_weight:.1%}
+• Frequency: {strategy_config.frequency_weight:.1%}
+• Session quality: {strategy_config.session_quality_weight:.1%}
+
+💡 Strategy Characteristics:"""
+                
+                if strategy == "aggressive":
+                    summary += """
+• 🚀 Warms caches quickly and frequently
+• Lower thresholds for warming eligibility
+• More concurrent warming tasks
+• Best for active development environments"""
+                elif strategy == "balanced":
+                    summary += """
+• ⚖️ Balanced approach to cache warming
+• Moderate thresholds and intervals
+• Good for most development workflows
+• Default recommended setting"""
+                elif strategy == "conservative":
+                    summary += """
+• 🛡️ Careful, resource-conscious warming
+• Higher thresholds for warming
+• Longer intervals between warmings
+• Best for resource-constrained environments"""
+                
+                summary += "\n\n✅ Strategy applied! Future warming decisions will use these settings."
+                
+                data = {
+                    "strategy": strategy,
+                    "configuration": {
+                        "min_access_count": strategy_config.min_access_count,
+                        "min_session_time": strategy_config.min_total_session_time,
+                        "warming_interval_hours": strategy_config.warming_interval_hours,
+                        "max_concurrent_warming": strategy_config.max_concurrent_warming,
+                        "recency_weight": strategy_config.recency_weight,
+                        "frequency_weight": strategy_config.frequency_weight,
+                        "session_quality_weight": strategy_config.session_quality_weight
+                    },
+                    "summary": summary
+                }
+                
+                return {
+                    "status": "success",
+                    "type": "warming_strategy_set",
+                    "data": data,
+                    "message": f"Cache warming strategy set to {strategy}",
+                    "confidence": 1.0
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": f"Failed to set warming strategy to {strategy}",
+                    "confidence": 0.0
+                }
+                
+        except Exception as e:
+            logger.error(f"Error setting warming strategy: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to set warming strategy: {str(e)}",
                 "confidence": 0.0
             }
