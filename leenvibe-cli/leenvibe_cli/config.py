@@ -24,6 +24,8 @@ class CLIConfig:
     backend_url: str = "http://localhost:8000"
     websocket_url: str = "ws://localhost:8000/ws"
     timeout_seconds: int = 30
+    api_timeout: int = 30  # Alias for timeout_seconds
+    websocket_timeout: int = 300
     
     # User preferences
     verbose: bool = False
@@ -31,11 +33,22 @@ class CLIConfig:
     show_notifications: bool = True
     notification_level: str = "medium"  # debug, low, medium, high, critical
     
+    # Notification settings
+    desktop_notifications: bool = True
+    terminal_notifications: bool = True
+    sound_notifications: bool = False
+    notification_throttle_seconds: int = 30
+    max_notifications_per_minute: int = 10
+    
+    # Notification filtering
+    enabled_event_types: List[str] = None
+    
     # Display settings
     max_lines_output: int = 50
     syntax_highlighting: bool = True
     show_timestamps: bool = True
     compact_mode: bool = False
+    show_progress: bool = True  # Added for compatibility
     
     # Project settings
     project_root: Optional[str] = None
@@ -47,6 +60,17 @@ class CLIConfig:
             self.exclude_patterns = [
                 "*.pyc", "*.pyo", "__pycache__", ".git", ".svn",
                 "node_modules", ".DS_Store", "*.log", ".env"
+            ]
+        
+        if self.enabled_event_types is None:
+            self.enabled_event_types = [
+                "architectural_violation",
+                "build_failure",
+                "security_issue",
+                "complexity_spike", 
+                "circular_dependency",
+                "test_failure",
+                "performance_regression"
             ]
         
         # Derive WebSocket URL from backend URL if not explicitly set
@@ -80,6 +104,27 @@ def get_config_path(config_path: Optional[str] = None) -> Path:
 
 def load_config(config_path: Optional[str] = None) -> CLIConfig:
     """Load configuration from file or create default"""
+    
+    # Try to use new configuration manager first
+    try:
+        from .config.manager import ConfigurationManager
+        manager = ConfigurationManager()
+        schema = manager._config
+        
+        # Create CLIConfig from active profile
+        config = CLIConfig()
+        schema.merge_with_cli_config(config)
+        
+        if config_path:
+            console.print(f"[dim]Loaded configuration from profile: {schema.active_profile}[/dim]")
+        
+        return config
+        
+    except Exception:
+        # Fall back to legacy config loading
+        pass
+    
+    # Legacy configuration loading
     config_file = get_config_path(config_path)
     
     if config_file.exists():

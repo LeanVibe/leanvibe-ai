@@ -19,7 +19,7 @@ LeenVibe is an L3 autonomous coding assistant designed for senior engineers. It 
 - **Development:** Hot reload with uvicorn ✅
 
 ### Backend (Mac Agent) - Planned
-- **LLM:** MLX with Qwen2.5-Coder-7B-Instruct (Apple Silicon optimized) ✅ (Architecture Working - Ready for Weights)
+- **LLM:** MLX with Phi-3-Mini-128K-Instruct (Microsoft, MVP-optimized) ✅ (Architecture Ready - MVP Perfect)
 - **Vector Store:** ChromaDB for code embeddings ⚠️ (Planned)  
 - **Agent Framework:** Pydantic.ai for L3 implementation ⚠️ (Planned)
 - **Code Analysis:** Tree-sitter for AST parsing ⚠️ (Planned)
@@ -124,8 +124,8 @@ open LeenVibe-iOS-App/LeenVibe.xcodeproj  # Current working iOS project
 ### Target Performance (When AI Implemented)
 - **Agent Response:** < 500ms for code suggestions ⚠️
 - **Context Loading:** < 1s for large projects ⚠️  
-- **Memory Usage:** < 16GB RAM during normal operation ⚠️
-- **Model Loading:** < 30s initial load ⚠️
+- **Memory Usage:** < 16GB RAM during normal operation ⚠️ (MVP-friendly with Phi-3-Mini)
+- **Model Loading:** < 30s initial load ⚠️ (Optimized for smaller model)
 
 ## Security Considerations - Current Status
 - All processing local - no external API calls ✅
@@ -139,7 +139,7 @@ open LeenVibe-iOS-App/LeenVibe.xcodeproj  # Current working iOS project
 - Code analysis safety mechanisms ⚠️
 
 ## Current Limitations & Known Issues
-1. **Model Weights**: Qwen2.5-Coder architecture working, need to load pre-trained weights ✅ (Architecture Complete - Ready for Weights)
+1. **Model Weights**: Phi-3-Mini-128K-Instruct architecture ready, need to download weights ✅ (MVP-Perfect Choice)
 2. **No CLI Tool**: Terminal workflow not yet implemented ⚠️ (Planned)
 3. **No Session Persistence**: Beyond WebSocket connection state ⚠️ (Planned)
 4. **Limited Error Handling**: Basic error cases covered ⚠️ (Improving)
@@ -181,7 +181,7 @@ Before any PR:
 ## Troubleshooting
 
 ### Common Issues
-- **Model loading fails**: Ensure 48GB+ RAM available
+- **Model loading fails**: Ensure 16GB+ RAM available (MVP-friendly requirements)
 - **WebSocket disconnects**: Check firewall/network settings
 - **Performance degradation**: Monitor context size, trigger pruning
 - **iOS pairing fails**: Verify both devices on same network

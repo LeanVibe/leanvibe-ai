@@ -154,13 +154,26 @@ class BackendClient:
         """Connect to WebSocket for real-time communication"""
         try:
             websocket_url = f"{self.config.websocket_url}/{self.client_id}"
-            self.websocket = await websockets.connect(websocket_url)
+            
+            # Use longer timeout for initial connection (agent session creation)
+            connect_timeout = self.config.timeout_seconds * 2
+            
+            if self.config.verbose:
+                console.print(f"[dim]Connecting to WebSocket (timeout: {connect_timeout}s): {websocket_url}[/dim]")
+            
+            self.websocket = await asyncio.wait_for(
+                websockets.connect(websocket_url),
+                timeout=connect_timeout
+            )
             self.connected = True
             
             if self.config.verbose:
                 console.print(f"[green]Connected to WebSocket: {websocket_url}[/green]")
             
             return True
+        except asyncio.TimeoutError:
+            console.print(f"[yellow]WebSocket connection timed out (backend may be initializing L3 agent)[/yellow]")
+            return False
         except Exception as e:
             console.print(f"[red]WebSocket connection failed: {e}[/red]")
             return False

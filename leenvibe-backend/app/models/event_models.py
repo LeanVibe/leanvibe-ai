@@ -86,8 +86,6 @@ class EventData:
     channel: NotificationChannel
     timestamp: datetime
     source: str  # Component that generated the event
-    # data: Dict[str, Any] = field(default_factory=dict)
-    # metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -98,6 +96,8 @@ class FileChangeEvent(EventData):
     file_size: Optional[int] = None
     modified_time: Optional[datetime] = None
     old_path: Optional[str] = None  # For rename operations
+    data: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -109,6 +109,8 @@ class AnalysisEvent(EventData):
     processing_time: Optional[float] = None
     success: bool = True
     error_message: Optional[str] = None
+    data: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -119,10 +121,12 @@ class ViolationEvent(EventData):
     severity: str
     file_path: str
     description: str
-    suggestion: Optional[str] = None
     symbol_name: Optional[str] = None
     line_number: Optional[int] = None
+    suggestion: Optional[str] = None
     confidence_score: float = 0.0
+    data: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -134,6 +138,8 @@ class AgentEvent(EventData):
     processing_time: Optional[float] = None
     confidence_score: Optional[float] = None
     tools_used: List[str] = field(default_factory=list)
+    data: Dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 class ClientPreferences(BaseModel):
@@ -207,6 +213,7 @@ class EventStats(BaseModel):
 
 
 # Utility functions for event creation
+
 
 def create_file_change_event(
     file_path: str,

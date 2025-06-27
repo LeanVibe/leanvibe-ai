@@ -19,8 +19,10 @@ from rich.table import Table
 from rich.text import Text
 from rich.columns import Columns
 
-from ..config import CLIConfig
+from ..config.legacy import CLIConfig
 from ..client import BackendClient
+from ..services import NotificationService
+from ..ui import NotificationOverlay, LiveMetricsDashboard
 
 console = Console()
 
@@ -32,16 +34,103 @@ console = Console()
               default='medium', help='Minimum event priority level')
 @click.option('--quiet', '-q', is_flag=True, help='Suppress startup messages')
 @click.option('--json', 'output_json', is_flag=True, help='Output events as JSON')
+@click.option('--background', '-b', is_flag=True, help='Enable background notification service')
+@click.option('--desktop-notifications', '-d', is_flag=True, help='Enable desktop notifications')
+@click.option('--live-dashboard', '-l', is_flag=True, help='Show live metrics dashboard')
+@click.option('--overlay', '-o', is_flag=True, help='Show notification overlays')
 @click.pass_context
-def monitor(ctx: click.Context, duration: Optional[int], filter_level: str, quiet: bool, output_json: bool):
-    """Monitor real-time file changes and events"""
+def monitor(ctx: click.Context, duration: Optional[int], filter_level: str, quiet: bool, output_json: bool, background: bool, desktop_notifications: bool, live_dashboard: bool, overlay: bool):
+    """Monitor real-time file changes and events with enhanced notifications"""
     config = ctx.obj['config']
     client = ctx.obj['client']
     
     # Override config notification level with command option
     config.notification_level = filter_level
     
-    asyncio.run(monitor_command(config, client, duration, quiet, output_json))
+    # Override notification settings with command options
+    if desktop_notifications:
+        config.desktop_notifications = True
+    
+    asyncio.run(enhanced_monitor_command(config, client, duration, quiet, output_json, background, live_dashboard, overlay))
+
+
+async def enhanced_monitor_command(config: CLIConfig, client: BackendClient, duration: Optional[int], quiet: bool, output_json: bool, background: bool, live_dashboard: bool, overlay: bool):
+    """Enhanced monitoring with notification services and live dashboard"""
+    
+    # If JSON output mode is requested, delegate to original implementation
+    if output_json:
+        return await monitor_command(config, client, duration, quiet, output_json)
+    
+    # If enhanced features are disabled, delegate to original implementation
+    if not (background or live_dashboard or overlay):
+        return await monitor_command(config, client, duration, quiet, output_json)
+    
+    if not quiet:
+        show_enhanced_monitor_header(config, duration, background, live_dashboard, overlay)
+    
+    # Setup signal handling for graceful shutdown
+    shutdown_event = asyncio.Event()
+    
+    def signal_handler(signum, frame):
+        if not quiet:
+            console.print("\n[yellow]Shutting down enhanced monitor...[/yellow]")
+        shutdown_event.set()
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    # Initialize services
+    notification_service = None
+    notification_overlay = None
+    live_metrics = None
+    
+    try:
+        async with client:
+            # Connect to WebSocket for real-time events
+            if not await client.connect_websocket():
+                console.print("[red]Failed to connect to backend for monitoring[/red]")
+                return
+            
+            # Initialize background notification service
+            if background:
+                notification_service = NotificationService(config)
+                if await notification_service.start_background_monitoring():
+                    if not quiet:
+                        console.print("[green]✅ Background notification service started[/green]")
+                else:
+                    console.print("[yellow]⚠️ Background notification service failed to start[/yellow]")
+                    notification_service = None
+            
+            # Initialize notification overlay
+            if overlay:
+                notification_overlay = NotificationOverlay(console)
+                if not quiet:
+                    console.print("[green]✅ Notification overlay enabled[/green]")
+            
+            # Initialize live metrics dashboard
+            if live_dashboard:
+                live_metrics = LiveMetricsDashboard(client, console)
+                if not quiet:
+                    console.print("[green]✅ Live metrics dashboard enabled[/green]")
+            
+            if not quiet:
+                console.print("[green]🔄 Enhanced monitoring active - Press Ctrl+C to stop[/green]\n")
+            
+            # Start enhanced monitoring
+            await enhanced_monitoring_loop(
+                client, config, shutdown_event, duration,
+                notification_service, notification_overlay, live_metrics
+            )
+    
+    except Exception as e:
+        console.print(f"[red]Enhanced monitoring error: {e}[/red]")
+    
+    finally:
+        # Cleanup services
+        if notification_service:
+            await notification_service.stop()
+            if not quiet:
+                console.print("[dim]Background notification service stopped[/dim]")
 
 
 async def monitor_command(config: CLIConfig, client: BackendClient, duration: Optional[int], quiet: bool, output_json: bool):
@@ -101,6 +190,168 @@ def show_monitor_header(config: CLIConfig, duration: Optional[int]):
     )
     
     console.print(panel)
+
+
+def show_enhanced_monitor_header(config: CLIConfig, duration: Optional[int], background: bool, live_dashboard: bool, overlay: bool):
+    """Show enhanced monitoring header with feature status"""
+    header_text = Text()
+    header_text.append("🚀 Enhanced Real-time Monitoring\n", style="bold cyan")
+    header_text.append(f"Backend: {config.backend_url}\n", style="dim")
+    header_text.append(f"Filter Level: {config.notification_level.upper()}\n", style="yellow")
+    
+    if duration:
+        header_text.append(f"Duration: {duration} seconds\n", style="dim")
+    else:
+        header_text.append("Duration: Continuous\n", style="dim")
+    
+    # Feature status
+    header_text.append("\nFeatures:\n", style="bold")
+    header_text.append(f"• Background Service: {'✅ Enabled' if background else '❌ Disabled'}\n", 
+                      style="green" if background else "dim")
+    header_text.append(f"• Live Dashboard: {'✅ Enabled' if live_dashboard else '❌ Disabled'}\n", 
+                      style="green" if live_dashboard else "dim")
+    header_text.append(f"• Notification Overlay: {'✅ Enabled' if overlay else '❌ Disabled'}\n", 
+                      style="green" if overlay else "dim")
+    header_text.append(f"• Desktop Notifications: {'✅ Enabled' if config.desktop_notifications else '❌ Disabled'}\n", 
+                      style="green" if config.desktop_notifications else "dim")
+    
+    panel = Panel(
+        header_text,
+        title="[bold]LeenVibe Enhanced Monitor[/bold]",
+        border_style="cyan",
+        padding=(1, 2)
+    )
+    
+    console.print(panel)
+
+
+async def enhanced_monitoring_loop(client: BackendClient, config: CLIConfig, shutdown_event: asyncio.Event, duration: Optional[int], notification_service: Optional[NotificationService], notification_overlay: Optional[NotificationOverlay], live_metrics: Optional[LiveMetricsDashboard]):
+    """Main enhanced monitoring loop with live updates"""
+    
+    start_time = datetime.now()
+    events_received = 0
+    last_metrics_update = 0
+    metrics_update_interval = 5  # Update metrics every 5 seconds
+    
+    # Event handlers for notification overlay
+    async def handle_overlay_event(event: Dict[str, Any]):
+        if notification_overlay:
+            await notification_overlay.show_notification(event, duration=3)
+    
+    # Add overlay event handler to notification service
+    if notification_service and notification_overlay:
+        notification_service.add_event_handler(lambda event: asyncio.create_task(handle_overlay_event(event)))
+    
+    # Create live display based on enabled features
+    if live_metrics:
+        # Live dashboard mode with metrics
+        with Live(
+            live_metrics.create_dashboard_layout(),
+            refresh_per_second=1,
+            console=console
+        ) as live_display:
+            
+            async for event in client.listen_for_events():
+                if shutdown_event.is_set():
+                    break
+                
+                # Check duration
+                if duration and (datetime.now() - start_time).total_seconds() > duration:
+                    break
+                
+                events_received += 1
+                
+                # Update metrics periodically
+                current_time = datetime.now().timestamp()
+                if current_time - last_metrics_update >= metrics_update_interval:
+                    await live_metrics.update_metrics()
+                    
+                    # Update live display with new dashboard
+                    dashboard = live_metrics.create_dashboard_layout()
+                    
+                    # Add overlay notifications if enabled
+                    if notification_overlay and notification_overlay.active_notifications:
+                        overlay_panels = []
+                        for notification in notification_overlay.active_notifications[-3:]:  # Show last 3
+                            overlay_panels.append(Panel(
+                                Text(notification),
+                                title="[bold yellow]Notification[/bold yellow]",
+                                border_style="yellow",
+                                width=40
+                            ))
+                        if overlay_panels:
+                            dashboard = Columns([dashboard, Columns(overlay_panels, expand=False)], expand=True)
+                    
+                    live_display.update(dashboard)
+                    last_metrics_update = current_time
+    
+    else:
+        # Traditional mode with enhanced notifications
+        recent_events = []
+        max_recent_events = 10
+        
+        with Live(
+            generate_enhanced_monitor_display(events_received, start_time, recent_events, config, notification_overlay),
+            refresh_per_second=2,
+            console=console
+        ) as live_display:
+            
+            async for event in client.listen_for_events():
+                if shutdown_event.is_set():
+                    break
+                
+                # Check duration
+                if duration and (datetime.now() - start_time).total_seconds() > duration:
+                    break
+                
+                # Process event
+                events_received += 1
+                recent_events.insert(0, event)
+                if len(recent_events) > max_recent_events:
+                    recent_events.pop()
+                
+                # Filter events by priority
+                if should_show_event(event, config.notification_level):
+                    # Update live display
+                    display = generate_enhanced_monitor_display(events_received, start_time, recent_events, config, notification_overlay)
+                    live_display.update(display)
+    
+    # Show final summary
+    duration_actual = (datetime.now() - start_time).total_seconds()
+    console.print(f"\n[green]Enhanced monitoring completed[/green]")
+    console.print(f"[dim]Duration: {duration_actual:.1f}s | Events: {events_received}[/dim]")
+    
+    # Show notification service stats if available
+    if notification_service:
+        stats = notification_service.get_stats()
+        console.print(f"[dim]Notifications sent: {stats.get('notifications_sent', 0)} | History: {stats.get('history_size', 0)}[/dim]")
+
+
+def generate_enhanced_monitor_display(events_count: int, start_time: datetime, recent_events: list, config: CLIConfig, notification_overlay: Optional[NotificationOverlay]):
+    """Generate enhanced monitoring display with notification overlay"""
+    
+    # Base display (same as original)
+    base_display = generate_monitor_display(events_count, start_time, recent_events, config)
+    
+    # Add notification overlay panel if available
+    if notification_overlay and notification_overlay.active_notifications:
+        overlay_text = Text()
+        overlay_text.append("Recent Notifications:\n", style="bold yellow")
+        
+        for notification in notification_overlay.active_notifications[-5:]:  # Show last 5
+            overlay_text.append(f"• {notification}\n", style="dim")
+        
+        overlay_panel = Panel(
+            overlay_text,
+            title="[bold]Notifications[/bold]",
+            border_style="yellow",
+            width=30
+        )
+        
+        # Combine with base display
+        return Columns([base_display, overlay_panel], expand=True)
+    
+    return base_display
 
 
 async def monitor_json_mode(client: BackendClient, shutdown_event: asyncio.Event, duration: Optional[int]):

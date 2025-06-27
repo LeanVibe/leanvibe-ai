@@ -14,7 +14,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.columns import Columns
 
-from ..config import CLIConfig
+from ..config.legacy import CLIConfig
 from ..client import BackendClient
 
 console = Console()
