@@ -17,6 +17,7 @@ import mlx.nn as nn
 
 from .production_model_service import ModelConfig, ProductionModelService
 from .simple_model_service import SimpleModelService
+from .phi3_mini_service import Phi3MiniService
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +32,14 @@ class RealMLXService:
     """
     
     def __init__(self):
-        self.model_name = "Qwen/Qwen3-30B-A3B-MLX-4bit" # Ensure this is the correct Qwen model
+        self.model_name = "microsoft/Phi-3-mini-128k-instruct"
         self.max_tokens = 512
         self.temperature = 0.3  # Lower temperature for code tasks
         self.is_initialized = False
         self.production_service = None
         self.simple_service = None
-        self.inference_mode = "auto"  # auto, production, simple, mock
+        self.phi3_service = None
+        self.inference_mode = "auto"  # auto, production, phi3, simple, mock
         self.intent_prompts = self._load_intent_prompts()
         
     async def initialize(self) -> bool:
@@ -52,7 +54,14 @@ class RealMLXService:
                 logger.info(f"Real MLX Service initialized with production mode: {self.production_service.deployment_mode}")
                 return True
             
-            # If production service fails or uses mock, try simple service for real MLX
+            # Try Phi-3-Mini service for real model inference
+            if await self._try_phi3_service():
+                self.inference_mode = "phi3"
+                self.is_initialized = True
+                logger.info("Real MLX Service initialized with Phi-3-Mini mode")
+                return True
+            
+            # If production and phi3 fail, try simple service for basic MLX
             if await self._try_simple_service():
                 self.inference_mode = "simple"
                 self.is_initialized = True
@@ -98,6 +107,24 @@ class RealMLXService:
                 
         except Exception as e:
             logger.warning(f"Production service initialization failed: {e}")
+            return False
+    
+    async def _try_phi3_service(self) -> bool:
+        """Try to initialize Phi-3-Mini service for real model inference"""
+        try:
+            logger.info("Attempting to initialize Phi-3-Mini Service...")
+            self.phi3_service = Phi3MiniService(self.model_name)
+            success = await self.phi3_service.initialize()
+            
+            if success:
+                logger.info("Phi-3-Mini Service initialized successfully")
+                return True
+            else:
+                logger.warning("Phi-3-Mini Service failed to initialize")
+                return False
+                
+        except Exception as e:
+            logger.warning(f"Phi-3-Mini Service initialization failed: {e}")
             return False
     
     async def _try_simple_service(self) -> bool:
@@ -162,6 +189,12 @@ class RealMLXService:
             # Generate AI response using the appropriate service based on mode
             if self.inference_mode == "production":
                 ai_response = await self.production_service.generate_text(
+                    prompt=prompt,
+                    max_tokens=self.max_tokens,
+                    temperature=self.temperature
+                )
+            elif self.inference_mode == "phi3":
+                ai_response = await self.phi3_service.generate_text(
                     prompt=prompt,
                     max_tokens=self.max_tokens,
                     temperature=self.temperature

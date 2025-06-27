@@ -92,8 +92,8 @@ try:
     from services.real_mlx_service import RealMLXService
     service = RealMLXService()
     print('')
-    print('🚀 MLX inference will use SimpleModelService for real tensor operations')
-    print('   This provides actual MLX-based AI responses without heavy dependencies')
+    print('🚀 MLX inference priority: Phi-3-Mini -> SimpleModelService -> Mock')
+    print('   Phi-3-Mini provides high-quality AI responses with MLX optimization')
     
 except Exception as e:
     print(f'❌ MLX/Model test failed: {e}')
@@ -110,10 +110,10 @@ echo "🌟 Starting FastAPI server with MLX AI support..."
 echo "📱 Scan the QR code above with the LeenVibe iOS app to connect"
 echo "🖥️  Or connect manually to: http://localhost:8000"
 echo ""
-echo "⚡ AI Mode: SimpleModelService (Lightweight MLX inference)"
-echo "💾 Expected memory usage: <1GB - very efficient!"
-echo "🎯 Real MLX tensor operations without heavy dependencies"
-echo "🚀 No large model downloads required - instant startup!"
+echo "⚡ AI Mode: Phi-3-Mini with MLX acceleration (fallback chain available)"
+echo "💾 Expected memory usage: ~8GB for Phi-3-Mini, <1GB for fallback"
+echo "🎯 High-quality AI responses with real MLX optimization"
+echo "🚀 Model downloads on first use - then cached locally"
 echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""

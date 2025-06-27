@@ -4,9 +4,11 @@ Tree-sitter Parsers Service
 Handles initialization and management of tree-sitter parsers for different languages.
 """
 
+import asyncio
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
+from concurrent.futures import ThreadPoolExecutor
 
 import tree_sitter
 from tree_sitter import Language, Node, Parser
@@ -14,9 +16,6 @@ from tree_sitter import Language, Node, Parser
 from ..models.ast_models import ASTNode, LanguageType
 
 logger = logging.getLogger(__name__)
-
-
-from concurrent.futures import ThreadPoolExecutor
 
 
 class TreeSitterManager:
