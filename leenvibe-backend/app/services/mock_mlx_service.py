@@ -6,11 +6,11 @@ appropriate suggestions based on AST context from L3 agent.
 """
 
 import asyncio
+import json
 import logging
 import time
-import json
-from typing import Dict, Any, List, Optional, AsyncGenerator
 from pathlib import Path
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 class MockMLXService:
     """
     Mock MLX service that provides contextually appropriate responses
-    
+
     This service simulates real MLX inference while validating the entire
     workflow from L3 agent context to code completion responses.
     """
-    
+
     def __init__(self):
         self.model_name = "mlx-community/Qwen2.5-Coder-32B-Instruct"
         self.max_tokens = 1024
@@ -30,7 +30,7 @@ class MockMLXService:
         self.is_initialized = False
         self.response_templates = self._load_response_templates()
         self.context_patterns = self._load_context_patterns()
-        
+
     async def initialize(self) -> bool:
         """Initialize mock MLX service"""
         try:
@@ -42,35 +42,33 @@ class MockMLXService:
         except Exception as e:
             logger.error(f"Failed to initialize Mock MLX Service: {e}")
             return False
-    
+
     async def generate_code_completion(
-        self, 
-        context: Dict[str, Any], 
-        intent: str = "suggest"
+        self, context: Dict[str, Any], intent: str = "suggest"
     ) -> Dict[str, Any]:
         """
         Generate code completion based on AST context and intent
-        
+
         Args:
             context: Rich AST context from L3 agent
             intent: Type of completion (suggest, explain, refactor, debug, optimize)
-            
+
         Returns:
             Structured completion response with confidence scoring
         """
         try:
             logger.info(f"Generating {intent} completion with AST context")
-            
+
             # Simulate processing time
             await asyncio.sleep(0.2)
-            
+
             # Extract key context elements
             file_path = context.get("file_path", "")
             language = context.get("current_file", {}).get("language", "unknown")
             current_symbol = context.get("current_symbol")
             surrounding_context = context.get("surrounding_context", {})
             completion_hints = context.get("completion_hints", [])
-            
+
             # Generate intent-specific response
             if intent == "suggest":
                 response = await self._generate_code_suggestion(
@@ -96,10 +94,10 @@ class MockMLXService:
                 response = await self._generate_general_assistance(
                     language, current_symbol, surrounding_context
                 )
-            
+
             # Calculate confidence based on context richness
             confidence = self._calculate_completion_confidence(context, intent)
-            
+
             # Build structured response
             completion_response = {
                 "status": "success",
@@ -114,93 +112,90 @@ class MockMLXService:
                     "has_symbol_context": current_symbol is not None,
                     "has_surrounding_context": bool(surrounding_context),
                     "hints_count": len(completion_hints),
-                    "language_detected": language
+                    "language_detected": language,
                 },
                 "suggestions": self._generate_follow_up_suggestions(intent, language),
-                "requires_human_review": confidence < 0.7
+                "requires_human_review": confidence < 0.7,
             }
-            
-            logger.info(f"Generated {intent} completion with {confidence:.2f} confidence")
+
+            logger.info(
+                f"Generated {intent} completion with {confidence:.2f} confidence"
+            )
             return completion_response
-            
+
         except Exception as e:
             logger.error(f"Error generating completion: {e}")
             return {
                 "status": "error",
                 "error": f"Completion generation failed: {str(e)}",
-                "confidence": 0.0
+                "confidence": 0.0,
             }
-    
+
     async def generate_streaming_completion(
-        self, 
-        context: Dict[str, Any], 
-        intent: str = "suggest"
+        self, context: Dict[str, Any], intent: str = "suggest"
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """
         Generate streaming code completion for real-time feedback
-        
+
         Args:
             context: Rich AST context from L3 agent
             intent: Type of completion
-            
+
         Yields:
             Streaming completion chunks
         """
         try:
             logger.info(f"Starting streaming {intent} completion")
-            
+
             # Get full completion
             full_response = await self.generate_code_completion(context, intent)
-            
+
             if full_response["status"] != "success":
                 yield full_response
                 return
-            
+
             response_text = full_response["response"]
-            
+
             # Stream response in chunks
             chunk_size = 20
             words = response_text.split()
-            
+
             for i in range(0, len(words), chunk_size):
-                chunk_words = words[i:i + chunk_size]
+                chunk_words = words[i : i + chunk_size]
                 chunk_text = " ".join(chunk_words)
-                
+
                 yield {
                     "status": "streaming",
                     "chunk": chunk_text,
                     "progress": min(1.0, (i + chunk_size) / len(words)),
-                    "is_final": i + chunk_size >= len(words)
+                    "is_final": i + chunk_size >= len(words),
                 }
-                
+
                 await asyncio.sleep(0.1)  # Simulate streaming delay
-            
+
             # Send final metadata
             yield {
                 "status": "complete",
                 "metadata": {
                     "confidence": full_response["confidence"],
                     "suggestions": full_response["suggestions"],
-                    "requires_human_review": full_response["requires_human_review"]
-                }
+                    "requires_human_review": full_response["requires_human_review"],
+                },
             }
-            
+
         except Exception as e:
             logger.error(f"Error in streaming completion: {e}")
-            yield {
-                "status": "error",
-                "error": f"Streaming failed: {str(e)}"
-            }
-    
+            yield {"status": "error", "error": f"Streaming failed: {str(e)}"}
+
     async def _generate_code_suggestion(
-        self, 
-        language: str, 
-        current_symbol: Optional[Dict[str, Any]], 
+        self,
+        language: str,
+        current_symbol: Optional[Dict[str, Any]],
         surrounding_context: Dict[str, Any],
-        hints: List[str]
+        hints: List[str],
     ) -> str:
         """Generate code suggestions based on context"""
-        
+
         if language == "python":
             if current_symbol and current_symbol.get("type") == "function":
                 return f"""Based on the function '{current_symbol.get("name", "unknown")}', here are some suggestions:
@@ -225,7 +220,7 @@ class MockMLXService:
 3. **Error Handling**: Add appropriate error handling if needed.
 
 Context hints: {', '.join(hints) if hints else 'Consider following PEP 8 guidelines'}"""
-            
+
             else:
                 return """Python code suggestions:
 
@@ -293,17 +288,17 @@ func processUser(_ user: User?) -> String {
 The code appears to be well-structured. Consider refactoring if functions become too large."""
 
     async def _generate_code_explanation(
-        self, 
-        language: str, 
-        current_symbol: Optional[Dict[str, Any]], 
-        surrounding_context: Dict[str, Any]
+        self,
+        language: str,
+        current_symbol: Optional[Dict[str, Any]],
+        surrounding_context: Dict[str, Any],
     ) -> str:
         """Generate code explanations"""
-        
+
         if current_symbol:
             symbol_name = current_symbol.get("name", "unknown")
             symbol_type = current_symbol.get("type", "unknown")
-            
+
             return f"""Code Explanation for {symbol_type} '{symbol_name}':
 
 **Purpose**: This {symbol_type} appears to be part of a {language} codebase.
@@ -342,40 +337,46 @@ This appears to be a {language} code section. Based on the surrounding context:
 - Consider refactoring if the section becomes too complex"""
 
     async def _generate_refactoring_suggestion(
-        self, 
-        language: str, 
-        current_symbol: Optional[Dict[str, Any]], 
-        surrounding_context: Dict[str, Any]
+        self,
+        language: str,
+        current_symbol: Optional[Dict[str, Any]],
+        surrounding_context: Dict[str, Any],
     ) -> str:
         """Generate refactoring suggestions"""
-        
+
         suggestions = [
             "**Extract Method**: Break down large functions into smaller, focused methods",
             "**Rename Variables**: Use more descriptive names for better readability",
             "**Remove Duplication**: Look for repeated code patterns that can be abstracted",
             "**Simplify Conditionals**: Consider using early returns or guard clauses",
-            "**Add Constants**: Replace magic numbers with named constants"
+            "**Add Constants**: Replace magic numbers with named constants",
         ]
-        
+
         if language == "python":
-            suggestions.extend([
-                "**Use List Comprehensions**: Replace simple loops with comprehensions",
-                "**Add Type Hints**: Improve code documentation with type annotations",
-                "**Use Context Managers**: Replace try/finally with 'with' statements"
-            ])
+            suggestions.extend(
+                [
+                    "**Use List Comprehensions**: Replace simple loops with comprehensions",
+                    "**Add Type Hints**: Improve code documentation with type annotations",
+                    "**Use Context Managers**: Replace try/finally with 'with' statements",
+                ]
+            )
         elif language == "javascript":
-            suggestions.extend([
-                "**Use Arrow Functions**: Simplify function definitions where appropriate",
-                "**Destructuring**: Simplify object/array access",
-                "**Template Literals**: Replace string concatenation"
-            ])
+            suggestions.extend(
+                [
+                    "**Use Arrow Functions**: Simplify function definitions where appropriate",
+                    "**Destructuring**: Simplify object/array access",
+                    "**Template Literals**: Replace string concatenation",
+                ]
+            )
         elif language == "swift":
-            suggestions.extend([
-                "**Use Guards**: Replace nested if-let with guard statements",
-                "**Protocol Extensions**: Add default implementations",
-                "**Computed Properties**: Replace getter methods with computed properties"
-            ])
-        
+            suggestions.extend(
+                [
+                    "**Use Guards**: Replace nested if-let with guard statements",
+                    "**Protocol Extensions**: Add default implementations",
+                    "**Computed Properties**: Replace getter methods with computed properties",
+                ]
+            )
+
         return f"""Refactoring Suggestions for {language.title()} Code:
 
 {chr(10).join(f"{i+1}. {suggestion}" for i, suggestion in enumerate(suggestions[:5]))}
@@ -385,13 +386,13 @@ This appears to be a {language} code section. Based on the surrounding context:
 **Testing**: Ensure you have tests in place before refactoring to maintain functionality."""
 
     async def _generate_debug_analysis(
-        self, 
-        language: str, 
-        current_symbol: Optional[Dict[str, Any]], 
-        surrounding_context: Dict[str, Any]
+        self,
+        language: str,
+        current_symbol: Optional[Dict[str, Any]],
+        surrounding_context: Dict[str, Any],
     ) -> str:
         """Generate debug analysis"""
-        
+
         return f"""Debug Analysis for {language.title()} Code:
 
 **Common Issues to Check**:
@@ -418,13 +419,13 @@ This appears to be a {language} code section. Based on the surrounding context:
 - Use appropriate debugging tools for {language}"""
 
     async def _generate_optimization_suggestion(
-        self, 
-        language: str, 
-        current_symbol: Optional[Dict[str, Any]], 
-        surrounding_context: Dict[str, Any]
+        self,
+        language: str,
+        current_symbol: Optional[Dict[str, Any]],
+        surrounding_context: Dict[str, Any],
     ) -> str:
         """Generate optimization suggestions"""
-        
+
         return f"""Performance Optimization for {language.title()} Code:
 
 **General Optimizations**:
@@ -451,13 +452,13 @@ This appears to be a {language} code section. Based on the surrounding context:
 - Profile in production-like environments"""
 
     async def _generate_general_assistance(
-        self, 
-        language: str, 
-        current_symbol: Optional[Dict[str, Any]], 
-        surrounding_context: Dict[str, Any]
+        self,
+        language: str,
+        current_symbol: Optional[Dict[str, Any]],
+        surrounding_context: Dict[str, Any],
     ) -> str:
         """Generate general assistance"""
-        
+
         return f"""General Code Assistance for {language.title()}:
 
 **Code Quality Checklist**:
@@ -487,86 +488,91 @@ This appears to be a {language} code section. Based on the surrounding context:
 - Discuss architectural decisions
 - Explore alternative approaches"""
 
-    def _calculate_completion_confidence(self, context: Dict[str, Any], intent: str) -> float:
+    def _calculate_completion_confidence(
+        self, context: Dict[str, Any], intent: str
+    ) -> float:
         """Calculate confidence score based on context richness"""
         base_confidence = 0.3  # Start lower for unknown contexts
-        
+
         # Boost confidence based on available context
         if context.get("current_symbol"):
             base_confidence += 0.15
-        
+
         if context.get("surrounding_context"):
             base_confidence += 0.15
-        
+
         if context.get("completion_hints"):
             base_confidence += 0.1
-        
+
         # Language-specific confidence
         language = context.get("current_file", {}).get("language", "unknown")
         if language in ["python", "javascript", "swift"]:
             base_confidence += 0.2
         elif language != "unknown":
             base_confidence += 0.1
-        
+
         # Intent-specific confidence adjustments
         intent_multiplier = {
             "suggest": 1.0,
             "explain": 1.1,  # Explanations are generally more reliable
             "refactor": 0.9,
-            "debug": 0.8,    # Debugging requires more caution
-            "optimize": 0.8  # Optimization requires more caution
+            "debug": 0.8,  # Debugging requires more caution
+            "optimize": 0.8,  # Optimization requires more caution
         }
-        
+
         final_confidence = base_confidence * intent_multiplier.get(intent, 0.8)
         return min(0.95, max(0.3, final_confidence))  # Clamp between 0.3 and 0.95
-    
+
     def _generate_follow_up_suggestions(self, intent: str, language: str) -> List[str]:
         """Generate follow-up action suggestions"""
         suggestions = []
-        
+
         if intent == "suggest":
             suggestions = [
                 "Ask for explanation of suggested patterns",
                 "Request refactoring recommendations",
-                "Get debugging tips for this code section"
+                "Get debugging tips for this code section",
             ]
         elif intent == "explain":
             suggestions = [
                 "Request code improvement suggestions",
                 "Ask about performance optimization",
-                "Get examples of similar patterns"
+                "Get examples of similar patterns",
             ]
         elif intent == "refactor":
             suggestions = [
                 "Test the refactored code",
                 "Get performance impact analysis",
-                "Request additional refactoring opportunities"
+                "Request additional refactoring opportunities",
             ]
         elif intent == "debug":
             suggestions = [
                 "Set up debugging environment",
                 "Write unit tests to isolate issues",
-                "Profile code for performance bottlenecks"
+                "Profile code for performance bottlenecks",
             ]
         elif intent == "optimize":
             suggestions = [
                 "Benchmark current performance",
                 "Profile memory usage",
-                "Consider alternative algorithms"
+                "Consider alternative algorithms",
             ]
-        
+
         return suggestions
-    
+
     def _get_functionality_description(self, symbol_type: str, language: str) -> str:
         """Get functionality description for symbol type"""
         descriptions = {
             "function": f"A {language} function that encapsulates specific functionality and can be called with parameters.",
             "class": f"A {language} class that defines an object template with properties and methods.",
             "method": f"A {language} method that belongs to a class and operates on object instances.",
-            "variable": f"A {language} variable that stores data for use within its scope."
+            "variable": f"A {language} variable that stores data for use within its scope.",
         }
-        return descriptions.get(symbol_type, f"A {language} {symbol_type} that serves a specific purpose in the codebase.")
-    
+        return descriptions.get(
+            symbol_type,
+            f"A {language} {symbol_type} that serves a specific purpose in the codebase.",
+        )
+
     def _get_best_practices(self, symbol_type: str, language: str) -> str:
         """Get best practices for symbol type"""
         if symbol_type == "function":
@@ -577,34 +583,38 @@ This appears to be a {language} code section. Based on the surrounding context:
             return "Ensure methods operate on instance state, consider static methods for utilities"
         else:
             return "Use descriptive names, maintain appropriate scope, document complex logic"
-    
+
     def _get_language_patterns(self, language: str) -> str:
         """Get common patterns for language"""
         patterns = {
             "python": "List comprehensions, context managers, decorators, generators",
             "javascript": "Callbacks, promises, async/await, closures, modules",
-            "swift": "Optionals, protocols, extensions, computed properties, guards"
+            "swift": "Optionals, protocols, extensions, computed properties, guards",
         }
         return patterns.get(language, "Language-specific idioms and patterns")
-    
+
     def _get_debug_tips(self, language: str) -> str:
         """Get debugging tips for language"""
         tips = {
             "python": "Use pdb debugger, print statements, logging module, pytest for testing",
             "javascript": "Use browser dev tools, console.log, debugger statement, Jest for testing",
-            "swift": "Use Xcode debugger, print statements, XCTest framework, breakpoints"
+            "swift": "Use Xcode debugger, print statements, XCTest framework, breakpoints",
         }
-        return tips.get(language, "Use language-appropriate debugging tools and techniques")
-    
+        return tips.get(
+            language, "Use language-appropriate debugging tools and techniques"
+        )
+
     def _get_optimization_tips(self, language: str) -> str:
         """Get optimization tips for language"""
         tips = {
             "python": "Use list comprehensions, numpy for numerical operations, cProfile for profiling",
             "javascript": "Minimize DOM manipulation, use requestAnimationFrame, avoid memory leaks",
-            "swift": "Use value types when appropriate, lazy properties, Instruments for profiling"
+            "swift": "Use value types when appropriate, lazy properties, Instruments for profiling",
         }
-        return tips.get(language, "Profile first, optimize bottlenecks, measure improvements")
-    
+        return tips.get(
+            language, "Profile first, optimize bottlenecks, measure improvements"
+        )
+
     def _load_response_templates(self) -> Dict[str, str]:
         """Load response templates for different scenarios"""
         return {
@@ -612,27 +622,27 @@ This appears to be a {language} code section. Based on the surrounding context:
             "explanation": "This code section appears to...",
             "refactoring": "Consider the following refactoring opportunities...",
             "debugging": "To debug this issue, check the following...",
-            "optimization": "For better performance, consider..."
+            "optimization": "For better performance, consider...",
         }
-    
+
     def _load_context_patterns(self) -> Dict[str, Any]:
         """Load patterns for context recognition"""
         return {
             "python": {
                 "function_patterns": ["def ", "lambda "],
                 "class_patterns": ["class "],
-                "import_patterns": ["import ", "from "]
+                "import_patterns": ["import ", "from "],
             },
             "javascript": {
                 "function_patterns": ["function ", "=> ", "const "],
                 "class_patterns": ["class "],
-                "import_patterns": ["import ", "require("]
+                "import_patterns": ["import ", "require("],
             },
             "swift": {
                 "function_patterns": ["func "],
                 "class_patterns": ["class ", "struct "],
-                "import_patterns": ["import "]
-            }
+                "import_patterns": ["import "],
+            },
         }
 
 

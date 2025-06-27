@@ -6,16 +6,17 @@ Provides the same interface as MockMLXService but with real AI-powered responses
 """
 
 import asyncio
+import json
 import logging
 import time
-import json
-from typing import Dict, Any, List, Optional, AsyncGenerator
 from pathlib import Path
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
-from .production_model_service import ProductionModelService, ModelConfig
-from .simple_model_service import SimpleModelService
 import mlx.core as mx
 import mlx.nn as nn
+
+from .production_model_service import ModelConfig, ProductionModelService
+from .simple_model_service import SimpleModelService
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +41,41 @@ class RealMLXService:
         self.intent_prompts = self._load_intent_prompts()
         
     async def initialize(self) -> bool:
-        """Initialize real MLX service with production model"""
+        """Initialize real MLX service with multiple fallback modes"""
         try:
             logger.info("Initializing Real MLX Service for L3 Agent integration...")
             
-            # Create production model service with coding-optimized config
+            # Try production service first
+            if await self._try_production_service():
+                self.inference_mode = "production"
+                self.is_initialized = True
+                logger.info(f"Real MLX Service initialized with production mode: {self.production_service.deployment_mode}")
+                return True
+            
+            # If production service fails or uses mock, try simple service for real MLX
+            if await self._try_simple_service():
+                self.inference_mode = "simple"
+                self.is_initialized = True
+                logger.info("Real MLX Service initialized with simple MLX mode")
+                return True
+            
+            # If both fail, we still have the production service mock mode as fallback
+            if self.production_service and self.production_service.deployment_mode == "mock":
+                self.inference_mode = "mock"
+                self.is_initialized = True
+                logger.info("Real MLX Service initialized with mock mode (development fallback)")
+                return True
+            
+            logger.error("Failed to initialize any MLX inference mode")
+            return False
+                
+        except Exception as e:
+            logger.error(f"Failed to initialize Real MLX Service: {e}")
+            return False
+    
+    async def _try_production_service(self) -> bool:
+        """Try to initialize production service with real MLX"""
+        try:
             config = ModelConfig(
                 model_name=self.model_name,
                 deployment_mode="auto",  # Auto-detect best mode
@@ -53,21 +84,38 @@ class RealMLXService:
             )
             
             self.production_service = ProductionModelService(config)
-            
-            # Initialize the production service
             success = await self.production_service.initialize()
             
-            if success:
-                self.is_initialized = True
-                logger.info("Real MLX Service initialized successfully")
-                logger.info(f"Deployment mode: {self.production_service.deployment_mode}")
+            if success and self.production_service.deployment_mode != "mock":
+                logger.info(f"Production service initialized successfully: {self.production_service.deployment_mode}")
                 return True
+            elif success:
+                logger.info("Production service initialized but using mock mode")
+                return False  # We want real inference, not mock
             else:
-                logger.error("Failed to initialize production model service")
+                logger.warning("Production service failed to initialize")
                 return False
                 
         except Exception as e:
-            logger.error(f"Failed to initialize Real MLX Service: {e}")
+            logger.warning(f"Production service initialization failed: {e}")
+            return False
+    
+    async def _try_simple_service(self) -> bool:
+        """Try to initialize simple MLX service for real inference"""
+        try:
+            logger.info("Attempting to initialize Simple MLX Service...")
+            self.simple_service = SimpleModelService()
+            success = await self.simple_service.initialize()
+            
+            if success:
+                logger.info("Simple MLX Service initialized successfully")
+                return True
+            else:
+                logger.warning("Simple MLX Service failed to initialize")
+                return False
+                
+        except Exception as e:
+            logger.warning(f"Simple MLX Service initialization failed: {e}")
             return False
     
     async def generate_code_completion(
@@ -111,12 +159,26 @@ class RealMLXService:
                 surrounding_context, completion_hints
             )
             
-            # Generate AI response using production service
-            ai_response = await self.production_service.generate_text(
-                prompt=prompt,
-                max_tokens=self.max_tokens,
-                temperature=self.temperature
-            )
+            # Generate AI response using the appropriate service based on mode
+            if self.inference_mode == "production":
+                ai_response = await self.production_service.generate_text(
+                    prompt=prompt,
+                    max_tokens=self.max_tokens,
+                    temperature=self.temperature
+                )
+            elif self.inference_mode == "simple":
+                ai_response = await self.simple_service.generate_text(
+                    prompt=prompt,
+                    max_tokens=self.max_tokens
+                )
+            elif self.inference_mode == "mock":
+                ai_response = await self.production_service.generate_text(
+                    prompt=prompt,
+                    max_tokens=self.max_tokens,
+                    temperature=self.temperature
+                )
+            else:
+                raise RuntimeError(f"Unknown inference mode: {self.inference_mode}")
             
             # Parse and structure the AI response
             structured_response = self._structure_ai_response(
@@ -131,6 +193,7 @@ class RealMLXService:
                 "status": "success",
                 "intent": intent,
                 "model": self.model_name,
+                "inference_mode": self.inference_mode,  # Indicate which mode was used
                 "language": language,
                 "confidence": confidence,
                 "timestamp": time.time(),
@@ -156,7 +219,7 @@ class RealMLXService:
             elif intent == "optimize":
                 completion_response["optimization_suggestions"] = structured_response["content"]
             
-            logger.info(f"Generated real MLX {intent} completion with {confidence:.2f} confidence")
+            logger.info(f"Generated real MLX {intent} completion using {self.inference_mode} mode with {confidence:.2f} confidence")
             return completion_response
             
         except Exception as e:
@@ -172,7 +235,7 @@ class RealMLXService:
         intent: str,
         language: str,
         file_path: str,
-        current_symbol: Optional[Dict[str, Any}],
+        current_symbol: Optional[Dict[str, Any]],
         surrounding_context: Dict[str, Any],
         completion_hints: List[str]
     ) -> str:
@@ -229,8 +292,8 @@ class RealMLXService:
     
     def _calculate_confidence(
         self, 
-        context: Dict[str, Any}, 
-        structured_response: Dict[str, Any},
+        context: Dict[str, Any], 
+        structured_response: Dict[str, Any],
         intent: str
     ) -> float:
         """Calculate confidence score for real AI responses"""

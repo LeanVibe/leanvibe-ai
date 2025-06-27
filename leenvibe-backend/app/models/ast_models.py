@@ -4,14 +4,16 @@ AST Models for Tree-sitter Integration
 Pydantic models for representing Abstract Syntax Trees and code analysis results.
 """
 
-from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field
-from enum import Enum
 import time
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
+
+from pydantic import BaseModel, Field
 
 
 class LanguageType(str, Enum):
     """Supported programming languages"""
+
     PYTHON = "python"
     JAVASCRIPT = "javascript"
     TYPESCRIPT = "typescript"
@@ -23,6 +25,7 @@ class LanguageType(str, Enum):
 
 class SymbolType(str, Enum):
     """Types of code symbols"""
+
     FUNCTION = "function"
     CLASS = "class"
     METHOD = "method"
@@ -37,18 +40,20 @@ class SymbolType(str, Enum):
 
 class ASTNode(BaseModel):
     """Base AST node representation"""
+
     node_type: str
     start_byte: int
     end_byte: int
     start_point: tuple[int, int]  # (row, column)
-    end_point: tuple[int, int]    # (row, column)
+    end_point: tuple[int, int]  # (row, column)
     text: Optional[str] = None
-    children: List['ASTNode'] = Field(default_factory=list)
-    parent: Optional['ASTNode'] = None
+    children: List["ASTNode"] = Field(default_factory=list)
+    parent: Optional["ASTNode"] = None
 
 
 class Symbol(BaseModel):
     """Code symbol representation"""
+
     id: str = Field(..., description="Unique identifier for the symbol")
     name: str
     symbol_type: SymbolType
@@ -69,6 +74,7 @@ class Symbol(BaseModel):
 
 class Dependency(BaseModel):
     """Code dependency representation"""
+
     source_file: str
     target_file: Optional[str] = None
     target_symbol: Optional[str] = None
@@ -80,6 +86,7 @@ class Dependency(BaseModel):
 
 class ComplexityMetrics(BaseModel):
     """Code complexity metrics"""
+
     cyclomatic_complexity: int = 0
     cognitive_complexity: int = 0
     lines_of_code: int = 0
@@ -92,6 +99,7 @@ class ComplexityMetrics(BaseModel):
 
 class FileAnalysis(BaseModel):
     """Complete analysis of a single file"""
+
     file_path: str
     language: LanguageType
     ast_root: Optional[ASTNode] = None
@@ -104,6 +112,7 @@ class FileAnalysis(BaseModel):
 
 class ProjectIndex(BaseModel):
     """Project-wide code index"""
+
     workspace_path: str
     files: Dict[str, FileAnalysis] = Field(default_factory=dict)
     symbols: Dict[str, Symbol] = Field(default_factory=dict)
@@ -116,6 +125,7 @@ class ProjectIndex(BaseModel):
 
 class Reference(BaseModel):
     """Symbol reference in code"""
+
     symbol_id: str
     file_path: str
     line_number: int
@@ -126,6 +136,7 @@ class Reference(BaseModel):
 
 class CallGraph(BaseModel):
     """Function call graph representation"""
+
     nodes: Dict[str, Symbol] = Field(default_factory=dict)
     edges: List[tuple[str, str]] = Field(default_factory=list)  # (caller_id, callee_id)
     entry_points: List[str] = Field(default_factory=list)
@@ -134,6 +145,7 @@ class CallGraph(BaseModel):
 
 class DependencyGraph(BaseModel):
     """Module dependency graph"""
+
     nodes: List[str] = Field(default_factory=list)  # file paths
     edges: List[tuple[str, str]] = Field(default_factory=list)  # (source, target)
     layers: List[List[str]] = Field(default_factory=list)
@@ -143,6 +155,7 @@ class DependencyGraph(BaseModel):
 
 class ImpactAnalysis(BaseModel):
     """Change impact analysis results"""
+
     changed_file: str
     directly_affected: List[str] = Field(default_factory=list)
     indirectly_affected: List[str] = Field(default_factory=list)
@@ -154,6 +167,7 @@ class ImpactAnalysis(BaseModel):
 
 class CodeSmell(BaseModel):
     """Code smell detection result"""
+
     smell_type: str
     file_path: str
     line_start: int
@@ -166,6 +180,7 @@ class CodeSmell(BaseModel):
 
 class RefactoringSuggestion(BaseModel):
     """Refactoring suggestion"""
+
     suggestion_type: str
     target_file: str
     target_symbol: Optional[str] = None
@@ -179,6 +194,7 @@ class RefactoringSuggestion(BaseModel):
 
 class ProjectContext(BaseModel):
     """Project context for L3 agent"""
+
     workspace_path: str
     current_file: Optional[str] = None
     project_index: Optional[ProjectIndex] = None
@@ -190,6 +206,7 @@ class ProjectContext(BaseModel):
 
 class ASTContext(BaseModel):
     """AST context for agent responses"""
+
     current_symbols: List[Symbol] = Field(default_factory=list)
     related_files: List[str] = Field(default_factory=list)
     call_chain: List[str] = Field(default_factory=list)

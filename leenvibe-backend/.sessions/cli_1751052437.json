@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "created_at": 1751052445.2074082,
+    "last_accessed": 1751052445.207496,
+    "workspace_path": ".",
+    "interaction_count": 1
+  },
+  "state": {
+    "conversation_history": [
+      {
+        "role": "user",
+        "content": "what is greater 3.11 or 3.8",
+        "timestamp": 1751052445.207498,
+        "confidence": 1.0
+      },
+      {
+        "role": "assistant",
+        "content": "I encountered an error processing your request: 'EnhancedL3CodingAgent' object has no attribute '_create_contextual_prompt'. How can I help you differently?",
+        "timestamp": 1751052445.20753,
+        "confidence": 0.6
+      }
+    ],
+    "project_context": {},
+    "confidence_scores": [
+      1.0,
+      0.6
+    ],
+    "current_task": null,
+    "workspace_path": ".",
+    "session_id": "cli_1751052437"
+  },
+  "dependencies": {
+    "workspace_path": ".",
+    "client_id": "cli_1751052437",
+    "session_data": {}
+  },
+  "saved_at": 1751052510.514678
+}

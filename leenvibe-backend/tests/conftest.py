@@ -1,16 +1,19 @@
 """
 Pytest configuration and shared fixtures for LeenVibe backend tests.
 """
-import pytest
+
 import asyncio
-import sys
 import os
+import sys
 from pathlib import Path
+
+import pytest
 from fastapi.testclient import TestClient
 
 # Add app directory to Python path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+
 
 @pytest.fixture(scope="session")
 def event_loop():
@@ -19,42 +22,48 @@ def event_loop():
     yield loop
     loop.close()
 
+
 @pytest.fixture
 def test_client():
     """Create a FastAPI test client."""
     from app.main import app
+
     with TestClient(app) as client:
         yield client
+
 
 @pytest.fixture
 def ai_service():
     """Create an AI service instance for testing."""
     from app.services.ai_service import AIService
+
     service = AIService()
     return service
+
 
 @pytest.fixture
 async def initialized_ai_service():
     """Create and initialize an AI service instance for testing."""
     from app.services.ai_service import AIService
+
     service = AIService()
     await service.initialize()
     return service
+
 
 @pytest.fixture
 def connection_manager():
     """Create a connection manager instance for testing."""
     from app.core.connection_manager import ConnectionManager
+
     return ConnectionManager()
+
 
 @pytest.fixture
 def sample_websocket_message():
     """Sample WebSocket message for testing."""
-    return {
-        "type": "command",
-        "content": "/status",
-        "client_id": "test-client"
-    }
+    return {"type": "command", "content": "/status", "client_id": "test-client"}
+
 
 @pytest.fixture
 def sample_agent_response():
@@ -63,8 +72,9 @@ def sample_agent_response():
         "status": "success",
         "message": "Test response",
         "data": None,
-        "processing_time": 0.1
+        "processing_time": 0.1,
     }
+
 
 # Test environment setup
 @pytest.fixture(autouse=True)

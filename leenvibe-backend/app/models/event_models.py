@@ -7,21 +7,23 @@ for the LeenVibe real-time communication system.
 
 import asyncio
 import time
-from datetime import datetime
-from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
+
 from pydantic import BaseModel
 
 
 class EventType(str, Enum):
     """Types of events that can be streamed to clients"""
+
     # File system events
     FILE_CHANGED = "file_changed"
     FILE_CREATED = "file_created"
     FILE_DELETED = "file_deleted"
     FILE_RENAMED = "file_renamed"
-    
+
     # AST analysis events
     AST_ANALYSIS_STARTED = "ast_analysis_started"
     AST_ANALYSIS_COMPLETED = "ast_analysis_completed"
@@ -29,29 +31,29 @@ class EventType(str, Enum):
     SYMBOL_ADDED = "symbol_added"
     SYMBOL_UPDATED = "symbol_updated"
     SYMBOL_REMOVED = "symbol_removed"
-    
+
     # Graph database events
     GRAPH_UPDATED = "graph_updated"
     RELATIONSHIP_ADDED = "relationship_added"
     RELATIONSHIP_REMOVED = "relationship_removed"
     CIRCULAR_DEPENDENCY_DETECTED = "circular_dependency_detected"
-    
+
     # Architectural violation events
     VIOLATION_DETECTED = "violation_detected"
     VIOLATION_RESOLVED = "violation_resolved"
     QUALITY_SCORE_CHANGED = "quality_score_changed"
-    
+
     # Cache events
     CACHE_INVALIDATED = "cache_invalidated"
     CACHE_WARMED = "cache_warmed"
     INDEX_UPDATED = "index_updated"
-    
+
     # Agent events
     AGENT_STARTED = "agent_started"
     AGENT_PROCESSING = "agent_processing"
     AGENT_COMPLETED = "agent_completed"
     AGENT_ERROR = "agent_error"
-    
+
     # System events
     SYSTEM_READY = "system_ready"
     SYSTEM_ERROR = "system_error"
@@ -60,26 +62,29 @@ class EventType(str, Enum):
 
 class EventPriority(str, Enum):
     """Priority levels for events"""
-    CRITICAL = "critical"    # System errors, critical violations
-    HIGH = "high"           # Important changes, agent completions
-    MEDIUM = "medium"       # File changes, cache updates
-    LOW = "low"             # Status updates, minor cache events
-    DEBUG = "debug"         # Debug information, verbose logging
+
+    CRITICAL = "critical"  # System errors, critical violations
+    HIGH = "high"  # Important changes, agent completions
+    MEDIUM = "medium"  # File changes, cache updates
+    LOW = "low"  # Status updates, minor cache events
+    DEBUG = "debug"  # Debug information, verbose logging
 
 
 class NotificationChannel(str, Enum):
     """Channels for different types of notifications"""
-    ALL = "all"                      # All events
-    FILE_SYSTEM = "file_system"      # File change events
-    ANALYSIS = "analysis"            # AST and graph analysis
-    VIOLATIONS = "violations"        # Code quality and violations
-    AGENT = "agent"                  # Agent processing events
-    SYSTEM = "system"                # System status events
+
+    ALL = "all"  # All events
+    FILE_SYSTEM = "file_system"  # File change events
+    ANALYSIS = "analysis"  # AST and graph analysis
+    VIOLATIONS = "violations"  # Code quality and violations
+    AGENT = "agent"  # Agent processing events
+    SYSTEM = "system"  # System status events
 
 
 @dataclass
 class EventData:
     """Base event data structure"""
+
     event_id: str
     event_type: EventType
     priority: EventPriority
@@ -91,6 +96,7 @@ class EventData:
 @dataclass
 class FileChangeEvent(EventData):
     """File system change event"""
+
     file_path: str
     change_type: str  # created, modified, deleted, renamed
     file_size: Optional[int] = None
@@ -103,6 +109,7 @@ class FileChangeEvent(EventData):
 @dataclass
 class AnalysisEvent(EventData):
     """AST or graph analysis event"""
+
     analysis_type: str  # ast, graph, complexity, violations
     file_path: Optional[str] = None
     symbols_count: Optional[int] = None
@@ -116,6 +123,7 @@ class AnalysisEvent(EventData):
 @dataclass
 class ViolationEvent(EventData):
     """Code quality violation event"""
+
     violation_id: str
     violation_type: str
     severity: str
@@ -132,6 +140,7 @@ class ViolationEvent(EventData):
 @dataclass
 class AgentEvent(EventData):
     """L3 Agent processing event"""
+
     session_id: str
     query: Optional[str] = None
     response: Optional[str] = None
@@ -144,6 +153,7 @@ class AgentEvent(EventData):
 
 class ClientPreferences(BaseModel):
     """Client-specific notification preferences"""
+
     client_id: str
     enabled_channels: List[NotificationChannel] = [NotificationChannel.ALL]
     min_priority: EventPriority = EventPriority.MEDIUM
@@ -152,26 +162,28 @@ class ClientPreferences(BaseModel):
     batch_interval_ms: int = 500
     enable_compression: bool = False
     custom_filters: Dict[str, Any] = {}
-    
+
     class Config:
         use_enum_values = True
 
 
 class NotificationBatch(BaseModel):
     """Batch of notifications for efficient delivery"""
+
     batch_id: str
     client_id: str
     events: List[EventData]
     created_at: datetime
     compressed: bool = False
     total_size: int = 0
-    
+
     class Config:
         arbitrary_types_allowed = True
 
 
 class StreamingMessage(BaseModel):
     """WebSocket streaming message format"""
+
     message_type: str = "notification"
     event_type: EventType
     priority: EventPriority
@@ -180,7 +192,7 @@ class StreamingMessage(BaseModel):
     data: Dict[str, Any]
     batch_info: Optional[Dict[str, Any]] = None
     sequence_number: Optional[int] = None
-    
+
     class Config:
         use_enum_values = True
         arbitrary_types_allowed = True
@@ -188,6 +200,7 @@ class StreamingMessage(BaseModel):
 
 class ConnectionState(BaseModel):
     """Client connection state"""
+
     client_id: str
     connected_at: datetime
     last_seen: datetime
@@ -195,13 +208,14 @@ class ConnectionState(BaseModel):
     missed_events: List[str] = []  # Event IDs missed during disconnection
     sequence_number: int = 0
     active: bool = True
-    
+
     class Config:
         arbitrary_types_allowed = True
 
 
 class EventStats(BaseModel):
     """Event streaming statistics"""
+
     total_events_sent: int = 0
     events_by_type: Dict[str, int] = {}
     events_by_priority: Dict[str, int] = {}
@@ -216,9 +230,7 @@ class EventStats(BaseModel):
 
 
 def create_file_change_event(
-    file_path: str,
-    change_type: str,
-    old_path: Optional[str] = None
+    file_path: str, change_type: str, old_path: Optional[str] = None
 ) -> FileChangeEvent:
     """Create a file change event"""
     return FileChangeEvent(
@@ -230,7 +242,7 @@ def create_file_change_event(
         source="file_monitor",
         file_path=file_path,
         change_type=change_type,
-        old_path=old_path
+        old_path=old_path,
     )
 
 
@@ -238,12 +250,14 @@ def create_analysis_event(
     analysis_type: str,
     file_path: Optional[str] = None,
     success: bool = True,
-    processing_time: Optional[float] = None
+    processing_time: Optional[float] = None,
 ) -> AnalysisEvent:
     """Create an analysis event"""
-    event_type = EventType.AST_ANALYSIS_COMPLETED if success else EventType.AST_ANALYSIS_FAILED
+    event_type = (
+        EventType.AST_ANALYSIS_COMPLETED if success else EventType.AST_ANALYSIS_FAILED
+    )
     priority = EventPriority.HIGH if not success else EventPriority.MEDIUM
-    
+
     return AnalysisEvent(
         event_id=f"analysis_{int(time.time() * 1000)}_{hash(str(file_path)) % 10000}",
         event_type=event_type,
@@ -254,7 +268,7 @@ def create_analysis_event(
         analysis_type=analysis_type,
         file_path=file_path,
         success=success,
-        processing_time=processing_time
+        processing_time=processing_time,
     )
 
 
@@ -263,16 +277,16 @@ def create_violation_event(
     violation_type: str,
     severity: str,
     file_path: str,
-    description: str
+    description: str,
 ) -> ViolationEvent:
     """Create a violation event"""
     priority_map = {
         "critical": EventPriority.CRITICAL,
         "error": EventPriority.HIGH,
         "warning": EventPriority.MEDIUM,
-        "info": EventPriority.LOW
+        "info": EventPriority.LOW,
     }
-    
+
     return ViolationEvent(
         event_id=violation_id,
         event_type=EventType.VIOLATION_DETECTED,
@@ -284,7 +298,7 @@ def create_violation_event(
         violation_type=violation_type,
         severity=severity,
         file_path=file_path,
-        description=description
+        description=description,
     )
 
 
@@ -292,7 +306,7 @@ def create_agent_event(
     session_id: str,
     event_type: EventType,
     query: Optional[str] = None,
-    response: Optional[str] = None
+    response: Optional[str] = None,
 ) -> AgentEvent:
     """Create an agent processing event"""
     return AgentEvent(
@@ -304,5 +318,5 @@ def create_agent_event(
         source="l3_agent",
         session_id=session_id,
         query=query,
-        response=response
+        response=response,
     )

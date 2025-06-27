@@ -10,15 +10,15 @@ import time
 import sys
 import os
 
-# Add app to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
+# Add leenvibe-backend to path for module discovery
+sys.path.insert(0, os.path.dirname(__file__))
 
 async def test_ai_service():
     """Test AI service initialization and basic commands"""
     print("🧠 Testing AI Service...")
     
     try:
-        from services.ai_service import AIService
+        from app.services.ai_service import AIService
         
         # Test initialization
         ai_service = AIService()
@@ -67,7 +67,7 @@ def test_connection_manager():
     print("\n🔌 Testing Connection Manager...")
     
     try:
-        from core.connection_manager import ConnectionManager
+        from app.core.connection_manager import ConnectionManager
         
         manager = ConnectionManager()
         
@@ -92,7 +92,7 @@ def test_models():
     print("\n📊 Testing Data Models...")
     
     try:
-        from models.messages import WebSocketMessage, AgentResponse
+        from app.models.messages import WebSocketMessage, AgentResponse
         
         # Test WebSocketMessage
         msg = WebSocketMessage(type="command", content="/status")
@@ -121,7 +121,7 @@ async def test_full_flow():
     print("\n🔄 Testing Full Request-Response Flow...")
     
     try:
-        from services.ai_service import AIService
+        from app.services.ai_service import AIService
         
         ai_service = AIService()
         await ai_service.initialize()
