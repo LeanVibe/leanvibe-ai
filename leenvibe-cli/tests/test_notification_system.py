@@ -12,51 +12,49 @@ from datetime import datetime, timedelta
 from collections import deque
 import platform
 
-from leenvibe_cli.config.legacy import CLIConfig
+from leenvibe_cli.config import CLIConfig
 from leenvibe_cli.services.notification_service import NotificationService
 from leenvibe_cli.services.desktop_notifications import DesktopNotificationService
 from leenvibe_cli.ui.notification_overlay import NotificationOverlay
 
 
+# Global fixtures for all test classes
+@pytest.fixture
+def mock_config():
+    """Create a mock configuration for testing"""
+    config = CLIConfig()
+    config.desktop_notifications = True
+    config.terminal_notifications = True
+    config.notification_throttle_seconds = 1
+    config.max_notifications_per_minute = 10
+    config.enabled_event_types = [
+        "architectural_violation",
+        "build_failure", 
+        "security_issue",
+        "complexity_spike"
+    ]
+    return config
+
+@pytest.fixture
+def mock_client():
+    """Create a mock backend client"""
+    client = Mock()
+    client.connect_websocket = AsyncMock(return_value=True)
+    client.listen_for_events = AsyncMock()
+    return client
+
+@pytest.fixture
+def notification_service(mock_config, mock_client):
+    """Create a notification service for testing"""
+    service = NotificationService(mock_config)
+    service.client = mock_client
+    return service
+
+
 class TestNotificationService:
     """Test the core notification service functionality"""
     
-    @pytest.fixture
-    def mock_config(self):
-        """Create a mock configuration for testing"""
-        config = CLIConfig()
-        config.desktop_notifications = True
-        config.terminal_notifications = True
-        config.notification_throttle_seconds = 1
-        config.max_notifications_per_minute = 10
-        config.enabled_event_types = [
-            "architectural_violation",
-            "build_failure", 
-            "security_issue",
-            "complexity_spike"
-        ]
-        return config
-    
-    @pytest.fixture
-    def mock_client(self):
-        """Create a mock backend client"""
-        client = Mock()
-        client.connect_websocket = AsyncMock(return_value=True)
-        client.listen_for_events = AsyncMock()
-        return client
-    
-    @pytest.fixture
-    async def notification_service(self, mock_config, mock_client):
-        """Create a notification service for testing"""
-        with patch('leenvibe_cli.services.notification_service.BackendClient', return_value=mock_client):
-            service = NotificationService(mock_config)
-            service.client = mock_client
-            yield service
-            if service.is_running:
-                await service.stop()
-    
-    @pytest.mark.asyncio
-    async def test_service_initialization(self, notification_service, mock_config):
+    def test_service_initialization(self, notification_service, mock_config):
         """Test that the notification service initializes correctly"""
         service = notification_service
         

@@ -31,9 +31,9 @@ This document outlines the technology stack, development setup, and technical co
 ## 4. Development & Operations
 
 *   **Development Workflow**: The project follows an agile, sprint-based methodology.
-*   **Build/Test**: Build and test commands are documented in `AGENTS.md`.
-*   **Code Style**: The project enforces specific code style guidelines.
-*   **Deployment**: The system is designed for local deployment, though specific deployment scripts exist (e.g., `deploy-leenvibe.sh`).
+*   **Build/Test**: All build, test, and quality check commands are documented in `AGENTS.md`.
+*   **Code Style**: `ruff` is the primary tool for linting and formatting.
+*   **Deployment**: The system is designed for local deployment.
 
 ## 5. Development Commands
 

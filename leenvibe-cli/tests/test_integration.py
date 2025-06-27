@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 
 from leenvibe_cli.client import BackendClient
-from leenvibe_cli.config.legacy import CLIConfig
+from leenvibe_cli.config import CLIConfig
 from leenvibe_cli.commands.monitor import enhanced_monitor_command
 from leenvibe_cli.commands.status import status_command
 from leenvibe_cli.commands.query import query_command

@@ -80,10 +80,14 @@ class DesktopNotificationService:
                                      sound: bool, timeout: int) -> bool:
         """Send macOS notification using osascript"""
         try:
+            # Escape special characters for AppleScript
+            safe_title = title.replace('"', '\\"').replace('!', '').replace('$', '')
+            safe_message = message.replace('"', '\\"').replace('!', '').replace('$', '')
+            
             script_parts = [
-                f'display notification "{message}"',
+                f'display notification "{safe_message}"',
                 f'with title "LeenVibe"',
-                f'subtitle "{title}"'
+                f'subtitle "{safe_title}"'
             ]
             
             if sound:

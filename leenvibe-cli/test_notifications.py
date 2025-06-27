@@ -12,7 +12,7 @@ from datetime import datetime
 # Add the leenvibe_cli package to the path
 sys.path.insert(0, '/Users/bogdan/work/leanvibe-ai/leenvibe-cli')
 
-from leenvibe_cli.config.legacy import CLIConfig
+from leenvibe_cli.config import CLIConfig
 from leenvibe_cli.services import NotificationService, DesktopNotificationService, NotificationTriggers
 from leenvibe_cli.ui import NotificationOverlay, NotificationHistory
 

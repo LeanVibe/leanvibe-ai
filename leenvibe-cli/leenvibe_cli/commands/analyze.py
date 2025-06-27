@@ -15,7 +15,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from ..config.legacy import CLIConfig
+from ..config import CLIConfig
 from ..client import BackendClient
 
 console = Console()

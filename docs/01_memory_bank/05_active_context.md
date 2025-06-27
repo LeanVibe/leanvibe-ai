@@ -10,7 +10,18 @@ The primary objective of this sprint is to transform the CLI into a live, reacti
 *   **Live Dashboard**: Enhance the `monitor` command to act as a live metrics dashboard with notification overlays.
 *   **Notification Management**: Implement features for viewing notification history and configuring notification preferences.
 
-## 2. Upcoming Sprints Overview
+## 2. Recent Cleanup (January 2025)
+
+**Technical Debt Addressed**:
+- ✅ Created comprehensive `.gitignore` to prevent cache/build files from being tracked
+- ✅ Moved integration tests from root to proper `tests/integration/` directory
+- ✅ Consolidated iOS implementations - kept `LeenVibe-iOS` (with QR scanner) as canonical
+- ✅ Archived older iOS implementations (`LeenVibe-iOS` and `LeenVibe-SwiftPM`) to `docs/archive/ios-implementations/`
+- ✅ Moved single-use scripts to `docs/archive/single-use-scripts/`
+- ✅ Cleaned up duplicate directories and cache files
+- ✅ Removed outdated `requirements.txt` (project uses `pyproject.toml` with `uv`)
+
+## 3. Upcoming Sprints Overview
 
 - **Sprint 2.4**: Create simple YAML configuration management.
 - **Sprint 2.5**: Add project-aware CLI integration.

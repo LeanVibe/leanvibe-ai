@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch, AsyncMock
 from datetime import datetime
 import statistics
 
-from leenvibe_cli.config.legacy import CLIConfig
+from leenvibe_cli.config import CLIConfig
 from leenvibe_cli.services.notification_service import NotificationService
 from leenvibe_cli.services.desktop_notifications import DesktopNotificationService
 from leenvibe_cli.ui.notification_overlay import NotificationOverlay

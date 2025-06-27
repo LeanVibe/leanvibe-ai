@@ -655,6 +655,63 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         logger.info(f"L3 Agent client {client_id} disconnected")
 
 
+def main():
+    """Main entry point for CLI usage"""
+    import sys
+    import asyncio
+    
+    if len(sys.argv) > 1 and sys.argv[1] == "query":
+        # Handle CLI query
+        if len(sys.argv) < 3:
+            print("Usage: leenvibe query '<your question>'")
+            sys.exit(1)
+            
+        query_text = " ".join(sys.argv[2:])
+        
+        # Run the CLI query handler
+        result = asyncio.run(handle_cli_query(query_text))
+        print(result)
+    else:
+        # Start the server
+        import uvicorn
+        uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+async def handle_cli_query(query: str) -> str:
+    """Handle CLI query and return formatted response"""
+    try:
+        # Initialize services
+        await ai_service.initialize()
+        await session_manager.start()
+        
+        # Create a temporary session for CLI
+        cli_session_id = "cli_session"
+        agent = await session_manager.get_or_create_session(cli_session_id, ".")
+        
+        # Process the query
+        result = await agent.run(query)
+        
+        # Format the response for CLI output
+        if result.get("status") == "success":
+            response = result.get("response", "No response generated")
+            confidence = result.get("confidence", 0.0)
+            
+            # Return formatted response (without box drawing for now)
+            return f"✅ Response (Confidence: {confidence*100:.1f}%)\n\n{response}"
+        else:
+            error = result.get("error", "Unknown error")
+            return f"❌ Error: {error}"
+            
+    except Exception as e:
+        return f"❌ CLI Error: {str(e)}"
+    finally:
+        # Cleanup
+        try:
+            await session_manager.stop()
+        except:
+            pass
+
+
 if __name__ == "__main__":
     import uvicorn
 

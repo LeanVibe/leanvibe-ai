@@ -14,7 +14,7 @@ from typing import Dict, Any, Optional, Callable, List
 
 from rich.console import Console
 
-from ..config.legacy import CLIConfig
+from ..config import CLIConfig
 from ..client import BackendClient
 
 logger = logging.getLogger(__name__)
