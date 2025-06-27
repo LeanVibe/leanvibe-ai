@@ -46,15 +46,12 @@ open Package.swift
 # From the leenvibe-backend directory:
 cd leenvibe-backend
 
-# Format and sort imports
-black .
-isort .
-
-# Run linter and type checker
-flake8 .
-mypy .
+# Format, lint, and sort imports with a single command
+ruff check . --fix
+ruff format .
 
 # Run the full test suite
+# Note: Ensure dependencies are installed with 'uv sync'
 python run_tests.py
 ```
 
@@ -85,7 +82,7 @@ open LeenVibe-iOS-App/LeenVibe.xcodeproj
 *   **Framework**: FastAPI, Uvicorn
 *   **AI Stack**: MLX, Pydantic.ai
 *   **Databases**: Neo4j, ChromaDB
-*   **Tooling**: `uv` for package management, `pytest` for testing
+*   **Tooling**: `uv` for package management, `pytest` for testing, `ruff` for linting and formatting.
 
 ### CLI
 *   **Framework**: Python `click`
