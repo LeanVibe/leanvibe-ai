@@ -39,6 +39,7 @@ class DependencyType(str, Enum):
     INSTANTIATION = "instantiation"
     COMPOSITION = "composition"
     AGGREGATION = "aggregation"
+    UNKNOWN = "unknown"
 
 
 class ImpactLevel(str, Enum):
