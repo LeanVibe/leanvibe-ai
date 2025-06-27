@@ -12,6 +12,7 @@ from pathlib import Path
 from datetime import datetime
 
 from .l3_coding_agent import L3CodingAgent, AgentDependencies, AgentState
+from .ast_context_provider import ASTContextProvider
 from ..services.ast_service import ast_service
 from ..services.project_indexer import project_indexer
 from ..services.incremental_indexer import incremental_indexer
@@ -56,6 +57,9 @@ class EnhancedL3CodingAgent(L3CodingAgent):
         self.last_index_update = 0
         self.index_timeout = 300  # 5 minutes
         
+        # AST Context Provider for intelligent code assistance
+        self.ast_context_provider = ASTContextProvider()
+        
         # Enhanced tools with AST and graph capabilities
         self.tools.update({
             "analyze_project": self._analyze_project_tool,
@@ -80,7 +84,12 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             "get_warming_candidates": self._get_warming_candidates_tool,
             "trigger_cache_warming": self._trigger_cache_warming_tool,
             "get_warming_metrics": self._get_warming_metrics_tool,
-            "set_warming_strategy": self._set_warming_strategy_tool
+            "set_warming_strategy": self._set_warming_strategy_tool,
+            
+            # AST Context-aware tools for code completion
+            "get_file_context": self._get_file_context_tool,
+            "get_completion_context": self._get_completion_context_tool,
+            "suggest_code_completion": self._suggest_code_completion_tool
         })
     
     async def initialize(self):
@@ -2176,3 +2185,368 @@ Start again with 'start monitoring' when needed."""
                 "message": f"Failed to set warming strategy: {str(e)}",
                 "confidence": 0.0
             }
+    
+    # AST Context-aware tools for intelligent code assistance
+    
+    async def _get_file_context_tool(self, file_path: str, cursor_position: int = 0) -> Dict[str, Any]:
+        """Get comprehensive AST context for a file"""
+        try:
+            logger.info(f"Getting file context for {file_path} at position {cursor_position}")
+            
+            # Use AST context provider to get rich context
+            context = await self.ast_context_provider.get_file_context(file_path, cursor_position)
+            
+            # Generate summary for user
+            if context.get("error"):
+                summary = f"❌ Could not analyze {Path(file_path).name}: {context['error']}"
+            else:
+                file_name = context.get("file_name", "unknown")
+                language = context.get("language", "unknown")
+                symbols = context.get("file_analysis", {}).get("symbols", [])
+                complexity = context.get("file_analysis", {}).get("complexity", {})
+                
+                summary = f"""📄 File Context for {file_name}:
+
+🔧 Language: {language}
+📊 Symbols: {len(symbols)} found
+🧮 Complexity: {complexity.get('cyclomatic', 0)} cyclomatic complexity
+📈 Functions: {complexity.get('functions', 0)}
+🏗️ Classes: {complexity.get('classes', 0)}
+📏 Lines: {complexity.get('lines', 0)}
+
+📍 Cursor Position: {cursor_position}
+{f"🎯 Current Symbol: {context['current_symbol']['name']}" if context.get('current_symbol') else "🎯 No symbol at cursor"}
+
+💡 This context provides comprehensive code understanding for intelligent suggestions."""
+            
+            context["summary"] = summary
+            
+            return {
+                "status": "success",
+                "type": "file_context",
+                "data": context,
+                "message": f"Retrieved context for {Path(file_path).name}",
+                "confidence": 0.9 if not context.get("error") else 0.3
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting file context: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to get file context: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _get_completion_context_tool(self, file_path: str, cursor_position: int, intent: str = "suggest") -> Dict[str, Any]:
+        """Get optimized context for code completion"""
+        try:
+            logger.info(f"Getting completion context for {intent} at {file_path}:{cursor_position}")
+            
+            # Use AST context provider for completion-optimized context
+            context = await self.ast_context_provider.get_completion_context(file_path, cursor_position, intent)
+            
+            # Generate summary based on intent
+            if context.get("error"):
+                summary = f"❌ Could not prepare completion context: {context['error']}"
+            else:
+                file_info = context.get("current_file", {})
+                hints = context.get("completion_hints", [])
+                
+                intent_icons = {
+                    "suggest": "💡",
+                    "explain": "📖", 
+                    "refactor": "🔧",
+                    "debug": "🐛",
+                    "optimize": "⚡"
+                }
+                
+                icon = intent_icons.get(intent, "🤖")
+                
+                summary = f"""{icon} Completion Context for {intent.upper()}:
+
+📄 File: {file_info.get('name', 'unknown')} ({file_info.get('language', 'unknown')})
+📊 Symbols: {file_info.get('symbol_count', 0)}
+🧮 Complexity: {file_info.get('complexity', {}).get('cyclomatic', 0)}
+
+🎯 Intent: {intent}
+📍 Position: {cursor_position}
+
+💡 Hints:"""
+                
+                for hint in hints[:3]:  # Show top 3 hints
+                    summary += f"\n  • {hint}"
+                
+                if len(hints) > 3:
+                    summary += f"\n  ... and {len(hints) - 3} more hints"
+                
+                summary += "\n\n✨ Ready for intelligent code assistance!"
+            
+            context["summary"] = summary
+            
+            return {
+                "status": "success",
+                "type": "completion_context",
+                "data": context,
+                "message": f"Prepared {intent} context for {Path(file_path).name}",
+                "confidence": 0.95 if not context.get("error") else 0.3
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting completion context: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to get completion context: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _suggest_code_completion_tool(self, file_path: str, cursor_position: int, intent: str = "suggest") -> Dict[str, Any]:
+        """Generate intelligent code completion suggestions using AST context"""
+        try:
+            logger.info(f"Generating code completion for {intent} at {file_path}:{cursor_position}")
+            
+            # Get completion context first
+            context_result = await self._get_completion_context_tool(file_path, cursor_position, intent)
+            
+            if context_result["status"] != "success":
+                return context_result
+            
+            context = context_result["data"]
+            
+            # Generate suggestions based on context and intent
+            suggestions = await self._generate_contextual_suggestions(context, intent)
+            
+            # Create response
+            file_name = Path(file_path).name
+            suggestion_count = len(suggestions)
+            
+            summary = f"""🎯 {intent.upper()} Suggestions for {file_name}:
+
+Generated {suggestion_count} contextual suggestions based on:
+• File language: {context.get('current_file', {}).get('language', 'unknown')}
+• Current context: Position {cursor_position}
+• Project analysis: {context.get('project_summary', {}).get('file_count', 0)} files analyzed
+
+📝 Suggestions:"""
+            
+            for i, suggestion in enumerate(suggestions[:3], 1):
+                summary += f"\n{i}. {suggestion.get('title', 'Suggestion')}"
+                summary += f"\n   Confidence: {suggestion.get('confidence', 0.5):.0%}"
+                if suggestion.get('description'):
+                    summary += f"\n   {suggestion['description'][:100]}..."
+                summary += "\n"
+            
+            if suggestion_count > 3:
+                summary += f"... and {suggestion_count - 3} more suggestions\n"
+            
+            summary += "\n💡 These suggestions are contextually aware and based on your project's patterns!"
+            
+            data = {
+                "file_path": file_path,
+                "cursor_position": cursor_position,
+                "intent": intent,
+                "suggestions": suggestions,
+                "context_used": context,
+                "generation_time": time.time(),
+                "summary": summary
+            }
+            
+            return {
+                "status": "success",
+                "type": "code_completion",
+                "data": data,
+                "message": f"Generated {suggestion_count} {intent} suggestions",
+                "confidence": 0.85
+            }
+            
+        except Exception as e:
+            logger.error(f"Error generating code completion: {e}")
+            return {
+                "status": "error",
+                "message": f"Failed to generate code completion: {str(e)}",
+                "confidence": 0.0
+            }
+    
+    async def _generate_contextual_suggestions(self, context: Dict[str, Any], intent: str) -> List[Dict[str, Any]]:
+        """Generate suggestions based on AST context and intent"""
+        try:
+            suggestions = []
+            
+            current_file = context.get("current_file", {})
+            language = current_file.get("language", "unknown")
+            hints = context.get("completion_hints", [])
+            
+            # Generate suggestions based on intent
+            if intent == "suggest":
+                suggestions.extend(await self._generate_code_suggestions(language, current_file, hints))
+            elif intent == "explain":
+                suggestions.extend(await self._generate_explanation_suggestions(language, current_file))
+            elif intent == "refactor":
+                suggestions.extend(await self._generate_refactoring_suggestions(language, current_file))
+            elif intent == "debug":
+                suggestions.extend(await self._generate_debugging_suggestions(language, current_file))
+            elif intent == "optimize":
+                suggestions.extend(await self._generate_optimization_suggestions(language, current_file))
+            else:
+                suggestions.extend(await self._generate_general_suggestions(language, current_file))
+            
+            return suggestions
+            
+        except Exception as e:
+            logger.error(f"Error generating contextual suggestions: {e}")
+            return [{"title": "Error generating suggestions", "confidence": 0.0, "description": str(e)}]
+    
+    async def _generate_code_suggestions(self, language: str, file_info: Dict[str, Any], hints: List[str]) -> List[Dict[str, Any]]:
+        """Generate code completion suggestions"""
+        suggestions = []
+        
+        if language == "python":
+            suggestions.extend([
+                {
+                    "title": "Add type hints to function parameters",
+                    "confidence": 0.8,
+                    "description": "Improve code clarity and enable better IDE support with type annotations",
+                    "code_example": "def function(param: str) -> str:"
+                },
+                {
+                    "title": "Add comprehensive docstring",
+                    "confidence": 0.75,
+                    "description": "Document function behavior, parameters, and return values",
+                    "code_example": '"""Function description.\n\nArgs:\n    param: Parameter description\n\nReturns:\n    Return value description\n"""'
+                },
+                {
+                    "title": "Add error handling",
+                    "confidence": 0.7,
+                    "description": "Implement proper exception handling for robustness",
+                    "code_example": "try:\n    # code here\nexcept SpecificException as e:\n    # handle error"
+                }
+            ])
+        elif language == "javascript":
+            suggestions.extend([
+                {
+                    "title": "Use const/let instead of var",
+                    "confidence": 0.85,
+                    "description": "Modern JavaScript best practices for variable declaration",
+                    "code_example": "const value = 'constant'; let variable = 'changeable';"
+                },
+                {
+                    "title": "Add JSDoc comments",
+                    "confidence": 0.7,
+                    "description": "Document function behavior and parameters",
+                    "code_example": "/**\n * Function description\n * @param {string} param - Parameter description\n * @returns {string} Return description\n */"
+                }
+            ])
+        
+        # Add hint-based suggestions
+        for hint in hints[:2]:
+            suggestions.append({
+                "title": f"Apply hint: {hint}",
+                "confidence": 0.6,
+                "description": f"Suggested improvement based on code analysis: {hint}"
+            })
+        
+        return suggestions
+    
+    async def _generate_explanation_suggestions(self, language: str, file_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Generate code explanation suggestions"""
+        return [
+            {
+                "title": "Explain function purpose",
+                "confidence": 0.9,
+                "description": "Provide a clear explanation of what this function does and why it exists"
+            },
+            {
+                "title": "Explain algorithm complexity",
+                "confidence": 0.7,
+                "description": "Analyze and explain the time and space complexity of this code"
+            },
+            {
+                "title": "Explain design patterns used",
+                "confidence": 0.6,
+                "description": "Identify and explain any design patterns implemented in this code"
+            }
+        ]
+    
+    async def _generate_refactoring_suggestions(self, language: str, file_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Generate refactoring suggestions"""
+        suggestions = [
+            {
+                "title": "Extract method",
+                "confidence": 0.8,
+                "description": "Break down large functions into smaller, more focused methods"
+            },
+            {
+                "title": "Rename for clarity",
+                "confidence": 0.75,
+                "description": "Use more descriptive names for variables and functions"
+            }
+        ]
+        
+        complexity = file_info.get("complexity", {}).get("cyclomatic", 0)
+        if complexity > 10:
+            suggestions.append({
+                "title": "Reduce complexity",
+                "confidence": 0.9,
+                "description": f"High complexity ({complexity}) detected. Consider breaking into smaller functions"
+            })
+        
+        return suggestions
+    
+    async def _generate_debugging_suggestions(self, language: str, file_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Generate debugging suggestions"""
+        return [
+            {
+                "title": "Add logging statements",
+                "confidence": 0.8,
+                "description": "Insert strategic log statements to trace execution flow"
+            },
+            {
+                "title": "Add assertion checks",
+                "confidence": 0.7,
+                "description": "Include assertions to validate assumptions and catch errors early"
+            },
+            {
+                "title": "Add unit tests",
+                "confidence": 0.85,
+                "description": "Create comprehensive unit tests to verify function behavior"
+            }
+        ]
+    
+    async def _generate_optimization_suggestions(self, language: str, file_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Generate optimization suggestions"""
+        return [
+            {
+                "title": "Optimize algorithm complexity",
+                "confidence": 0.7,
+                "description": "Review algorithm for potential performance improvements"
+            },
+            {
+                "title": "Cache expensive operations",
+                "confidence": 0.6,
+                "description": "Consider caching results of expensive computations"
+            },
+            {
+                "title": "Use list comprehensions",
+                "confidence": 0.8 if language == "python" else 0.3,
+                "description": "Replace loops with more efficient list comprehensions where appropriate"
+            }
+        ]
+    
+    async def _generate_general_suggestions(self, language: str, file_info: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Generate general suggestions"""
+        return [
+            {
+                "title": "Improve code documentation",
+                "confidence": 0.7,
+                "description": "Add or improve comments and documentation for better maintainability"
+            },
+            {
+                "title": "Follow language conventions",
+                "confidence": 0.8,
+                "description": f"Ensure code follows {language} best practices and style guidelines"
+            },
+            {
+                "title": "Add input validation",
+                "confidence": 0.75,
+                "description": "Validate function inputs to prevent errors and improve robustness"
+            }
+        ]

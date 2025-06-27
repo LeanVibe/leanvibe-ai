@@ -1,5 +1,5 @@
 import Foundation
-4import Starscream
+import Starscream
 
 struct ServerConfig {
     let host: String
