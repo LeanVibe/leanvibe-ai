@@ -15,6 +15,8 @@ import mlx.core as mx
 import mlx.nn as nn
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
 # Hugging Face transformers for tokenization and model config
 try:
     from transformers import AutoConfig, AutoTokenizer
@@ -24,8 +26,7 @@ except ImportError:
     HF_AVAILABLE = False
     AutoTokenizer = None
     AutoConfig = None
-
-logger = logging.getLogger(__name__)
+    logger.warning("Transformers library not available. Phi-3-Mini service will use fallback tokenization.")
 
 
 class Phi3MiniModel(nn.Module):

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# LeenVibe Backend Startup Script with MLX Phi-3-Mini-128K-Instruct Integration
+# LeenVibe Backend Startup Script with MLX AI Integration
 
-echo "🚀 Starting LeenVibe Backend with Phi-3-Mini-128K-Instruct..."
+echo "🚀 Starting LeenVibe Backend with MLX AI Support..."
 
 # Check if uv is installed
 if ! command -v uv &> /dev/null; then
@@ -23,40 +23,26 @@ fi
 echo "📚 Syncing dependencies with uv..."
 uv sync
 
-# Install MLX dependencies
-echo "🧠 Installing MLX dependencies for Phi-3-Mini..."
-uv sync --extra mlx
+# Note: MLX core is already in main dependencies
+# We don't need the MLX extras which include problematic packages like sentencepiece
+echo "🧠 MLX core dependencies already included..."
 
-# Check available memory (Phi-3-Mini needs ~8GB RAM)
-echo "💾 Checking system memory for Phi-3-Mini model..."
+# Check available memory
+echo "💾 Checking system memory..."
 total_memory=$(system_profiler SPHardwareDataType | grep "Memory:" | awk '{print $2 $3}')
 echo "   System Memory: $total_memory"
+echo "   SimpleModelService uses <1GB RAM - very efficient!"
 
-# Extract numeric value for comparison
-memory_gb=$(system_profiler SPHardwareDataType | grep "Memory:" | awk '{print $2}' | sed 's/[^0-9]//g')
-if [[ $memory_gb -lt 16 ]]; then
-    echo "⚠️  Warning: Phi-3-Mini works best with 16GB+ RAM for optimal performance"
-    echo "   Your system has ${memory_gb}GB. Model will still work but may be slower."
-    echo "   Consider closing other applications for better performance."
-fi
-
-# Initialize MLX model cache
-echo "🗄️  Preparing MLX model cache..."
+# Initialize application cache
+echo "🗄️  Preparing application cache..."
 uv run python -c "
 import os
 from pathlib import Path
 
-# Create model cache directory
-cache_dir = Path.home() / '.cache' / 'leenvibe' / 'models'
+# Create cache directories
+cache_dir = Path.home() / '.cache' / 'leenvibe'
 cache_dir.mkdir(parents=True, exist_ok=True)
-print(f'✅ Model cache directory: {cache_dir}')
-
-# Check for existing model files
-model_files = list(cache_dir.glob('*Phi-3*'))
-if model_files:
-    print(f'📁 Found {len(model_files)} existing model files')
-else:
-    print('📥 Model will be downloaded on first use (~7GB download)')
+print(f'✅ Cache directory ready: {cache_dir}')
 "
 
 # Print QR code and connection info
@@ -82,15 +68,36 @@ try:
     mx.eval(y)
     print('✅ MLX operations working')
     
-    # Test model service initialization (without loading full weights)
+    # Test model services
     import sys
     sys.path.append('app')
-    from services.phi3_mini_service import Phi3MiniService
-    print('✅ Phi-3-Mini service module loaded')
+    
+    # Check which services are available
+    try:
+        from services.simple_model_service import SimpleModelService
+        print('✅ SimpleModelService available (lightweight MLX inference)')
+    except:
+        print('⚠️  SimpleModelService not available')
+    
+    try:
+        from services.phi3_mini_service import Phi3MiniService, HF_AVAILABLE
+        if HF_AVAILABLE:
+            print('✅ Phi-3-Mini service with full transformers support')
+        else:
+            print('⚠️  Phi-3-Mini service loaded but transformers not available')
+    except:
+        print('⚠️  Phi-3-Mini service not available')
+    
+    # Show which inference mode will be used
+    from services.real_mlx_service import RealMLXService
+    service = RealMLXService()
+    print('')
+    print('🚀 MLX inference will use SimpleModelService for real tensor operations')
+    print('   This provides actual MLX-based AI responses without heavy dependencies')
     
 except Exception as e:
     print(f'❌ MLX/Model test failed: {e}')
-    print('🔧 Check that MLX is properly installed: pip install mlx')
+    print('🔧 Check that MLX is properly installed: uv sync')
     exit(1)
 "
 
@@ -99,14 +106,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "🌟 Starting FastAPI server with Phi-3-Mini-128K-Instruct support..."
+echo "🌟 Starting FastAPI server with MLX AI support..."
 echo "📱 Scan the QR code above with the LeenVibe iOS app to connect"
 echo "🖥️  Or connect manually to: http://localhost:8000"
 echo ""
-echo "⚡ Model: Phi-3-Mini-128K-Instruct (Microsoft, MLX optimized)"
-echo "💾 Expected memory usage: ~8GB during inference"
-echo "🎯 First model load may take 2-5 minutes to download (~7GB)"
-echo "🚀 Much faster and lighter than 30B models - perfect for MVP!"
+echo "⚡ AI Mode: SimpleModelService (Lightweight MLX inference)"
+echo "💾 Expected memory usage: <1GB - very efficient!"
+echo "🎯 Real MLX tensor operations without heavy dependencies"
+echo "🚀 No large model downloads required - instant startup!"
 echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""

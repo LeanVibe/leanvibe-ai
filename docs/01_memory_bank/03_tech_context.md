@@ -33,4 +33,37 @@ This document outlines the technology stack, development setup, and technical co
 *   **Development Workflow**: The project follows an agile, sprint-based methodology.
 *   **Build/Test**: Build and test commands are documented in `AGENTS.md`.
 *   **Code Style**: The project enforces specific code style guidelines.
-*   **Deployment**: The system is designed for local deployment, though specific deployment scripts exist (e.g., `deploy-leenvibe.sh`). 
+*   **Deployment**: The system is designed for local deployment, though specific deployment scripts exist (e.g., `deploy-leenvibe.sh`).
+
+## 5. Development Commands
+
+This section provides common commands for development and testing.
+
+### Backend (leenvibe-backend)
+
+- **Run development server:**
+  ```bash
+  cd leenvibe-backend && ./start.sh
+  ```
+- **Run tests:**
+  ```bash
+  cd leenvibe-backend
+  python run_tests.py
+  # Or, for verbose output:
+  pytest tests/ -v
+  ```
+- **Run code quality checks:**
+  ```bash
+  cd leenvibe-backend
+  black app/ tests/
+  isort app/ tests/
+  flake8 app/ tests/
+  mypy app/
+  ```
+
+### iOS (LeenVibe-iOS-App)
+
+- **Open project in Xcode:**
+  ```bash
+  open LeenVibe-iOS-App/LeenVibe.xcodeproj
+  ``` 
