@@ -2608,7 +2608,7 @@ Generated {suggestion_count} contextual suggestions based on:
             
             # Format response for L3 agent
             result = {
-                "suggestions": response["response"],
+                "response": response["response"],
                 "confidence": response["confidence"],
                 "language": response["language"],
                 "requires_review": response["requires_human_review"],

@@ -1,7 +1,7 @@
 import Foundation
 
 struct AgentMessage: Identifiable, Codable, Sendable {
-    let id = UUID()
+    var id = UUID()
     let content: String
     let isFromUser: Bool
     let timestamp: Date
@@ -87,7 +87,7 @@ struct ResponseData: Codable, Sendable {
 }
 
 struct FileInfo: Codable, Identifiable, Sendable {
-    let id = UUID()
+    var id = UUID()
     let name: String
     let size: Int?
     let type: String

@@ -193,75 +193,77 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     
     // MARK: - WebSocketDelegate
     
-    func didReceive(event: WebSocketEvent, client: WebSocketClient) {
-        switch event {
-        case .connected(let headers):
-            isConnected = true
-            connectionStatus = "Connected"
-            lastError = nil
-            
-            // Handle QR code connection completion
-            if let completion = qrConnectionCompletion {
-                completion(true, nil)
-                qrConnectionCompletion = nil
-            }
-            
-            // Send initial status request
-            sendCommand("/status", type: "command")
-            
-        case .disconnected(let reason, let code):
-            isConnected = false
-            connectionStatus = "Disconnected"
-            
-            // Handle QR code connection failure
-            if let completion = qrConnectionCompletion {
-                completion(false, "Connection failed: \(reason)")
-                qrConnectionCompletion = nil
-            }
-            
-        case .text(let string):
-            handleReceivedMessage(string)
-            
-        case .binary(let data):
-            if let text = String(data: data, encoding: .utf8) {
-                handleReceivedMessage(text)
-            }
-            
-        case .error(let error):
-            let errorMessage = error?.localizedDescription ?? "Unknown WebSocket error"
-            lastError = errorMessage
-            isConnected = false
-            connectionStatus = "Error"
-            
-            // Handle QR code connection error
-            if let completion = qrConnectionCompletion {
-                completion(false, errorMessage)
-                qrConnectionCompletion = nil
-            }
-            
-        case .ping(_), .pong(_):
-            // Handle ping/pong for connection keep-alive
-            break
-            
-        case .viabilityChanged(let isViable):
-            if !isViable {
-                connectionStatus = "Connection not viable"
-            }
-            
-        case .reconnectSuggested(let shouldReconnect):
-            if shouldReconnect && !isConnected {
-                connectionStatus = "Reconnecting..."
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    self.connect()
+    nonisolated func didReceive(event: WebSocketEvent, client: WebSocketClient) {
+        Task { @MainActor in
+            switch event {
+            case .connected:
+                self.isConnected = true
+                self.connectionStatus = "Connected"
+                self.lastError = nil
+                
+                // Handle QR code connection completion
+                if let completion = self.qrConnectionCompletion {
+                    completion(true, nil)
+                    self.qrConnectionCompletion = nil
                 }
+                
+                // Send initial status request
+                self.sendCommand("/status", type: "command")
+                
+            case .disconnected(let reason, _):
+                self.isConnected = false
+                self.connectionStatus = "Disconnected"
+                
+                // Handle QR code connection failure
+                if let completion = self.qrConnectionCompletion {
+                    completion(false, "Connection failed: \(reason)")
+                    self.qrConnectionCompletion = nil
+                }
+                
+            case .text(let string):
+                self.handleReceivedMessage(string)
+                
+            case .binary(let data):
+                if let text = String(data: data, encoding: .utf8) {
+                    self.handleReceivedMessage(text)
+                }
+                
+            case .error(let error):
+                let errorMessage = error?.localizedDescription ?? "Unknown WebSocket error"
+                self.lastError = errorMessage
+                self.isConnected = false
+                self.connectionStatus = "Error"
+                
+                // Handle QR code connection error
+                if let completion = self.qrConnectionCompletion {
+                    completion(false, errorMessage)
+                    self.qrConnectionCompletion = nil
+                }
+                
+            case .ping(_), .pong(_):
+                // Handle ping/pong for connection keep-alive
+                break
+                
+            case .viabilityChanged(let isViable):
+                if !isViable {
+                    self.connectionStatus = "Connection not viable"
+                }
+                
+            case .reconnectSuggested(let shouldReconnect):
+                if shouldReconnect && !self.isConnected {
+                    self.connectionStatus = "Reconnecting..."
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        self.connect()
+                    }
+                }
+                
+            case .cancelled:
+                self.isConnected = false
+                self.connectionStatus = "Cancelled"
+                
+            default:
+                break
             }
-            
-        case .cancelled:
-            isConnected = false
-            connectionStatus = "Cancelled"
-            
-        default:
-            break
         }
     }
     

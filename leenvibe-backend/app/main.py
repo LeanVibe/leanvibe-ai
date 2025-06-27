@@ -12,6 +12,8 @@ from .agent.session_manager import SessionManager
 from .services.event_streaming_service import event_streaming_service
 from .services.reconnection_service import reconnection_service, handle_client_reconnection, client_heartbeat
 from .models.event_models import ClientPreferences, EventType
+from .api.endpoints.code_completion import router as code_completion_router, get_enhanced_agent
+from .api.models import CodeCompletionRequest
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +30,137 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register API routers
+app.include_router(code_completion_router)
+
+# Code completion WebSocket handler
+async def handle_code_completion_websocket(message: dict, client_id: str) -> dict:
+    """
+    Handle code completion requests through WebSocket
+    
+    Expected message format:
+    {
+        "type": "code_completion",
+        "file_path": "/path/to/file.py",
+        "cursor_position": 100,
+        "intent": "suggest",
+        "content": "optional file content",
+        "language": "python"
+    }
+    """
+    try:
+        # Extract request data from WebSocket message
+        request_data = {
+            "file_path": message.get("file_path", ""),
+            "cursor_position": message.get("cursor_position", 0),
+            "intent": message.get("intent", "suggest"),
+            "content": message.get("content"),
+            "language": message.get("language")
+        }
+        
+        # Validate request using Pydantic model
+        try:
+            request = CodeCompletionRequest(**request_data)
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Invalid request format: {str(e)}",
+                "confidence": 0.0,
+                "timestamp": asyncio.get_event_loop().time()
+            }
+        
+        # Get Enhanced L3 Agent
+        agent = await get_enhanced_agent()
+        
+        # Prepare agent request
+        agent_request = {
+            "file_path": request.file_path,
+            "cursor_position": request.cursor_position
+        }
+        
+        # Add optional fields
+        if request.content:
+            agent_request["content"] = request.content
+        if request.language:
+            agent_request["language"] = request.language
+            
+        agent_request_json = json.dumps(agent_request)
+        
+        # Call appropriate MLX tool based on intent
+        if request.intent == "suggest":
+            response_text = await agent._mlx_suggest_code_tool(agent_request_json)
+        elif request.intent == "explain":
+            response_text = await agent._mlx_explain_code_tool(agent_request_json)
+        elif request.intent == "refactor":
+            response_text = await agent._mlx_refactor_code_tool(agent_request_json)
+        elif request.intent == "debug":
+            response_text = await agent._mlx_debug_code_tool(agent_request_json)
+        elif request.intent == "optimize":
+            response_text = await agent._mlx_optimize_code_tool(agent_request_json)
+        else:
+            return {
+                "status": "error",
+                "message": f"Unsupported intent: {request.intent}",
+                "confidence": 0.0,
+                "timestamp": asyncio.get_event_loop().time()
+            }
+        
+        # Parse agent response
+        try:
+            agent_response = json.loads(response_text)
+        except json.JSONDecodeError:
+            # Handle plain text responses
+            if response_text.startswith("Error:"):
+                return {
+                    "status": "error",
+                    "message": response_text,
+                    "confidence": 0.0,
+                    "timestamp": asyncio.get_event_loop().time()
+                }
+            
+            # Wrap plain text as success response
+            agent_response = {
+                "response": response_text,
+                "confidence": 0.7,
+                "requires_review": True,
+                "follow_up_actions": []
+            }
+        
+        # Build WebSocket response
+        ws_response = {
+            "status": "success",
+            "type": "code_completion_response",
+            "intent": request.intent,
+            "response": agent_response.get("response", ""),
+            "confidence": agent_response.get("confidence", 0.7),
+            "requires_review": agent_response.get("requires_review", True),
+            "suggestions": agent_response.get("follow_up_actions", []),
+            "client_id": client_id,
+            "timestamp": asyncio.get_event_loop().time()
+        }
+        
+        # Add intent-specific fields
+        if request.intent == "explain":
+            ws_response["explanation"] = agent_response.get("explanation", agent_response.get("response", ""))
+        elif request.intent == "refactor":
+            ws_response["refactoring_suggestions"] = agent_response.get("refactoring_suggestions", agent_response.get("response", ""))
+        elif request.intent == "debug":
+            ws_response["debug_analysis"] = agent_response.get("debug_analysis", agent_response.get("response", ""))
+        elif request.intent == "optimize":
+            ws_response["optimization_suggestions"] = agent_response.get("optimization_suggestions", agent_response.get("response", ""))
+        
+        logger.info(f"Code completion {request.intent} request processed for client {client_id}")
+        return ws_response
+        
+    except Exception as e:
+        logger.error(f"Error processing code completion WebSocket message: {e}")
+        return {
+            "status": "error",
+            "message": f"Internal error: {str(e)}",
+            "confidence": 0.0,
+            "timestamp": asyncio.get_event_loop().time()
+        }
 
 # Initialize services with enhanced AI and event streaming
 ai_service = EnhancedAIService()
@@ -384,6 +517,9 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                     # Handle slash commands through legacy AI service for compatibility
                     message["client_id"] = client_id
                     response = await ai_service.process_command(message)
+                elif message_type == "code_completion":
+                    # Handle code completion requests from iOS
+                    response = await handle_code_completion_websocket(message, client_id)
                 else:
                     # Handle natural language through L3 agent
                     response = await session_manager.process_message(
