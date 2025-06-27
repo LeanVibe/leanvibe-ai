@@ -15,10 +15,13 @@ from ..models.ast_models import LanguageType, ASTNode
 logger = logging.getLogger(__name__)
 
 
+from concurrent.futures import ThreadPoolExecutor
+
 class TreeSitterManager:
     """Manages tree-sitter parsers for multiple languages"""
     
-    def __init__(self):
+    def __init__(self, executor: ThreadPoolExecutor):
+        self.executor = executor
         self.languages: Dict[LanguageType, Language] = {}
         self.parsers: Dict[LanguageType, Parser] = {}
         self.initialized = False
@@ -112,8 +115,8 @@ class TreeSitterManager:
         
         return language_map.get(extension, LanguageType.UNKNOWN)
     
-    async def parse_file(self, file_path: str, content: str) -> Tuple[Optional[tree_sitter.Tree], List[str]]:
-        """Parse a file and return the syntax tree"""
+    def parse_file(self, file_path: str, content: str) -> Tuple[Optional[tree_sitter.Tree], List[str]]:
+        """Parse a file and return the syntax tree (synchronous)"""
         errors = []
         
         try:
@@ -143,6 +146,15 @@ class TreeSitterManager:
             logger.error(f"Error parsing file {file_path}: {e}")
             errors.append(f"Parsing failed: {str(e)}")
             return None, errors
+
+    async def async_parse_file(self, file_path: str, content: str) -> Tuple[Optional[tree_sitter.Tree], List[str]]:
+        """Parse a file asynchronously using the executor"""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            self.executor,
+            self.parse_file,  # Call the synchronous parse_file
+            file_path, content
+        )
     
     def tree_to_ast_node(self, node: Node, source_code: bytes) -> ASTNode:
         """Convert tree-sitter Node to our ASTNode model"""
@@ -199,8 +211,8 @@ class TreeSitterManager:
         except Exception:
             return ""
     
-    async def extract_imports(self, tree: tree_sitter.Tree, source_code: bytes, language: LanguageType) -> List[Dict]:
-        """Extract import statements from the syntax tree"""
+    def extract_imports(self, tree: tree_sitter.Tree, source_code: bytes, language: LanguageType) -> List[Dict]:
+        """Extract import statements from the syntax tree (synchronous)"""
         imports = []
         
         try:
@@ -213,6 +225,15 @@ class TreeSitterManager:
             logger.error(f"Error extracting imports: {e}")
         
         return imports
+
+    async def async_extract_imports(self, tree: tree_sitter.Tree, source_code: bytes, language: LanguageType) -> List[Dict]:
+        """Extract import statements from the syntax tree (asynchronous)"""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            self.executor,
+            self.extract_imports,
+            tree, source_code, language
+        )
     
     def _extract_python_imports(self, root: Node, source_code: bytes) -> List[Dict]:
         """Extract Python import statements"""
@@ -288,4 +309,4 @@ class TreeSitterManager:
 
 
 # Global instance
-tree_sitter_manager = TreeSitterManager()
+tree_sitter_manager = TreeSitterManager(ThreadPoolExecutor(max_workers=2))

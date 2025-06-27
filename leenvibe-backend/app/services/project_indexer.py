@@ -16,7 +16,8 @@ from ..models.ast_models import (
     ProjectIndex, FileAnalysis, Symbol, Dependency, Reference, 
     CallGraph, DependencyGraph, LanguageType
 )
-from .ast_service import ast_service
+from .ast_service import ASTAnalysisService
+from .tree_sitter_parsers import TreeSitterManager
 
 logger = logging.getLogger(__name__)
 
@@ -491,3 +492,5 @@ class ProjectIndexer:
 
 # Global instance
 project_indexer = ProjectIndexer()
+ast_service = ASTAnalysisService(project_indexer.executor)
+tree_sitter_manager = TreeSitterManager(project_indexer.executor)

@@ -22,10 +22,13 @@ from .tree_sitter_parsers import tree_sitter_manager
 logger = logging.getLogger(__name__)
 
 
+from concurrent.futures import ThreadPoolExecutor
+
 class ASTAnalysisService:
     """Main service for AST analysis and code understanding"""
     
-    def __init__(self):
+    def __init__(self, executor: ThreadPoolExecutor):
+        self.executor = executor
         self.initialized = False
         self.file_cache: Dict[str, FileAnalysis] = {}
         self.cache_timeout = 300  # 5 minutes
@@ -75,7 +78,7 @@ class ASTAnalysisService:
                 return analysis
             
             # Parse with tree-sitter
-            tree, parsing_errors = await tree_sitter_manager.parse_file(file_path, content)
+            tree, parsing_errors = await tree_sitter_manager.async_parse_file(file_path, content)
             analysis.parsing_errors.extend(parsing_errors)
             
             if tree is None:
@@ -86,13 +89,22 @@ class ASTAnalysisService:
             analysis.ast_root = tree_sitter_manager.tree_to_ast_node(tree.root_node, source_bytes)
             
             # Extract symbols
-            analysis.symbols = await self._extract_symbols(tree, source_bytes, language, file_path)
+            analysis.symbols = await asyncio.get_event_loop().run_in_executor(
+                self.executor,
+                lambda: self._extract_symbols_sync(tree, source_bytes, language, file_path)
+            )
             
             # Extract dependencies
-            analysis.dependencies = await self._extract_dependencies(tree, source_bytes, language, file_path)
+            analysis.dependencies = await asyncio.get_event_loop().run_in_executor(
+                self.executor,
+                lambda: self._extract_dependencies_sync(tree, source_bytes, language, file_path)
+            )
             
             # Calculate complexity metrics
-            analysis.complexity = await self._calculate_complexity(tree, source_bytes, language)
+            analysis.complexity = await asyncio.get_event_loop().run_in_executor(
+                self.executor,
+                lambda: self._calculate_complexity_sync(tree, source_bytes, language)
+            )
             
             # Cache the result
             self.file_cache[cache_key] = analysis
@@ -107,7 +119,7 @@ class ASTAnalysisService:
                 parsing_errors=[f"Analysis failed: {str(e)}"]
             )
     
-    async def _extract_symbols(
+    def _extract_symbols_sync(
         self, 
         tree, 
         source_bytes: bytes, 
@@ -119,30 +131,30 @@ class ASTAnalysisService:
         
         try:
             if language == LanguageType.PYTHON:
-                symbols.extend(await self._extract_python_symbols(tree.root_node, source_bytes, file_path))
+                symbols.extend(self._extract_python_symbols(tree.root_node, source_bytes, file_path))
             elif language in [LanguageType.JAVASCRIPT, LanguageType.TYPESCRIPT]:
-                symbols.extend(await self._extract_js_symbols(tree.root_node, source_bytes, file_path))
+                symbols.extend(self._extract_js_symbols(tree.root_node, source_bytes, file_path))
             
         except Exception as e:
             logger.error(f"Error extracting symbols: {e}")
         
         return symbols
     
-    async def _extract_python_symbols(self, root, source_bytes: bytes, file_path: str) -> List[Symbol]:
+    def _extract_python_symbols(self, root, source_bytes: bytes, file_path: str) -> List[Symbol]:
         """Extract Python symbols"""
         symbols = []
         
         # Function definitions
         function_nodes = tree_sitter_manager.find_nodes_by_type(root, ['function_definition'])
         for node in function_nodes:
-            symbol = await self._create_python_function_symbol(node, source_bytes, file_path)
+            symbol = self._create_python_function_symbol(node, source_bytes, file_path)
             if symbol:
                 symbols.append(symbol)
         
         # Class definitions
         class_nodes = tree_sitter_manager.find_nodes_by_type(root, ['class_definition'])
         for node in class_nodes:
-            symbol = await self._create_python_class_symbol(node, source_bytes, file_path)
+            symbol = self._create_python_class_symbol(node, source_bytes, file_path)
             if symbol:
                 symbols.append(symbol)
         
@@ -151,13 +163,13 @@ class ASTAnalysisService:
         for node in assignment_nodes:
             # Only extract top-level assignments
             if self._is_top_level_node(node):
-                symbol = await self._create_python_variable_symbol(node, source_bytes, file_path)
+                symbol = self._create_python_variable_symbol(node, source_bytes, file_path)
                 if symbol:
                     symbols.append(symbol)
         
         return symbols
     
-    async def _create_python_function_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
+    def _create_python_function_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
         """Create symbol for Python function"""
         try:
             # Find function name
@@ -209,7 +221,7 @@ class ASTAnalysisService:
             logger.error(f"Error creating function symbol: {e}")
             return None
     
-    async def _create_python_class_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
+    def _create_python_class_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
         """Create symbol for Python class"""
         try:
             # Find class name
@@ -244,7 +256,7 @@ class ASTAnalysisService:
             logger.error(f"Error creating class symbol: {e}")
             return None
     
-    async def _create_python_variable_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
+    def _create_python_variable_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
         """Create symbol for Python variable"""
         try:
             # Find variable name (left side of assignment)
@@ -277,7 +289,7 @@ class ASTAnalysisService:
             logger.error(f"Error creating variable symbol: {e}")
             return None
     
-    async def _extract_js_symbols(self, root, source_bytes: bytes, file_path: str) -> List[Symbol]:
+    def _extract_js_symbols(self, root, source_bytes: bytes, file_path: str) -> List[Symbol]:
         """Extract JavaScript/TypeScript symbols"""
         symbols = []
         
@@ -286,14 +298,14 @@ class ASTAnalysisService:
             root, ['function_declaration', 'arrow_function', 'method_definition']
         )
         for node in function_nodes:
-            symbol = await self._create_js_function_symbol(node, source_bytes, file_path)
+            symbol = self._create_js_function_symbol(node, source_bytes, file_path)
             if symbol:
                 symbols.append(symbol)
         
         # Class declarations
         class_nodes = tree_sitter_manager.find_nodes_by_type(root, ['class_declaration'])
         for node in class_nodes:
-            symbol = await self._create_js_class_symbol(node, source_bytes, file_path)
+            symbol = self._create_js_class_symbol(node, source_bytes, file_path)
             if symbol:
                 symbols.append(symbol)
         
@@ -303,13 +315,13 @@ class ASTAnalysisService:
         )
         for node in var_nodes:
             if self._is_top_level_node(node):
-                symbol = await self._create_js_variable_symbol(node, source_bytes, file_path)
+                symbol = self._create_js_variable_symbol(node, source_bytes, file_path)
                 if symbol:
                     symbols.append(symbol)
         
         return symbols
     
-    async def _create_js_function_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
+    def _create_js_function_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
         """Create symbol for JavaScript function"""
         try:
             # Extract function name
@@ -348,7 +360,7 @@ class ASTAnalysisService:
             logger.error(f"Error creating JS function symbol: {e}")
             return None
     
-    async def _create_js_class_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
+    def _create_js_class_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
         """Create symbol for JavaScript class"""
         try:
             # Find class name
@@ -374,7 +386,7 @@ class ASTAnalysisService:
             logger.error(f"Error creating JS class symbol: {e}")
             return None
     
-    async def _create_js_variable_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
+    def _create_js_variable_symbol(self, node, source_bytes: bytes, file_path: str) -> Optional[Symbol]:
         """Create symbol for JavaScript variable"""
         try:
             # Find variable name
@@ -403,7 +415,7 @@ class ASTAnalysisService:
             logger.error(f"Error creating JS variable symbol: {e}")
             return None
     
-    async def _extract_dependencies(
+    def _extract_dependencies_sync(
         self, 
         tree, 
         source_bytes: bytes, 
@@ -415,7 +427,7 @@ class ASTAnalysisService:
         
         try:
             # Extract imports using tree-sitter manager
-            imports = await tree_sitter_manager.extract_imports(tree, source_bytes, language)
+            imports = tree_sitter_manager.async_extract_imports(tree, source_bytes, language)
             
             for import_info in imports:
                 dependency = Dependency(
@@ -432,7 +444,7 @@ class ASTAnalysisService:
         
         return dependencies
     
-    async def _calculate_complexity(
+    def _calculate_complexity_sync(
         self, 
         tree, 
         source_bytes: bytes, 
@@ -573,4 +585,4 @@ class ASTAnalysisService:
 
 
 # Global instance
-ast_service = ASTAnalysisService()
+ast_service = ASTAnalysisService(ThreadPoolExecutor(max_workers=2))
