@@ -164,7 +164,7 @@ class QwenMLP(nn.Module):
 class QwenCoderService:
     """Production service for Qwen2.5-Coder model"""
     
-    def __init__(self, model_name: str = "Qwen/Qwen2.5-Coder-7B-Instruct"):
+    def __init__(self, model_name: str = "Qwen/Qwen3-30B-A3B-MLX-4bit"):
         self.model_name = model_name
         self.model = None
         self.tokenizer = None

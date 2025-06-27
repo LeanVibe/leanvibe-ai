@@ -1,0 +1,31 @@
+{
+  "metadata": {
+    "created_at": 1751025646.447526,
+    "last_accessed": 1751025646.4477062,
+    "workspace_path": ".",
+    "interaction_count": 1
+  },
+  "state": {
+    "conversation_history": [
+      {
+        "role": "user",
+        "content": "Explain the concept of dependency injection in Python.",
+        "timestamp": 1751025646.447718,
+        "confidence": 1.0
+      }
+    ],
+    "project_context": {},
+    "confidence_scores": [
+      1.0
+    ],
+    "current_task": null,
+    "workspace_path": ".",
+    "session_id": "enhanced-ai-test-client"
+  },
+  "dependencies": {
+    "workspace_path": ".",
+    "client_id": "enhanced-ai-test-client",
+    "session_data": {}
+  },
+  "saved_at": 1751027522.193463
+}
