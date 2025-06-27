@@ -14,6 +14,7 @@ from datetime import datetime
 from .l3_coding_agent import L3CodingAgent, AgentDependencies, AgentState
 from .ast_context_provider import ASTContextProvider
 from ..services.ast_service import ast_service
+from ..services.mock_mlx_service import mock_mlx_service
 from ..services.project_indexer import project_indexer
 from ..services.incremental_indexer import incremental_indexer
 from ..services.graph_service import graph_service
@@ -89,7 +90,15 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             # AST Context-aware tools for code completion
             "get_file_context": self._get_file_context_tool,
             "get_completion_context": self._get_completion_context_tool,
-            "suggest_code_completion": self._suggest_code_completion_tool
+            "suggest_code_completion": self._suggest_code_completion_tool,
+            
+            # MLX-powered code assistance tools
+            "mlx_suggest_code": self._mlx_suggest_code_tool,
+            "mlx_explain_code": self._mlx_explain_code_tool,
+            "mlx_refactor_code": self._mlx_refactor_code_tool,
+            "mlx_debug_code": self._mlx_debug_code_tool,
+            "mlx_optimize_code": self._mlx_optimize_code_tool,
+            "mlx_stream_completion": self._mlx_stream_completion_tool
         })
     
     async def initialize(self):
@@ -105,6 +114,9 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             
             # Initialize graph database
             await graph_service.initialize()
+            
+            # Initialize MLX service for AI-powered assistance
+            await mock_mlx_service.initialize()
             
             # Initialize project context
             await self._initialize_project_context()
@@ -2550,3 +2562,329 @@ Generated {suggestion_count} contextual suggestions based on:
                 "description": "Validate function inputs to prevent errors and improve robustness"
             }
         ]
+    
+    # ============================================================================
+    # MLX-POWERED CODE ASSISTANCE TOOLS
+    # ============================================================================
+    
+    async def _mlx_suggest_code_tool(self, request: str) -> str:
+        """
+        Generate code suggestions using MLX inference with AST context
+        
+        Args:
+            request: JSON string with file_path and cursor_position
+            
+        Returns:
+            MLX-generated code suggestions with confidence scoring
+        """
+        try:
+            import json
+            
+            # Parse request
+            try:
+                req_data = json.loads(request)
+                file_path = req_data.get("file_path", "")
+                cursor_position = req_data.get("cursor_position", 0)
+            except json.JSONDecodeError:
+                # Fallback: treat as file path
+                file_path = request.strip()
+                cursor_position = 0
+            
+            if not file_path:
+                return "Error: file_path required for code suggestions"
+            
+            logger.info(f"Generating MLX code suggestions for {file_path}:{cursor_position}")
+            
+            # Get rich AST context
+            context = await self.ast_context_provider.get_completion_context(
+                file_path, cursor_position, intent="suggest"
+            )
+            
+            # Generate MLX response
+            response = await mock_mlx_service.generate_code_completion(context, "suggest")
+            
+            if response["status"] != "success":
+                return f"Error generating suggestions: {response.get('error', 'Unknown error')}"
+            
+            # Format response for L3 agent
+            result = {
+                "suggestions": response["response"],
+                "confidence": response["confidence"],
+                "language": response["language"],
+                "requires_review": response["requires_human_review"],
+                "follow_up_actions": response["suggestions"],
+                "model": response["model"],
+                "context_used": response["context_used"]
+            }
+            
+            return json.dumps(result, indent=2)
+            
+        except Exception as e:
+            logger.error(f"Error in MLX suggest code tool: {e}")
+            return f"Error: {str(e)}"
+    
+    async def _mlx_explain_code_tool(self, request: str) -> str:
+        """
+        Explain code using MLX inference with AST context
+        
+        Args:
+            request: JSON string with file_path and cursor_position
+            
+        Returns:
+            MLX-generated code explanation
+        """
+        try:
+            import json
+            
+            # Parse request
+            try:
+                req_data = json.loads(request)
+                file_path = req_data.get("file_path", "")
+                cursor_position = req_data.get("cursor_position", 0)
+            except json.JSONDecodeError:
+                file_path = request.strip()
+                cursor_position = 0
+            
+            if not file_path:
+                return "Error: file_path required for code explanation"
+            
+            logger.info(f"Generating MLX code explanation for {file_path}:{cursor_position}")
+            
+            # Get rich AST context
+            context = await self.ast_context_provider.get_completion_context(
+                file_path, cursor_position, intent="explain"
+            )
+            
+            # Generate MLX response
+            response = await mock_mlx_service.generate_code_completion(context, "explain")
+            
+            if response["status"] != "success":
+                return f"Error generating explanation: {response.get('error', 'Unknown error')}"
+            
+            # Format response
+            result = {
+                "explanation": response["response"],
+                "confidence": response["confidence"],
+                "language": response["language"],
+                "context_analyzed": response["context_used"],
+                "follow_up_suggestions": response["suggestions"]
+            }
+            
+            return json.dumps(result, indent=2)
+            
+        except Exception as e:
+            logger.error(f"Error in MLX explain code tool: {e}")
+            return f"Error: {str(e)}"
+    
+    async def _mlx_refactor_code_tool(self, request: str) -> str:
+        """
+        Generate refactoring suggestions using MLX inference
+        
+        Args:
+            request: JSON string with file_path and cursor_position
+            
+        Returns:
+            MLX-generated refactoring suggestions
+        """
+        try:
+            import json
+            
+            # Parse request
+            try:
+                req_data = json.loads(request)
+                file_path = req_data.get("file_path", "")
+                cursor_position = req_data.get("cursor_position", 0)
+            except json.JSONDecodeError:
+                file_path = request.strip()
+                cursor_position = 0
+            
+            if not file_path:
+                return "Error: file_path required for refactoring suggestions"
+            
+            logger.info(f"Generating MLX refactoring suggestions for {file_path}:{cursor_position}")
+            
+            # Get rich AST context
+            context = await self.ast_context_provider.get_completion_context(
+                file_path, cursor_position, intent="refactor"
+            )
+            
+            # Generate MLX response
+            response = await mock_mlx_service.generate_code_completion(context, "refactor")
+            
+            if response["status"] != "success":
+                return f"Error generating refactoring suggestions: {response.get('error', 'Unknown error')}"
+            
+            # Format response
+            result = {
+                "refactoring_suggestions": response["response"],
+                "confidence": response["confidence"],
+                "language": response["language"],
+                "requires_review": response["requires_human_review"],
+                "next_steps": response["suggestions"],
+                "complexity_analysis": context.get("relevant_context", {}).get("complexity", {})
+            }
+            
+            return json.dumps(result, indent=2)
+            
+        except Exception as e:
+            logger.error(f"Error in MLX refactor code tool: {e}")
+            return f"Error: {str(e)}"
+    
+    async def _mlx_debug_code_tool(self, request: str) -> str:
+        """
+        Generate debugging analysis using MLX inference
+        
+        Args:
+            request: JSON string with file_path and cursor_position
+            
+        Returns:
+            MLX-generated debugging suggestions
+        """
+        try:
+            import json
+            
+            # Parse request
+            try:
+                req_data = json.loads(request)
+                file_path = req_data.get("file_path", "")
+                cursor_position = req_data.get("cursor_position", 0)
+            except json.JSONDecodeError:
+                file_path = request.strip()
+                cursor_position = 0
+            
+            if not file_path:
+                return "Error: file_path required for debugging analysis"
+            
+            logger.info(f"Generating MLX debugging analysis for {file_path}:{cursor_position}")
+            
+            # Get rich AST context
+            context = await self.ast_context_provider.get_completion_context(
+                file_path, cursor_position, intent="debug"
+            )
+            
+            # Generate MLX response
+            response = await mock_mlx_service.generate_code_completion(context, "debug")
+            
+            if response["status"] != "success":
+                return f"Error generating debug analysis: {response.get('error', 'Unknown error')}"
+            
+            # Format response
+            result = {
+                "debug_analysis": response["response"],
+                "confidence": response["confidence"],
+                "language": response["language"],
+                "potential_issues": "Check the debug analysis for specific issues",
+                "debugging_steps": response["suggestions"],
+                "surrounding_context": context.get("surrounding_context", {})
+            }
+            
+            return json.dumps(result, indent=2)
+            
+        except Exception as e:
+            logger.error(f"Error in MLX debug code tool: {e}")
+            return f"Error: {str(e)}"
+    
+    async def _mlx_optimize_code_tool(self, request: str) -> str:
+        """
+        Generate optimization suggestions using MLX inference
+        
+        Args:
+            request: JSON string with file_path and cursor_position
+            
+        Returns:
+            MLX-generated optimization suggestions
+        """
+        try:
+            import json
+            
+            # Parse request
+            try:
+                req_data = json.loads(request)
+                file_path = req_data.get("file_path", "")
+                cursor_position = req_data.get("cursor_position", 0)
+            except json.JSONDecodeError:
+                file_path = request.strip()
+                cursor_position = 0
+            
+            if not file_path:
+                return "Error: file_path required for optimization suggestions"
+            
+            logger.info(f"Generating MLX optimization suggestions for {file_path}:{cursor_position}")
+            
+            # Get rich AST context
+            context = await self.ast_context_provider.get_completion_context(
+                file_path, cursor_position, intent="optimize"
+            )
+            
+            # Generate MLX response
+            response = await mock_mlx_service.generate_code_completion(context, "optimize")
+            
+            if response["status"] != "success":
+                return f"Error generating optimization suggestions: {response.get('error', 'Unknown error')}"
+            
+            # Format response
+            result = {
+                "optimization_suggestions": response["response"],
+                "confidence": response["confidence"],
+                "language": response["language"],
+                "performance_impact": "See optimization suggestions for details",
+                "implementation_steps": response["suggestions"],
+                "complexity_metrics": context.get("relevant_context", {}).get("complexity", {})
+            }
+            
+            return json.dumps(result, indent=2)
+            
+        except Exception as e:
+            logger.error(f"Error in MLX optimize code tool: {e}")
+            return f"Error: {str(e)}"
+    
+    async def _mlx_stream_completion_tool(self, request: str) -> str:
+        """
+        Generate streaming code completion using MLX inference
+        
+        Args:
+            request: JSON string with file_path, cursor_position, and intent
+            
+        Returns:
+            Information about starting streaming completion
+        """
+        try:
+            import json
+            
+            # Parse request
+            try:
+                req_data = json.loads(request)
+                file_path = req_data.get("file_path", "")
+                cursor_position = req_data.get("cursor_position", 0)
+                intent = req_data.get("intent", "suggest")
+            except json.JSONDecodeError:
+                return "Error: Invalid JSON request for streaming completion"
+            
+            if not file_path:
+                return "Error: file_path required for streaming completion"
+            
+            logger.info(f"Starting MLX streaming completion for {file_path}:{cursor_position} with intent '{intent}'")
+            
+            # Get rich AST context
+            context = await self.ast_context_provider.get_completion_context(
+                file_path, cursor_position, intent=intent
+            )
+            
+            # Note: In a real implementation, this would set up a streaming endpoint
+            # For now, we simulate by starting the stream and returning info
+            
+            result = {
+                "status": "streaming_started",
+                "file_path": file_path,
+                "cursor_position": cursor_position,
+                "intent": intent,
+                "context_ready": True,
+                "estimated_chunks": 10,
+                "message": "Streaming completion started. Use WebSocket connection to receive real-time updates."
+            }
+            
+            return json.dumps(result, indent=2)
+            
+        except Exception as e:
+            logger.error(f"Error in MLX stream completion tool: {e}")
+            return f"Error: {str(e)}"
