@@ -13,14 +13,8 @@ class AIService:
     """AI service that handles command processing and MLX integration"""
     
     def __init__(self):
-        self.model = None
-        self.tokenizer = None
         self.is_initialized = False
-        self.model_name = "mlx-community/CodeLlama-7b-Instruct-hf"
-        self.max_tokens = 512
-        self.temperature = 0.7
         self.session_data = {}  # Simple in-memory session storage
-        self.model_health = {"status": "unknown", "last_check": None, "memory_usage": 0}
         self.supported_commands = {
             "/list-files": self._list_files,
             "/status": self._get_status,
@@ -31,109 +25,10 @@ class AIService:
         }
     
     async def initialize(self):
-        """Initialize AI service with real MLX integration"""
-        try:
-            logger.info("Initializing AI service with MLX...")
-            
-            # Check if MLX is available
-            try:
-                import mlx.core as mx
-                from mlx_lm import load, generate
-                self.mlx_available = True
-                logger.info("MLX framework detected")
-            except ImportError:
-                logger.warning("MLX not available, falling back to mock mode")
-                self.mlx_available = False
-                await asyncio.sleep(1)  # Simulate loading time
-                self.is_initialized = True
-                self.model_health["status"] = "mock_mode"
-                return
-            
-            # Load model if MLX is available
-            if self.mlx_available:
-                logger.info(f"Loading model: {self.model_name}")
-                # Run model loading in thread pool to avoid blocking
-                loop = asyncio.get_event_loop()
-                model_data = await loop.run_in_executor(
-                    None, 
-                    self._load_model_sync
-                )
-                
-                if model_data:
-                    self.model, self.tokenizer = model_data
-                    self.is_initialized = True
-                    self.model_health["status"] = "ready"
-                    self.model_health["last_check"] = time.time()
-                    logger.info("AI service initialized successfully with MLX")
-                else:
-                    raise Exception("Failed to load MLX model")
-            
-        except Exception as e:
-            logger.error(f"Failed to initialize AI service: {e}")
-            logger.info("Falling back to mock mode")
-            self.is_initialized = True
-            self.mlx_available = False
-            self.model_health["status"] = "mock_mode"
-    
-    def _load_model_sync(self):
-        """Load MLX model synchronously (runs in thread pool)"""
-        try:
-            from mlx_lm import load
-            import mlx.core as mx
-            
-            # Load model with error handling
-            model, tokenizer = load(self.model_name)
-            
-            # Verify model loaded correctly
-            if model is None or tokenizer is None:
-                return None
-                
-            # Get memory usage estimate
-            try:
-                memory_mb = mx.metal.get_active_memory() / 1024 / 1024
-                self.model_health["memory_usage"] = memory_mb
-                logger.info(f"Model loaded, using ~{memory_mb:.1f}MB GPU memory")
-            except:
-                logger.info("Model loaded successfully (memory usage unknown)")
-            
-            return model, tokenizer
-            
-        except Exception as e:
-            logger.error(f"Error loading MLX model: {e}")
-            return None
-    
-    async def _generate_response_mlx(self, prompt: str) -> str:
-        """Generate response using MLX model"""
-        if not self.mlx_available or not self.model:
-            return "MLX not available"
-        
-        try:
-            from mlx_lm import generate
-            
-            # Run generation in thread pool to avoid blocking
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(
-                None,
-                lambda: generate(
-                    self.model,
-                    self.tokenizer,
-                    prompt=prompt,
-                    max_tokens=self.max_tokens,
-                    temp=self.temperature,
-                    verbose=False
-                )
-            )
-            
-            # Update health status
-            self.model_health["last_check"] = time.time()
-            self.model_health["status"] = "ready"
-            
-            return response
-            
-        except Exception as e:
-            logger.error(f"Error generating MLX response: {e}")
-            self.model_health["status"] = "error"
-            return f"AI processing error: {str(e)}"
+        """Initialize AI service (no MLX loading here)"""
+        logger.info("Initializing AI service (command dispatcher only)...")
+        self.is_initialized = True
+        logger.info("AI service initialized successfully.")
     
     def _calculate_confidence_score(self, response: str, command_type: str) -> float:
         """Calculate confidence score for agent response"""
@@ -215,12 +110,20 @@ class AIService:
             # Create prompt for coding assistant
             prompt = self._create_coding_prompt(message)
             
-            # Generate response using MLX or fallback
-            if self.mlx_available and self.model:
-                response = await self._generate_response_mlx(prompt)
-                model_info = f"CodeLlama-7B (MLX)"
+            # Generate response using real_mlx_service
+            from .real_mlx_service import real_mlx_service
+            if real_mlx_service.is_initialized:
+                response_obj = await real_mlx_service.generate_code_completion(
+                    context={"prompt": prompt},
+                    intent="suggest"
+                )
+                if response_obj and response_obj.get("status") == "success":
+                    response = response_obj.get("response", "")
+                    model_info = real_mlx_service.model_name
+                else:
+                    response = await self._generate_mock_response(message)
+                    model_info = "CodeLlama-7B (Mock)"
             else:
-                # Enhanced mock responses for fallback
                 response = await self._generate_mock_response(message)
                 model_info = "CodeLlama-7B (Mock)"
             
@@ -373,7 +276,7 @@ Please provide a helpful response focused on practical software development guid
     
     async def _get_status(self, args: str, client_id: str) -> Dict[str, Any]:
         """Get agent status with health information"""
-        model_name = "CodeLlama-7B (MLX)" if self.mlx_available else "CodeLlama-7B (Mock)"
+        model_name = "N/A (MLX handled by real_mlx_service)"
         
         # Calculate confidence score for status command
         confidence = self._calculate_confidence_score("Agent status retrieved", "file_operation")
@@ -384,20 +287,16 @@ Please provide a helpful response focused on practical software development guid
             "version": "0.2.0",
             "supported_commands": list(self.supported_commands.keys()),
             "session_active": client_id in self.session_data,
-            "mlx_available": self.mlx_available,
-            "health": self.model_health.copy(),
+            "mlx_available": False, # MLX availability now checked via real_mlx_service
+            "health": {"status": "N/A", "last_check": None, "memory_usage": 0}, # MLX health now via real_mlx_service
             "confidence_scoring": True
         }
-        
-        # Add memory info if available
-        if self.model_health.get("memory_usage"):
-            status_data["memory_usage_mb"] = self.model_health["memory_usage"]
         
         return {
             "status": "success",
             "type": "agent_status",
             "data": status_data,
-            "message": f"Agent is ready and operational ({'MLX mode' if self.mlx_available else 'Mock mode'})",
+            "message": f"Agent is ready and operational (MLX status via real_mlx_service)",
             "confidence": confidence
         }
     
@@ -429,10 +328,19 @@ Please provide a helpful response focused on practical software development guid
             # Create analysis prompt
             analysis_prompt = self._create_analysis_prompt(str(file_path), content)
             
-            # Generate analysis using MLX or fallback
-            if self.mlx_available and self.model:
-                analysis = await self._generate_response_mlx(analysis_prompt)
-                model_info = "CodeLlama-7B (MLX)"
+            # Generate analysis using real_mlx_service or fallback
+            from .real_mlx_service import real_mlx_service
+            if real_mlx_service.is_initialized:
+                response_obj = await real_mlx_service.generate_code_completion(
+                    context={"prompt": analysis_prompt, "file_path": str(file_path), "content": content},
+                    intent="explain" # Use explain intent for analysis
+                )
+                if response_obj and response_obj.get("status") == "success":
+                    analysis = response_obj.get("response", "")
+                    model_info = real_mlx_service.model_name
+                else:
+                    analysis = await self._generate_mock_analysis(str(file_path), content)
+                    model_info = "CodeLlama-7B (Mock)"
             else:
                 analysis = await self._generate_mock_analysis(str(file_path), content)
                 model_info = "CodeLlama-7B (Mock)"

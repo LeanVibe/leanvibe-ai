@@ -13,6 +13,9 @@ from typing import Dict, Any, List, Optional, AsyncGenerator
 from pathlib import Path
 
 from .production_model_service import ProductionModelService, ModelConfig
+from .simple_model_service import SimpleModelService
+import mlx.core as mx
+import mlx.nn as nn
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +30,13 @@ class RealMLXService:
     """
     
     def __init__(self):
-        self.model_name = "Qwen/Qwen3-30B-A3B-MLX-4bit"
+        self.model_name = "Qwen/Qwen3-30B-A3B-MLX-4bit" # Ensure this is the correct Qwen model
         self.max_tokens = 512
         self.temperature = 0.3  # Lower temperature for code tasks
         self.is_initialized = False
         self.production_service = None
+        self.simple_service = None
+        self.inference_mode = "auto"  # auto, production, simple, mock
         self.intent_prompts = self._load_intent_prompts()
         
     async def initialize(self) -> bool:
@@ -82,15 +87,15 @@ class RealMLXService:
         """
         try:
             if not self.is_initialized:
-                await self.initialize()
+                # Attempt to initialize if not already
+                init_success = await self.initialize()
+                if not init_success:
+                    return {
+                        "status": "error",
+                        "error": "MLX service not initialized and failed to initialize",
+                        "confidence": 0.0
+                    }
                 
-            if not self.is_initialized:
-                return {
-                    "status": "error",
-                    "error": "MLX service not initialized",
-                    "confidence": 0.0
-                }
-            
             logger.info(f"Generating real MLX {intent} completion with AST context")
             
             # Extract key context elements
@@ -167,7 +172,7 @@ class RealMLXService:
         intent: str,
         language: str,
         file_path: str,
-        current_symbol: Optional[Dict[str, Any]],
+        current_symbol: Optional[Dict[str, Any}],
         surrounding_context: Dict[str, Any],
         completion_hints: List[str]
     ) -> str:
@@ -224,8 +229,8 @@ class RealMLXService:
     
     def _calculate_confidence(
         self, 
-        context: Dict[str, Any], 
-        structured_response: Dict[str, Any],
+        context: Dict[str, Any}, 
+        structured_response: Dict[str, Any},
         intent: str
     ) -> float:
         """Calculate confidence score for real AI responses"""
@@ -385,6 +390,14 @@ Please provide optimization suggestions focusing on:
 
 Provide specific, measurable optimization recommendations."""
         }
+
+
+# Create global instance (same pattern as mock service)
+    def get_model_health(self) -> Dict[str, Any]:
+        """Get the health status of the underlying production model service"""
+        if self.production_service:
+            return self.production_service.get_health_status()
+        return {"status": "uninitialized", "model_loaded": False}
 
 
 # Create global instance (same pattern as mock service)

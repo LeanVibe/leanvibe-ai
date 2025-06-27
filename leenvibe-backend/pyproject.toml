@@ -57,7 +57,7 @@ dependencies = [
 # MLX dependencies (optional for full AI features)
 mlx = [
     "mlx>=0.20.0",
-    "mlx-lm>=0.20.0",
+    "mlx-lm>=0.19.0",
     "chromadb>=0.5.23",
     "sentence-transformers>=3.3.1",
     "numpy>=1.24.0",

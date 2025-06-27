@@ -92,13 +92,7 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             "get_completion_context": self._get_completion_context_tool,
             "suggest_code_completion": self._suggest_code_completion_tool,
             
-            # MLX-powered code assistance tools
-            "mlx_suggest_code": self._mlx_suggest_code_tool,
-            "mlx_explain_code": self._mlx_explain_code_tool,
-            "mlx_refactor_code": self._mlx_refactor_code_tool,
-            "mlx_debug_code": self._mlx_debug_code_tool,
-            "mlx_optimize_code": self._mlx_optimize_code_tool,
-            "mlx_stream_completion": self._mlx_stream_completion_tool
+            
         })
     
     async def initialize(self):
@@ -115,8 +109,7 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             # Initialize graph database
             await graph_service.initialize()
             
-            # Initialize MLX service for AI-powered assistance
-            await real_mlx_service.initialize()
+            
             
             # Initialize project context
             await self._initialize_project_context()
@@ -426,43 +419,7 @@ class EnhancedL3CodingAgent(L3CodingAgent):
             logger.error(f"Error in enhanced user input processing: {e}")
             return f"I encountered an error processing your request: {str(e)}. How can I help you differently?"
     
-    async def _create_contextual_prompt(self, user_input: str) -> str:
-        """Create a context-aware prompt with project understanding"""
-        try:
-            base_prompt = f"""
-As LeenVibe L3 coding agent, I need to respond to: "{user_input}"
-
-Project Context:
-- Workspace: {self.state.workspace_path}
-- Architecture: {self.project_context.architecture_summary if self.project_context else 'Unknown'}
-- Technology Stack: {', '.join(self.project_context.technology_stack[:5]) if self.project_context else 'Unknown'}
-- Key Components: {len(self.project_context.key_components) if self.project_context else 0} identified
-- Previous interactions: {len(self.state.conversation_history)}
-- Average confidence: {self.state.get_average_confidence():.2f}
-"""
-            
-            # Add current file context if available
-            if self.project_context and self.project_context.current_file:
-                current_file_analysis = None
-                if self.project_index:
-                    current_file_analysis = self.project_index.files.get(self.project_context.current_file)
-                
-                if current_file_analysis:
-                    base_prompt += f"""
-Current File Context:
-- File: {self.project_context.current_file}
-- Language: {current_file_analysis.language}
-- Symbols: {len(current_file_analysis.symbols)} (functions, classes, etc.)
-- Complexity: {current_file_analysis.complexity.cyclomatic_complexity}
-"""
-            
-            base_prompt += "\nProvide a helpful, practical response focused on coding assistance with project awareness."
-            
-            return base_prompt
-            
-        except Exception as e:
-            logger.error(f"Error creating contextual prompt: {e}")
-            return f"As LeenVibe L3 coding agent, I need to respond to: \"{user_input}\""
+    
     
     async def _analyze_project_tool(self) -> Dict[str, Any]:
         """Analyze the entire project and provide insights"""
@@ -1411,7 +1368,9 @@ Use it to understand:
                 "incremental_indexing", "smart_caching", "file_change_integration",
                 "performance_optimization", "cache_persistence", "metrics_tracking"
             ],
-            "indexer_metrics": incremental_indexer.get_metrics()
+            "indexer_metrics": incremental_indexer.get_metrics(),
+            "mlx_available": real_mlx_service.is_initialized,
+            "model_health": real_mlx_service.get_model_health()
         })
         
         return base_summary

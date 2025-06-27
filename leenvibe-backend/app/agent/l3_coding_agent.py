@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, RunContext, Tool
 
 from ..services.ai_service import AIService
+from ..services.real_mlx_service import real_mlx_service
 
 logger = logging.getLogger(__name__)
 
@@ -68,22 +69,21 @@ class AgentState(BaseModel):
 class SimpleMLXModel:
     """Simple MLX model for pydantic.ai integration"""
     
-    def __init__(self, ai_service: AIService):
-        self.ai_service = ai_service
-        self.model_name = "mlx-codellama-7b"
+    def __init__(self, mlx_service: 'RealMLXService'):
+        self.mlx_service = mlx_service
     
     async def generate_response(self, prompt: str) -> str:
         """Generate response using MLX backend"""
         try:
-            # Use existing MLX integration
-            if self.ai_service.mlx_available and self.ai_service.model:
-                response = await self.ai_service._generate_response_mlx(
-                    self.ai_service._create_coding_prompt(prompt)
-                )
-            else:
-                response = await self.ai_service._generate_mock_response(prompt)
+            response_obj = await self.mlx_service.generate_code_completion(
+                context={"prompt": prompt},
+                intent="suggest" # General suggestion for now
+            )
             
-            return response
+            if response_obj and response_obj.get("status") == "success":
+                return response_obj.get("response", "")
+            else:
+                return f"MLX model generation failed: {response_obj.get("error", "Unknown error")}"
             
         except Exception as e:
             logger.error(f"MLX model generation failed: {e}")
@@ -101,7 +101,7 @@ class L3CodingAgent:
     def __init__(self, dependencies: AgentDependencies):
         self.dependencies = dependencies
         self.ai_service = AIService()
-        self.model_wrapper = None
+        self.model_wrapper = SimpleMLXModel(real_mlx_service) # Use the global real_mlx_service
         self.state = AgentState(
             workspace_path=dependencies.workspace_path,
             session_id=dependencies.client_id
@@ -126,11 +126,11 @@ class L3CodingAgent:
         try:
             logger.info("Initializing L3 Coding Agent...")
             
-            # Initialize underlying AI service
+            # Initialize underlying AI service (for file ops, etc.)
             await self.ai_service.initialize()
             
-            # Create MLX model wrapper
-            self.model_wrapper = SimpleMLXModel(self.ai_service)
+            # Initialize real MLX service
+            await real_mlx_service.initialize()
             
             logger.info("L3 Coding Agent initialized successfully")
             return True
@@ -280,12 +280,7 @@ You have access to file analysis, file operations, and confidence assessment too
     async def run(self, user_input: str) -> Dict[str, Any]:
         """Main entry point for agent interaction"""
         try:
-            if not self.model_wrapper:
-                return {
-                    "status": "error",
-                    "message": "Agent not initialized",
-                    "confidence": 0.0
-                }
+            # model_wrapper is initialized in __init__ now
             
             # Record user input
             self.state.add_conversation_entry("user", user_input)
@@ -294,7 +289,15 @@ You have access to file analysis, file operations, and confidence assessment too
             response_content = await self._process_user_input(user_input)
             
             # Calculate overall confidence for this interaction
-            confidence = self._calculate_interaction_confidence(user_input, response_content)
+            # Use real_mlx_service's confidence calculation if available, otherwise fallback
+            if real_mlx_service.is_initialized:
+                confidence = real_mlx_service._calculate_confidence(
+                    context={"user_input": user_input},
+                    structured_response={"content": response_content},
+                    intent="suggest" # General intent for overall interaction
+                )
+            else:
+                confidence = self.ai_service._calculate_confidence_score(response_content, "ai_response")
             
             # Record agent response
             self.state.add_conversation_entry("assistant", response_content, confidence)
@@ -305,7 +308,7 @@ You have access to file analysis, file operations, and confidence assessment too
                 "message": response_content,
                 "confidence": confidence,
                 "recommendation": self._get_confidence_recommendation(confidence),
-                "model": "L3-Agent-MLX" if self.ai_service.mlx_available else "L3-Agent-Mock",
+                "model": real_mlx_service.model_name if real_mlx_service.is_initialized else "L3-Agent-Mock",
                 "session_state": {
                     "conversation_length": len(self.state.conversation_history),
                     "average_confidence": self.state.get_average_confidence(),
@@ -386,8 +389,17 @@ Provide a helpful, practical response focused on coding assistance.
     
     def _calculate_interaction_confidence(self, user_input: str, response: str) -> float:
         """Calculate confidence for this specific interaction"""
-        # Use existing confidence calculation from AI service
-        base_confidence = self.ai_service._calculate_confidence_score(response, "ai_response")
+        # This method will be replaced by direct call to real_mlx_service._calculate_confidence
+        # in the run method. Keeping it for now to avoid breaking other parts.
+        base_confidence = 0.5 # Default if MLX service is not initialized
+        if real_mlx_service.is_initialized:
+            base_confidence = real_mlx_service._calculate_confidence(
+                context={"user_input": user_input},
+                structured_response={"content": response},
+                intent="suggest"
+            )
+        else:
+            base_confidence = self.ai_service._calculate_confidence_score(response, "ai_response")
         
         # Adjust based on input complexity
         input_complexity_factors = {
@@ -490,10 +502,6 @@ Provide a helpful, practical response focused on coding assistance.
             "average_confidence": self.state.get_average_confidence(),
             "current_task": self.state.current_task,
             "project_context_keys": list(self.state.project_context.keys()),
-            "ai_service_status": {
-                "initialized": self.ai_service.is_initialized,
-                "mlx_available": self.ai_service.mlx_available,
-                "model_health": self.ai_service.model_health
-            },
+            "ai_service_status": real_mlx_service.get_model_health(),
             "confidence_thresholds": self.confidence_thresholds
         }
