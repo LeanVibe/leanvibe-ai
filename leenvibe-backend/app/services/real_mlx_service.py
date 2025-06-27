@@ -18,6 +18,7 @@ import mlx.nn as nn
 from .production_model_service import ModelConfig, ProductionModelService
 from .simple_model_service import SimpleModelService
 from .phi3_mini_service import Phi3MiniService
+from .pragmatic_mlx_service import pragmatic_mlx_service
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,14 @@ class RealMLXService:
         try:
             logger.info("Initializing Real MLX Service for L3 Agent integration...")
             
-            # Try production service first
+            # Try pragmatic service first (most reliable)
+            if await self._try_pragmatic_service():
+                self.inference_mode = "pragmatic"
+                self.is_initialized = True
+                logger.info("Real MLX Service initialized with pragmatic mode")
+                return True
+            
+            # Try production service
             if await self._try_production_service():
                 self.inference_mode = "production"
                 self.is_initialized = True
@@ -61,7 +69,7 @@ class RealMLXService:
                 logger.info("Real MLX Service initialized with Phi-3-Mini mode")
                 return True
             
-            # If production and phi3 fail, try simple service for basic MLX
+            # If all else fails, try simple service for basic MLX
             if await self._try_simple_service():
                 self.inference_mode = "simple"
                 self.is_initialized = True
@@ -107,6 +115,23 @@ class RealMLXService:
                 
         except Exception as e:
             logger.warning(f"Production service initialization failed: {e}")
+            return False
+    
+    async def _try_pragmatic_service(self) -> bool:
+        """Try to initialize pragmatic MLX service (most reliable)"""
+        try:
+            logger.info("Attempting to initialize Pragmatic MLX Service...")
+            success = await pragmatic_mlx_service.initialize()
+            
+            if success:
+                logger.info("Pragmatic MLX Service initialized successfully")
+                return True
+            else:
+                logger.warning("Pragmatic MLX Service failed to initialize")
+                return False
+                
+        except Exception as e:
+            logger.warning(f"Pragmatic MLX Service initialization failed: {e}")
             return False
     
     async def _try_phi3_service(self) -> bool:
@@ -187,7 +212,10 @@ class RealMLXService:
             )
             
             # Generate AI response using the appropriate service based on mode
-            if self.inference_mode == "production":
+            if self.inference_mode == "pragmatic":
+                # Use pragmatic service directly - it handles its own response format
+                return await pragmatic_mlx_service.generate_code_completion(context, intent)
+            elif self.inference_mode == "production":
                 ai_response = await self.production_service.generate_text(
                     prompt=prompt,
                     max_tokens=self.max_tokens,

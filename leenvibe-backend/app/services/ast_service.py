@@ -61,6 +61,14 @@ class ASTAnalysisService:
     async def parse_file(self, file_path: str) -> FileAnalysis:
         """Parse a single file and extract comprehensive analysis"""
         try:
+            # Skip files we shouldn't parse (pragmatic filter)
+            if self._should_skip_file(file_path):
+                return FileAnalysis(
+                    file_path=file_path,
+                    language=LanguageType.UNKNOWN,
+                    parsing_errors=[f"Skipped: {file_path}"],
+                )
+
             # Check cache first
             cache_key = self._get_cache_key(file_path)
             if cache_key in self.file_cache:
@@ -130,12 +138,41 @@ class ASTAnalysisService:
             return analysis
 
         except Exception as e:
-            logger.error(f"Error parsing file {file_path}: {e}")
+            # Only log errors for files we actually care about
+            if not self._should_skip_file(file_path):
+                logger.error(f"Error parsing file {file_path}: {e}")
             return FileAnalysis(
                 file_path=file_path,
                 language=LanguageType.UNKNOWN,
                 parsing_errors=[f"Analysis failed: {str(e)}"],
             )
+
+    def _should_skip_file(self, file_path: str) -> bool:
+        """Pragmatic filter to skip files we don't want to parse"""
+        path_str = file_path.lower()
+        
+        # Skip dependency directories
+        skip_patterns = [
+            '/site-packages/',
+            '/.venv/',
+            '/venv/',
+            '/env/',
+            '/node_modules/',
+            '/__pycache__/',
+            '/.git/',
+            '/build/',
+            '/dist/',
+            '.pyc',
+            '.pyo',
+            '.so',
+            '.dylib',
+        ]
+        
+        for pattern in skip_patterns:
+            if pattern in path_str:
+                return True
+                
+        return False
 
     def _extract_symbols_sync(
         self, tree, source_bytes: bytes, language: LanguageType, file_path: str
