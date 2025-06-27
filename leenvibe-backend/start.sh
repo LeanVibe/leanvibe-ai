@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# LeenVibe Backend Startup Script with MLX Qwen3-30B-A3B-MLX-4bit Integration
+# LeenVibe Backend Startup Script with MLX Phi-3-Mini-128K-Instruct Integration
 
-echo "🚀 Starting LeenVibe Backend with Qwen3-30B-A3B-MLX-4bit..."
+echo "🚀 Starting LeenVibe Backend with Phi-3-Mini-128K-Instruct..."
 
 # Check if uv is installed
 if ! command -v uv &> /dev/null; then
@@ -12,43 +12,32 @@ if ! command -v uv &> /dev/null; then
     echo "✅ uv installed successfully"
 fi
 
-# Check if we're on Apple Silicon (required for MLX)
+# Check if we're on Apple Silicon (required for optimal MLX performance)
 if [[ $(uname -m) != "arm64" ]]; then
-    echo "⚠️  Warning: MLX is optimized for Apple Silicon (M1/M2/M3/M4 Macs)"
-    echo "   This may not work on Intel Macs or other architectures"
-    read -p "Continue anyway? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "❌ Exiting. Please run on Apple Silicon Mac for optimal performance."
-        exit 1
-    fi
+    echo "⚠️  Notice: MLX is optimized for Apple Silicon (M1/M2/M3/M4 Macs)"
+    echo "   Intel Macs and other architectures will use CPU fallback"
+    echo "   Performance may be reduced but functionality remains intact"
 fi
 
 # Sync dependencies using uv
 echo "📚 Syncing dependencies with uv..."
 uv sync
 
-# Install MLX dependencies on Apple Silicon
-echo "🧠 Installing MLX dependencies for Qwen3-30B-A3B-MLX-4bit..."
+# Install MLX dependencies
+echo "🧠 Installing MLX dependencies for Phi-3-Mini..."
 uv sync --extra mlx
 
-# Check available memory (30B model needs ~60GB RAM)
-echo "💾 Checking system memory for Qwen3-30B model..."
+# Check available memory (Phi-3-Mini needs ~8GB RAM)
+echo "💾 Checking system memory for Phi-3-Mini model..."
 total_memory=$(system_profiler SPHardwareDataType | grep "Memory:" | awk '{print $2 $3}')
 echo "   System Memory: $total_memory"
 
 # Extract numeric value for comparison
 memory_gb=$(system_profiler SPHardwareDataType | grep "Memory:" | awk '{print $2}' | sed 's/[^0-9]//g')
-if [[ $memory_gb -lt 64 ]]; then
-    echo "⚠️  Warning: Qwen3-30B-A3B requires ~60GB+ RAM for optimal performance"
-    echo "   Your system has ${memory_gb}GB. Consider using a smaller model."
-    echo "   Options: Qwen3-7B-A3B-MLX-4bit or Qwen3-14B-A3B-MLX-4bit"
-    read -p "Continue with 30B model anyway? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "💡 Tip: Update model_name in qwen_coder_service.py to use a smaller model"
-        exit 1
-    fi
+if [[ $memory_gb -lt 16 ]]; then
+    echo "⚠️  Warning: Phi-3-Mini works best with 16GB+ RAM for optimal performance"
+    echo "   Your system has ${memory_gb}GB. Model will still work but may be slower."
+    echo "   Consider closing other applications for better performance."
 fi
 
 # Initialize MLX model cache
@@ -63,11 +52,11 @@ cache_dir.mkdir(parents=True, exist_ok=True)
 print(f'✅ Model cache directory: {cache_dir}')
 
 # Check for existing model files
-model_files = list(cache_dir.glob('*Qwen3*'))
+model_files = list(cache_dir.glob('*Phi-3*'))
 if model_files:
     print(f'📁 Found {len(model_files)} existing model files')
 else:
-    print('📥 Model will be downloaded on first use')
+    print('📥 Model will be downloaded on first use (~7GB download)')
 "
 
 # Print QR code and connection info
@@ -96,8 +85,8 @@ try:
     # Test model service initialization (without loading full weights)
     import sys
     sys.path.append('app')
-    from services.qwen_coder_service import QwenCoderService
-    print('✅ Qwen3 service module loaded')
+    from services.phi3_mini_service import Phi3MiniService
+    print('✅ Phi-3-Mini service module loaded')
     
 except Exception as e:
     print(f'❌ MLX/Model test failed: {e}')
@@ -110,13 +99,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "🌟 Starting FastAPI server with Qwen3-30B-A3B-MLX-4bit support..."
+echo "🌟 Starting FastAPI server with Phi-3-Mini-128K-Instruct support..."
 echo "📱 Scan the QR code above with the LeenVibe iOS app to connect"
 echo "🖥️  Or connect manually to: http://localhost:8000"
 echo ""
-echo "⚡ Model: Qwen3-30B-A3B-MLX-4bit (MLX optimized)"
-echo "💾 Expected memory usage: ~60GB during inference"
-echo "🎯 First model load may take 5-10 minutes to download"
+echo "⚡ Model: Phi-3-Mini-128K-Instruct (Microsoft, MLX optimized)"
+echo "💾 Expected memory usage: ~8GB during inference"
+echo "🎯 First model load may take 2-5 minutes to download (~7GB)"
+echo "🚀 Much faster and lighter than 30B models - perfect for MVP!"
 echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""

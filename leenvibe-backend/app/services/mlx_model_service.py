@@ -24,13 +24,13 @@ except ImportError:
     ProductionModelService = None
     ModelConfig = None
 
-# Import our Qwen2.5-Coder service for testing
+# Import our Phi-3-Mini service for testing
 try:
-    from .qwen_coder_service import QwenCoderService
-    QWEN_CODER_AVAILABLE = True
+    from .phi3_mini_service import Phi3MiniService
+    PHI3_MINI_AVAILABLE = True
 except ImportError:
-    QWEN_CODER_AVAILABLE = False
-    QwenCoderService = None
+    PHI3_MINI_AVAILABLE = False
+    Phi3MiniService = None
 
 # Import our simple model service for testing
 try:
@@ -49,12 +49,12 @@ class MLXModelService:
         self.model = None
         self.tokenizer = None
         self.is_initialized = False
-        self.model_name = "Qwen/Qwen3-30B-A3B-MLX-4bit"  # Production Qwen3 model
+        self.model_name = "microsoft/Phi-3-mini-128k-instruct"  # Production Phi-3-Mini model
         self.max_tokens = 512
         self.temperature = 0.7
         self.mlx_available = MLX_AVAILABLE
         self.production_service = None
-        self.qwen_coder_service = None
+        self.phi3_mini_service = None
         self.simple_model_service = None
         
         self.health_status = {
@@ -116,21 +116,21 @@ class MLXModelService:
                 else:
                     logger.warning("Production service failed, trying fallbacks...")
             
-            # Fallback to Qwen2.5-Coder service for testing
-            if QWEN_CODER_AVAILABLE:
-                logger.info("Initializing Qwen2.5-Coder service as fallback...")
-                self.qwen_coder_service = QwenCoderService("Qwen/Qwen2.5-Coder-7B-Instruct")
-                success = await self.qwen_coder_service.initialize()
+            # Fallback to Phi-3-Mini service for testing
+            if PHI3_MINI_AVAILABLE:
+                logger.info("Initializing Phi-3-Mini service as fallback...")
+                self.phi3_mini_service = Phi3MiniService("microsoft/Phi-3-mini-128k-instruct")
+                success = await self.phi3_mini_service.initialize()
                 
                 if success:
-                    logger.info("Qwen2.5-Coder service initialized successfully")
-                    self.health_status["status"] = "qwen_coder_fallback"
+                    logger.info("Phi-3-Mini service initialized successfully")
+                    self.health_status["status"] = "phi3_mini_fallback"
                     self.health_status["last_check"] = time.time()
                     self.health_status["model_loaded"] = True
                     self.is_initialized = True
                     return True
                 else:
-                    logger.warning("Qwen2.5-Coder service failed, trying simple model...")
+                    logger.warning("Phi-3-Mini service failed, trying simple model...")
             
             # Fallback to simple model for testing
             if SIMPLE_MODEL_AVAILABLE:
@@ -238,10 +238,10 @@ class MLXModelService:
                 logger.info(f"Production model generation completed in {generation_time:.2f}s")
                 return response
             
-            # Fallback to Qwen2.5-Coder if available
-            elif self.qwen_coder_service:
-                logger.info("Using Qwen2.5-Coder for generation")
-                response = await self.qwen_coder_service.generate_text(prompt, max_tokens)
+            # Fallback to Phi-3-Mini if available
+            elif self.phi3_mini_service:
+                logger.info("Using Phi-3-Mini for generation")
+                response = await self.phi3_mini_service.generate_text(prompt, max_tokens)
                 
                 # Update our health metrics
                 generation_time = time.time() - start_time
@@ -252,7 +252,7 @@ class MLXModelService:
                     except:
                         pass
                 
-                logger.info(f"Qwen2.5-Coder generation completed in {generation_time:.2f}s")
+                logger.info(f"Phi-3-Mini generation completed in {generation_time:.2f}s")
                 return response
             
             # Fallback to simple model if available
@@ -360,7 +360,7 @@ Try using specific commands like /help, /status, or ask about code-related topic
         status["is_initialized"] = self.is_initialized
         status["model_name"] = self.model_name
         status["production_service_active"] = self.production_service is not None
-        status["qwen_coder_active"] = self.qwen_coder_service is not None
+        status["phi3_mini_active"] = self.phi3_mini_service is not None
         status["simple_model_active"] = self.simple_model_service is not None
         
         # Get production service status if available
@@ -368,10 +368,10 @@ Try using specific commands like /help, /status, or ask about code-related topic
             production_status = self.production_service.get_health_status()
             status["production_service_status"] = production_status
         
-        # Get Qwen2.5-Coder status if available
-        if self.qwen_coder_service:
-            qwen_status = self.qwen_coder_service.get_health_status()
-            status["qwen_coder_status"] = qwen_status
+        # Get Phi-3-Mini status if available
+        if self.phi3_mini_service:
+            phi3_status = self.phi3_mini_service.get_health_status()
+            status["phi3_mini_status"] = phi3_status
         
         # Get simple model status if available
         if self.simple_model_service:
@@ -389,10 +389,10 @@ Try using specific commands like /help, /status, or ask about code-related topic
             await self.production_service.cleanup()
             self.production_service = None
         
-        # Cleanup Qwen2.5-Coder service if active
-        if self.qwen_coder_service:
-            await self.qwen_coder_service.cleanup()
-            self.qwen_coder_service = None
+        # Cleanup Phi-3-Mini service if active
+        if self.phi3_mini_service:
+            await self.phi3_mini_service.cleanup()
+            self.phi3_mini_service = None
         
         # Cleanup simple model service if active
         if self.simple_model_service:

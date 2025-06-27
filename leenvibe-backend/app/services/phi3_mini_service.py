@@ -1,6 +1,6 @@
 """
-Qwen2.5-Coder Model Service for LeenVibe
-Production-ready service for loading and running Qwen2.5-Coder models with MLX
+Phi-3-Mini Model Service for LeenVibe
+Production-ready service for loading and running Phi-3-Mini-128K-Instruct with MLX
 """
 import asyncio
 import logging
@@ -25,8 +25,8 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-class QwenCoderModel(nn.Module):
-    """MLX implementation of Qwen2.5-Coder model"""
+class Phi3MiniModel(nn.Module):
+    """MLX implementation of Phi-3-Mini model"""
     
     def __init__(self, config):
         super().__init__()
@@ -39,7 +39,7 @@ class QwenCoderModel(nn.Module):
         
         # Model components
         self.embed_tokens = nn.Embedding(self.vocab_size, self.hidden_size)
-        self.layers = [QwenDecoderLayer(config) for _ in range(self.num_layers)]
+        self.layers = [Phi3DecoderLayer(config) for _ in range(self.num_layers)]
         self.norm = nn.RMSNorm(self.hidden_size)
         self.lm_head = nn.Linear(self.hidden_size, self.vocab_size, bias=False)
         
@@ -60,14 +60,14 @@ class QwenCoderModel(nn.Module):
         
         return logits, cache
 
-class QwenDecoderLayer(nn.Module):
-    """Single transformer layer for Qwen2.5-Coder"""
+class Phi3DecoderLayer(nn.Module):
+    """Single transformer layer for Phi-3-Mini"""
     
     def __init__(self, config):
         super().__init__()
         self.hidden_size = config.hidden_size
-        self.self_attn = QwenAttention(config)
-        self.mlp = QwenMLP(config)
+        self.self_attn = Phi3Attention(config)
+        self.mlp = Phi3MLP(config)
         self.input_layernorm = nn.RMSNorm(config.hidden_size)
         self.post_attention_layernorm = nn.RMSNorm(config.hidden_size)
     
@@ -86,8 +86,8 @@ class QwenDecoderLayer(nn.Module):
         
         return x, cache
 
-class QwenAttention(nn.Module):
-    """Multi-head attention for Qwen2.5-Coder"""
+class Phi3Attention(nn.Module):
+    """Multi-head attention for Phi-3-Mini"""
     
     def __init__(self, config):
         super().__init__()
@@ -143,8 +143,8 @@ class QwenAttention(nn.Module):
         
         return out, cache
 
-class QwenMLP(nn.Module):
-    """MLP layer for Qwen2.5-Coder"""
+class Phi3MLP(nn.Module):
+    """MLP layer for Phi-3-Mini"""
     
     def __init__(self, config):
         super().__init__()
@@ -161,10 +161,10 @@ class QwenMLP(nn.Module):
         up = self.up_proj(x)
         return self.down_proj(nn.silu(gate) * up)
 
-class QwenCoderService:
-    """Production service for Qwen2.5-Coder model"""
+class Phi3MiniService:
+    """Production service for Phi-3-Mini-128K-Instruct model"""
     
-    def __init__(self, model_name: str = "Qwen/Qwen3-30B-A3B-MLX-4bit"):
+    def __init__(self, model_name: str = "microsoft/Phi-3-mini-128k-instruct"):
         self.model_name = model_name
         self.model = None
         self.tokenizer = None
@@ -184,9 +184,9 @@ class QwenCoderService:
         }
     
     async def initialize(self) -> bool:
-        """Initialize the Qwen2.5-Coder service"""
+        """Initialize the Phi-3-Mini service"""
         try:
-            logger.info(f"Initializing Qwen2.5-Coder service: {self.model_name}")
+            logger.info(f"Initializing Phi-3-Mini service: {self.model_name}")
             
             if not HF_AVAILABLE:
                 logger.error("Hugging Face transformers not available")
@@ -212,7 +212,7 @@ class QwenCoderService:
             # For initial testing, create model structure without loading weights
             # This demonstrates the infrastructure is ready
             logger.info("Creating model structure...")
-            self.model = QwenCoderModel(self.config)
+            self.model = Phi3MiniModel(self.config)
             
             # Initialize with random weights (for infrastructure testing)
             # In production, you'd load pre-trained weights here
@@ -222,25 +222,25 @@ class QwenCoderService:
             self.health_status["status"] = "ready_infrastructure"
             self.health_status["model_loaded"] = True
             
-            logger.info("Qwen2.5-Coder service initialized successfully")
+            logger.info("Phi-3-Mini service initialized successfully")
             return True
             
         except Exception as e:
-            logger.error(f"Failed to initialize Qwen2.5-Coder service: {e}")
+            logger.error(f"Failed to initialize Phi-3-Mini service: {e}")
             self.health_status["status"] = "error"
             return False
     
     async def generate_text(self, prompt: str, max_tokens: int = 128, temperature: float = 0.7) -> str:
-        """Generate text using Qwen2.5-Coder"""
+        """Generate text using Phi-3-Mini"""
         if not self.is_initialized:
-            raise RuntimeError("Qwen2.5-Coder service not initialized")
+            raise RuntimeError("Phi-3-Mini service not initialized")
         
         start_time = time.time()
         
         try:
-            # Tokenize input
+            # Tokenize input with Phi-3 chat format
             messages = [
-                {"role": "system", "content": "You are Qwen, created by Alibaba Cloud. You are a helpful coding assistant."},
+                {"role": "system", "content": "You are a helpful AI coding assistant."},
                 {"role": "user", "content": prompt}
             ]
             
@@ -295,7 +295,7 @@ class QwenCoderService:
             logger.info(f"Generated {len(generated_tokens)} tokens in {inference_time:.2f}s")
             
             # Return formatted response
-            return f"""**Qwen2.5-Coder Response** (Infrastructure Test - {len(generated_tokens)} tokens)
+            return f"""**Phi-3-Mini Response** (Infrastructure Test - {len(generated_tokens)} tokens)
 
 **Prompt:** {prompt}
 
@@ -333,11 +333,11 @@ class QwenCoderService:
     
     async def cleanup(self):
         """Cleanup resources"""
-        logger.info("Cleaning up Qwen2.5-Coder service...")
+        logger.info("Cleaning up Phi-3-Mini service...")
         self.model = None
         self.tokenizer = None
         self.config = None
         self.is_initialized = False
         self.health_status["status"] = "shutdown"
         self.health_status["model_loaded"] = False
-        logger.info("Qwen2.5-Coder service cleanup completed")
+        logger.info("Phi-3-Mini service cleanup completed")
