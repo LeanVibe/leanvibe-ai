@@ -19,6 +19,8 @@ import aiofiles
 
 from ..models.ast_models import ProjectIndex, LanguageType
 from ..models.monitoring_models import FileChange, ChangeType
+from ..models.cache_models import CacheEntry, CacheMetadata, CacheStatus, CachePriority
+from .cache_persistence_service import cache_persistence_service, CacheFormat
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +134,11 @@ class SmartCacheWarmingService:
         # Background tasks
         self.warming_background_task: Optional[asyncio.Task] = None
         self.stats_cleanup_task: Optional[asyncio.Task] = None
+        
+        # Cache persistence
+        self.persistence_enabled = True
+        self.auto_persistence_interval_minutes = 15
+        self.last_persistence_save = datetime.now()
         
     async def initialize(self):
         """Initialize the cache warming service"""
@@ -703,6 +710,189 @@ class SmartCacheWarmingService:
         except Exception as e:
             logger.error(f"Error setting warming strategy: {e}")
             return False
+    
+    async def save_cache_with_persistence(self, cache_data: Dict[str, Any], cache_key: str = "warming_cache") -> bool:
+        """Save cache data using persistence service"""
+        try:
+            if not self.persistence_enabled:
+                return True
+            
+            # Create cache metadata
+            metadata = {
+                cache_key: CacheMetadata(
+                    key=cache_key,
+                    created_at=datetime.now(),
+                    last_accessed=datetime.now(),
+                    status=CacheStatus.VALID,
+                    priority=CachePriority.HIGH,
+                    tags=["cache_warming", "project_stats"],
+                    version="1.0"
+                )
+            }
+            
+            # Save using persistence service
+            success = await cache_persistence_service.save_cache(
+                {cache_key: cache_data}, 
+                metadata,
+                CacheFormat.COMPRESSED_PICKLE
+            )
+            
+            if success:
+                self.last_persistence_save = datetime.now()
+                logger.debug(f"Cache data saved for key: {cache_key}")
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Error saving cache with persistence: {e}")
+            return False
+    
+    async def load_cache_with_persistence(self, cache_key: str = "warming_cache") -> Optional[Dict[str, Any]]:
+        """Load cache data using persistence service"""
+        try:
+            if not self.persistence_enabled:
+                return None
+            
+            # Load using persistence service
+            cache_data, metadata = await cache_persistence_service.load_cache(CacheFormat.COMPRESSED_PICKLE)
+            
+            if cache_data and cache_key in cache_data:
+                logger.debug(f"Cache data loaded for key: {cache_key}")
+                return cache_data[cache_key]
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error loading cache with persistence: {e}")
+            return None
+    
+    async def create_persistence_checkpoint(self) -> bool:
+        """Create a persistence checkpoint for current cache state"""
+        try:
+            if not self.persistence_enabled:
+                return True
+            
+            # Prepare current state for persistence
+            cache_data = {
+                "project_stats": {
+                    path: asdict(stats) for path, stats in self.project_stats.items()
+                },
+                "metrics": self.metrics.copy(),
+                "current_strategy": self.current_strategy,
+                "warming_queue": [asdict(task) for task in self.warming_queue],
+                "completed_tasks": [asdict(task) for task in self.completed_tasks[-50:]]  # Last 50 tasks
+            }
+            
+            # Save with checkpoint
+            success = await self.save_cache_with_persistence(cache_data, "warming_state")
+            
+            if success:
+                # Create checkpoint
+                checkpoint = await cache_persistence_service.create_checkpoint(force=True)
+                if checkpoint:
+                    logger.info(f"Created persistence checkpoint: {checkpoint.checkpoint_id}")
+                    return True
+            
+            return success
+            
+        except Exception as e:
+            logger.error(f"Error creating persistence checkpoint: {e}")
+            return False
+    
+    async def recover_from_persistence(self) -> bool:
+        """Recover cache warming state from persistence"""
+        try:
+            if not self.persistence_enabled:
+                return True
+            
+            logger.info("Attempting to recover cache warming state from persistence")
+            
+            # Try to load saved state
+            cache_data = await self.load_cache_with_persistence("warming_state")
+            
+            if cache_data:
+                # Restore project stats
+                if "project_stats" in cache_data:
+                    for path, stats_dict in cache_data["project_stats"].items():
+                        # Convert dict back to ProjectUsageStats
+                        stats_dict["first_access"] = datetime.fromisoformat(stats_dict["first_access"])
+                        stats_dict["last_access"] = datetime.fromisoformat(stats_dict["last_access"])
+                        if stats_dict.get("last_warmed"):
+                            stats_dict["last_warmed"] = datetime.fromisoformat(stats_dict["last_warmed"])
+                        
+                        self.project_stats[path] = ProjectUsageStats(**stats_dict)
+                
+                # Restore metrics
+                if "metrics" in cache_data:
+                    self.metrics.update(cache_data["metrics"])
+                
+                # Restore strategy
+                if "current_strategy" in cache_data:
+                    self.current_strategy = cache_data["current_strategy"]
+                
+                # Restore completed tasks (for metrics)
+                if "completed_tasks" in cache_data:
+                    for task_dict in cache_data["completed_tasks"]:
+                        task_dict["created_at"] = datetime.fromisoformat(task_dict["created_at"])
+                        if task_dict.get("completed_at"):
+                            task_dict["completed_at"] = datetime.fromisoformat(task_dict["completed_at"])
+                        self.completed_tasks.append(WarmingTask(**task_dict))
+                
+                logger.info(f"Recovered cache warming state: {len(self.project_stats)} projects, strategy: {self.current_strategy}")
+                return True
+            
+            else:
+                # Try recovery from checkpoints
+                recovery_result = await cache_persistence_service.recover_cache()
+                if recovery_result.success:
+                    logger.info(f"Recovered from checkpoint: {recovery_result.recovered_entries} entries")
+                    return await self.recover_from_persistence()  # Try loading again
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error recovering from persistence: {e}")
+            return False
+    
+    async def auto_persist_if_needed(self) -> bool:
+        """Automatically persist cache if enough time has passed"""
+        try:
+            if not self.persistence_enabled:
+                return True
+            
+            current_time = datetime.now()
+            time_since_save = (current_time - self.last_persistence_save).total_seconds() / 60
+            
+            if time_since_save >= self.auto_persistence_interval_minutes:
+                logger.debug("Auto-persisting cache warming state")
+                return await self.create_persistence_checkpoint()
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error in auto-persist: {e}")
+            return False
+    
+    def get_persistence_metrics(self) -> Dict[str, Any]:
+        """Get cache persistence metrics"""
+        try:
+            base_metrics = cache_persistence_service.get_metrics()
+            
+            # Add cache warming specific metrics
+            warming_metrics = {
+                "persistence_enabled": self.persistence_enabled,
+                "last_persistence_save": self.last_persistence_save.isoformat() if self.last_persistence_save else None,
+                "auto_persistence_interval_minutes": self.auto_persistence_interval_minutes,
+                "warming_project_count": len(self.project_stats),
+                "warming_queue_size": len(self.warming_queue),
+                "completed_task_count": len(self.completed_tasks)
+            }
+            
+            return {**base_metrics, **warming_metrics}
+            
+        except Exception as e:
+            logger.error(f"Error getting persistence metrics: {e}")
+            return {"error": str(e)}
 
 
 # Global instance
