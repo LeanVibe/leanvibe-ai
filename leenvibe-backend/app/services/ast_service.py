@@ -474,8 +474,8 @@ class ASTAnalysisService:
         dependencies = []
 
         try:
-            # Extract imports using tree-sitter manager
-            imports = tree_sitter_manager.async_extract_imports(
+            # Extract imports using tree-sitter manager (synchronous version)
+            imports = tree_sitter_manager.extract_imports(
                 tree, source_bytes, language
             )
 
