@@ -6,6 +6,8 @@ import json
 from .services.ai_service import AIService
 from .core.connection_manager import ConnectionManager
 from .agent.session_manager import SessionManager
+from .services.task_service import task_service
+from .api.endpoints.tasks import router as tasks_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,12 +30,16 @@ ai_service = AIService()
 connection_manager = ConnectionManager()
 session_manager = SessionManager()
 
+# Include API routers
+app.include_router(tasks_router)
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
     logger.info("Starting LeenVibe backend with L3 Agent...")
     await ai_service.initialize()
     await session_manager.start()
+    await task_service.initialize()
 
 @app.on_event("shutdown")
 async def shutdown_event():
