@@ -1,0 +1,128 @@
+# LeenVibe CLI Default Configuration
+# This file contains all available configuration options with their default values
+
+version: "1.0"
+active_profile: "default"
+
+profiles:
+  default:
+    # Connection settings
+    backend_url: "http://localhost:8000"
+    api_timeout: 30
+    websocket_timeout: 300
+    
+    # Notification settings
+    notifications:
+      # Global toggles
+      enabled: true
+      desktop_enabled: true
+      terminal_enabled: true
+      sound_enabled: false
+      
+      # Priority filtering
+      minimum_priority: "medium"  # debug, low, medium, high, critical
+      
+      # Rate limiting
+      throttle_seconds: 30
+      max_per_minute: 10
+      
+      # Event type filtering
+      enabled_events:
+        - code_quality_issue
+        - architectural_violation
+        - security_vulnerability
+        - performance_regression
+        - test_failure
+        - build_failure
+        - file_change
+        - session_update
+      
+      disabled_events:
+        - heartbeat
+        - debug_trace
+        - connection_status
+      
+      # Desktop notification settings
+      desktop:
+        timeout_seconds: 5
+        critical_sound: true
+        high_sound: false
+        position: "top-right"  # top-left, top-right, bottom-left, bottom-right
+        
+      # Terminal notification settings
+      terminal:
+        max_overlay_items: 5
+        overlay_duration: 3
+        show_timestamp: true
+        show_source: true
+        
+    # File filtering
+    file_filters:
+      exclude_patterns:
+        - "*.pyc"
+        - "__pycache__/*"
+        - ".git/*"
+        - "node_modules/*"
+        - ".venv/*"
+        - "venv/*"
+        - "*.log"
+        - ".DS_Store"
+        - "*.swp"
+        - "*.swo"
+        - ".idea/*"
+        - ".vscode/*"
+      
+      include_only_patterns: []  # If set, only these patterns are monitored
+      
+    # Display settings
+    display:
+      theme: "dark"  # dark, light, auto
+      verbose: false
+      show_progress: true
+      timestamp_format: "relative"  # relative, absolute, iso
+      color_output: true
+      
+    # Performance settings
+    performance:
+      cache_enabled: true
+      cache_ttl_seconds: 300
+      parallel_connections: 5
+      batch_size: 100
+      
+  # Production profile - optimized for production use
+  production:
+    backend_url: "https://api.leenvibe.com"
+    api_timeout: 60
+    notifications:
+      minimum_priority: "high"
+      desktop_enabled: true
+      sound_enabled: true
+      throttle_seconds: 60
+      max_per_minute: 5
+    performance:
+      cache_enabled: true
+      cache_ttl_seconds: 600
+      
+  # Quiet profile - minimal notifications
+  quiet:
+    notifications:
+      enabled: false
+      desktop_enabled: false
+      terminal_enabled: false
+      sound_enabled: false
+    display:
+      verbose: false
+      show_progress: false
+      
+  # Development profile - verbose output for debugging
+  development:
+    notifications:
+      minimum_priority: "debug"
+      throttle_seconds: 5
+      max_per_minute: 100
+    display:
+      verbose: true
+      show_progress: true
+      timestamp_format: "iso"
+    performance:
+      cache_enabled: false  # Disable cache for fresh data

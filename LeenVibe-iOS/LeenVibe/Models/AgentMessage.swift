@@ -1,13 +1,13 @@
 import Foundation
 
-struct AgentMessage: Identifiable, Codable {
-    let id = UUID()
+struct AgentMessage: Identifiable, Codable, Sendable {
+    var id = UUID()
     let content: String
     let isFromUser: Bool
     let timestamp: Date
     let type: MessageType
     
-    enum MessageType: String, Codable {
+    enum MessageType: String, Codable, Sendable {
         case message = "message"
         case command = "command"
         case response = "response"
@@ -23,7 +23,7 @@ struct AgentMessage: Identifiable, Codable {
     }
 }
 
-struct WebSocketMessage: Codable {
+struct WebSocketMessage: Codable, Sendable {
     let type: String
     let content: String
     let timestamp: String
@@ -33,23 +33,46 @@ struct WebSocketMessage: Codable {
         case type, content, timestamp
         case clientId = "client_id"
     }
+    
+    init(type: String, content: String, timestamp: String, clientId: String? = nil) {
+        self.type = type
+        self.content = content
+        self.timestamp = timestamp
+        self.clientId = clientId
+    }
 }
 
-struct AgentResponse: Codable {
+struct AgentResponse: Codable, Sendable {
     let status: String
     let type: String?
     let message: String
     let data: ResponseData?
     let processingTime: Double?
     let timestamp: Double?
+    let confidence: Double?
+    let model: String?
+    let warning: String?
+    let health: ModelHealth?
     
     enum CodingKeys: String, CodingKey {
-        case status, type, message, data, timestamp
+        case status, type, message, data, timestamp, confidence, model, warning, health
         case processingTime = "processing_time"
     }
 }
 
-struct ResponseData: Codable {
+struct ModelHealth: Codable, Sendable {
+    let status: String
+    let lastCheck: Double?
+    let memoryUsage: Double?
+    
+    enum CodingKeys: String, CodingKey {
+        case status
+        case lastCheck = "last_check"
+        case memoryUsage = "memory_usage"
+    }
+}
+
+struct ResponseData: Codable, Sendable {
     let files: [FileInfo]?
     let directories: [FileInfo]?
     let path: String?
@@ -63,8 +86,8 @@ struct ResponseData: Codable {
     }
 }
 
-struct FileInfo: Codable, Identifiable {
-    let id = UUID()
+struct FileInfo: Codable, Identifiable, Sendable {
+    var id = UUID()
     let name: String
     let size: Int?
     let type: String
@@ -74,7 +97,7 @@ struct FileInfo: Codable, Identifiable {
     }
 }
 
-struct AgentStatusInfo: Codable {
+struct AgentStatusInfo: Codable, Sendable {
     let model: String
     let ready: Bool
     let version: String

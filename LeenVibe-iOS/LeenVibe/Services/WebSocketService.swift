@@ -1,63 +1,68 @@
 import Foundation
-import Network
+import Starscream
+
+struct ServerConfig {
+    let host: String
+    let port: Int
+    let websocketPath: String
+    let serverName: String?
+    let network: String?
+}
 
 @MainActor
-class WebSocketService: ObservableObject {
+class WebSocketService: ObservableObject, WebSocketDelegate {
     @Published var isConnected = false
     @Published var messages: [AgentMessage] = []
     @Published var connectionStatus = "Disconnected"
     @Published var lastError: String?
     
-    private var webSocketTask: URLSessionWebSocketTask?
-    private var urlSession: URLSession?
-    private let serverURL = "ws://localhost:8000/ws/ios-client"
+    private var socket: WebSocket?
     private let clientId = "ios-client-\(UUID().uuidString.prefix(8))"
+    private let storageManager = ConnectionStorageManager()
+    private var qrConnectionCompletion: ((Bool, String?) -> Void)?
     
     init() {
-        setupURLSession()
+        // Try to auto-connect with stored settings on init
+        autoConnectIfAvailable()
     }
     
-    private func setupURLSession() {
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 60
-        urlSession = URLSession(configuration: config)
-    }
+    // MARK: - Connection Management
     
-    func connect() {
-        guard let url = URL(string: serverURL) else {
-            connectionStatus = "Invalid URL"
+    private func autoConnectIfAvailable() {
+        guard let storedConnection = storageManager.currentConnection else {
+            connectionStatus = "No saved connection - Scan QR to connect"
             return
         }
         
+        connectionStatus = "Connecting to \(storedConnection.displayName)..."
+        connectWithSettings(storedConnection)
+    }
+    
+    private func connectWithSettings(_ settings: ConnectionSettings) {
+        let url = "\(settings.websocketURL)/\(clientId)"
+        setupWebSocketWithURL(url)
+        connect()
+    }
+    
+    private func setupWebSocket() {
+        // This method is deprecated - use setupWebSocketWithURL instead
+        connectionStatus = "No connection configured"
+    }
+    
+    func connect() {
         connectionStatus = "Connecting..."
-        
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 10
-        
-        webSocketTask = urlSession?.webSocketTask(with: request)
-        webSocketTask?.resume()
-        
-        isConnected = true
-        connectionStatus = "Connected"
-        
-        // Start listening for messages
-        receiveMessage()
-        
-        // Send initial status request
-        sendCommand("/status", type: "command")
+        socket?.connect()
     }
     
     func disconnect() {
-        webSocketTask?.cancel(with: .goingAway, reason: nil)
-        webSocketTask = nil
+        socket?.disconnect()
         isConnected = false
         connectionStatus = "Disconnected"
         lastError = nil
     }
     
     func sendMessage(_ content: String, type: String = "message") {
-        guard isConnected, let webSocketTask = webSocketTask else {
+        guard isConnected, let socket = socket else {
             lastError = "Not connected"
             return
         }
@@ -73,14 +78,7 @@ class WebSocketService: ObservableObject {
             let data = try JSONEncoder().encode(message)
             let string = String(data: data, encoding: .utf8) ?? ""
             
-            webSocketTask.send(.string(string)) { [weak self] error in
-                DispatchQueue.main.async {
-                    if let error = error {
-                        self?.lastError = "Send error: \(error.localizedDescription)"
-                        self?.disconnect()
-                    }
-                }
-            }
+            socket.write(string: string)
             
             // Add user message to UI
             let userMessage = AgentMessage(
@@ -99,33 +97,172 @@ class WebSocketService: ObservableObject {
         sendMessage(command, type: type)
     }
     
-    private func receiveMessage() {
-        webSocketTask?.receive { [weak self] result in
-            switch result {
-            case .success(let message):
-                switch message {
-                case .string(let text):
-                    DispatchQueue.main.async {
-                        self?.handleReceivedMessage(text)
-                    }
-                case .data(let data):
-                    if let text = String(data: data, encoding: .utf8) {
-                        DispatchQueue.main.async {
-                            self?.handleReceivedMessage(text)
-                        }
-                    }
-                @unknown default:
-                    break
+    func clearMessages() {
+        messages.removeAll()
+    }
+    
+    // MARK: - Connection Management
+    
+    var connectionStorage: ConnectionStorageManager {
+        return storageManager
+    }
+    
+    func connectToSavedConnection() {
+        autoConnectIfAvailable()
+    }
+    
+    func hasStoredConnection() -> Bool {
+        return storageManager.hasValidConnection()
+    }
+    
+    func getCurrentConnectionInfo() -> ConnectionSettings? {
+        return storageManager.currentConnection
+    }
+    
+    // MARK: - QR Code Connection
+    
+    func connectWithQRCode(_ qrData: String, completion: @escaping (Bool, String?) -> Void) {
+        guard let config = parseQRConfig(qrData) else {
+            completion(false, "Invalid QR code format")
+            return
+        }
+        
+        // Create connection settings from QR config
+        let connectionSettings = ConnectionSettings(from: config)
+        
+        // Save the connection settings for future use
+        storageManager.saveConnection(connectionSettings)
+        
+        // Disconnect if already connected
+        if isConnected {
+            disconnect()
+        }
+        
+        // Update status and connect
+        connectionStatus = "Connecting to \(connectionSettings.displayName)..."
+        
+        // Store completion for later
+        qrConnectionCompletion = completion
+        
+        // Connect using the new settings
+        connectWithSettings(connectionSettings)
+    }
+    
+    private func parseQRConfig(_ qrData: String) -> ServerConfig? {
+        do {
+            let data = qrData.data(using: .utf8) ?? Data()
+            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            
+            guard let leenvibe = json?["leenvibe"] as? [String: Any],
+                  let server = leenvibe["server"] as? [String: Any],
+                  let host = server["host"] as? String,
+                  let port = server["port"] as? Int,
+                  let websocketPath = server["websocket_path"] as? String else {
+                return nil
+            }
+            
+            let metadata = leenvibe["metadata"] as? [String: Any]
+            let serverName = metadata?["server_name"] as? String
+            let network = metadata?["network"] as? String
+            
+            return ServerConfig(
+                host: host,
+                port: port,
+                websocketPath: websocketPath,
+                serverName: serverName,
+                network: network
+            )
+        } catch {
+            print("Error parsing QR config: \(error)")
+            return nil
+        }
+    }
+    
+    private func setupWebSocketWithURL(_ url: String) {
+        guard let wsURL = URL(string: url) else {
+            connectionStatus = "Invalid URL"
+            return
+        }
+        
+        var request = URLRequest(url: wsURL)
+        request.timeoutInterval = 10
+        
+        socket = WebSocket(request: request)
+        socket?.delegate = self
+    }
+    
+    // MARK: - WebSocketDelegate
+    
+    nonisolated func didReceive(event: WebSocketEvent, client: WebSocketClient) {
+        Task { @MainActor in
+            switch event {
+            case .connected:
+                self.isConnected = true
+                self.connectionStatus = "Connected"
+                self.lastError = nil
+                
+                // Handle QR code connection completion
+                if let completion = self.qrConnectionCompletion {
+                    completion(true, nil)
+                    self.qrConnectionCompletion = nil
                 }
                 
-                // Continue listening
-                self?.receiveMessage()
+                // Send initial status request
+                self.sendCommand("/status", type: "command")
                 
-            case .failure(let error):
-                DispatchQueue.main.async {
-                    self?.lastError = "Receive error: \(error.localizedDescription)"
-                    self?.disconnect()
+            case .disconnected(let reason, _):
+                self.isConnected = false
+                self.connectionStatus = "Disconnected"
+                
+                // Handle QR code connection failure
+                if let completion = self.qrConnectionCompletion {
+                    completion(false, "Connection failed: \(reason)")
+                    self.qrConnectionCompletion = nil
                 }
+                
+            case .text(let string):
+                self.handleReceivedMessage(string)
+                
+            case .binary(let data):
+                if let text = String(data: data, encoding: .utf8) {
+                    self.handleReceivedMessage(text)
+                }
+                
+            case .error(let error):
+                let errorMessage = error?.localizedDescription ?? "Unknown WebSocket error"
+                self.lastError = errorMessage
+                self.isConnected = false
+                self.connectionStatus = "Error"
+                
+                // Handle QR code connection error
+                if let completion = self.qrConnectionCompletion {
+                    completion(false, errorMessage)
+                    self.qrConnectionCompletion = nil
+                }
+                
+            case .ping(_), .pong(_):
+                // Handle ping/pong for connection keep-alive
+                break
+                
+            case .viabilityChanged(let isViable):
+                if !isViable {
+                    self.connectionStatus = "Connection not viable"
+                }
+                
+            case .reconnectSuggested(let shouldReconnect):
+                if shouldReconnect && !self.isConnected {
+                    self.connectionStatus = "Reconnecting..."
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        self.connect()
+                    }
+                }
+                
+            case .cancelled:
+                self.isConnected = false
+                self.connectionStatus = "Cancelled"
+                
+            default:
+                break
             }
         }
     }
@@ -172,6 +309,23 @@ class WebSocketService: ObservableObject {
             output += "\n\n⏱️ Processed in \(String(format: "%.3f", processingTime))s"
         }
         
+        // Add confidence score if available
+        if let confidence = response.confidence {
+            let confidencePercent = Int(confidence * 100)
+            let confidenceEmoji = confidence >= 0.8 ? "🟢" : confidence >= 0.5 ? "🟡" : "🔴"
+            output += "\n\n\(confidenceEmoji) Confidence: \(confidencePercent)%"
+            
+            // Add warning for low confidence
+            if confidence < 0.5 {
+                output += "\n⚠️ Low confidence - consider manual review"
+            }
+        }
+        
+        // Add model information if available
+        if let model = response.model {
+            output += "\n\n🤖 Model: \(model)"
+        }
+        
         // Format specific response types
         if let data = response.data {
             if let files = data.files, let directories = data.directories {
@@ -214,8 +368,5 @@ class WebSocketService: ObservableObject {
         formatter.countStyle = .file
         return "(\(formatter.string(fromByteCount: Int64(bytes))))"
     }
-    
-    func clearMessages() {
-        messages.removeAll()
-    }
 }
+
