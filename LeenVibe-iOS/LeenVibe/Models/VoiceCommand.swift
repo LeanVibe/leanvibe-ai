@@ -249,26 +249,11 @@ class VoiceCommandProcessor {
             }
             return "show me the tasks"
         case .project:
-            if text.contains("analyze") || text.contains("analyse") {
-                return "analyze project"
-            } else if text.contains("refresh") || text.contains("update") {
-                return "refresh dashboard"
-            } else if text.contains("switch") || text.contains("change") {
+            if text.contains("switch") || text.contains("change") {
                 return "switch project"
-            } else if text.contains("status") || text.contains("health") {
-                return "show project status"
             }
             return "show project info"
-        case .navigation:
-            if text.contains("dashboard") || text.contains("home") {
-                return "go to dashboard"
-            } else if text.contains("monitoring") || text.contains("monitor") {
-                return "go to monitoring"
-            } else if text.contains("settings") {
-                return "go to settings"
-            }
-            return text
-        case .general:
+        case .navigation, .general:
             return text
         }
     }

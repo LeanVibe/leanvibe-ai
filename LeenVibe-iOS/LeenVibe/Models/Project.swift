@@ -12,24 +12,7 @@ struct Project: Identifiable, Codable, Equatable {
     let metrics: ProjectMetrics
     let clientId: String?
     
-    var displayName: String {
-        return name.isEmpty ? URL(fileURLWithPath: path).lastPathComponent : name
-    }
-    
-    var isActive: Bool {
-        return status == .active && clientId != nil
-    }
-    
-    init(
-        id: String = UUID().uuidString,
-        name: String,
-        path: String,
-        language: ProjectLanguage = .unknown,
-        status: ProjectStatus = .inactive,
-        lastActivity: Date = Date(),
-        metrics: ProjectMetrics = ProjectMetrics(),
-        clientId: String? = nil
-    ) {
+    init(id: String = UUID().uuidString, name: String, path: String, language: ProjectLanguage, status: ProjectStatus = .active, lastActivity: Date = Date(), metrics: ProjectMetrics = ProjectMetrics(), clientId: String? = nil) {
         self.id = id
         self.name = name
         self.path = path
@@ -41,43 +24,27 @@ struct Project: Identifiable, Codable, Equatable {
     }
 }
 
-enum ProjectLanguage: String, Codable, CaseIterable {
-    case swift = "swift"
-    case python = "python"
-    case javascript = "javascript"
-    case typescript = "typescript"
-    case rust = "rust"
-    case go = "go"
-    case java = "java"
-    case csharp = "csharp"
-    case cpp = "cpp"
-    case unknown = "unknown"
+enum ProjectLanguage: String, CaseIterable, Codable {
+    case swift = "Swift"
+    case python = "Python"
+    case javascript = "JavaScript"
+    case typescript = "TypeScript"
+    case kotlin = "Kotlin"
+    case java = "Java"
+    case csharp = "C#"
+    case go = "Go"
+    case rust = "Rust"
+    case unknown = "Unknown"
     
-    var displayName: String {
-        switch self {
-        case .swift: return "Swift"
-        case .python: return "Python"
-        case .javascript: return "JavaScript"
-        case .typescript: return "TypeScript"
-        case .rust: return "Rust"
-        case .go: return "Go"
-        case .java: return "Java"
-        case .csharp: return "C#"
-        case .cpp: return "C++"
-        case .unknown: return "Unknown"
-        }
-    }
-    
-    var iconName: String {
+    var icon: String {
         switch self {
         case .swift: return "swift"
-        case .python: return "snake.fill"
-        case .javascript, .typescript: return "curlybraces"
+        case .python: return "terminal.fill"
+        case .javascript, .typescript: return "globe"
+        case .kotlin, .java: return "cup.and.saucer.fill"
+        case .csharp: return "square.fill"
+        case .go: return "arrow.triangle.2.circlepath"
         case .rust: return "gear.badge"
-        case .go: return "go.forward"
-        case .java: return "cup.and.saucer.fill"
-        case .csharp: return "number.square"
-        case .cpp: return "plus.plus"
         case .unknown: return "questionmark.folder"
         }
     }
@@ -85,182 +52,159 @@ enum ProjectLanguage: String, Codable, CaseIterable {
     var color: String {
         switch self {
         case .swift: return "orange"
-        case .python: return "blue"
+        case .python: return "yellow"
         case .javascript: return "yellow"
         case .typescript: return "blue"
-        case .rust: return "brown"
-        case .go: return "cyan"
+        case .kotlin: return "purple"
         case .java: return "red"
-        case .csharp: return "purple"
-        case .cpp: return "gray"
+        case .csharp: return "blue"
+        case .go: return "cyan"
+        case .rust: return "brown"
         case .unknown: return "gray"
         }
     }
 }
 
-enum ProjectStatus: String, Codable, CaseIterable {
-    case active = "active"
-    case inactive = "inactive"
-    case analyzing = "analyzing"
-    case error = "error"
-    case building = "building"
-    case testing = "testing"
+enum ProjectStatus: String, CaseIterable, Codable {
+    case active = "Active"
+    case maintenance = "Maintenance"
+    case archived = "Archived"
+    case error = "Error"
     
-    var displayName: String {
+    var color: String {
         switch self {
-        case .active: return "Active"
-        case .inactive: return "Inactive"
-        case .analyzing: return "Analyzing"
-        case .error: return "Error"
-        case .building: return "Building"
-        case .testing: return "Testing"
+        case .active: return "green"
+        case .maintenance: return "yellow"
+        case .archived: return "gray"
+        case .error: return "red"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .active: return "checkmark.circle.fill"
+        case .maintenance: return "wrench.and.screwdriver.fill"
+        case .archived: return "archivebox.fill"
+        case .error: return "exclamationmark.triangle.fill"
+        }
+    }
+}
+
+struct ProjectMetrics: Codable, Equatable {
+    let filesCount: Int
+    let linesOfCode: Int
+    let lastBuildTime: TimeInterval?
+    let testCoverage: Double?
+    let healthScore: Double
+    let issuesCount: Int
+    let performanceScore: Double?
+    
+    init(filesCount: Int = 0, linesOfCode: Int = 0, lastBuildTime: TimeInterval? = nil, testCoverage: Double? = nil, healthScore: Double = 0.85, issuesCount: Int = 0, performanceScore: Double? = nil) {
+        self.filesCount = filesCount
+        self.linesOfCode = linesOfCode
+        self.lastBuildTime = lastBuildTime
+        self.testCoverage = testCoverage
+        self.healthScore = healthScore
+        self.issuesCount = issuesCount
+        self.performanceScore = performanceScore
+    }
+    
+    var healthColor: String {
+        switch healthScore {
+        case 0.8...1.0: return "green"
+        case 0.6..<0.8: return "yellow"
+        case 0.4..<0.6: return "orange"
+        default: return "red"
+        }
+    }
+    
+    var healthDescription: String {
+        switch healthScore {
+        case 0.9...1.0: return "Excellent"
+        case 0.8..<0.9: return "Good"
+        case 0.6..<0.8: return "Fair"
+        case 0.4..<0.6: return "Poor"
+        default: return "Critical"
+        }
+    }
+}
+
+// MARK: - Session Models
+
+struct ProjectSession: Identifiable, Codable {
+    let id: String
+    let projectId: String
+    let startTime: Date
+    let endTime: Date?
+    let duration: TimeInterval
+    let activities: [SessionActivity]
+    let clientId: String
+    
+    init(id: String = UUID().uuidString, projectId: String, startTime: Date = Date(), endTime: Date? = nil, duration: TimeInterval = 0, activities: [SessionActivity] = [], clientId: String) {
+        self.id = id
+        self.projectId = projectId
+        self.startTime = startTime
+        self.endTime = endTime
+        self.duration = duration
+        self.activities = activities
+        self.clientId = clientId
+    }
+    
+    var isActive: Bool {
+        return endTime == nil
+    }
+    
+    var formattedDuration: String {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .abbreviated
+        return formatter.string(from: duration) ?? "0m"
+    }
+}
+
+struct SessionActivity: Identifiable, Codable {
+    let id: String
+    let type: ActivityType
+    let description: String
+    let timestamp: Date
+    let metadata: [String: String]?
+    
+    init(id: String = UUID().uuidString, type: ActivityType, description: String, timestamp: Date = Date(), metadata: [String: String]? = nil) {
+        self.id = id
+        self.type = type
+        self.description = description
+        self.timestamp = timestamp
+        self.metadata = metadata
+    }
+}
+
+enum ActivityType: String, CaseIterable, Codable {
+    case fileEdit = "file_edit"
+    case build = "build"
+    case test = "test"
+    case debug = "debug"
+    case commit = "commit"
+    case refactor = "refactor"
+    
+    var icon: String {
+        switch self {
+        case .fileEdit: return "pencil"
+        case .build: return "hammer"
+        case .test: return "checkmark.shield"
+        case .debug: return "ladybug"
+        case .commit: return "arrow.up.circle"
+        case .refactor: return "arrow.triangle.2.circlepath"
         }
     }
     
     var color: String {
         switch self {
-        case .active: return "green"
-        case .inactive: return "gray"
-        case .analyzing: return "blue"
-        case .error: return "red"
-        case .building: return "orange"
-        case .testing: return "purple"
+        case .fileEdit: return "blue"
+        case .build: return "orange"
+        case .test: return "green"
+        case .debug: return "red"
+        case .commit: return "purple"
+        case .refactor: return "cyan"
         }
-    }
-    
-    var iconName: String {
-        switch self {
-        case .active: return "checkmark.circle.fill"
-        case .inactive: return "circle"
-        case .analyzing: return "magnifyingglass.circle.fill"
-        case .error: return "exclamationmark.triangle.fill"
-        case .building: return "hammer.circle.fill"
-        case .testing: return "testtube.2"
-        }
-    }
-}
-
-// MARK: - Project Metrics
-
-struct ProjectMetrics: Codable, Equatable {
-    let fileCount: Int
-    let lineCount: Int
-    let complexity: Double
-    let testCoverage: Double?
-    let buildTime: Double?
-    let memoryUsage: Double?
-    let cpuUsage: Double?
-    let issueCount: Int
-    let performanceScore: Double?
-    let lastAnalyzed: Date?
-    
-    init(
-        fileCount: Int = 0,
-        lineCount: Int = 0,
-        complexity: Double = 0.0,
-        testCoverage: Double? = nil,
-        buildTime: Double? = nil,
-        memoryUsage: Double? = nil,
-        cpuUsage: Double? = nil,
-        issueCount: Int = 0,
-        performanceScore: Double? = nil,
-        lastAnalyzed: Date? = nil
-    ) {
-        self.fileCount = fileCount
-        self.lineCount = lineCount
-        self.complexity = complexity
-        self.testCoverage = testCoverage
-        self.buildTime = buildTime
-        self.memoryUsage = memoryUsage
-        self.cpuUsage = cpuUsage
-        self.issueCount = issueCount
-        self.performanceScore = performanceScore
-        self.lastAnalyzed = lastAnalyzed
-    }
-    
-    var healthScore: Double {
-        var score = 1.0
-        
-        // Complexity penalty
-        if complexity > 10 {
-            score -= 0.2
-        }
-        
-        // Issue penalty
-        if issueCount > 0 {
-            score -= min(0.3, Double(issueCount) * 0.05)
-        }
-        
-        // Test coverage bonus
-        if let coverage = testCoverage {
-            score += (coverage - 0.5) * 0.2
-        }
-        
-        // Performance score factor
-        if let performance = performanceScore {
-            score = score * performance
-        }
-        
-        return max(0.0, min(1.0, score))
-    }
-    
-    var healthColor: String {
-        let health = healthScore
-        if health >= 0.8 { return "green" }
-        if health >= 0.6 { return "yellow" }
-        if health >= 0.4 { return "orange" }
-        return "red"
-    }
-}
-
-// MARK: - Session Integration
-
-struct ProjectSession: Identifiable, Codable {
-    let id: String
-    let projectId: String
-    let clientId: String
-    let startTime: Date
-    let lastActivity: Date
-    let isActive: Bool
-    let metrics: SessionMetrics?
-    
-    init(
-        id: String = UUID().uuidString,
-        projectId: String,
-        clientId: String,
-        startTime: Date = Date(),
-        lastActivity: Date = Date(),
-        isActive: Bool = true,
-        metrics: SessionMetrics? = nil
-    ) {
-        self.id = id
-        self.projectId = projectId
-        self.clientId = clientId
-        self.startTime = startTime
-        self.lastActivity = lastActivity
-        self.isActive = isActive
-        self.metrics = metrics
-    }
-}
-
-struct SessionMetrics: Codable {
-    let commandCount: Int
-    let analysisCount: Int
-    let errorCount: Int
-    let avgResponseTime: Double
-    let totalActiveTime: Double
-    
-    init(
-        commandCount: Int = 0,
-        analysisCount: Int = 0,
-        errorCount: Int = 0,
-        avgResponseTime: Double = 0.0,
-        totalActiveTime: Double = 0.0
-    ) {
-        self.commandCount = commandCount
-        self.analysisCount = analysisCount
-        self.errorCount = errorCount
-        self.avgResponseTime = avgResponseTime
-        self.totalActiveTime = totalActiveTime
     }
 }
