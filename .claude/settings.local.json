@@ -68,7 +68,12 @@
       "Bash(gh run view:*)",
       "Bash(yamllint:*)",
       "Bash(true)",
-      "Bash(uv add:*)"
+      "Bash(uv add:*)",
+      "Bash(curl:*)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-ios-visualization log --oneline -3)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-ios-dashboard log --oneline -3)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-ios-voice log --oneline -3)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-backend-apis log --oneline -3)"
     ],
     "deny": []
   }
