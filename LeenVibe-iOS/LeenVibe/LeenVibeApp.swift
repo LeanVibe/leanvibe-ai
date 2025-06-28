@@ -4,7 +4,7 @@ import SwiftUI
 struct LeenVibeApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            DashboardTabView()
         }
     }
 }
