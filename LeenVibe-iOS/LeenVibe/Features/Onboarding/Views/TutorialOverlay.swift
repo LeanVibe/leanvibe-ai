@@ -1,0 +1,31 @@
+
+import SwiftUI
+
+struct TutorialOverlay: ViewModifier {
+    let tutorial: Tutorial
+    @State private var currentStep: TutorialStep?
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(tutorialContent)
+    }
+
+    @ViewBuilder
+    private var tutorialContent: some View {
+        if let step = currentStep {
+            // Placeholder for the tutorial content
+            Text(step.text)
+                .padding()
+                .background(Color.black.opacity(0.8))
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .padding()
+        }
+    }
+}
+
+extension View {
+    func tutorialOverlay(_ tutorial: Tutorial) -> some View {
+        modifier(TutorialOverlay(tutorial: tutorial))
+    }
+}
