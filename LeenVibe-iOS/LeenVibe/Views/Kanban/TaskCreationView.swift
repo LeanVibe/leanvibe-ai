@@ -161,6 +161,8 @@ struct TagsFlowView: View {
     }
 }
 
-#Preview {
-    TaskCreationView(taskService: TaskService(webSocketService: WebSocketService()))
+struct TaskCreationView_Previews: PreviewProvider {
+    static var previews: some View {
+        TaskCreationView(taskService: TaskService())
+    }
 }

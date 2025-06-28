@@ -6,6 +6,8 @@ struct DashboardTabView: View {
     @StateObject private var speechService: SpeechRecognitionService
     @StateObject private var wakePhraseManager: WakePhraseManager
     @StateObject private var permissionManager = VoicePermissionManager()
+    @StateObject private var globalVoice: GlobalVoiceManager
+    @StateObject private var navigationCoordinator = NavigationCoordinator()
     
     @State private var showingVoiceInterface = false
     
@@ -22,48 +24,79 @@ struct DashboardTabView: View {
             projectManager: projectMgr,
             voiceProcessor: voiceProcessor
         ))
+        self._globalVoice = StateObject(wrappedValue: GlobalVoiceManager(
+            webSocketService: webSocket,
+            projectManager: projectMgr
+        ))
     }
     
     var body: some View {
         ZStack {
-            TabView {
-                ProjectDashboardView(
-                    projectManager: projectManager,
-                    webSocketService: webSocketService
-                )
-                .tabItem {
-                    Label("Projects", systemImage: "folder.fill")
-                }
-                .tag(0)
-                
-                ChatView(webSocketService: webSocketService)
-                    .tabItem {
-                        Label("Agent", systemImage: "brain.head.profile")
+            TabView(selection: $navigationCoordinator.selectedTab) {
+                NavigationStack(path: $navigationCoordinator.navigationPath) {
+                    ProjectDashboardView(
+                        projectManager: projectManager,
+                        webSocketService: webSocketService
+                    )
+                    .navigationDestination(for: String.self) { destination in
+                        if destination.hasPrefix("project-") {
+                            let projectId = String(destination.dropFirst("project-".count))
+                            ProjectDetailView(projectId: projectId, projectManager: projectManager)
+                        }
                     }
-                    .tag(1)
-                
-                MonitoringView(
-                    projectManager: projectManager,
-                    webSocketService: webSocketService
-                )
-                .tabItem {
-                    Label("Monitor", systemImage: "chart.line.uptrend.xyaxis")
                 }
-                .tag(2)
+                .tabItem {
+                    Label(NavigationCoordinator.Tab.projects.title, 
+                          systemImage: NavigationCoordinator.Tab.projects.systemImage)
+                }
+                .tag(NavigationCoordinator.Tab.projects.rawValue)
                 
-                SettingsTabView(webSocketService: webSocketService)
-                    .tabItem {
-                        Label("Settings", systemImage: "gear")
+                NavigationStack(path: $navigationCoordinator.navigationPath) {
+                    ChatView(webSocketService: webSocketService)
+                }
+                .tabItem {
+                    Label(NavigationCoordinator.Tab.agent.title,
+                          systemImage: NavigationCoordinator.Tab.agent.systemImage)
+                }
+                .tag(NavigationCoordinator.Tab.agent.rawValue)
+                
+                NavigationStack(path: $navigationCoordinator.navigationPath) {
+                    MonitoringView(
+                        projectManager: projectManager,
+                        webSocketService: webSocketService
+                    )
+                    .navigationDestination(for: String.self) { destination in
+                        if destination.hasPrefix("task-") {
+                            let taskId = String(destination.dropFirst("task-".count))
+                            TaskDetailView(taskId: taskId, webSocketService: webSocketService)
+                        }
                     }
-                    .tag(3)
+                }
+                .tabItem {
+                    Label(NavigationCoordinator.Tab.monitor.title,
+                          systemImage: NavigationCoordinator.Tab.monitor.systemImage)
+                }
+                .tag(NavigationCoordinator.Tab.monitor.rawValue)
                 
-                VoiceTabView(
-                    webSocketService: webSocketService,
-                    projectManager: projectManager
-                )
+                NavigationStack(path: $navigationCoordinator.navigationPath) {
+                    SettingsTabView(webSocketService: webSocketService)
+                }
+                .tabItem {
+                    Label(NavigationCoordinator.Tab.settings.title,
+                          systemImage: NavigationCoordinator.Tab.settings.systemImage)
+                }
+                .tag(NavigationCoordinator.Tab.settings.rawValue)
+                
+                NavigationStack(path: $navigationCoordinator.navigationPath) {
+                    VoiceTabView(
+                        webSocketService: webSocketService,
+                        projectManager: projectManager
+                    )
+                }
                 .tabItem {
                     ZStack {
-                        Label("Voice", systemImage: "mic.circle.fill")
+                        Label(NavigationCoordinator.Tab.voice.title,
+                              systemImage: NavigationCoordinator.Tab.voice.systemImage)
                         
                         VoiceStatusBadge(
                             wakePhraseManager: wakePhraseManager,
@@ -72,7 +105,7 @@ struct DashboardTabView: View {
                         .offset(x: 10, y: -10)
                     }
                 }
-                .tag(4)
+                .tag(NavigationCoordinator.Tab.voice.rawValue)
             }
             
             // Floating voice indicator (appears on all tabs except Voice tab)
@@ -82,15 +115,29 @@ struct DashboardTabView: View {
                 permissionManager: permissionManager,
                 webSocketService: webSocketService
             )
+            
+            // Global voice command overlay
+            if globalVoice.isVoiceCommandActive {
+                GlobalVoiceCommandView(globalVoice: globalVoice)
+                    .zIndex(999)
+            }
         }
+        .environmentObject(navigationCoordinator)
         .onAppear {
             // Initialize project manager with WebSocket service
             projectManager.configure(with: webSocketService)
             
-            // Start wake phrase listening if permissions are available
+            // Start global voice listening if permissions are available
             if permissionManager.isFullyAuthorized {
-                wakePhraseManager.startWakeListening()
+                globalVoice.startGlobalVoiceListening()
             }
+        }
+        .onDisappear {
+            // Stop global voice listening when view disappears
+            globalVoice.stopGlobalVoiceListening()
+        }
+        .onOpenURL { url in
+            navigationCoordinator.handleURL(url)
         }
     }
 }

@@ -1,5 +1,23 @@
 import Foundation
 
+// MARK: - Server Configuration
+
+struct ServerConfig: Codable {
+    let host: String
+    let port: Int
+    let websocketPath: String
+    let serverName: String?
+    let network: String?
+    
+    var baseURL: String {
+        return "\(host):\(port)"
+    }
+    
+    var fullURL: String {
+        return "ws://\(host):\(port)\(websocketPath)"
+    }
+}
+
 // MARK: - Connection Settings Storage
 
 struct ConnectionSettings: Codable, Equatable {
@@ -120,6 +138,32 @@ class ConnectionStorageManager: ObservableObject {
     
     func hasValidConnection() -> Bool {
         return currentConnection != nil
+    }
+    
+    func hasStoredConnection() -> Bool {
+        return currentConnection != nil
+    }
+    
+    func store(_ config: ServerConfig) {
+        let settings = ConnectionSettings(from: config)
+        saveConnection(settings)
+    }
+    
+    func loadStoredConnection() -> ServerConfig? {
+        guard let connection = currentConnection else { return nil }
+        
+        return ServerConfig(
+            host: connection.host,
+            port: connection.port,
+            websocketPath: connection.websocketPath,
+            serverName: connection.serverName,
+            network: connection.network
+        )
+    }
+    
+    func clearStoredConnection() {
+        currentConnection = nil
+        persistCurrentConnection()
     }
     
     // MARK: - Private Methods

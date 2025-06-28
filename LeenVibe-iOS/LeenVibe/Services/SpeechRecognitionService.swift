@@ -4,7 +4,7 @@ import AVFoundation
 import Combine
 
 @MainActor
-class SpeechRecognitionService: ObservableObject {
+class SpeechRecognitionService: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
     @Published var isListening = false
     @Published var isAvailable = false
     @Published var transcription = ""
@@ -370,16 +370,15 @@ class SpeechRecognitionService: ObservableObject {
     }
 }
 
-// MARK: - SFSpeechRecognizerDelegate
-
+/*
 extension SpeechRecognitionService: SFSpeechRecognizerDelegate {
-    nonisolated func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
-        DispatchQueue.main.async {
-            self.isAvailable = available
-            if !available {
-                self.stopListening()
-                self.lastError = "Speech recognition became unavailable"
-            }
+    
+    public func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
+        if available {
+            isAvailable = true
+        } else {
+            isAvailable = false
         }
     }
 }
+*/

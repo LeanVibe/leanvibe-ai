@@ -1,23 +1,16 @@
 import SwiftUI
 
+@MainActor
 struct KanbanBoardView: View {
-    @StateObject private var taskService: TaskService
-    @State private var showingTaskCreation = false
-    @State private var showingSettings = false
+    @ObservedObject var taskService: TaskService
+    @State private var showingCreateTask = false
     @State private var selectedTask: Task?
-    @State private var draggedTask: Task?
-    @State private var searchText = ""
-    @State private var sortOption: TaskSortOption = .priority
-    @State private var showingStatistics = false
-    
-    private let columns: [TaskStatus] = [.backlog, .inProgress, .testing, .done]
-    private let webSocketService: WebSocketService
-    
-    init(webSocketService: WebSocketService) {
-        self.webSocketService = webSocketService
-        self._taskService = StateObject(wrappedValue: TaskService(webSocketService: webSocketService))
+    @State private var editingTask: Task?
+
+    private var columns: [GridItem] {
+        // ... existing code ...
     }
-    
+
     var body: some View {
         NavigationView {
             GeometryReader { geometry in
@@ -67,7 +60,7 @@ struct KanbanBoardView: View {
                         
                         Divider()
                         
-                        Button(action: { showingTaskCreation = true }) {
+                        Button(action: { showingCreateTask = true }) {
                             Label("New Task", systemImage: "plus")
                         }
                         
@@ -79,7 +72,7 @@ struct KanbanBoardView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingTaskCreation) {
+            .sheet(isPresented: $showingCreateTask) {
                 TaskCreationView(taskService: taskService)
             }
             .sheet(isPresented: $showingStatistics) {
@@ -87,6 +80,9 @@ struct KanbanBoardView: View {
             }
             .sheet(item: $selectedTask) { task in
                 TaskDetailView(task: task, taskService: taskService)
+            }
+            .sheet(item: $editingTask) { task in
+                TaskEditView(task: .constant(task), taskService: taskService)
             }
             .alert("Error", isPresented: .constant(taskService.error != nil)) {
                 Button("OK") {
@@ -377,14 +373,8 @@ struct TagsView: View {
     }
 }
 
-// MARK: - Task Conformance to Transferable
-
-extension Task: Transferable {
-    static var transferRepresentation: some TransferRepresentation {
-        CodableRepresentation(contentType: .data)
+struct KanbanBoardView_Previews: PreviewProvider {
+    static var previews: some View {
+        KanbanBoardView(taskService: TaskService())
     }
-}
-
-#Preview {
-    KanbanBoardView(webSocketService: WebSocketService())
 }

@@ -405,21 +405,11 @@ extension DateFormatter {
     }()
 }
 
-#Preview {
-    let mockTask = Task(
-        title: "Implement authentication",
-        description: "Add OAuth2 login flow with secure token storage",
-        status: .inProgress,
-        priority: .high,
-        confidence: 0.85,
-        clientId: "mock-client",
-        assignedTo: "AI Agent",
-        estimatedEffort: 14400,
-        tags: ["authentication", "security", "backend"]
-    )
-    
-    return TaskDetailView(
-        taskService: TaskService(webSocketService: WebSocketService()),
-        task: mockTask
-    )
+struct TaskDetailView_Previews: PreviewProvider {
+    static var previews: some View {
+        TaskDetailView(
+            task: .constant(Task.mock()),
+            taskService: TaskService()
+        )
+    }
 }

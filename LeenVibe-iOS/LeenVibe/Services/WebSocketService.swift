@@ -1,14 +1,6 @@
 import Foundation
 import Starscream
 
-struct ServerConfig {
-    let host: String
-    let port: Int
-    let websocketPath: String
-    let serverName: String?
-    let network: String?
-}
-
 @MainActor
 class WebSocketService: ObservableObject, WebSocketDelegate {
     @Published var isConnected = false
@@ -42,11 +34,6 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         let url = "\(settings.websocketURL)/\(clientId)"
         setupWebSocketWithURL(url)
         connect()
-    }
-    
-    private func setupWebSocket() {
-        // This method is deprecated - use setupWebSocketWithURL instead
-        connectionStatus = "No connection configured"
     }
     
     func connect() {

@@ -4,7 +4,7 @@ import AVFoundation
 import SwiftUI
 
 @MainActor
-class WakePhraseManager: ObservableObject {
+class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
     @Published var isWakeListening = false
     @Published var wakePhraseDetected = false
     @Published var lastWakeDetection: WakePhraseDetection?
@@ -321,16 +321,15 @@ class WakePhraseManager: ObservableObject {
     }
 }
 
-// MARK: - SFSpeechRecognizerDelegate
-
+/*
 extension WakePhraseManager: SFSpeechRecognizerDelegate {
-    nonisolated func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
-        DispatchQueue.main.async {
-            self.isAvailable = available
-            if !available {
-                self.stopWakeListening()
-                self.lastError = "Speech recognition became unavailable"
-            }
+    
+    public func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
+        if available {
+            isAvailable = true
+        } else {
+            isAvailable = false
         }
     }
 }
+*/

@@ -440,9 +440,8 @@ struct QuickActionCard: View {
     }
 }
 
-#Preview {
-    ProjectDashboardView(
-        projectManager: ProjectManager(),
-        webSocketService: WebSocketService()
-    )
+struct ProjectDashboardView_Previews: PreviewProvider {
+    static var previews: some View {
+        ProjectDashboardView(project: .constant(Project.mock()))
+    }
 }

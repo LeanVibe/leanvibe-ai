@@ -1,9 +1,8 @@
-
 import SwiftUI
 
+@MainActor
 struct ArchitectureTabView: View {
-    @StateObject private var service = ArchitectureVisualizationService()
-    @StateObject private var webSocketService = WebSocketService()
+    @StateObject private var service = ArchitectureVisualizationService(webSocketService: WebSocketService())
     @State private var showComparison = false
     @State private var selectedProject: String = "default_project"
     @State private var showingExportSheet = false
@@ -12,19 +11,6 @@ struct ArchitectureTabView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Diagram Type Selector
-                if !service.availableDiagramTypes.isEmpty {
-                    DiagramTypePicker(
-                        selectedType: $service.selectedDiagramType,
-                        availableTypes: service.availableDiagramTypes,
-                        onTypeChanged: { newType in
-                            Task {
-                                await service.switchDiagramType(newType, clientId: selectedProject)
-                            }
-                        }
-                    )
-                }
-                
                 // Main Content Area
                 ZStack(alignment: .bottomTrailing) {
                     Group {
@@ -45,7 +31,7 @@ struct ArchitectureTabView: View {
                                 }
                             }
                         } else if let errorMessage = service.errorMessage {
-                            ErrorView(message: errorMessage) {
+                            ErrorView(errorMessage: errorMessage) {
                                 Task {
                                     await service.refreshDiagram(clientId: selectedProject)
                                 }
@@ -90,6 +76,12 @@ struct ArchitectureTabView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItemGroup(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        service.fetchArchitecture()
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    
                     Button(action: { showComparison.toggle() }) {
                         Image(systemName: showComparison ? "doc.text.image.fill" : "doc.text.image")
                     }
@@ -124,14 +116,15 @@ struct ArchitectureTabView: View {
                 ExportDiagramSheet(diagramContent: exportedDiagram)
             }
         }
+        .sheet(isPresented: $showComparison) {
+            DiagramComparisonView(
+                service: service,
+                webSocketService: WebSocketService()
+            )
+        }
     }
     
     private func setupInitialLoad() {
-        // Connect WebSocket if not already connected
-        if !webSocketService.isConnected {
-            webSocketService.connect()
-        }
-        
         // Fetch initial diagram
         Task {
             await service.fetchProjectArchitecture(clientId: selectedProject)
@@ -154,41 +147,8 @@ struct ArchitectureTabView: View {
 
 // MARK: - Supporting Views
 
-struct DiagramTypePicker: View {
-    @Binding var selectedType: DiagramType
-    let availableTypes: [DiagramType]
-    let onTypeChanged: (DiagramType) -> Void
-    
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(availableTypes) { type in
-                    Button(action: {
-                        selectedType = type
-                        onTypeChanged(type)
-                    }) {
-                        Text(type.displayName)
-                            .font(.caption)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(selectedType == type ? Color.blue : Color.gray.opacity(0.2))
-                            )
-                            .foregroundColor(selectedType == type ? .white : .primary)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-            .padding(.horizontal)
-        }
-        .padding(.vertical, 8)
-        .background(Color.gray.opacity(0.1))
-    }
-}
-
 struct ErrorView: View {
-    let message: String
+    let errorMessage: String
     let onRetry: () -> Void
     
     var body: some View {
@@ -201,7 +161,7 @@ struct ErrorView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
             
-            Text(message)
+            Text(errorMessage)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -279,3 +239,38 @@ struct ExportDiagramSheet: View {
         }
     }
 }
+
+/*
+struct DiagramTypePicker: View {
+    @Binding var selectedType: DiagramType
+    let availableTypes: [DiagramType]
+    let onTypeChanged: (DiagramType) -> Void
+    
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(availableTypes) { type in
+                    Button(action: {
+                        selectedType = type
+                        onTypeChanged(type)
+                    }) {
+                        Text(type.displayName)
+                            .font(.caption)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(selectedType == type ? Color.blue : Color.gray.opacity(0.2))
+                            )
+                            .foregroundColor(selectedType == type ? .white : .primary)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+            .padding(.horizontal)
+        }
+        .padding(.vertical, 8)
+        .background(Color.gray.opacity(0.1))
+    }
+}
+*/
