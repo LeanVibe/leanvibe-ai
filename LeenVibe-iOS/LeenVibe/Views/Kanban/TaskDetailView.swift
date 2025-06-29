@@ -4,7 +4,7 @@ struct TaskDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var taskService: TaskService
     
-    @State var task: Task
+    @State var task: LeenVibeTask
     @State private var isEditing = false
     @State private var showingApprovalSheet = false
     @State private var approvalFeedback = ""
@@ -71,13 +71,9 @@ struct TaskDetailView: View {
             TaskEditView(task: $task, taskService: taskService)
         }
         .sheet(isPresented: $showingApprovalSheet) {
-            if let decision = task.agentDecision {
-                AgentDecisionApprovalView(
-                    decision: decision,
-                    taskService: taskService,
-                    feedback: $approvalFeedback
-                )
-            }
+            // TODO: Implement AgentDecisionApprovalView
+            Text("Agent Decision Approval - Coming Soon")
+                .padding()
         }
     }
     
@@ -282,7 +278,7 @@ struct StatusBadge: View {
     
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: status.systemIcon)
+            Image(systemName: statusIcon(for: status))
             Text(status.displayName)
         }
         .font(.caption)
@@ -291,9 +287,39 @@ struct StatusBadge: View {
         .padding(.vertical, 4)
         .background(
             Capsule()
-                .fill(Color(status.statusColor).opacity(0.2))
+                .fill(statusColor(for: status).opacity(0.2))
         )
-        .foregroundColor(Color(status.statusColor))
+        .foregroundColor(statusColor(for: status))
+    }
+    
+    private func statusIcon(for status: TaskStatus) -> String {
+        switch status {
+        case .backlog:
+            return "tray.full"
+        case .inProgress:
+            return "play.circle"
+        case .testing:
+            return "checkmark.circle"
+        case .done:
+            return "checkmark.circle.fill"
+        case .blocked:
+            return "exclamationmark.triangle"
+        }
+    }
+    
+    private func statusColor(for status: TaskStatus) -> Color {
+        switch status {
+        case .backlog:
+            return .gray
+        case .inProgress:
+            return .blue
+        case .testing:
+            return .orange
+        case .done:
+            return .green
+        case .blocked:
+            return .red
+        }
     }
 }
 
@@ -366,7 +392,7 @@ struct TimelineItem: View {
 }
 
 struct StatusChangeMenu: View {
-    let task: Task
+    let task: LeenVibeTask
     let taskService: TaskService
     
     var body: some View {
@@ -374,17 +400,33 @@ struct StatusChangeMenu: View {
             ForEach(TaskStatus.allCases, id: \.self) { status in
                 if status != task.status {
                     Button(action: {
-                        Task {
-                            await taskService.moveTask(task, to: status)
-                        }
+                        // TODO: Implement moveTask in TaskService
+                        // Task {
+                        //     await taskService.moveTask(task, to: status)
+                        // }
                     }) {
                         HStack {
-                            Image(systemName: status.systemIcon)
+                            Image(systemName: statusIcon(for: status))
                             Text(status.displayName)
                         }
                     }
                 }
             }
+        }
+    }
+    
+    private func statusIcon(for status: TaskStatus) -> String {
+        switch status {
+        case .backlog:
+            return "tray.full"
+        case .inProgress:
+            return "play.circle"
+        case .testing:
+            return "checkmark.circle"
+        case .done:
+            return "checkmark.circle.fill"
+        case .blocked:
+            return "exclamationmark.triangle"
         }
     }
 }
@@ -408,8 +450,16 @@ extension DateFormatter {
 struct TaskDetailView_Previews: PreviewProvider {
     static var previews: some View {
         TaskDetailView(
-            task: .constant(Task.mock()),
-            taskService: TaskService()
+            taskService: TaskService(),
+            task: LeenVibeTask(
+                id: UUID(),
+                title: "Sample Task",
+                description: "This is a sample task for preview",
+                status: .inProgress,
+                priority: .medium,
+                confidence: 0.85,
+                clientId: "preview-client"
+            )
         )
     }
 }

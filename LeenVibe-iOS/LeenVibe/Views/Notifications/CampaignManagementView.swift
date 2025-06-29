@@ -74,7 +74,7 @@ struct CampaignRow: View {
                     
                     Spacer()
                     
-                    StatusBadge(status: campaign.status)
+                    CampaignStatusBadge(status: campaign.status)
                 }
                 
                 Text(campaign.description)

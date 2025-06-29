@@ -9,7 +9,7 @@ class PerformanceManager: ObservableObject {
     @Published var performanceAlerts: [PerformanceAlert] = []
     @Published var isMonitoring = false
     
-    private var timer: Timer?
+    nonisolated(unsafe) private var timer: Timer?
     private var cancellables = Set<AnyCancellable>()
     private let alertThresholds = PerformanceThresholds()
     
@@ -78,7 +78,9 @@ class PerformanceManager: ObservableObject {
     }
     
     deinit {
-        stopMonitoring()
+        // Monitoring will be stopped automatically
+        timer?.invalidate()
+        timer = nil
     }
     
     private func setupMemoryWarningObserver() {
@@ -189,7 +191,7 @@ class PerformanceManager: ObservableObject {
     }
     
     private func getCPUUsage() -> Double {
-        var info = processor_info_array_t.allocate(capacity: 1)
+        var info: processor_info_array_t? = nil
         var numCpuInfo: mach_msg_type_number_t = 0
         var numCpus: natural_t = 0
         
@@ -200,7 +202,9 @@ class PerformanceManager: ObservableObject {
                                        &numCpuInfo)
         
         defer {
-            info.deallocate()
+            if let info = info {
+                vm_deallocate(mach_task_self_, vm_address_t(bitPattern: info), vm_size_t(numCpuInfo))
+            }
         }
         
         if result == KERN_SUCCESS {

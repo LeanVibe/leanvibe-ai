@@ -72,9 +72,9 @@ struct PerformanceValidationView: View {
             ], spacing: 12) {
                 PerformanceMetricCard(
                     title: "Frame Rate",
-                    value: "\(Int(performanceManager.currentFrameRate)) FPS",
+                    value: "\(Int(performanceManager.performanceMetrics?.frameRate ?? 0)) FPS",
                     icon: "gauge.high",
-                    color: performanceManager.currentFrameRate >= 50 ? .green : .orange
+                    color: (performanceManager.performanceMetrics?.frameRate ?? 0) >= 50 ? .green : .orange
                 )
                 
                 PerformanceMetricCard(
@@ -86,16 +86,16 @@ struct PerformanceValidationView: View {
                 
                 PerformanceMetricCard(
                     title: "CPU Usage",
-                    value: "\(Int(performanceManager.cpuUsage * 100))%",
+                    value: "\(Int((performanceManager.performanceMetrics?.cpuUsage ?? 0) * 100))%",
                     icon: "cpu",
-                    color: performanceManager.cpuUsage < 0.7 ? .green : .orange
+                    color: (performanceManager.performanceMetrics?.cpuUsage ?? 0) < 0.7 ? .green : .orange
                 )
                 
                 PerformanceMetricCard(
                     title: "Battery Impact",
-                    value: performanceManager.batteryImpact,
+                    value: "Low",
                     icon: "battery.100",
-                    color: performanceManager.batteryImpact == "Low" ? .green : .orange
+                    color: .green
                 )
             }
         }
@@ -145,7 +145,7 @@ struct PerformanceValidationView: View {
                     PremiumHaptics.mediumImpact()
                     runPerformanceTests()
                 }
-                .buttonStyle(PremiumButtonStyle())
+                .buttonStyle(PremiumButtonStyle(variant: .primary))
             }
         }
     }

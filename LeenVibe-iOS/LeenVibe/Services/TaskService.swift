@@ -6,6 +6,7 @@ import _Concurrency
 // MARK: - Task Service for Backend Integration
 
 @available(macOS 10.15, iOS 13.0, *)
+@MainActor
 class TaskService: ObservableObject {
     @Published var taskMetrics: TaskMetrics?
     @Published var kanbanStatistics: KanbanStatistics?
@@ -48,6 +49,7 @@ class TaskService: ObservableObject {
         }
     }
     
+    @MainActor
     private func fetchTaskStats() async throws -> TaskStatsAPIResponse {
         guard let url = URL(string: "\(baseURL)/api/tasks/stats") else {
             throw TaskServiceError.invalidURL
@@ -113,7 +115,7 @@ class TaskService: ObservableObject {
         Timer.publish(every: 30, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                _Concurrency.Task {
+                Task { @MainActor [weak self] in
                     await self?.updatePerformanceMetrics()
                 }
             }
@@ -159,6 +161,7 @@ class TaskService: ObservableObject {
         }
     }
     
+    @MainActor
     private func fetchSystemHealth() async throws -> SystemHealthStatus {
         // Check multiple services
         async let backendHealth = checkServiceHealth(endpoint: "/health", serviceName: "Backend")

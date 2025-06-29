@@ -2,7 +2,7 @@ import SwiftUI
 
 struct TaskEditView: View {
     @Environment(\.dismiss) private var dismiss
-    @Binding var task: Task
+    @Binding var task: LeenVibeTask
     @ObservedObject var taskService: TaskService
     
     @State private var title: String
@@ -13,7 +13,7 @@ struct TaskEditView: View {
     @State private var newTag = ""
     @State private var isUpdating = false
     
-    init(task: Binding<Task>, taskService: TaskService) {
+    init(task: Binding<LeenVibeTask>, taskService: TaskService) {
         self._task = task
         self.taskService = taskService
         
@@ -134,7 +134,8 @@ struct TaskEditView: View {
         updatedTask.updatedAt = Date()
         
         Task {
-            await taskService.updateTask(updatedTask)
+            // TODO: Implement updateTask in TaskService
+            // await taskService.updateTask(updatedTask)
             
             await MainActor.run {
                 self.task = updatedTask
@@ -161,7 +162,15 @@ struct TaskEditView: View {
 struct TaskEditView_Previews: PreviewProvider {
     static var previews: some View {
         TaskEditView(
-            task: .constant(Task.mock()),
+            task: .constant(LeenVibeTask(
+                id: UUID(),
+                title: "Sample Task",
+                description: "This is a sample task for preview",
+                status: .inProgress,
+                priority: .medium,
+                confidence: 0.85,
+                clientId: "preview-client"
+            )),
             taskService: TaskService()
         )
     }

@@ -74,20 +74,20 @@ struct QROnboardingView: View {
             }
         }
         .sheet(isPresented: $showingQRScanner) {
-            QRScannerView(
-                isPresented: $showingQRScanner,
-                webSocketService: webSocketService
+            ServerQRScannerView(
+                onResult: { qrContent in
+                    // Handle QR code result
+                    Task {
+                        do {
+                            try await webSocketService.connectWithQRCode(qrContent)
+                            coordinator.handleQRScanSuccess()
+                        } catch {
+                            coordinator.handleQRScanFailure(error: error.localizedDescription)
+                        }
+                    }
+                    showingQRScanner = false
+                }
             )
-            .onReceive(webSocketService.$isConnected) { isConnected in
-                if isConnected {
-                    coordinator.handleQRScanSuccess()
-                }
-            }
-            .onReceive(webSocketService.$lastError) { error in
-                if let error = error {
-                    coordinator.handleQRScanFailure(error: error)
-                }
-            }
         }
     }
 }

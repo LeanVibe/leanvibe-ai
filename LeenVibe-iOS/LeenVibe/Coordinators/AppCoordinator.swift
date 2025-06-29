@@ -42,6 +42,16 @@ class AppCoordinator: ObservableObject {
         }
     }
     
+    func handleQRScanSuccess() {
+        showingQRScanner = false
+        appState = .ready
+    }
+    
+    func handleQRScanFailure(error: String) {
+        errorMessage = error
+        appState = .error(error)
+    }
+    
     private func handleLifecycleStateChange(_ state: AppLifecycleManager.AppState) {
         switch state {
         case .launching:

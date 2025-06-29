@@ -361,7 +361,7 @@ struct VoiceTestView: View {
                     .buttonStyle(.plain)
                     
                     if isListening {
-                        VoiceWaveformView()
+                        LeenVibeVoiceWaveformView()
                             .frame(height: 60)
                     }
                 }
@@ -473,7 +473,7 @@ struct VoiceTestResult: Identifiable {
     let testType: VoiceTestView.VoiceTestType
 }
 
-struct VoiceWaveformView: View {
+struct LeenVibeVoiceWaveformView: View {
     @State private var animationOffset: CGFloat = 0
     
     var body: some View {

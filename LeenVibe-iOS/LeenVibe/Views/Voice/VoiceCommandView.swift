@@ -8,14 +8,16 @@ struct VoiceCommandView: View {
     @StateObject private var permissionManager = VoicePermissionManager()
     @Environment(\.presentationMode) private var presentationMode
     
+    private let webSocketService: WebSocketService
+    private let settingsManager: SettingsManager
+    
     @State private var showingPermissionSheet = false
     @State private var voiceCommand: VoiceCommand?
     @State private var showingCommandConfirmation = false
     
-    private let webSocketService: WebSocketService
-    
-    init(webSocketService: WebSocketService) {
+    init(webSocketService: WebSocketService, settingsManager: SettingsManager) {
         self.webSocketService = webSocketService
+        self.settingsManager = settingsManager
         self._speechService = StateObject(wrappedValue: SpeechRecognitionService())
     }
     
@@ -275,7 +277,7 @@ struct VoiceCommandView: View {
     private func processCompletedRecognition() {
         guard !speechService.recognizedText.isEmpty else { return }
         
-        let processor = VoiceCommandProcessor()
+        let processor = VoiceCommandProcessor(settings: settingsManager.voiceSettings)
         let command = processor.processVoiceInput(speechService.recognizedText)
         
         if command.requiresConfirmation {
@@ -466,5 +468,5 @@ struct VoiceCommandConfirmationView: View {
 }
 
 #Preview {
-    VoiceCommandView(webSocketService: WebSocketService())
+    VoiceCommandView(webSocketService: WebSocketService(), settingsManager: SettingsManager.shared)
 }

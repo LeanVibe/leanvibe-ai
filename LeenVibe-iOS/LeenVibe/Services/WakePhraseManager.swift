@@ -14,8 +14,8 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
     
     private let speechRecognizer: SFSpeechRecognizer?
     private var wakeRecognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    private var wakeRecognitionTask: SFSpeechRecognitionTask?
-    private let wakeAudioEngine = AVAudioEngine()
+    nonisolated(unsafe) private var wakeRecognitionTask: SFSpeechRecognitionTask?
+    nonisolated(unsafe) private let wakeAudioEngine = AVAudioEngine()
     
     private let webSocketService: WebSocketService
     private let projectManager: ProjectManager
@@ -35,7 +35,7 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
     // Detection settings
     private let confidenceThreshold: Float = 0.6
     private let silenceTimeout: TimeInterval = 3.0
-    private var silenceTimer: Timer?
+    nonisolated(unsafe) private var silenceTimer: Timer?
     
     init(webSocketService: WebSocketService, projectManager: ProjectManager, voiceProcessor: DashboardVoiceProcessor) {
         self.webSocketService = webSocketService
@@ -43,12 +43,17 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
         self.voiceProcessor = voiceProcessor
         self.speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
         
+        super.init()
+        
         setupSpeechRecognizer()
         checkPermissions()
     }
     
     deinit {
-        stopWakeListening()
+        // Cleanup will be handled automatically
+        wakeAudioEngine.stop()
+        wakeRecognitionTask?.cancel()
+        silenceTimer?.invalidate()
     }
     
     // MARK: - Setup and Permissions
@@ -277,7 +282,9 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
     
     private func startSilenceTimer() {
         silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceTimeout, repeats: false) { [weak self] _ in
-            self?.handleSilenceTimeout()
+            Task { @MainActor in
+                self?.handleSilenceTimeout()
+            }
         }
     }
     

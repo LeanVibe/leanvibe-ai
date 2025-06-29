@@ -11,6 +11,9 @@ import os.log
 @MainActor
 class PushNotificationService: NSObject, ObservableObject {
     
+    // MARK: - Singleton Instance
+    static let shared = PushNotificationService()
+    
     // MARK: - Published Properties
     
     @Published var isRegisteredForRemoteNotifications = false
@@ -270,7 +273,14 @@ class PushNotificationService: NSObject, ObservableObject {
         content.title = request.title
         content.body = request.body
         content.categoryIdentifier = request.category
-        content.sound = request.sound == .default ? .default : .none
+        switch request.sound {
+        case .default:
+            content.sound = .default
+        case .none:
+            content.sound = nil
+        case .custom(let soundName):
+            content.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: soundName))
+        }
         
         if let subtitle = request.subtitle {
             content.subtitle = subtitle
@@ -422,7 +432,7 @@ class PushNotificationService: NSObject, ObservableObject {
     // MARK: - Analytics
     
     private func trackNotificationEvent(_ event: NotificationEvent) {
-        logger.info("Notification event: \(event.type) for ID: \(event.notificationId)")
+        logger.info("Notification event: \(String(describing: event.type)) for ID: \(event.notificationId)")
         // Implementation would send analytics to backend
     }
     
@@ -432,10 +442,9 @@ class PushNotificationService: NSObject, ObservableObject {
     }
 }
 
-@MainActor
 extension PushNotificationService: UNUserNotificationCenterDelegate {
     
-    func userNotificationCenter(
+    nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
@@ -444,7 +453,7 @@ extension PushNotificationService: UNUserNotificationCenterDelegate {
         completionHandler([.alert, .badge, .sound])
     }
     
-    func userNotificationCenter(
+    nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void

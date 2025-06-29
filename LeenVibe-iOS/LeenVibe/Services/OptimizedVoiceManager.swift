@@ -1,7 +1,7 @@
 import SwiftUI
 import AVFoundation
 import Speech
-import Combine
+import Accelerate
 
 @MainActor
 class OptimizedVoiceManager: ObservableObject {
@@ -33,7 +33,7 @@ class OptimizedVoiceManager: ObservableObject {
     }
     
     deinit {
-        cleanup()
+        // Cleanup will be handled by the parent VoiceManager
     }
     
     // MARK: - Performance Optimization
@@ -55,7 +55,7 @@ class OptimizedVoiceManager: ObservableObject {
             try audioSession.setCategory(
                 .playAndRecord,
                 mode: .measurement,
-                options: [.defaultToSpeaker, .allowBluetooth]
+                options: [.defaultToSpeaker, .allowBluetoothA2DP]
             )
             try audioSession.setActive(true)
         } catch {
@@ -107,7 +107,7 @@ class OptimizedVoiceManager: ObservableObject {
         
         // Cancel warmup after brief period
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            warmupTask?.cancel()
+            warmupTask.cancel()
             self.recognitionRequestPool.returnRequest(warmupRequest)
         }
     }
@@ -126,7 +126,9 @@ class OptimizedVoiceManager: ObservableObject {
         
         // Process on background queue for performance
         processingQueue.async { [weak self] in
-            self?.analyzeAudioForWakePhrase(buffer)
+            DispatchQueue.main.async {
+                self?.analyzeAudioForWakePhrase(buffer)
+            }
         }
         
         // Update performance metrics

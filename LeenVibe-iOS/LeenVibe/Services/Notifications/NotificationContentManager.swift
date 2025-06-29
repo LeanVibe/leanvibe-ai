@@ -708,7 +708,7 @@ class IntelligentScheduler {
         case .welcome:
             optimalHour = 10 // Mid-morning
         case .reminder:
-            optimalHour = Int(userProfile?.preferredReminderTime.prefix(2)) ?? 9
+            optimalHour = Int(userProfile?.preferredReminderTime.prefix(2) ?? "09") ?? 9
         case .achievement:
             optimalHour = 12 // Lunch time for positive reinforcement
         case .motivation:

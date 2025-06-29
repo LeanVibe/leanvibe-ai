@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -83,6 +83,7 @@
 		A768FD1F687910F50B5CCAB3 /* VoiceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B55ED5554DE9CB6A7604B2A /* VoiceManager.swift */; };
 		A86FA44FE49A08054D6E4E9C /* VoicePermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42F34ECF3F87221065B41557 /* VoicePermissionManager.swift */; };
 		AA0AAEDB2CFADE300B5108AD /* VoiceTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 535C9D320FAF970A156A940A /* VoiceTabView.swift */; };
+		AAC3C926B5C5CF7B40B899AF /* PushNotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F605B72332E52FE3D89C1EFF /* PushNotificationTests.swift */; };
 		ACF2B2F27A5E6F25C3C60015 /* VoiceCommandDemoOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF4E9D52B7F33AE14DFA0CBD /* VoiceCommandDemoOnboardingView.swift */; };
 		B16F5BD4D252957B74144DB0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AEEEE009BC7CCC57CEB0CEC /* SettingsView.swift */; };
 		B20750D5FF1A9952B630DE80 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F2335B3F51AB59BF1875D7F /* Assets.xcassets */; };
@@ -122,6 +123,16 @@
 		FE6C43D749061D9BE3C6ADD3 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E2950A72FBFB6724A804108 /* QRScannerView.swift */; };
 		FF74F16421621C83037ECE4B /* CampaignManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA55366C81C20380D0AF7380 /* CampaignManagementView.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C434AC5533F736BB672F73DB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 68EDACE84B8DE408F80C3F20 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7F76A2518DE2801E6963D4B5;
+			remoteInfo = LeenVibe;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		04DA51491D349F8445511D95 /* ArchitectureVisualizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchitectureVisualizationService.swift; sourceTree = "<group>"; };
@@ -189,19 +200,20 @@
 		839F6ECF2C9B324594E29309 /* AgentMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentMessage.swift; sourceTree = "<group>"; };
 		857FABBDA9347895A0404B30 /* MonitoringView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringView.swift; sourceTree = "<group>"; };
 		875AE0F5350907921D86349F /* ArchitectureDiagram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchitectureDiagram.swift; sourceTree = "<group>"; };
-		88DD26660B87C36B710A572B /* LeenVibe.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LeenVibe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		88DD26660B87C36B710A572B /* LeenVibe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeenVibe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B227A04D9935EC43D55642A /* DecisionLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionLogView.swift; sourceTree = "<group>"; };
 		8E8E10FC7B5C6E33A9A44460 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8F4C092F2B390CEB30607A9D /* OnboardingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCoordinator.swift; sourceTree = "<group>"; };
 		9106A9195626D429906085EB /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
 		94014CA078D02702EF38C3EC /* MermaidRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MermaidRenderer.swift; sourceTree = "<group>"; };
 		96C1DCCC3662CAEF53B00BEC /* TaskMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskMetrics.swift; sourceTree = "<group>"; };
+		9802A728146E1B6F678DD6D3 /* LeenVibeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = LeenVibeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D034570405E564F2BE4EF79 /* PerformanceAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceAnalytics.swift; sourceTree = "<group>"; };
 		A26099F98FA63AC3C1DB3B21 /* View+PremiumTransitions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+PremiumTransitions.swift"; sourceTree = "<group>"; };
 		A3AA6FE5C1E18C42580E3EA7 /* AccessibilitySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySettingsView.swift; sourceTree = "<group>"; };
 		A7F321F77CA034E37E36C7A6 /* ProjectSetupOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectSetupOnboardingView.swift; sourceTree = "<group>"; };
 		A879D4345A6BBBF0922D4B11 /* GlobalVoiceCommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalVoiceCommandView.swift; sourceTree = "<group>"; };
-		AD8AF48FC815C6E464F88DF1 /* LeenVibeAppIcon.svg */ = {isa = PBXFileReference; path = LeenVibeAppIcon.svg; sourceTree = "<group>"; };
+		AD8AF48FC815C6E464F88DF1 /* LeenVibeAppIcon.svg */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = LeenVibeAppIcon.svg; sourceTree = "<group>"; };
 		AE9C220D7B004FEB654B3DA8 /* WelcomeOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeOnboardingView.swift; sourceTree = "<group>"; };
 		AEABB20C43B0A32E60F6E324 /* CompletionOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionOnboardingView.swift; sourceTree = "<group>"; };
 		B1CFEDB14F1176D75D7CB134 /* OnboardingAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAnalytics.swift; sourceTree = "<group>"; };
@@ -236,6 +248,7 @@
 		F4540FEA00F887314C2EA316 /* DiagramStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagramStyle.swift; sourceTree = "<group>"; };
 		F4D03D3B96A40047003DFFD9 /* OnboardingProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProgress.swift; sourceTree = "<group>"; };
 		F5C53746EAE999B8B685619C /* IntegratedPerformanceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegratedPerformanceManager.swift; sourceTree = "<group>"; };
+		F605B72332E52FE3D89C1EFF /* PushNotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationTests.swift; sourceTree = "<group>"; };
 		F8D73D087B098429838D8E6F /* AnimationPerformanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationPerformanceView.swift; sourceTree = "<group>"; };
 		FC8D3910A94D62E8587EF16F /* interaction-bridge.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "interaction-bridge.js"; sourceTree = "<group>"; };
 		FE2CF6543769D26553BCB85C /* PerformanceValidationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceValidationView.swift; sourceTree = "<group>"; };
@@ -363,6 +376,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		2F4FA5518B9ADAE843B9667C /* LeenVibeTests */ = {
+			isa = PBXGroup;
+			children = (
+				F605B72332E52FE3D89C1EFF /* PushNotificationTests.swift */,
+			);
+			path = LeenVibeTests;
+			sourceTree = "<group>";
+		};
 		335078CE0365425F63E2016A /* Kanban */ = {
 			isa = PBXGroup;
 			children = (
@@ -475,6 +496,7 @@
 			isa = PBXGroup;
 			children = (
 				7D34307C534630D033B08527 /* LeenVibe */,
+				2F4FA5518B9ADAE843B9667C /* LeenVibeTests */,
 				DB261A1E2629392B118EB3A3 /* Products */,
 			);
 			indentWidth = 4;
@@ -588,6 +610,7 @@
 			isa = PBXGroup;
 			children = (
 				88DD26660B87C36B710A572B /* LeenVibe.app */,
+				9802A728146E1B6F678DD6D3 /* LeenVibeTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -664,6 +687,24 @@
 			productReference = 88DD26660B87C36B710A572B /* LeenVibe.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F4DE99490E16021EBD986AB4 /* LeenVibeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0FBDF778FFB8DCABC3C86B1E /* Build configuration list for PBXNativeTarget "LeenVibeTests" */;
+			buildPhases = (
+				BBA7C609B089115E08E7A40D /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9192E376A34E679C29801354 /* PBXTargetDependency */,
+			);
+			name = LeenVibeTests;
+			packageProductDependencies = (
+			);
+			productName = LeenVibeTests;
+			productReference = 9802A728146E1B6F678DD6D3 /* LeenVibeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -674,8 +715,10 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					7F76A2518DE2801E6963D4B5 = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
+					};
+					F4DE99490E16021EBD986AB4 = {
+						DevelopmentTeam = "";
 					};
 				};
 			};
@@ -692,11 +735,11 @@
 			packageReferences = (
 				A8D0007FD32AD936CE1EBC7B /* XCRemoteSwiftPackageReference "Starscream" */,
 			);
-			preferredProjectObjectVersion = 54;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				7F76A2518DE2801E6963D4B5 /* LeenVibe */,
+				F4DE99490E16021EBD986AB4 /* LeenVibeTests */,
 			);
 		};
 /* End PBXProject section */
@@ -832,7 +875,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BBA7C609B089115E08E7A40D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AAC3C926B5C5CF7B40B899AF /* PushNotificationTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		9192E376A34E679C29801354 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7F76A2518DE2801E6963D4B5 /* LeenVibe */;
+			targetProxy = C434AC5533F736BB672F73DB /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		ABCD90D058CECDBB05ACBE4B /* Debug */ = {
@@ -896,7 +955,6 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.leenvibe.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
@@ -908,6 +966,24 @@
 			};
 			name = Debug;
 		};
+		AC4644774DC391A37759138C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leenvibe.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LeenVibe.app/LeenVibe";
+			};
+			name = Debug;
+		};
 		B602B378DB5A020573866D9D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -915,14 +991,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GLKDB2BTQG;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = LeenVibe/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.leenvibe.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leenvibe.LeenVibe;
 				PRODUCT_NAME = LeenVibe;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -937,18 +1014,37 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GLKDB2BTQG;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = LeenVibe/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.leenvibe.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leenvibe.LeenVibe;
 				PRODUCT_NAME = LeenVibe;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F44DFAA0C51A6583FD483917 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leenvibe.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LeenVibe.app/LeenVibe";
 			};
 			name = Release;
 		};
@@ -1006,7 +1102,6 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.leenvibe.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = NO;
@@ -1021,6 +1116,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0FBDF778FFB8DCABC3C86B1E /* Build configuration list for PBXNativeTarget "LeenVibeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC4644774DC391A37759138C /* Debug */,
+				F44DFAA0C51A6583FD483917 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		A01E27D0A2D95837D8640DF2 /* Build configuration list for PBXProject "LeenVibe" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

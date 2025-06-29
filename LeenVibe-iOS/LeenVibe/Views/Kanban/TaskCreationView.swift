@@ -104,13 +104,14 @@ struct TaskCreationView: View {
         isCreating = true
         
         Task {
-            await taskService.createTask(
-                title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-                description: description.trimmingCharacters(in: .whitespacesAndNewlines),
-                priority: priority,
-                assignedTo: assignedTo.isEmpty ? nil : assignedTo,
-                tags: tags
-            )
+            // TODO: Implement createTask in TaskService
+            // await taskService.createTask(
+            //     title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            //     description: description.trimmingCharacters(in: .whitespacesAndNewlines),
+            //     priority: priority,
+            //     assignedTo: assignedTo.isEmpty ? nil : assignedTo,
+            //     tags: tags
+            // )
             
             await MainActor.run {
                 isCreating = false

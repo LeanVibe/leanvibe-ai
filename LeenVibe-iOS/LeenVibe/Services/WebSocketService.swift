@@ -58,7 +58,8 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             type: type,
             content: content,
             timestamp: ISO8601DateFormatter().string(from: Date()),
-            clientId: clientId
+            clientId: clientId,
+            priority: .normal
         )
         
         do {
@@ -181,9 +182,11 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     // MARK: - WebSocketDelegate
     
     nonisolated func didReceive(event: WebSocketEvent, client: WebSocketClient) {
-        Task { @MainActor in
-            switch event {
-            case .connected:
+        // Create a copy of the event data that we need
+        switch event {
+        case .connected:
+            Task { @MainActor [weak self] in
+                guard let self else { return }
                 self.isConnected = true
                 self.connectionStatus = "Connected"
                 self.lastError = nil
@@ -196,8 +199,11 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 
                 // Send initial status request
                 self.sendCommand("/status", type: "command")
-                
-            case .disconnected(let reason, _):
+            }
+            
+        case .disconnected(let reason, _):
+            Task { @MainActor [weak self] in
+                guard let self else { return }
                 self.isConnected = false
                 self.connectionStatus = "Disconnected"
                 
@@ -206,51 +212,42 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                     completion(false, "Connection failed: \(reason)")
                     self.qrConnectionCompletion = nil
                 }
-                
-            case .text(let string):
-                self.handleReceivedMessage(string)
-                
-            case .binary(let data):
-                if let text = String(data: data, encoding: .utf8) {
-                    self.handleReceivedMessage(text)
+            }
+            
+        case .text(let string):
+            Task { @MainActor [weak self] in
+                self?.handleReceivedMessage(string)
+            }
+            
+        case .binary(let data):
+            if let text = String(data: data, encoding: .utf8) {
+                Task { @MainActor [weak self] in
+                    self?.handleReceivedMessage(text)
                 }
-                
-            case .error(let error):
-                let errorMessage = error?.localizedDescription ?? "Unknown WebSocket error"
-                self.lastError = errorMessage
-                self.isConnected = false
-                self.connectionStatus = "Error"
+            }
+            
+        case .error(let error):
+            let errorMessage = error?.localizedDescription ?? "Unknown WebSocket error"
+            Task { @MainActor [weak self] in
+                self?.lastError = errorMessage
+                self?.connectionStatus = "Error: \(errorMessage)"
                 
                 // Handle QR code connection error
-                if let completion = self.qrConnectionCompletion {
+                if let completion = self?.qrConnectionCompletion {
                     completion(false, errorMessage)
-                    self.qrConnectionCompletion = nil
+                    self?.qrConnectionCompletion = nil
                 }
-                
-            case .ping(_), .pong(_):
-                // Handle ping/pong for connection keep-alive
-                break
-                
-            case .viabilityChanged(let isViable):
-                if !isViable {
-                    self.connectionStatus = "Connection not viable"
-                }
-                
-            case .reconnectSuggested(let shouldReconnect):
-                if shouldReconnect && !self.isConnected {
-                    self.connectionStatus = "Reconnecting..."
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        self.connect()
-                    }
-                }
-                
-            case .cancelled:
-                self.isConnected = false
-                self.connectionStatus = "Cancelled"
-                
-            default:
-                break
             }
+            
+        case .cancelled, .peerClosed:
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.isConnected = false
+                self.connectionStatus = "Connection closed"
+            }
+            
+        default:
+            break
         }
     }
     

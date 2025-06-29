@@ -90,7 +90,7 @@ struct DeliveredNotificationsView: View {
                 ForEach(notifications) { notification in
                     NotificationHistoryCard(
                         title: notification.title,
-                        body: notification.messageBody,
+                        body: notification.body,
                         date: notification.deliveredDate,
                         category: notification.category,
                         status: .delivered
@@ -175,7 +175,7 @@ struct NotificationHistoryCard: View {
                 Spacer()
                 
                 // Status Badge
-                StatusBadge(status: status)
+                NotificationStatusBadge(status: status)
             }
             
             Text(message)
@@ -304,6 +304,68 @@ enum NotificationStatus: String, CaseIterable, Identifiable {
     var id: String { self.rawValue }
     case delivered
     case pending
+    case opened
+    case cancelled
+    case failed
+    
+    var displayName: String {
+        switch self {
+        case .pending: return "Pending"
+        case .delivered: return "Delivered"
+        case .opened: return "Opened"
+        case .cancelled: return "Cancelled"
+        case .failed: return "Failed"
+        }
+    }
+}
+
+struct NotificationStatusBadge: View {
+    let status: NotificationStatus
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: statusIcon)
+                .font(.caption)
+            Text(status.displayName)
+                .font(.caption)
+                .fontWeight(.medium)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(statusColor.opacity(0.2))
+        .foregroundColor(statusColor)
+        .cornerRadius(8)
+    }
+    
+    private var statusIcon: String {
+        switch status {
+        case .pending:
+            return "clock"
+        case .delivered:
+            return "checkmark.circle"
+        case .opened:
+            return "envelope.open"
+        case .cancelled:
+            return "xmark.circle"
+        case .failed:
+            return "exclamationmark.triangle"
+        }
+    }
+    
+    private var statusColor: Color {
+        switch status {
+        case .pending:
+            return .orange
+        case .delivered:
+            return .blue
+        case .opened:
+            return .green
+        case .cancelled:
+            return .gray
+        case .failed:
+            return .red
+        }
+    }
 }
 
 #Preview {

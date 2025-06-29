@@ -42,7 +42,7 @@ struct ServerSettingsView: View {
         .navigationTitle("Server Settings")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingQRScanner) {
-            QRScannerView { result in
+            ServerQRScannerView { result in
                 handleQRScanResult(result)
             }
         }
@@ -438,7 +438,7 @@ struct ServerSettingsView: View {
 
 // MARK: - Supporting Views
 
-struct QRScannerView: View {
+struct ServerQRScannerView: View {
     let onResult: (String) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var hasPermission = false

@@ -428,6 +428,13 @@ struct NotificationSettings: SettingsProtocol {
     var projectStatusChanges = true
     var newDecisionLogs = true
     var systemAlerts = true
+    var voiceNotificationsEnabled = true
+    var bannerNotificationsEnabled = true
+    var taskOverdueNotifications = true
+    var taskNotificationsEnabled = true
+    var systemNotificationsEnabled = true
+    var voiceCommandResultNotifications = true
+    var serverConnectionNotifications = true
     
     // Quiet hours
     var quietHoursEnabled = false

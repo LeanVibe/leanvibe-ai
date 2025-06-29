@@ -4,6 +4,20 @@ struct MonitoringView: View {
     @ObservedObject var projectManager: ProjectManager
     @ObservedObject var webSocketService: WebSocketService
     
+    private func colorFromString(_ colorName: String) -> Color {
+        switch colorName {
+        case "orange": return .orange
+        case "yellow": return .yellow
+        case "blue": return .blue
+        case "purple": return .purple
+        case "red": return .red
+        case "green": return .green
+        case "pink": return .pink
+        case "gray": return .gray
+        default: return .gray
+        }
+    }
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -59,9 +73,7 @@ struct MonitoringView: View {
                 .font(.headline)
                 .fontWeight(.semibold)
             
-            let activeProjects = projectManager.getActiveProjects()
-            
-            if activeProjects.isEmpty {
+            if projectManager.projects.filter({ $0.status == .active }).isEmpty {
                 Text("No active projects")
                     .foregroundColor(.secondary)
                     .padding()
@@ -69,15 +81,15 @@ struct MonitoringView: View {
                     .background(Color(.systemGray6))
                     .cornerRadius(12)
             } else {
-                ForEach(activeProjects) { project in
+                ForEach(projectManager.projects.filter({ $0.status == .active }), id: \.id) { project in
                     HStack {
-                        Image(systemName: project.language.iconName)
-                            .foregroundColor(Color(project.language.color))
+                        Image(systemName: project.language.icon)
+                            .foregroundColor(colorFromString(project.language.color))
                         
                         VStack(alignment: .leading) {
-                            Text(project.displayName)
+                            Text(project.name)
                                 .font(.headline)
-                            Text(project.language.displayName)
+                            Text(project.language.rawValue)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -106,8 +118,8 @@ struct MonitoringView: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 12) {
-                MetricCard(title: "Messages", value: "\(webSocketService.messages.count)", icon: "message.fill")
-                MetricCard(title: "Projects", value: "\(projectManager.projects.count)", icon: "folder.fill")
+                MetricCard(title: "Messages", value: "\(webSocketService.messages.count)", unit: "", color: .blue, trend: .stable, icon: "message.fill")
+                MetricCard(title: "Projects", value: "\(projectManager.projects.count)", unit: "", color: .blue, trend: .stable, icon: "folder.fill")
             }
         }
     }

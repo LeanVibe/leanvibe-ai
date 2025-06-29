@@ -103,14 +103,14 @@ struct NotificationSettingsView: View {
     
     private var pushNotificationsSection: some View {
         Section("Push Notifications") {
-            Toggle("Enable Push Notifications", isOn: $settingsManager.notificationSettings.pushNotificationsEnabled)
+            Toggle("Enable Push Notifications", isOn: $settingsManager.notificationSettings.notificationsEnabled)
                 .disabled(notificationAuthStatus != .authorized)
-                .onChange(of: settingsManager.notificationSettings.pushNotificationsEnabled) { _, enabled in
+                .onChange(of: settingsManager.notificationSettings.notificationsEnabled) { _, enabled in
                     handlePushNotificationsToggle(enabled)
                 }
             
-            if settingsManager.notificationSettings.pushNotificationsEnabled && notificationAuthStatus == .authorized {
-                Toggle("Task Notifications", isOn: $settingsManager.notificationSettings.taskNotificationsEnabled)
+            if settingsManager.notificationSettings.notificationsEnabled && notificationAuthStatus == .authorized {
+                Toggle("Task Notifications", isOn: $settingsManager.notificationSettings.taskUpdates)
                 
                 Toggle("Voice Command Results", isOn: $settingsManager.notificationSettings.voiceNotificationsEnabled)
                 
@@ -154,18 +154,17 @@ struct NotificationSettingsView: View {
     
     private var inAppNotificationsSection: some View {
         Section("In-App Notifications") {
-            Toggle("Banner Notifications", isOn: $settingsManager.notificationSettings.bannerNotificationsEnabled)
+            Toggle("Banner Notifications", isOn: $settingsManager.notificationSettings.notificationsEnabled)
             
-            Toggle("Sound Effects", isOn: $settingsManager.notificationSettings.soundEffectsEnabled)
+            Toggle("Sound Effects", isOn: $settingsManager.notificationSettings.soundEnabled)
             
-            Toggle("Haptic Feedback", isOn: $settingsManager.notificationSettings.hapticFeedbackEnabled)
-                .onChange(of: settingsManager.notificationSettings.hapticFeedbackEnabled) { _, enabled in
+            Toggle("Vibration", isOn: $settingsManager.notificationSettings.vibrationEnabled)
+                .onChange(of: settingsManager.notificationSettings.vibrationEnabled) { _, enabled in
                     if enabled {
                         testHapticFeedback()
                     }
                 }
             
-            Toggle("Notification Badge", isOn: $settingsManager.notificationSettings.notificationBadgeEnabled)
             
             VStack(alignment: .leading, spacing: 8) {
                 Text("In-App Notification Preview")
@@ -211,7 +210,7 @@ struct NotificationSettingsView: View {
                 iconColor: .green,
                 title: "Task Created",
                 description: "When new tasks are added",
-                isEnabled: $settingsManager.notificationSettings.taskCreatedNotifications
+                isEnabled: $settingsManager.notificationSettings.taskUpdates
             )
             
             NotificationTypeRow(
@@ -219,7 +218,7 @@ struct NotificationSettingsView: View {
                 iconColor: .blue,
                 title: "Task Completed",
                 description: "When tasks are marked as done",
-                isEnabled: $settingsManager.notificationSettings.taskCompletedNotifications
+                isEnabled: $settingsManager.notificationSettings.taskUpdates
             )
             
             NotificationTypeRow(
@@ -258,7 +257,14 @@ struct NotificationSettingsView: View {
                     Spacer()
                     DatePicker(
                         "",
-                        selection: $settingsManager.notificationSettings.quietHoursStart,
+                        selection: Binding<Date>(
+                            get: { 
+                                DateFormatter.timeFormatter.date(from: settingsManager.notificationSettings.quietHoursStart) ?? Date()
+                            },
+                            set: { newValue in
+                                settingsManager.notificationSettings.quietHoursStart = DateFormatter.timeFormatter.string(from: newValue)
+                            }
+                        ),
                         displayedComponents: .hourAndMinute
                     )
                     .labelsHidden()
@@ -269,7 +275,14 @@ struct NotificationSettingsView: View {
                     Spacer()
                     DatePicker(
                         "",
-                        selection: $settingsManager.notificationSettings.quietHoursEnd,
+                        selection: Binding<Date>(
+                            get: { 
+                                DateFormatter.timeFormatter.date(from: settingsManager.notificationSettings.quietHoursEnd) ?? Date()
+                            },
+                            set: { newValue in
+                                settingsManager.notificationSettings.quietHoursEnd = DateFormatter.timeFormatter.string(from: newValue)
+                            }
+                        ),
                         displayedComponents: .hourAndMinute
                     )
                     .labelsHidden()
@@ -280,7 +293,7 @@ struct NotificationSettingsView: View {
                         .font(.subheadline)
                         .fontWeight(.medium)
                     
-                    Text("Notifications will be silenced from \(formatTime(settingsManager.notificationSettings.quietHoursStart)) to \(formatTime(settingsManager.notificationSettings.quietHoursEnd))")
+                    Text("Notifications will be silenced from \(settingsManager.notificationSettings.quietHoursStart) to \(settingsManager.notificationSettings.quietHoursEnd)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -323,7 +336,7 @@ struct NotificationSettingsView: View {
             .buttonStyle(.plain)
             
             NavigationLink("Notification History") {
-                NotificationHistoryView()
+                NotificationHistoryView(pushService: PushNotificationService.shared)
             }
             
             Button(action: { resetNotificationSettings() }) {
@@ -427,7 +440,7 @@ struct NotificationSettingsView: View {
                 checkNotificationPermission()
                 
                 if granted {
-                    settingsManager.notificationSettings.pushNotificationsEnabled = true
+                    settingsManager.notificationSettings.notificationsEnabled = true
                 }
             }
         }
@@ -448,7 +461,7 @@ struct NotificationSettingsView: View {
         let content = UNMutableNotificationContent()
         content.title = "Test Notification"
         content.body = "This is a test notification from LeenVibe"
-        content.sound = settingsManager.notificationSettings.soundEffectsEnabled ? .default : nil
+        content.sound = settingsManager.notificationSettings.soundEnabled ? .default : nil
         
         let request = UNNotificationRequest(
             identifier: "test-notification",
@@ -583,6 +596,15 @@ struct QuietHoursSettingsView: View {
     }
 }
 
+// MARK: - Date Formatter Extension
+
+extension DateFormatter {
+    static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
+}
 
 // MARK: - Preview
 

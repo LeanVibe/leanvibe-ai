@@ -10,7 +10,7 @@ class PerformanceAnalytics: ObservableObject {
     @Published var isMonitoring = false
     @Published var optimizationRecommendations: [OptimizationRecommendation] = []
     
-    private var displayLink: CADisplayLink?
+    nonisolated(unsafe) private var displayLink: CADisplayLink?
     private var lastFrameTime: CFTimeInterval = 0
     private var frameCount = 0
     private var performanceHistory: [PerformanceSnapshot] = []
@@ -26,7 +26,8 @@ class PerformanceAnalytics: ObservableObject {
     }
     
     deinit {
-        stopPerformanceMonitoring()
+        displayLink?.invalidate()
+        displayLink = nil
     }
     
     // MARK: - Performance Monitoring
@@ -41,7 +42,7 @@ class PerformanceAnalytics: ObservableObject {
         
         // Start continuous monitoring
         Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.updateDetailedMetrics()
+            Task { await self?.updateDetailedMetrics() }
         }
         
         print("📊 Performance Analytics: Monitoring started")
@@ -62,7 +63,7 @@ class PerformanceAnalytics: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleMemoryWarning()
+            Task { await self?.handleMemoryWarning() }
         }
         
         // Setup background/foreground observers
@@ -71,7 +72,7 @@ class PerformanceAnalytics: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleBackgroundTransition()
+            Task { await self?.handleBackgroundTransition() }
         }
         
         NotificationCenter.default.addObserver(
@@ -79,7 +80,7 @@ class PerformanceAnalytics: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleForegroundTransition()
+            Task { await self?.handleForegroundTransition() }
         }
     }
     

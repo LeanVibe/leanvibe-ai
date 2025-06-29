@@ -87,13 +87,13 @@ struct ProjectDashboardView: View {
             }
             
             // Active projects summary
-            if !projectManager.getActiveProjects().isEmpty {
+            if !projectManager.projects.filter({ $0.status == .active }).isEmpty {
                 HStack {
                     Circle()
                         .fill(Color.green)
                         .frame(width: 8, height: 8)
                     
-                    Text("\(projectManager.getActiveProjects().count) active project(s)")
+                    Text("\(projectManager.projects.filter({ $0.status == .active }).count) active project(s)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
@@ -253,18 +253,18 @@ struct ProjectCard: View {
                 // Header with language icon and status
                 HStack {
                     HStack(spacing: 8) {
-                        Image(systemName: project.language.iconName)
+                        Image(systemName: project.language.icon)
                             .foregroundColor(Color(project.language.color))
                             .font(.title2)
                         
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(project.displayName)
+                            Text(project.name)
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)
                                 .lineLimit(1)
                             
-                            Text(project.language.displayName)
+                            Text(project.language.rawValue)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -272,27 +272,27 @@ struct ProjectCard: View {
                     
                     Spacer()
                     
-                    StatusBadge(status: project.status)
+                    ProjectStatusBadge(status: project.status)
                 }
                 
                 // Metrics row
                 HStack(spacing: 16) {
                     MetricItem(
                         icon: "doc.text",
-                        value: "\(project.metrics.fileCount)",
+                        value: "\(project.metrics.filesCount)",
                         label: "Files"
                     )
                     
                     MetricItem(
                         icon: "number",
-                        value: "\(project.metrics.lineCount)",
+                        value: "\(project.metrics.linesOfCode)",
                         label: "Lines"
                     )
                     
-                    if project.metrics.issueCount > 0 {
+                    if project.metrics.issuesCount > 0 {
                         MetricItem(
                             icon: "exclamationmark.triangle",
-                            value: "\(project.metrics.issueCount)",
+                            value: "\(project.metrics.issuesCount)",
                             label: "Issues",
                             color: .red
                         )
@@ -328,15 +328,15 @@ struct ProjectCard: View {
     }
 }
 
-struct StatusBadge: View {
+struct ProjectStatusBadge: View {
     let status: ProjectStatus
     
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: status.iconName)
+            Image(systemName: status.icon)
                 .font(.caption)
             
-            Text(status.displayName)
+            Text(status.rawValue)
                 .font(.caption)
                 .fontWeight(.medium)
         }
@@ -446,6 +446,9 @@ struct QuickActionCard: View {
 
 struct ProjectDashboardView_Previews: PreviewProvider {
     static var previews: some View {
-        ProjectDashboardView(project: .constant(Project.mock()))
+        ProjectDashboardView(
+            projectManager: ProjectManager(),
+            webSocketService: WebSocketService()
+        )
     }
 }

@@ -56,10 +56,10 @@ struct FloatingVoiceIndicator: View {
             .padding(.bottom, 20)
         }
         .sheet(isPresented: $showingVoiceModal) {
-            VoiceCommandView(webSocketService: webSocketService)
+            VoiceCommandView(webSocketService: webSocketService, settingsManager: SettingsManager.shared)
         }
-        .onChange(of: wakePhraseManager.wakePhraseDetected) { detected in
-            if detected {
+        .onChange(of: wakePhraseManager.wakePhraseDetected) { _, newValue in
+            if newValue {
                 withAnimation(.spring()) {
                     showingVoiceModal = true
                 }

@@ -352,7 +352,7 @@ struct VoicePermissionSetupView: View {
         isRequestingPermissions = true
         
         Task {
-            await permissionManager.requestAllPermissions()
+            permissionManager.requestFullPermissions { _ in }
             
             await MainActor.run {
                 isRequestingPermissions = false
@@ -367,7 +367,7 @@ struct VoicePermissionSetupView: View {
         isRequestingPermissions = true
         
         Task {
-            await permissionManager.requestAllPermissions()
+            permissionManager.requestFullPermissions { _ in }
             
             await MainActor.run {
                 isRequestingPermissions = false

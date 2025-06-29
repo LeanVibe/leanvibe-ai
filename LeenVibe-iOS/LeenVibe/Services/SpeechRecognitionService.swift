@@ -191,7 +191,7 @@ class SpeechRecognitionService: NSObject, ObservableObject {
 
 #if os(iOS)
 extension SpeechRecognitionService: SFSpeechRecognizerDelegate {
-    nonisolated(unsafe) func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
+    nonisolated func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
         _Concurrency.Task { @MainActor in
             if !available {
                 self.recognitionState = .error("Speech recognizer became unavailable")

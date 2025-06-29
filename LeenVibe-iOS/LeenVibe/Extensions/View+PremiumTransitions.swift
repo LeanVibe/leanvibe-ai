@@ -111,7 +111,7 @@ extension View {
         self
             .offset(offset)
             .scaleEffect(1 - abs(offset.width) / 1000)
-            .opacity(1 - abs(offset.width) / 500)
+            .opacity(1 - abs(offset.width) / 500.0)
             .animation(PremiumTransitions.microInteraction, value: offset)
     }
     
@@ -123,31 +123,12 @@ extension View {
             .offset(y: max(0, pullDistance))
             .scaleEffect(1 + min(pullDistance / 1000, 0.1))
             .animation(PremiumTransitions.spring, value: pullDistance)
-            .onChange(of: pullDistance) { _, newValue in
-                if newValue >= threshold {
-                    PremiumHaptics.pullToRefresh()
-                }
-            }
     }
+            
     
     // MARK: - Loading State Transitions
     
-    func premiumLoadingTransition(
-        isLoading: Bool,
-        loadingContent: some View = PremiumLoadingView()
-    ) -> some View {
-        ZStack {
-            self
-                .opacity(isLoading ? 0.3 : 1.0)
-                .disabled(isLoading)
-            
-            if isLoading {
-                loadingContent
-                    .transition(PremiumTransitions.fadeScale)
-            }
-        }
-        .animation(PremiumTransitions.easeInOut, value: isLoading)
-    }
+    
     
     // MARK: - Error State Transitions
     
@@ -167,7 +148,7 @@ extension View {
             }
         }
         .animation(PremiumTransitions.spring, value: hasError)
-        .onChange(of: hasError) { _, newValue in
+        .onChange(of: hasError) { newValue in
             if newValue {
                 PremiumHaptics.errorNotification()
             }
@@ -189,11 +170,7 @@ extension View {
             }
         }
         .animation(PremiumTransitions.spring, value: showSuccess)
-        .onChange(of: showSuccess) { _, newValue in
-            if newValue {
-                PremiumHaptics.successNotification()
-            }
-        }
+        
     }
     
     // MARK: - List Item Transitions
@@ -304,17 +281,16 @@ class PremiumTransitionCoordinator: ObservableObject {
         let steps = Int(duration * 60) // 60 FPS
         let increment = 1.0 / Double(steps)
         
-        transitionTimer = Timer.scheduledTimer(withTimeInterval: duration / Double(steps), repeats: true) { [weak self] timer in
-            guard let self = self else {
-                timer.invalidate()
-                return
-            }
+        transitionTimer?.invalidate()
+        transitionTimer = Timer.scheduledTimer(withTimeInterval: duration / Double(steps), repeats: true) { [weak self] _ in
+            guard let self = self else { return }
             
-            self.transitionProgress += increment
-            
-            if self.transitionProgress >= 1.0 {
-                self.completeTransition()
-                timer.invalidate()
+            DispatchQueue.main.async {
+                self.transitionProgress += increment
+                
+                if self.transitionProgress >= 1.0 {
+                    self.completeTransition()
+                }
             }
         }
     }
@@ -346,8 +322,8 @@ struct PremiumTransitionModifier: ViewModifier {
         content
             .transition(transition)
             .animation(animation, value: isPresented)
-            .onChange(of: isPresented) { _, newValue in
-                if let hapticFeedback = hapticFeedback {
+            .onChange(of: isPresented) { newValue in
+                if let hapticFeedback = hapticFeedback, newValue {
                     PremiumHaptics.contextualFeedback(for: hapticFeedback)
                 }
             }
@@ -413,15 +389,15 @@ struct PremiumSwipeTransition: ViewModifier {
     }
     
     private func getSwipeDirection(from translation: CGSize) -> SwipeDirection {
-        if abs(translation.x) > abs(translation.y) {
-            return translation.x > 0 ? .right : .left
+        if abs(translation.width) > abs(translation.height) {
+            return translation.width > 0 ? .right : .left
         } else {
-            return translation.y > 0 ? .down : .up
+            return translation.height > 0 ? .down : .up
         }
     }
     
     private func getSwipeDistance(from translation: CGSize) -> CGFloat {
-        return sqrt(translation.x * translation.x + translation.y * translation.y)
+        return sqrt(translation.width * translation.width + translation.height * translation.height)
     }
 }
 

@@ -13,7 +13,7 @@ class BatteryOptimizedManager: ObservableObject {
     @Published var batteryUsageRate: Double = 0.0 // % per hour
     
     // Battery monitoring
-    private var batteryMonitoringTimer: Timer?
+    nonisolated(unsafe) private var batteryMonitoringTimer: Timer?
     private var batteryHistory: [BatterySnapshot] = []
     private let maxHistoryCount = 20 // Keep 20 snapshots (about 20 minutes)
     
@@ -55,7 +55,8 @@ class BatteryOptimizedManager: ObservableObject {
     }
     
     deinit {
-        stopBatteryTracking()
+        // Battery tracking will be stopped when the object is deallocated
+        batteryMonitoringTimer?.invalidate()
     }
     
     // MARK: - Battery Monitoring Setup
@@ -72,7 +73,9 @@ class BatteryOptimizedManager: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.updateBatteryInfo()
+            Task { @MainActor in
+                self?.updateBatteryInfo()
+            }
         }
         
         // Battery state change notifications
@@ -81,7 +84,9 @@ class BatteryOptimizedManager: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.updateBatteryInfo()
+            Task { @MainActor in
+                self?.updateBatteryInfo()
+            }
         }
         
         // Low power mode notifications
@@ -90,15 +95,19 @@ class BatteryOptimizedManager: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.updatePowerModeStatus()
+            Task { @MainActor in
+                self?.updatePowerModeStatus()
+            }
         }
     }
     
     private func startBatteryTracking() {
         batteryMonitoringTimer = Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
-            self?.recordBatterySnapshot()
-            self?.calculateBatteryUsageRate()
-            self?.evaluateOptimizationNeeds()
+            Task { @MainActor in
+                self?.recordBatterySnapshot()
+                self?.calculateBatteryUsageRate()
+                self?.evaluateOptimizationNeeds()
+            }
         }
     }
     

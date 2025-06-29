@@ -12,8 +12,8 @@ class VoicePermissionManager: ObservableObject {
     @Published var isFullyAuthorized = false
     @Published var permissionError: String?
     
-    private var speechAuthorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
-    private var microphoneAuthorizationStatus: AVAudioSession.RecordPermission = .undetermined
+    @Published private(set) var speechAuthorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
+    @Published private(set) var microphoneAuthorizationStatus: AVAudioSession.RecordPermission = .undetermined
     
     enum PermissionStatus {
         case notDetermined
@@ -30,6 +30,14 @@ class VoicePermissionManager: ObservableObject {
         checkMicrophonePermission()
         checkSpeechRecognitionPermission()
         updateOverallStatus()
+    }
+    
+    func openAppSettings() {
+        #if canImport(UIKit)
+        if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(settingsURL)
+        }
+        #endif
     }
     
     private func checkMicrophonePermission() {

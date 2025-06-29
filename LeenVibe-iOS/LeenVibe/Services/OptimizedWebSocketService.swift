@@ -6,6 +6,7 @@ import Combine
 
 #if os(iOS)
 @available(macOS 10.15, iOS 13.0, *)
+@MainActor
 class OptimizedWebSocketService: ObservableObject {
     @Published var isConnected = false
     @Published var connectionQuality: ConnectionQuality = .unknown
@@ -39,7 +40,8 @@ class OptimizedWebSocketService: ObservableObject {
     }
     
     deinit {
-        cleanup()
+        // Cleanup will be handled automatically
+        networkMonitor.cancel()
     }
     
     // MARK: - Performance Optimization
@@ -74,7 +76,7 @@ class OptimizedWebSocketService: ObservableObject {
     private func enableMessageBatching() {
         // Start batching timer for improved throughput
         batchTimer = Timer.scheduledTimer(withTimeInterval: batchInterval, repeats: true) { [weak self] _ in
-            self?.processBatchedMessages()
+            Task { await self?.processBatchedMessages() }
         }
     }
     
@@ -300,7 +302,7 @@ class OptimizedWebSocketService: ObservableObject {
     private func handleNetworkError(_ error: Error) {
         print("🌐 WebSocket Service: Network error - \(error)")
         
-        _Concurrency.Task {
+        Task {
             await self.attemptReconnection()
         }
     }

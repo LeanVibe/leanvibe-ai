@@ -21,7 +21,7 @@ struct ProjectDetailView: View {
                 }
                 .padding()
             }
-            .navigationTitle(project.displayName)
+            .navigationTitle(project.name)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -36,23 +36,23 @@ struct ProjectDetailView: View {
     private var projectHeaderSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: project.language.iconName)
+                Image(systemName: project.language.icon)
                     .foregroundColor(Color(project.language.color))
                     .font(.largeTitle)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(project.displayName)
+                    Text(project.name)
                         .font(.title)
                         .fontWeight(.bold)
                     
-                    Text(project.language.displayName)
+                    Text(project.language.rawValue)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
-                StatusBadge(status: project.status)
+                ProjectStatusBadge(status: project.status)
             }
             
             Text(project.path)
@@ -80,30 +80,30 @@ struct ProjectDetailView: View {
             ], spacing: 12) {
                 MetricDetailCard(
                     title: "Files",
-                    value: "\(project.metrics.fileCount)",
+                    value: "\(project.metrics.filesCount)",
                     icon: "doc.text",
                     color: .blue
                 )
                 
                 MetricDetailCard(
                     title: "Lines of Code",
-                    value: "\(project.metrics.lineCount)",
+                    value: "\(project.metrics.linesOfCode)",
                     icon: "number",
                     color: .green
                 )
                 
                 MetricDetailCard(
-                    title: "Complexity",
-                    value: String(format: "%.1f", project.metrics.complexity),
-                    icon: "chart.bar",
-                    color: .orange
+                    title: "Health Score",
+                    value: String(format: "%.1f%%", project.metrics.healthScore * 100),
+                    icon: "heart.fill",
+                    color: Color(project.metrics.healthColor)
                 )
                 
                 MetricDetailCard(
                     title: "Issues",
-                    value: "\(project.metrics.issueCount)",
+                    value: "\(project.metrics.issuesCount)",
                     icon: "exclamationmark.triangle",
-                    color: project.metrics.issueCount > 0 ? .red : .gray
+                    color: project.metrics.issuesCount > 0 ? .red : .gray
                 )
             }
             
@@ -128,7 +128,7 @@ struct ProjectDetailView: View {
                 .fontWeight(.semibold)
             
             VStack(spacing: 12) {
-                ActionButton(
+                ProjectActionButton(
                     title: "Analyze Project",
                     icon: "magnifyingglass",
                     color: .blue,
@@ -139,7 +139,7 @@ struct ProjectDetailView: View {
                     }
                 }
                 
-                ActionButton(
+                ProjectActionButton(
                     title: "Open in Agent Chat",
                     icon: "brain.head.profile",
                     color: .purple,
@@ -149,7 +149,7 @@ struct ProjectDetailView: View {
                     dismiss()
                 }
                 
-                ActionButton(
+                ProjectActionButton(
                     title: "Remove Project",
                     icon: "trash",
                     color: .red,
@@ -190,7 +190,7 @@ struct MetricDetailCard: View {
     }
 }
 
-struct ActionButton: View {
+struct ProjectActionButton: View {
     let title: String
     let icon: String
     let color: Color

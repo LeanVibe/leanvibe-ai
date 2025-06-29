@@ -4,6 +4,7 @@ import Speech
 struct VoiceTabView: View {
     @ObservedObject var webSocketService: WebSocketService
     @ObservedObject var projectManager: ProjectManager
+    @ObservedObject var settingsManager: SettingsManager
     
     @StateObject private var speechService: SpeechRecognitionService
     @StateObject private var permissionManager = VoicePermissionManager()
@@ -13,15 +14,16 @@ struct VoiceTabView: View {
     @State private var showingPermissionSheet = false
     @State private var showingVoiceModal = false
     
-    init(webSocketService: WebSocketService, projectManager: ProjectManager) {
+    init(webSocketService: WebSocketService, projectManager: ProjectManager, settingsManager: SettingsManager) {
         self.webSocketService = webSocketService
         self.projectManager = projectManager
+        self.settingsManager = settingsManager
         self._speechService = StateObject(wrappedValue: SpeechRecognitionService())
-        self._voiceProcessor = StateObject(wrappedValue: DashboardVoiceProcessor(projectManager: projectManager, webSocketService: webSocketService))
+        self._voiceProcessor = StateObject(wrappedValue: DashboardVoiceProcessor(projectManager: projectManager, webSocketService: webSocketService, settingsManager: settingsManager))
         self._wakePhraseManager = StateObject(wrappedValue: WakePhraseManager(
             webSocketService: webSocketService,
             projectManager: projectManager,
-            voiceProcessor: DashboardVoiceProcessor(projectManager: projectManager, webSocketService: webSocketService)
+            voiceProcessor: DashboardVoiceProcessor(projectManager: projectManager, webSocketService: webSocketService, settingsManager: settingsManager)
         ))
     }
     
@@ -57,7 +59,7 @@ struct VoiceTabView: View {
             VoicePermissionSetupView(permissionManager: permissionManager)
         }
         .sheet(isPresented: $showingVoiceModal) {
-            VoiceCommandView(webSocketService: webSocketService)
+            VoiceCommandView(webSocketService: webSocketService, settingsManager: settingsManager)
         }
         .onAppear {
             permissionManager.checkPermissionsStatus()
@@ -295,7 +297,9 @@ struct VoiceTabView: View {
             object: nil,
             queue: .main
         ) { _ in
-            self.showingVoiceModal = true
+            Task { @MainActor in
+                showingVoiceModal = true
+            }
         }
     }
 }
@@ -362,6 +366,7 @@ struct VoiceCommandHistoryRow: View {
 #Preview {
     VoiceTabView(
         webSocketService: WebSocketService(),
-        projectManager: ProjectManager()
+        projectManager: ProjectManager(),
+        settingsManager: SettingsManager.shared
     )
 }

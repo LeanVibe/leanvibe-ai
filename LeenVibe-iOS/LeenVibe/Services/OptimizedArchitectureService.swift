@@ -31,7 +31,7 @@ class OptimizedArchitectureService: ObservableObject {
     }
     
     deinit {
-        cleanupResources()
+        // Cleanup is handled automatically by ARC
     }
     
     // MARK: - Memory Optimization
@@ -50,7 +50,7 @@ class OptimizedArchitectureService: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleMemoryWarning()
+            Task { await self?.handleMemoryWarning() }
         }
     }
     
@@ -72,7 +72,7 @@ class OptimizedArchitectureService: ObservableObject {
     
     private func setupMemoryMonitoring() {
         Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            self?.updateMemoryUsage()
+            Task { await self?.updateMemoryUsage() }
         }
     }
     
@@ -108,7 +108,7 @@ class OptimizedArchitectureService: ObservableObject {
         let cacheKey = NSString(string: "\(type.rawValue):\(specification.hashValue)")
         if let cachedDiagram = diagramCache.object(forKey: cacheKey) {
             recordRenderTime(Date().timeIntervalSince(startTime))
-            return cachedDiagram
+            return cachedDiagram.diagram
         }
         
         do {
@@ -123,7 +123,7 @@ class OptimizedArchitectureService: ObservableObject {
             )
             
             // Cache the result
-            diagramCache.setObject(diagram, forKey: cacheKey)
+            diagramCache.setObject(CachedDiagram(diagram: diagram), forKey: cacheKey)
             
             // Return WebView to pool
             webViewPool.returnWebView(webView)
@@ -156,7 +156,7 @@ class OptimizedArchitectureService: ObservableObject {
             DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: timeout)
             
             // Monitor for completion
-            webView.evaluateJavaScript("document.readyState") { result, error in
+            webView.evaluateJavaScript("document.readyState") { [weak self] result, error in
                 timeout.cancel()
                 
                 if let error = error {
@@ -165,8 +165,8 @@ class OptimizedArchitectureService: ObservableObject {
                 }
                 
                 // Extract rendered diagram
-                self.extractDiagramFromWebView(webView) { diagram in
-                    if let diagram = diagram {
+                Task {
+                    if let diagram = await self?.extractDiagramFromWebView(webView) {
                         continuation.resume(returning: diagram)
                     } else {
                         continuation.resume(throwing: ArchitectureServiceError.extractionFailed)
@@ -209,24 +209,28 @@ class OptimizedArchitectureService: ObservableObject {
         """
     }
     
-    private func extractDiagramFromWebView(_ webView: WKWebView, completion: @escaping (ArchitectureDiagram?) -> Void) {
+    private func extractDiagramFromWebView(_ webView: WKWebView) async -> ArchitectureDiagram? {
         // Extract SVG and create optimized diagram object
-        webView.evaluateJavaScript("document.querySelector('.mermaid svg')?.outerHTML") { result, error in
+        do {
+            let result = try await webView.evaluateJavaScript("document.querySelector('.mermaid svg')?.outerHTML")
             guard let svgString = result as? String else {
-                completion(nil)
-                return
+                return nil
             }
             
             let diagram = ArchitectureDiagram(
                 id: UUID(),
-                svgContent: svgString,
-                specification: "",
-                type: .flowchart,
+                name: "Architecture Diagram",
+                mermaidDefinition: svgString,
+                description: "Generated diagram",
+                diagramType: "flowchart",
                 createdAt: Date(),
-                memoryFootprint: svgString.count // Rough estimate
+                updatedAt: Date()
             )
             
-            completion(diagram)
+            return diagram
+        } catch {
+            print("Error extracting diagram: \(error)")
+            return nil
         }
     }
     

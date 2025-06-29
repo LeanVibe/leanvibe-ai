@@ -1,6 +1,6 @@
 name: LeenVibe
 options:
-  bundleIdPrefix: com.leenvibe
+  bundleIdPrefix: com.bogdan.leenvibe
   deploymentTarget:
     iOS: "16.0"
   developmentLanguage: en
@@ -25,7 +25,7 @@ settings:
     SWIFT_EMIT_LOC_STRINGS: true
     INFOPLIST_KEY_CFBundleDisplayName: "LeenVibe"
     INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.developer-tools"
-    PRODUCT_BUNDLE_IDENTIFIER: "com.leenvibe.app"
+
 
 packages:
   Starscream:
@@ -90,10 +90,44 @@ targets:
     settings:
       base:
         INFOPLIST_FILE: LeenVibe/Info.plist
-        PRODUCT_BUNDLE_IDENTIFIER: com.leenvibe.app
+        
         PRODUCT_NAME: LeenVibe
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         CODE_SIGN_STYLE: Automatic
         ENABLE_PREVIEWS: true
         SWIFT_EMIT_LOC_STRINGS: true
+
+  LeenVibeTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: LeenVibeTests
+    dependencies:
+      - target: LeenVibe
+    settings:
+      base:
+        BUNDLE_LOADER: $(TEST_HOST)
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/LeenVibe.app/LeenVibe
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.bogdan.leenvibe.tests
+
+schemes:
+  LeenVibe:
+    build:
+      targets:
+        LeenVibe: all
+        LeenVibeTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - LeenVibeTests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

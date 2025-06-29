@@ -46,9 +46,8 @@ class NotificationAnalyticsService: ObservableObject {
         logger.info("NotificationAnalyticsService initialized")
     }
     
-    deinit {
-        stopAnalyticsUpdates()
-    }
+    // Note: stopAnalyticsUpdates should be called explicitly when no longer needed
+    // Cannot call async methods in deinit
     
     // MARK: - Event Tracking
     

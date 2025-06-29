@@ -215,7 +215,7 @@ struct AdvancedVoiceWaveformView: View {
                     .fill(stateColor)
                     .frame(width: 8, height: 8)
                 
-                Text(recognitionState.description)
+                Text(stateDescription)
                     .font(.caption)
                     .foregroundColor(stateColor)
             }
@@ -238,11 +238,28 @@ struct AdvancedVoiceWaveformView: View {
         }
     }
     
+    private var stateDescription: String {
+        switch recognitionState {
+        case .listening:
+            return "Listening..."
+        case .processing:
+            return "Processing..."
+        case .completed:
+            return "Completed"
+        case .error(let message):
+            return "Error: \(message)"
+        case .idle:
+            return "Ready"
+        }
+    }
+    
     private func startFrequencyAnimation() {
         Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
-            updateFrequencyData()
-            withAnimation(.linear(duration: 0.05)) {
-                animationPhase += 0.1
+            Task { @MainActor in
+                updateFrequencyData()
+                withAnimation(.linear(duration: 0.05)) {
+                    animationPhase += 0.1
+                }
             }
         }
     }

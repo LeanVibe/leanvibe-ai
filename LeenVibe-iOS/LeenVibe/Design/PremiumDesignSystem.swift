@@ -89,36 +89,6 @@ struct PremiumDesignSystem {
         static let buttonTitle = Font.system(size: 16, weight: .semibold, design: .default)
     }
     
-    // MARK: - Shadow Styles
-    struct Shadows {
-        static let card = Shadow(
-            color: cardShadow,
-            radius: 8,
-            x: 0,
-            y: 4
-        )
-        
-        static let elevated = Shadow(
-            color: elevatedShadow,
-            radius: 16,
-            x: 0,
-            y: 8
-        )
-        
-        static let floating = Shadow(
-            color: .black.opacity(0.25),
-            radius: 20,
-            x: 0,
-            y: 12
-        )
-        
-        static let pressed = Shadow(
-            color: cardShadow,
-            radius: 2,
-            x: 0,
-            y: 1
-        )
-    }
 }
 
 // MARK: - Premium Card Component
@@ -149,14 +119,19 @@ struct PremiumCard<Content: View>: View {
             }
         }
         
-        var background: AnyView {
+        @ViewBuilder
+        var background: some View {
             switch self {
             case .standard, .elevated:
-                return AnyView(PremiumDesignSystem.Colors.background)
+                PremiumDesignSystem.Colors.background
             case .glass:
-                return AnyView(PremiumDesignSystem.glassMaterial)
+                Rectangle()
+                    .fill(PremiumDesignSystem.Colors.glassBackground)
+                    .background(PremiumDesignSystem.glassMaterial)
             case .floating:
-                return AnyView(PremiumDesignSystem.thickGlassMaterial)
+                Rectangle()
+                    .fill(PremiumDesignSystem.Colors.glassBackground)
+                    .background(PremiumDesignSystem.thickGlassMaterial)
             }
         }
     }
@@ -180,15 +155,22 @@ struct PremiumCard<Content: View>: View {
             .scaleEffect(isPressed ? 0.98 : (isHovered ? 1.02 : 1.0))
             .animation(.easeInOut(duration: PremiumDesignSystem.microInteractionDuration), value: isPressed)
             .animation(.easeInOut(duration: PremiumDesignSystem.microInteractionDuration), value: isHovered)
-            .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { pressing in
-                withAnimation {
-                    isPressed = pressing
-                }
-                
-                if pressing {
-                    PremiumHaptics.lightImpact()
-                }
-            }
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        if !isPressed {
+                            withAnimation {
+                                isPressed = true
+                            }
+                            PremiumHaptics.lightImpact()
+                        }
+                    }
+                    .onEnded { _ in
+                        withAnimation {
+                            isPressed = false
+                        }
+                    }
+            )
             .onHover { hovering in
                 withAnimation {
                     isHovered = hovering
@@ -270,36 +252,21 @@ struct PremiumButtonStyle: ButtonStyle {
 
 // MARK: - Sophisticated Haptic Feedback System
 
+@MainActor
 class PremiumHaptics {
-    private static let lightImpactGenerator: UIImpactFeedbackGenerator = {
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.prepare()
-        return generator
-    }()
+    private static let lightImpactGenerator = UIImpactFeedbackGenerator(style: .light)
+    private static let mediumImpactGenerator = UIImpactFeedbackGenerator(style: .medium)
+    private static let heavyImpactGenerator = UIImpactFeedbackGenerator(style: .heavy)
+    private static let notificationGenerator = UINotificationFeedbackGenerator()
+    private static let selectionGenerator = UISelectionFeedbackGenerator()
     
-    private static let mediumImpactGenerator: UIImpactFeedbackGenerator = {
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.prepare()
-        return generator
-    }()
-    
-    private static let heavyImpactGenerator: UIImpactFeedbackGenerator = {
-        let generator = UIImpactFeedbackGenerator(style: .heavy)
-        generator.prepare()
-        return generator
-    }()
-    
-    private static let notificationGenerator: UINotificationFeedbackGenerator = {
-        let generator = UINotificationFeedbackGenerator()
-        generator.prepare()
-        return generator
-    }()
-    
-    private static let selectionGenerator: UISelectionFeedbackGenerator = {
-        let generator = UISelectionFeedbackGenerator()
-        generator.prepare()
-        return generator
-    }()
+    static func prepareGenerators() {
+        lightImpactGenerator.prepare()
+        mediumImpactGenerator.prepare()
+        heavyImpactGenerator.prepare()
+        notificationGenerator.prepare()
+        selectionGenerator.prepare()
+    }
     
     // MARK: - Basic Haptics
     
@@ -463,14 +430,14 @@ struct PremiumTransitions {
     )
     
     // MARK: - Slide Transitions
-    static let slideFromRight = AnyTransition.move(edge: .trailing)
-    static let slideFromLeft = AnyTransition.move(edge: .leading)
-    static let slideFromTop = AnyTransition.move(edge: .top)
-    static let slideFromBottom = AnyTransition.move(edge: .bottom)
+    nonisolated(unsafe) static let slideFromRight = AnyTransition.move(edge: .trailing)
+    nonisolated(unsafe) static let slideFromLeft = AnyTransition.move(edge: .leading)
+    nonisolated(unsafe) static let slideFromTop = AnyTransition.move(edge: .top)
+    nonisolated(unsafe) static let slideFromBottom = AnyTransition.move(edge: .bottom)
     
     // MARK: - Custom Transitions
-    static let fadeScale = AnyTransition.scale.combined(with: .opacity)
-    static let flipHorizontal = AnyTransition.asymmetric(
+    nonisolated(unsafe) static let fadeScale = AnyTransition.scale.combined(with: .opacity)
+    nonisolated(unsafe) static let flipHorizontal = AnyTransition.asymmetric(
         insertion: .scale(scale: 0.01).combined(with: .opacity),
         removal: .scale(scale: 0.01).combined(with: .opacity)
     )

@@ -12,8 +12,8 @@ class ProductionReadinessValidator: ObservableObject {
     @Published var currentCheck: String = ""
     
     // Dependencies
-    private let performanceValidator: PerformanceValidationSuite
-    private let integratedManager: IntegratedPerformanceManager
+    nonisolated(unsafe) private let performanceValidator: PerformanceValidationSuite
+    nonisolated(unsafe) private let integratedManager: IntegratedPerformanceManager
     
     // Production readiness criteria
     struct ProductionCriteria {
@@ -91,7 +91,7 @@ class ProductionReadinessValidator: ObservableObject {
             score: performanceReport.overallScore,
             details: "Performance score: \(String(format: "%.1f", performanceReport.overallScore))% (Target: ≥\(Int(ProductionCriteria.minimumPerformanceScore))%)",
             executionTime: Date().timeIntervalSince(startTime),
-            criticalIssues: performanceReport.failedTests
+            criticalIssues: performanceReport.totalTests - performanceReport.passedTests
         )
         
         validationResults.append(result)

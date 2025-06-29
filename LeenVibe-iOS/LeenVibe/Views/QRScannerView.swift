@@ -2,7 +2,7 @@ import SwiftUI
 import AVFoundation
 import AudioToolbox
 
-struct QRScannerView: View {
+struct LeenVibeQRScannerView: View {
     @Binding var isPresented: Bool
     @ObservedObject var webSocketService: WebSocketService
     @State private var isScanning = true

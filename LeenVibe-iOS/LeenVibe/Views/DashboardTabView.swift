@@ -4,12 +4,14 @@ struct DashboardTabView: View {
     @StateObject private var webSocketService = WebSocketService()
     @StateObject private var projectManager = ProjectManager()
     @StateObject private var speechService: SpeechRecognitionService
+    @StateObject private var taskService = TaskService()
     @StateObject private var wakePhraseManager: WakePhraseManager
     @StateObject private var permissionManager = VoicePermissionManager()
     @StateObject private var globalVoice: GlobalVoiceManager
     @StateObject private var navigationCoordinator = NavigationCoordinator()
     @StateObject private var performanceAnalytics = PerformanceAnalytics()
     @StateObject private var batteryManager = BatteryOptimizedManager()
+    @StateObject private var settingsManager: SettingsManager
     
     @State private var showingVoiceInterface = false
     
@@ -26,6 +28,7 @@ struct DashboardTabView: View {
         self._webSocketService = StateObject(wrappedValue: webSocket)
         self._projectManager = StateObject(wrappedValue: projectMgr)
         self._speechService = StateObject(wrappedValue: SpeechRecognitionService())
+        self._settingsManager = StateObject(wrappedValue: settingsMgr)
         self._wakePhraseManager = StateObject(wrappedValue: WakePhraseManager(
             webSocketService: webSocket,
             projectManager: projectMgr,
@@ -33,7 +36,8 @@ struct DashboardTabView: View {
         ))
         self._globalVoice = StateObject(wrappedValue: GlobalVoiceManager(
             webSocketService: webSocket,
-            projectManager: projectMgr
+            projectManager: projectMgr,
+            settingsManager: settingsMgr
         ))
     }
     
@@ -68,7 +72,7 @@ struct DashboardTabView: View {
                           systemImage: NavigationCoordinator.Tab.projects.systemImage)
                 }
                 .tag(NavigationCoordinator.Tab.projects.rawValue)
-                .hapticFeedback(.tabSwitch)
+                .hapticFeedback(.navigation)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     ChatView(webSocketService: webSocketService)
@@ -78,26 +82,20 @@ struct DashboardTabView: View {
                           systemImage: NavigationCoordinator.Tab.agent.systemImage)
                 }
                 .tag(NavigationCoordinator.Tab.agent.rawValue)
-                .hapticFeedback(.tabSwitch)
+                .hapticFeedback(.navigation)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     MonitoringView(
                         projectManager: projectManager,
                         webSocketService: webSocketService
                     )
-                    .navigationDestination(for: String.self) { destination in
-                        if destination.hasPrefix("task-") {
-                            let taskId = String(destination.dropFirst("task-".count))
-                            TaskDetailView(taskId: taskId, webSocketService: webSocketService)
-                        }
-                    }
                 }
                 .tabItem {
                     Label(NavigationCoordinator.Tab.monitor.title,
                           systemImage: NavigationCoordinator.Tab.monitor.systemImage)
                 }
                 .tag(NavigationCoordinator.Tab.monitor.rawValue)
-                .hapticFeedback(.tabSwitch)
+                .hapticFeedback(.navigation)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     SettingsTabView(webSocketService: webSocketService)
@@ -107,12 +105,13 @@ struct DashboardTabView: View {
                           systemImage: NavigationCoordinator.Tab.settings.systemImage)
                 }
                 .tag(NavigationCoordinator.Tab.settings.rawValue)
-                .hapticFeedback(.tabSwitch)
+                .hapticFeedback(.navigation)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     VoiceTabView(
                         webSocketService: webSocketService,
-                        projectManager: projectManager
+                        projectManager: projectManager,
+                        settingsManager: settingsManager
                     )
                 }
                 .tabItem {
@@ -128,7 +127,7 @@ struct DashboardTabView: View {
                     }
                 }
                 .tag(NavigationCoordinator.Tab.voice.rawValue)
-                .hapticFeedback(.tabSwitch)
+                .hapticFeedback(.navigation)
             }
             .premiumShadow(PremiumDesignSystem.Shadows.elevated)
             .animation(PremiumTransitions.easeInOut, value: navigationCoordinator.selectedTab)
