@@ -1,10 +1,12 @@
 import SwiftUI
 import Speech
 
+@available(macOS 10.15, iOS 13.0, *)
+@available(macOS 11.0, iOS 14.0, *)
 struct VoiceCommandView: View {
     @StateObject private var speechService: SpeechRecognitionService
     @StateObject private var permissionManager = VoicePermissionManager()
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.presentationMode) private var presentationMode
     
     @State private var showingPermissionSheet = false
     @State private var voiceCommand: VoiceCommand?
@@ -14,16 +16,16 @@ struct VoiceCommandView: View {
     
     init(webSocketService: WebSocketService) {
         self.webSocketService = webSocketService
-        self._speechService = StateObject(wrappedValue: SpeechRecognitionService(webSocketService: webSocketService))
+        self._speechService = StateObject(wrappedValue: SpeechRecognitionService())
     }
     
     var body: some View {
         ZStack {
             // Background blur
             Color.black.opacity(0.4)
-                .ignoresSafeArea()
+                .edgesIgnoringSafeArea(.all)
                 .onTapGesture {
-                    dismiss()
+                    presentationMode.wrappedValue.dismiss()
                 }
             
             // Main voice interface
@@ -43,7 +45,7 @@ struct VoiceCommandView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(.ultraThickMaterial)
+                    .fill(Color.white.opacity(0.95))
                     .shadow(radius: 20)
             )
             .padding()
@@ -83,14 +85,14 @@ struct VoiceCommandView: View {
                 
                 Spacer()
                 
-                Button(action: { dismiss() }) {
+                Button(action: { presentationMode.wrappedValue.dismiss() }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title2)
                         .foregroundColor(.secondary)
                 }
             }
             
-            Text(speechService.recognitionState.description)
+            Text(recognitionStateDescription)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
         }
@@ -107,7 +109,7 @@ struct VoiceCommandView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
             
-            Text(permissionManager.permissionStatusDescription)
+            Text(permissionStatusDescription)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -144,20 +146,20 @@ struct VoiceCommandView: View {
     
     private var transcriptionSection: some View {
         VStack(spacing: 8) {
-            if !speechService.transcription.isEmpty {
+            if !speechService.recognizedText.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("You said:")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    Text(speechService.transcription)
+                    Text(speechService.recognizedText)
                         .font(.body)
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.blue.opacity(0.1))
                         )
-                        .animation(.easeInOut, value: speechService.transcription)
+                        .animation(.easeInOut, value: speechService.recognizedText)
                 }
             } else if speechService.isListening {
                 Text("Listening...")
@@ -220,7 +222,7 @@ struct VoiceCommandView: View {
             Spacer()
             
             // Main microphone button
-            Button(action: { speechService.toggleListening() }) {
+            Button(action: { toggleListening() }) {
                 ZStack {
                     Circle()
                         .fill(microphoneButtonColor)
@@ -233,8 +235,8 @@ struct VoiceCommandView: View {
                         .foregroundColor(.white)
                 }
             }
-            .disabled(!speechService.canStartListening)
-            .buttonStyle(PlainButtonStyle())
+            .disabled(!(permissionManager.isFullyAuthorized && !speechService.isListening))
+            .buttonStyle(DefaultButtonStyle())
             
             Spacer()
             
@@ -253,7 +255,7 @@ struct VoiceCommandView: View {
     }
     
     private var microphoneButtonColor: Color {
-        if !speechService.canStartListening {
+        if !(permissionManager.isFullyAuthorized && !speechService.isListening) {
             return .gray
         } else if speechService.isListening {
             return .red
@@ -271,10 +273,10 @@ struct VoiceCommandView: View {
     }
     
     private func processCompletedRecognition() {
-        guard !speechService.transcription.isEmpty else { return }
+        guard !speechService.recognizedText.isEmpty else { return }
         
         let processor = VoiceCommandProcessor()
-        let command = processor.processVoiceInput(speechService.transcription)
+        let command = processor.processVoiceInput(speechService.recognizedText)
         
         if command.requiresConfirmation {
             voiceCommand = command
@@ -312,7 +314,42 @@ struct VoiceCommandView: View {
         
         // Close voice interface after successful command
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            dismiss()
+            presentationMode.wrappedValue.dismiss()
+        }
+    }
+    
+    private var recognitionStateDescription: String {
+        switch speechService.recognitionState {
+        case .idle: return "Idle"
+        case .listening: return "Listening..."
+        case .processing: return "Processing..."
+        case .completed: return "Completed"
+        case .error(let message): return "Error: \(message)"
+        }
+    }
+    
+    private var permissionStatusDescription: String {
+        switch permissionManager.permissionStatus {
+        case .notDetermined:
+            return "Permissions not determined."
+        case .granted:
+            return "All permissions granted."
+        case .denied:
+            return "Permissions denied. Please enable in Settings."
+        case .restricted:
+            return "Permissions restricted."
+        }
+    }
+    
+    private func toggleListening() {
+        if speechService.isListening {
+            DispatchQueue.main.async {
+                speechService.stopListening()
+            }
+        } else {
+            DispatchQueue.main.async {
+                speechService.startListening()
+            }
         }
     }
 }
@@ -405,13 +442,13 @@ struct VoiceCommandConfirmationView: View {
                     Button("Execute Command") {
                         onConfirm()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(DefaultButtonStyle())
                     .controlSize(.large)
                     
                     Button("Cancel") {
                         onCancel()
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(DefaultButtonStyle())
                 }
             }
             .padding()

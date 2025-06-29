@@ -1,225 +1,131 @@
 import Foundation
 import Speech
 import AVFoundation
+import Combine
+import _Concurrency
 import SwiftUI
 
 @MainActor
 class VoiceManager: ObservableObject {
     @Published var isListening = false
-    @Published var isAvailable = false
-    @Published var transcription = ""
-    @Published var authorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
+    @Published var currentCommand = ""
+    @Published var isProcessing = false
     @Published var lastError: String?
+    @Published var recognitionConfidence: Float = 0.0
     @Published var audioLevel: Float = 0.0
     
-    private let speechRecognizer: SFSpeechRecognizer?
-    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    private var recognitionTask: SFSpeechRecognitionTask?
-    private let audioEngine = AVAudioEngine()
-    
+    private let speechService: SpeechRecognitionService
     private let webSocketService: WebSocketService
+    private var cancellables = Set<AnyCancellable>()
     
-    init(webSocketService: WebSocketService) {
+    init(speechService: SpeechRecognitionService, webSocketService: WebSocketService) {
+        self.speechService = speechService
         self.webSocketService = webSocketService
-        self.speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-        
-        setupSpeechRecognizer()
-        requestPermissions()
+        setupBindings()
     }
     
     deinit {
-        stopListening()
+        nonisolated(unsafe) let speechService = speechService
+        _Concurrency.Task {
+            await speechService.stopListening()
+        }
     }
     
-    private func setupSpeechRecognizer() {
-        isAvailable = speechRecognizer?.isAvailable ?? false
-    }
-    
-    func requestPermissions() {
-        SFSpeechRecognizer.requestAuthorization { [weak self] status in
-            DispatchQueue.main.async {
-                self?.authorizationStatus = status
-                
-                if status == .authorized {
-                    self?.requestMicrophonePermission()
-                } else {
-                    self?.lastError = "Speech recognition access denied"
+    private func setupBindings() {
+        // Bind speech service state to voice manager state
+        speechService.$isListening
+            .assign(to: &$isListening)
+        
+        speechService.$recognizedText
+            .assign(to: &$currentCommand)
+        
+        speechService.$audioLevel
+            .assign(to: &$audioLevel)
+        
+        speechService.$confidenceScore
+            .map { Float($0) }
+            .assign(to: &$recognitionConfidence)
+        
+        speechService.$lastError
+            .assign(to: &$lastError)
+        
+        // Process completed recognitions
+        speechService.$recognitionState
+            .filter { $0 == .completed }
+            .sink { [weak self] _ in
+                _Concurrency.Task { @MainActor in
+                    await self?.processVoiceCommand()
                 }
             }
-        }
+            .store(in: &cancellables)
     }
     
-    private func requestMicrophonePermission() {
-        AVAudioSession.sharedInstance().requestRecordPermission { [weak self] granted in
-            DispatchQueue.main.async {
-                if granted {
-                    self?.configureAudioSession()
-                } else {
-                    self?.lastError = "Microphone access denied"
-                }
-            }
-        }
-    }
-    
-    private func configureAudioSession() {
-        do {
-            let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-            isAvailable = true
-            lastError = nil
-        } catch {
-            lastError = "Audio session configuration failed: \(error.localizedDescription)"
-        }
-    }
-    
-    func startListening() {
-        guard isAvailable && authorizationStatus == .authorized else {
-            lastError = "Speech recognition not available or not authorized"
-            return
-        }
+    func startListening() async {
+        guard !isListening else { return }
         
-        stopListening() // Stop any existing recognition
+        currentCommand = ""
+        lastError = nil
         
-        isListening = true
-        transcription = ""
-        
-        setupRecognition()
-        startAudioEngine()
+        await speechService.startListening()
     }
     
     func stopListening() {
-        isListening = false
-        
-        if audioEngine.isRunning {
-            audioEngine.stop()
-            audioEngine.inputNode.removeTap(onBus: 0)
-        }
-        
-        recognitionRequest?.endAudio()
-        recognitionTask?.cancel()
-        recognitionRequest = nil
-        recognitionTask = nil
-        
-        audioLevel = 0.0
+        guard isListening else { return }
+        speechService.stopListening()
     }
     
-    private func setupRecognition() {
-        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        
-        guard let recognitionRequest = recognitionRequest else {
-            lastError = "Unable to create recognition request"
-            return
-        }
-        
-        recognitionRequest.shouldReportPartialResults = true
-        recognitionRequest.requiresOnDeviceRecognition = true
-        
-        guard let speechRecognizer = speechRecognizer else {
-            lastError = "Speech recognizer not available"
-            return
-        }
-        
-        recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-            DispatchQueue.main.async {
-                self?.handleRecognitionResult(result: result, error: error)
-            }
-        }
-    }
-    
-    private func startAudioEngine() {
-        let inputNode = audioEngine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
-        
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            self?.recognitionRequest?.append(buffer)
-            self?.calculateAudioLevel(from: buffer)
-        }
-        
-        do {
-            audioEngine.prepare()
-            try audioEngine.start()
-        } catch {
-            DispatchQueue.main.async {
-                self.lastError = "Audio engine failed to start: \(error.localizedDescription)"
-                self.stopListening()
-            }
-        }
-    }
-    
-    private func calculateAudioLevel(from buffer: AVAudioPCMBuffer) {
-        guard let channelData = buffer.floatChannelData?[0] else { return }
-        
-        let frameLength = Int(buffer.frameLength)
-        var sum: Float = 0.0
-        
-        for i in 0..<frameLength {
-            sum += abs(channelData[i])
-        }
-        
-        let averageLevel = sum / Float(frameLength)
-        let normalizedLevel = min(averageLevel * 20, 1.0)
-        
-        DispatchQueue.main.async {
-            self.audioLevel = normalizedLevel
-        }
-    }
-    
-    private func handleRecognitionResult(result: SFSpeechRecognitionResult?, error: Error?) {
-        if let error = error {
-            lastError = "Recognition error: \(error.localizedDescription)"
+    func toggleListening() async {
+        if isListening {
             stopListening()
-            return
-        }
-        
-        guard let result = result else { return }
-        
-        transcription = result.bestTranscription.formattedString
-        
-        if result.isFinal {
-            processCompletedTranscription()
+        } else {
+            await startListening()
         }
     }
     
-    private func processCompletedTranscription() {
-        guard !transcription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            stopListening()
-            return
-        }
+    private func processVoiceCommand() async {
+        guard !currentCommand.isEmpty else { return }
         
-        let processedCommand = preprocessVoiceCommand(transcription)
-        webSocketService.sendMessage(processedCommand, type: "voice_command")
+        isProcessing = true
+        defer { isProcessing = false }
         
-        // Add voice message to chat
+        let processedCommand = preprocessCommand(currentCommand)
+        
+        // Send command to backend
+        webSocketService.sendCommand(processedCommand)
+        
+        // Log the voice command
         let voiceMessage = AgentMessage(
-            content: "🎤 Voice: \(transcription)",
+            content: "🎤 Voice: \(currentCommand)",
             isFromUser: true,
             type: .command
         )
-        webSocketService.messages.append(voiceMessage)
         
-        stopListening()
+        await MainActor.run {
+            webSocketService.messages.append(voiceMessage)
+        }
+        
+        // Reset for next command
+        speechService.resetRecognition()
     }
     
-    private func preprocessVoiceCommand(_ command: String) -> String {
-        let lowercased = command.lowercased()
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "hey leenvibe", with: "")
-            .replacingOccurrences(of: "leenvibe", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+    private func preprocessCommand(_ command: String) -> String {
+        let lowercased = command.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
+        // Basic command mappings
         let commandMappings: [String: String] = [
             "status": "/status",
             "list files": "/list-files",
             "current directory": "/current-dir",
             "help": "/help",
+            "show architecture": "/architecture",
+            "create task": "/create-task",
+            "show tasks": "/tasks",
             "show me the status": "/status",
             "what's the current directory": "/current-dir",
-            "list all files": "/list-files",
-            "show help": "/help"
+            "list all files": "/list-files"
         ]
         
-        // Check for exact matches first
+        // Check for exact matches
         if let mappedCommand = commandMappings[lowercased] {
             return mappedCommand
         }
@@ -231,18 +137,16 @@ class VoiceManager: ObservableObject {
             }
         }
         
+        // Return as natural language if no mapping found
         return lowercased
     }
     
-    func toggleListening() {
-        if isListening {
-            stopListening()
-        } else {
-            startListening()
-        }
+    // Public interface for voice command capabilities
+    var canStartListening: Bool {
+        return !isListening && !isProcessing
     }
     
-    var canStartListening: Bool {
-        return isAvailable && authorizationStatus == .authorized && !isListening
+    var isActive: Bool {
+        return isListening || isProcessing
     }
 }

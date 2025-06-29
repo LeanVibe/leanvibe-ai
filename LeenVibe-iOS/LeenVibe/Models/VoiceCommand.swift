@@ -107,38 +107,6 @@ struct SpeechRecognitionResult: Identifiable, Sendable {
     }
 }
 
-// MARK: - Voice Settings
-
-struct VoiceSettings: Codable, Sendable {
-    var isWakePhraseEnabled: Bool = true
-    var wakePhraseText: String = "Hey LeenVibe"
-    var isContinuousListeningEnabled: Bool = false
-    var silenceTimeout: TimeInterval = 2.0
-    var maxRecordingDuration: TimeInterval = 60.0
-    var confidenceThreshold: Double = 0.5
-    var preferredLocale: String = "en-US"
-    var voiceFeedbackEnabled: Bool = true
-    var hapticFeedbackEnabled: Bool = true
-    
-    static let defaultSettings = VoiceSettings()
-    
-    // Supported wake phrases
-    static let supportedWakePhrases = [
-        "Hey LeenVibe",
-        "LeenVibe",
-        "Hey Agent",
-        "Computer"
-    ]
-    
-    // Supported locales for speech recognition
-    static let supportedLocales = [
-        "en-US": "English (United States)",
-        "en-GB": "English (United Kingdom)",
-        "en-AU": "English (Australia)",
-        "en-CA": "English (Canada)"
-    ]
-}
-
 // MARK: - Wake Phrase Detection
 
 struct WakePhraseDetection: Identifiable, Sendable {
@@ -161,7 +129,7 @@ struct WakePhraseDetection: Identifiable, Sendable {
 class VoiceCommandProcessor {
     private let settings: VoiceSettings
     
-    init(settings: VoiceSettings = .defaultSettings) {
+    init(settings: VoiceSettings) {
         self.settings = settings
     }
     

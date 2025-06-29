@@ -1,6 +1,7 @@
 import SwiftUI
 import Foundation
 import Combine
+import _Concurrency
 
 @MainActor
 class AppCoordinator: ObservableObject {
@@ -12,7 +13,7 @@ class AppCoordinator: ObservableObject {
     private let connectionManager = ConnectionStorageManager()
     private let lifecycleManager = AppLifecycleManager()
     
-    enum AppState {
+    enum AppState: Equatable {
         case launching
         case needsConfiguration
         case ready
@@ -27,64 +28,124 @@ class AppCoordinator: ObservableObject {
     private func setupLifecycleObserver() {
         // Observe lifecycle manager state changes
         lifecycleManager.$appState
-            .sink { [weak self] lifecycleState in
-                self?.handleLifecycleStateChange(lifecycleState)
+            .sink { [weak self] state in
+                self?.handleLifecycleStateChange(state)
             }
             .store(in: &cancellables)
     }
     
     private var cancellables = Set<AnyCancellable>()
     
-    private func initializeApp() {
-        Task {
+    func initializeApp() {
+        _Concurrency.Task {
             await lifecycleManager.initialize()
         }
     }
     
-    private func handleLifecycleStateChange(_ lifecycleState: AppLifecycleManager.AppState) {
-        switch lifecycleState {
+    private func handleLifecycleStateChange(_ state: AppLifecycleManager.AppState) {
+        switch state {
         case .launching:
             appState = .launching
         case .needsOnboarding:
             appState = .needsConfiguration
-            showingQRScanner = true
-            isConfigured = false
+        case .needsPermissions:
+            appState = .needsConfiguration
         case .ready:
             appState = .ready
             isConfigured = true
-            showingQRScanner = false
+        case .background:
+            // Don't change coordinator state during background
+            break
         case .error(let message):
             appState = .error(message)
             errorMessage = message
-            showingQRScanner = false
-        case .needsPermissions:
-            // Handle permissions in the ready state for now
-            appState = .ready
+        }
+    }
+    
+    func showQRScanner() {
+        showingQRScanner = true
+    }
+    
+    func hideQRScanner() {
+        showingQRScanner = false
+    }
+    
+    func handleQRCode(_ code: String) {
+        hideQRScanner()
+        
+        _Concurrency.Task {
+            await processQRCode(code)
+        }
+    }
+    
+    private func processQRCode(_ code: String) async {
+        // Parse QR code and configure connection
+        guard let components = parseQRCode(code) else {
+            errorMessage = "Invalid QR code format"
+            appState = .error("Invalid QR code format")
+            return
+        }
+        
+        // Store connection details
+        let connection = ServerConfig(
+            host: components.host,
+            port: components.port,
+            websocketPath: "/ws",
+            serverName: nil,
+            network: nil
+        )
+        
+        connectionManager.store(connection)
+        
+        // Test connection
+        let success = await testConnection(connection)
+        if success {
             isConfigured = true
-            showingQRScanner = false
-        case .background:
-            // Background state doesn't change the coordinator state
-            break
+            appState = .ready
+        } else {
+            appState = .error("Failed to connect to server")
         }
     }
     
-    func handleQRScanSuccess() {
-        // Connection was successful, reinitialize the app
-        Task {
-            await lifecycleManager.initialize()
+    private func parseQRCode(_ code: String) -> (host: String, port: Int, apiKey: String)? {
+        // Parse QR code format: leenvibe://connect?host=localhost&port=8000&key=abc123
+        guard let url = URL(string: code),
+              url.scheme == "leenvibe",
+              url.host == "connect" else {
+            return nil
         }
+        
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        guard let queryItems = components?.queryItems,
+              let host = queryItems.first(where: { $0.name == "host" })?.value,
+              let portString = queryItems.first(where: { $0.name == "port" })?.value,
+              let port = Int(portString),
+              let apiKey = queryItems.first(where: { $0.name == "key" })?.value else {
+            return nil
+        }
+        
+        return (host: host, port: port, apiKey: apiKey)
     }
     
-    func handleQRScanFailure(error: String) {
-        lifecycleManager.handleError(error)
+    private func testConnection(_ connection: ServerConfig) async -> Bool {
+        // Simulate connection test
+        try? await _Concurrency.Task.sleep(nanoseconds: 1_000_000_000)
+        
+        // In a real implementation, this would test the WebSocket connection
+        return !connection.host.isEmpty && connection.port > 0
     }
     
-    func retryConfiguration() {
-        lifecycleManager.retryFromError()
+    func retry() {
+        errorMessage = nil
+        appState = .launching
+        initializeApp()
     }
     
-    func resetApp() {
-        lifecycleManager.resetToOnboarding()
+    func resetConfiguration() {
+        connectionManager.clearConnection()
+        isConfigured = false
+        appState = .needsConfiguration
+        errorMessage = nil
     }
     
     // MARK: - Lifecycle Access
@@ -100,4 +161,10 @@ class AppCoordinator: ObservableObject {
     var canUseVoiceFeatures: Bool {
         return lifecycleManager.canUseVoiceFeatures
     }
+}
+
+struct ServerConnection {
+    let host: String
+    let port: Int
+    let apiKey: String
 }

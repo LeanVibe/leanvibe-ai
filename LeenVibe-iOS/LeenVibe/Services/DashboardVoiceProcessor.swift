@@ -5,14 +5,17 @@ import SwiftUI
 class DashboardVoiceProcessor: ObservableObject {
     private let projectManager: ProjectManager
     private let webSocketService: WebSocketService
-    private let commandProcessor = VoiceCommandProcessor()
+    private let settingsManager: SettingsManager
+    private let commandProcessor: VoiceCommandProcessor
     
     @Published var lastCommand: VoiceCommand?
     @Published var isProcessing = false
     
-    init(projectManager: ProjectManager, webSocketService: WebSocketService) {
+    init(projectManager: ProjectManager, webSocketService: WebSocketService, settingsManager: SettingsManager) {
         self.projectManager = projectManager
         self.webSocketService = webSocketService
+        self.settingsManager = settingsManager
+        self.commandProcessor = VoiceCommandProcessor(settings: settingsManager.voiceSettings)
     }
     
     func processVoiceCommand(_ transcription: String) async {
@@ -74,7 +77,7 @@ class DashboardVoiceProcessor: ObservableObject {
     }
     
     private func handleStatusCommand(_ command: VoiceCommand) async {
-        let activeProjects = projectManager.getActiveProjects()
+        let activeProjects = projectManager.projects.filter { $0.status == .active }
         let totalProjects = projectManager.projects.count
         
         let statusMessage = """
@@ -88,7 +91,7 @@ class DashboardVoiceProcessor: ObservableObject {
     }
     
     private func analyzeCurrentProjects() async {
-        let activeProjects = projectManager.getActiveProjects()
+        let activeProjects = projectManager.projects.filter { $0.status == .active }
         
         if activeProjects.isEmpty {
             sendFeedbackMessage("🔍 No active projects to analyze")
@@ -120,7 +123,7 @@ class DashboardVoiceProcessor: ObservableObject {
             return
         }
         
-        let activeCount = projects.filter { $0.isActive }.count
+        let activeCount = projects.filter { $0.status == .active }.count
         let inactiveCount = projects.count - activeCount
         
         var statusMessage = "📁 Project Status:\n"

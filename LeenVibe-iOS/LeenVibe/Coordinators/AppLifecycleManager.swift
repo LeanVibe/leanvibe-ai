@@ -1,6 +1,7 @@
 import SwiftUI
 import Foundation
 import Combine
+import _Concurrency
 
 @MainActor
 class AppLifecycleManager: ObservableObject {
@@ -85,7 +86,9 @@ class AppLifecycleManager: ObservableObject {
         
         // Update session duration every minute
         Timer.scheduledTimer(withTimeInterval: 60.0, repeats: true) { [weak self] _ in
-            self?.updateSessionDuration()
+            _Concurrency.Task {
+                await self?.updateSessionDuration()
+            }
         }
     }
     
@@ -100,7 +103,7 @@ class AppLifecycleManager: ObservableObject {
         appState = .launching
         
         // Small delay to show launch screen
-        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        try? await _Concurrency.Task.sleep(nanoseconds: 1_000_000_000) // 1 second
         
         // Check connection
         guard connectionManager.hasStoredConnection() else {
@@ -134,7 +137,7 @@ class AppLifecycleManager: ObservableObject {
     
     private func testBackendConnection() async -> Bool {
         // Simulate connection test
-        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+        try? await _Concurrency.Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
         
         // In a real implementation, this would test the WebSocket connection
         guard let connection = connectionManager.currentConnection else {
@@ -174,7 +177,7 @@ class AppLifecycleManager: ObservableObject {
             
             // Re-check connection if we were in background for more than 5 minutes
             if backgroundTime > 300 {
-                Task {
+                _Concurrency.Task {
                     let isConnected = await testBackendConnection()
                     if !isConnected {
                         appState = .error("Connection lost while in background")
@@ -256,15 +259,18 @@ class AppLifecycleManager: ObservableObject {
     
     func retryFromError() {
         lastError = nil
-        Task {
+        _Concurrency.Task {
             await initialize()
         }
     }
     
     func resetToOnboarding() {
-        connectionManager.clearStoredConnection()
+        connectionManager.clearConnection()
         appState = .needsOnboarding
         lastError = nil
+        _Concurrency.Task {
+            await initialize()
+        }
     }
     
     // MARK: - State Queries

@@ -319,26 +319,27 @@ struct ServerSettingsView: View {
     }
     
     private var connectionStatusText: String {
-        if webSocketService.isConnected {
+        switch webSocketService.connectionState {
+        case .connected:
             return "Connected"
-        } else if isTestingConnection {
-            return "Testing..."
-        } else if settingsManager.connectionSettings.serverURL.isEmpty {
-            return "Not configured"
-        } else {
+        case .connecting:
+            return "Connecting..."
+        case .disconnected:
             return "Disconnected"
+        case .error(let error):
+            return "Error: \(error?.localizedDescription ?? "Unknown")"
         }
     }
     
     private var fullServerURL: String {
-        let protocol = settingsManager.connectionSettings.useHTTPS ? "https" : "http"
         let host = settingsManager.connectionSettings.serverURL
         let port = settingsManager.connectionSettings.serverPort
+        let protocolString = settingsManager.connectionSettings.useHTTPS ? "https" : "http"
         
-        if port == (settingsManager.connectionSettings.useHTTPS ? 443 : 80) {
-            return "\(protocol)://\(host)"
+        if port == 80 || port == 443 {
+            return "\(protocolString)://\(host)"
         } else {
-            return "\(protocol)://\(host):\(port)"
+            return "\(protocolString)://\(host):\(port)"
         }
     }
     
@@ -355,6 +356,7 @@ struct ServerSettingsView: View {
     // MARK: - Actions
     
     private func testConnection() {
+        guard !settingsManager.connectionSettings.serverURL.isEmpty else { return }
         isTestingConnection = true
         connectionTestResult = nil
         

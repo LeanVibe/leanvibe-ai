@@ -6,24 +6,27 @@ struct LeenVibeApp: App {
     
     var body: some Scene {
         WindowGroup {
-            Group {
-                switch coordinator.appState {
-                case .launching:
-                    LaunchScreenView()
-                case .needsConfiguration:
-                    QROnboardingView(coordinator: coordinator)
-                case .ready:
-                    DashboardTabView()
-                        .environmentObject(coordinator)
-                case .error(let errorMessage):
-                    ErrorRecoveryView(
-                        errorMessage: errorMessage,
-                        onRetry: coordinator.retryConfiguration,
-                        onReset: coordinator.resetApp
-                    )
-                }
-            }
-            .animation(.easeInOut(duration: 0.5), value: coordinator.appState)
+            contentView
+                .animation(.easeInOut(duration: 0.5), value: coordinator.appState)
+        }
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        switch coordinator.appState {
+        case .launching:
+            LaunchScreenView()
+        case .needsConfiguration:
+            QROnboardingView(coordinator: coordinator)
+        case .ready:
+            DashboardTabView()
+                .environmentObject(coordinator)
+        case .error(let errorMessage):
+            ErrorRecoveryView(
+                errorMessage: errorMessage,
+                onRetry: coordinator.retry,
+                onReset: coordinator.resetConfiguration
+            )
         }
     }
 }

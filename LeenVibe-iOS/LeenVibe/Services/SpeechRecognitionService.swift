@@ -2,383 +2,271 @@ import Foundation
 import Speech
 import AVFoundation
 import Combine
+import _Concurrency
 
+@available(macOS 10.15, iOS 13.0, *)
 @MainActor
-class SpeechRecognitionService: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
+class SpeechRecognitionService: NSObject, ObservableObject {
     @Published var isListening = false
-    @Published var isAvailable = false
-    @Published var transcription = ""
-    @Published var authorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
-    @Published var lastError: String?
-    @Published var audioLevel: Float = 0.0
+    @Published var recognizedText = ""
+    @Published var confidenceScore: Float = 0.0
     @Published var recognitionState: RecognitionState = .idle
+    @Published var audioLevel: Float = 0.0
+    @Published var lastError: String?
     
-    private let speechRecognizer: SFSpeechRecognizer?
-    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    private var recognitionTask: SFSpeechRecognitionTask?
-    private let audioEngine = AVAudioEngine()
-    private var audioLevelTimer: Timer?
-    
-    private let webSocketService: WebSocketService
-    private var cancellables = Set<AnyCancellable>()
-    
-    // Configuration
-    private let silenceTimeout: TimeInterval = 2.0
-    private let maxRecordingDuration: TimeInterval = 60.0
-    private var silenceTimer: Timer?
-    private var recordingTimer: Timer?
-    
-    enum RecognitionState {
+    enum RecognitionState: Equatable {
         case idle
         case listening
         case processing
         case completed
         case error(String)
-        
-        var description: String {
-            switch self {
-            case .idle:
-                return "Ready"
-            case .listening:
-                return "Listening..."
-            case .processing:
-                return "Processing..."
-            case .completed:
-                return "Completed"
-            case .error(let message):
-                return "Error: \(message)"
-            }
-        }
     }
     
-    init(webSocketService: WebSocketService) {
-        self.webSocketService = webSocketService
-        self.speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-        
+    private var audioEngine: AVAudioEngine?
+    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var recognitionTask: SFSpeechRecognitionTask?
+    private var speechRecognizer: SFSpeechRecognizer?
+    private var audioLevelTimer: Timer?
+    private var silenceTimer: Timer?
+    private var recordingTimer: Timer?
+    private var cancellables = Set<AnyCancellable>()
+    
+    // Configuration
+    private let maxRecordingDuration: TimeInterval = 30.0
+    private let silenceTimeout: TimeInterval = 3.0
+    private let audioLevelUpdateInterval: TimeInterval = 0.1
+    
+    override init() {
+        super.init()
         setupSpeechRecognizer()
-        requestPermissions()
     }
     
     deinit {
-        stopListening()
+#if os(iOS)
+        audioEngine?.stop()
+        recognitionTask?.cancel()
+        recognitionRequest?.endAudio()
         audioLevelTimer?.invalidate()
         silenceTimer?.invalidate()
         recordingTimer?.invalidate()
+#endif
     }
-    
-    // MARK: - Setup and Permissions
     
     private func setupSpeechRecognizer() {
+#if os(iOS)
+        speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
         speechRecognizer?.delegate = self
-        isAvailable = speechRecognizer?.isAvailable ?? false
+#else
+        speechRecognizer = nil
+#endif
     }
     
-    func requestPermissions() {
-        // Request speech recognition permission
-        SFSpeechRecognizer.requestAuthorization { [weak self] status in
-            DispatchQueue.main.async {
-                self?.authorizationStatus = status
-                
-                switch status {
-                case .authorized:
-                    self?.requestMicrophonePermission()
-                case .denied, .restricted:
-                    self?.lastError = "Speech recognition access denied"
-                case .notDetermined:
-                    self?.lastError = "Speech recognition permission not determined"
-                @unknown default:
-                    self?.lastError = "Unknown speech recognition permission status"
-                }
-            }
-        }
-    }
-    
-    private func requestMicrophonePermission() {
-        AVAudioSession.sharedInstance().requestRecordPermission { [weak self] granted in
-            DispatchQueue.main.async {
-                if granted {
-                    self?.configureAudioSession()
-                } else {
-                    self?.lastError = "Microphone access denied"
-                }
-            }
-        }
-    }
-    
-    private func configureAudioSession() {
-        do {
-            let audioSession = AVAudioSession.sharedInstance()
-            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-            isAvailable = true
-            lastError = nil
-        } catch {
-            lastError = "Audio session configuration failed: \(error.localizedDescription)"
-        }
-    }
-    
-    // MARK: - Speech Recognition Control
-    
+    #if os(iOS)
     func startListening() {
-        guard isAvailable && authorizationStatus == .authorized else {
-            lastError = "Speech recognition not available or not authorized"
-            return
-        }
-        
-        // Stop any existing recognition
-        stopListening()
-        
+        guard !isListening else { return }
+        recognizedText = ""
+        confidenceScore = 0.0
+        lastError = nil
         recognitionState = .listening
-        isListening = true
-        transcription = ""
-        
-        setupRecognition()
-        startAudioEngine()
-        startAudioLevelMonitoring()
-        startRecordingTimeout()
+        requestPermissions { [weak self] micGranted, speechStatus in
+            guard let self = self else { return }
+            guard micGranted else {
+                self.recognitionState = .error("Microphone permission denied")
+                return
+            }
+            guard speechStatus == .authorized else {
+                self.recognitionState = .error("Speech recognition permission denied")
+                return
+            }
+            do {
+                try self.startAudioEngine()
+                self.setupRecognitionRequest()
+                self.isListening = true
+                self.startTimers()
+            } catch {
+                self.recognitionState = .error(error.localizedDescription)
+                self.lastError = error.localizedDescription
+            }
+        }
     }
+    #endif
     
     func stopListening() {
-        recognitionState = .idle
-        isListening = false
+        guard isListening else { return }
         
-        // Clean up timers
+        isListening = false
+        recognitionState = .processing
+        
+        audioEngine?.stop()
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        recognitionRequest?.endAudio()
+        stopTimers()
+        
+        // Process final recognition
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.recognitionState = .completed
+        }
+    }
+    
+    private func startTimers() {
+        // Audio level monitoring
+        audioLevelTimer = Timer.scheduledTimer(withTimeInterval: audioLevelUpdateInterval, repeats: true) { _ in
+            // Timer handled by audio tap
+        }
+        
+        // Silence detection
+        silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceTimeout, repeats: false) { [weak self] _ in
+            _Concurrency.Task { @MainActor in
+                self?.handleSilenceTimeout()
+            }
+        }
+        
+        // Maximum recording duration
+        recordingTimer = Timer.scheduledTimer(withTimeInterval: maxRecordingDuration, repeats: false) { [weak self] _ in
+            _Concurrency.Task { @MainActor in
+                self?.handleRecordingTimeout()
+            }
+        }
+    }
+    
+    private func stopTimers() {
+        audioLevelTimer?.invalidate()
         silenceTimer?.invalidate()
         recordingTimer?.invalidate()
-        audioLevelTimer?.invalidate()
         
-        // Stop audio engine
-        if audioEngine.isRunning {
-            audioEngine.stop()
-            audioEngine.inputNode.removeTap(onBus: 0)
-        }
-        
-        // Clean up recognition
-        recognitionRequest?.endAudio()
-        recognitionTask?.cancel()
-        recognitionRequest = nil
-        recognitionTask = nil
-        
-        // Reset audio level
-        audioLevel = 0.0
+        audioLevelTimer = nil
+        silenceTimer = nil
+        recordingTimer = nil
     }
     
-    private func setupRecognition() {
-        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        
-        guard let recognitionRequest = recognitionRequest else {
-            lastError = "Unable to create recognition request"
-            return
-        }
-        
-        recognitionRequest.shouldReportPartialResults = true
-        recognitionRequest.requiresOnDeviceRecognition = true // Privacy-first approach
-        
-        guard let speechRecognizer = speechRecognizer else {
-            lastError = "Speech recognizer not available"
-            return
-        }
-        
-        recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-            DispatchQueue.main.async {
-                self?.handleRecognitionResult(result: result, error: error)
-            }
+    private func handleSilenceTimeout() {
+        if isListening && recognitionState == .listening {
+            stopListening()
         }
     }
     
-    private func startAudioEngine() {
-        let inputNode = audioEngine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
-        
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            self?.recognitionRequest?.append(buffer)
-            
-            // Calculate audio level for visualization
-            self?.calculateAudioLevel(from: buffer)
-        }
-        
-        do {
-            audioEngine.prepare()
-            try audioEngine.start()
-        } catch {
-            DispatchQueue.main.async {
-                self.lastError = "Audio engine failed to start: \(error.localizedDescription)"
-                self.stopListening()
-            }
+    private func handleRecordingTimeout() {
+        if isListening {
+            stopListening()
         }
     }
-    
-    // MARK: - Audio Level Monitoring
-    
-    private func startAudioLevelMonitoring() {
-        audioLevelTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            // Audio level is updated in calculateAudioLevel
-        }
-    }
-    
-    private func calculateAudioLevel(from buffer: AVAudioPCMBuffer) {
-        guard let channelData = buffer.floatChannelData?[0] else { return }
-        
-        let frameLength = Int(buffer.frameLength)
-        var sum: Float = 0.0
-        
-        for i in 0..<frameLength {
-            sum += abs(channelData[i])
-        }
-        
-        let averageLevel = sum / Float(frameLength)
-        let normalizedLevel = min(averageLevel * 20, 1.0) // Amplify and normalize
-        
-        DispatchQueue.main.async {
-            self.audioLevel = normalizedLevel
-        }
-    }
-    
-    // MARK: - Recognition Result Handling
     
     private func handleRecognitionResult(result: SFSpeechRecognitionResult?, error: Error?) {
         if let error = error {
-            lastError = "Recognition error: \(error.localizedDescription)"
             recognitionState = .error(error.localizedDescription)
+            lastError = error.localizedDescription
             stopListening()
             return
         }
         
         guard let result = result else { return }
         
-        transcription = result.bestTranscription.formattedString
-        
-        // Reset silence timer on new speech
-        if !transcription.isEmpty {
-            resetSilenceTimer()
-        }
+        recognizedText = result.bestTranscription.formattedString
+        confidenceScore = result.bestTranscription.segments.last?.confidence ?? 0.0
         
         if result.isFinal {
             recognitionState = .completed
-            processCompletedTranscription()
-        }
-    }
-    
-    private func processCompletedTranscription() {
-        guard !transcription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            stopListening()
-            return
-        }
-        
-        recognitionState = .processing
-        
-        // Process the voice command
-        Task {
-            await processVoiceCommand(transcription)
             stopListening()
         }
     }
     
-    // MARK: - Voice Command Processing
-    
-    private func processVoiceCommand(_ command: String) async {
-        // Basic command processing - will be enhanced with natural language processing
-        let processedCommand = preprocessVoiceCommand(command)
-        
-        // Send to WebSocket service
-        webSocketService.sendMessage(processedCommand, type: "voice_command")
-        
-        // Log the voice command
-        let voiceMessage = AgentMessage(
-            content: "🎤 Voice: \(command)",
-            isFromUser: true,
-            type: .command
-        )
-        webSocketService.messages.append(voiceMessage)
+    func resetRecognition() {
+        recognizedText = ""
+        confidenceScore = 0.0
+        audioLevel = 0.0
+        recognitionState = .idle
+        lastError = nil
     }
     
-    private func preprocessVoiceCommand(_ command: String) -> String {
-        let lowercased = command.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        // Basic command mapping
-        let commandMappings: [String: String] = [
-            "status": "/status",
-            "list files": "/list-files",
-            "current directory": "/current-dir",
-            "help": "/help",
-            "show me the status": "/status",
-            "what's the current directory": "/current-dir",
-            "list all files": "/list-files",
-            "show help": "/help"
-        ]
-        
-        // Check for exact matches first
-        if let mappedCommand = commandMappings[lowercased] {
-            return mappedCommand
-        }
-        
-        // Check for partial matches
-        for (pattern, command) in commandMappings {
-            if lowercased.contains(pattern) {
-                return command
+    #if os(iOS)
+    func requestPermissions(completion: @escaping (Bool, SFSpeechRecognizerAuthorizationStatus) -> Void) {
+        AVAudioSession.sharedInstance().requestRecordPermission { micGranted in
+            SFSpeechRecognizer.requestAuthorization { speechStatus in
+                completion(micGranted, speechStatus)
             }
         }
-        
-        // If no mapping found, send as natural language
-        return lowercased
     }
-    
-    // MARK: - Timeout Management
-    
-    private func resetSilenceTimer() {
-        silenceTimer?.invalidate()
-        silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceTimeout, repeats: false) { [weak self] _ in
-            self?.handleSilenceTimeout()
-        }
-    }
-    
-    private func handleSilenceTimeout() {
-        if !transcription.isEmpty {
-            recognitionState = .completed
-            processCompletedTranscription()
-        } else {
-            stopListening()
-        }
-    }
-    
-    private func startRecordingTimeout() {
-        recordingTimer = Timer.scheduledTimer(withTimeInterval: maxRecordingDuration, repeats: false) { [weak self] _ in
-            self?.handleRecordingTimeout()
-        }
-    }
-    
-    private func handleRecordingTimeout() {
-        lastError = "Recording timeout reached"
-        stopListening()
-    }
-    
-    // MARK: - Public Interface
-    
-    var canStartListening: Bool {
-        return isAvailable && 
-               authorizationStatus == .authorized && 
-               !isListening &&
-               recognitionState != .processing
-    }
-    
-    func toggleListening() {
-        if isListening {
-            stopListening()
-        } else {
-            startListening()
+    #endif
+}
+
+#if os(iOS)
+extension SpeechRecognitionService: SFSpeechRecognizerDelegate {
+    nonisolated(unsafe) func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
+        _Concurrency.Task { @MainActor in
+            if !available {
+                self.recognitionState = .error("Speech recognizer became unavailable")
+                self.stopListening()
+            }
         }
     }
 }
 
-/*
-extension SpeechRecognitionService: SFSpeechRecognizerDelegate {
+// Restore iOS-only methods
+extension SpeechRecognitionService {
+    func startAudioEngine() throws {
+        audioEngine = AVAudioEngine()
+        guard let audioEngine = audioEngine else {
+            throw RecognitionError.audioEngineFailure
+        }
+        let inputNode = audioEngine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+            self?.recognitionRequest?.append(buffer)
+            let level = self?.calculateAudioLevel(from: buffer) ?? 0.0
+            DispatchQueue.main.async {
+                self?.audioLevel = level
+            }
+        }
+        audioEngine.prepare()
+        try audioEngine.start()
+    }
     
-    public func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
-        if available {
-            isAvailable = true
-        } else {
-            isAvailable = false
+    func setupRecognitionRequest() {
+        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
+        guard let recognitionRequest = recognitionRequest else { return }
+        recognitionRequest.shouldReportPartialResults = true
+        recognitionRequest.requiresOnDeviceRecognition = false
+        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
+            DispatchQueue.main.async {
+                self?.handleRecognitionResult(result: result, error: error)
+            }
+        }
+    }
+    
+    private func calculateAudioLevel(from buffer: AVAudioPCMBuffer) -> Float {
+        guard let channelData = buffer.floatChannelData?[0] else { return 0.0 }
+        let channelDataArray = Array(UnsafeBufferPointer(start: channelData, count: Int(buffer.frameLength)))
+        let rms = sqrt(channelDataArray.map { $0 * $0 }.reduce(0, +) / Float(channelDataArray.count))
+        return min(max(rms * 20, 0.0), 1.0)
+    }
+}
+#endif
+
+#if os(macOS)
+// Provide stubs for macOS that set error states or do nothing
+#endif
+
+// MARK: - Supporting Types
+enum RecognitionError: LocalizedError {
+    case microphonePermissionDenied
+    case speechRecognitionPermissionDenied
+    case audioEngineFailure
+    case recognitionFailed(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .microphonePermissionDenied:
+            return "Microphone permission is required for voice recognition"
+        case .speechRecognitionPermissionDenied:
+            return "Speech recognition permission is required"
+        case .audioEngineFailure:
+            return "Failed to start audio engine"
+        case .recognitionFailed(let message):
+            return "Recognition failed: \(message)"
         }
     }
 }
-*/
+
+#if os(iOS)
+// All AVAudioSession, SFSpeechRecognizer, and related code here
+#endif 

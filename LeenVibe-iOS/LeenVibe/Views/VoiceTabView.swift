@@ -16,7 +16,7 @@ struct VoiceTabView: View {
     init(webSocketService: WebSocketService, projectManager: ProjectManager) {
         self.webSocketService = webSocketService
         self.projectManager = projectManager
-        self._speechService = StateObject(wrappedValue: SpeechRecognitionService(webSocketService: webSocketService))
+        self._speechService = StateObject(wrappedValue: SpeechRecognitionService())
         self._voiceProcessor = StateObject(wrappedValue: DashboardVoiceProcessor(projectManager: projectManager, webSocketService: webSocketService))
         self._wakePhraseManager = StateObject(wrappedValue: WakePhraseManager(
             webSocketService: webSocketService,

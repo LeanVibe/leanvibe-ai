@@ -29,7 +29,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showingSettings) {
-                SettingsView(webSocketService: webSocketService)
+                ConnectionSettingsView(webSocketService: webSocketService)
             }
         }
     }
@@ -254,51 +254,15 @@ struct MessageBubble: View {
     }
     
     private var messageTypeIcon: some View {
-        Image(systemName: iconName)
-            .font(.caption)
-            .foregroundColor(iconColor)
-    }
-    
-    private var iconName: String {
-        switch message.type {
-        case .command:
-            return "terminal"
-        case .error:
-            return "exclamationmark.triangle"
-        case .status:
-            return "checkmark.circle"
-        case .response:
-            return "brain.head.profile"
-        case .message:
-            return message.isFromUser ? "person" : "brain.head.profile"
-        }
-    }
-    
-    private var iconColor: Color {
-        switch message.type {
-        case .error:
-            return .red
-        case .status:
-            return .green
-        case .command:
-            return .blue
-        default:
-            return .secondary
-        }
+        Image(systemName: message.isFromUser ? "person.circle" : "brain.head.profile")
+            .foregroundColor(.secondary)
     }
     
     private var messageBackgroundColor: Color {
         if message.isFromUser {
             return .blue
         } else {
-            switch message.type {
-            case .error:
-                return .red.opacity(0.1)
-            case .status:
-                return .green.opacity(0.1)
-            default:
-                return Color(.systemGray5)
-            }
+            return Color(.systemGray5)
         }
     }
     
@@ -306,17 +270,12 @@ struct MessageBubble: View {
         if message.isFromUser {
             return .white
         } else {
-            switch message.type {
-            case .error:
-                return .red
-            default:
-                return .primary
-            }
+            return .primary
         }
     }
 }
 
-struct SettingsView: View {
+struct ConnectionSettingsView: View {
     @ObservedObject var webSocketService: WebSocketService
     @Environment(\.dismiss) private var dismiss
     
@@ -391,6 +350,7 @@ struct SettingsView: View {
 extension DateFormatter {
     static let shortTime: DateFormatter = {
         let formatter = DateFormatter()
+        formatter.dateStyle = .none
         formatter.timeStyle = .short
         return formatter
     }()

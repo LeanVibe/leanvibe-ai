@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 struct DiagramComparisonView: View {
@@ -10,8 +9,10 @@ struct DiagramComparisonView: View {
             VStack {
                 Text("Before")
                     .font(.headline)
-                ArchitectureWebView(diagramDefinition: beforeDiagram.mermaidDefinition) {
-                    nodeId in
+                ArchitectureWebView(
+                    diagramDefinition: beforeDiagram.mermaidDefinition,
+                    zoomScale: 1.0
+                ) { nodeId in
                     print("Tapped node \(nodeId) in 'before' diagram")
                 }
             }
@@ -19,8 +20,10 @@ struct DiagramComparisonView: View {
             VStack {
                 Text("After")
                     .font(.headline)
-                ArchitectureWebView(diagramDefinition: afterDiagram.mermaidDefinition) {
-                    nodeId in
+                ArchitectureWebView(
+                    diagramDefinition: afterDiagram.mermaidDefinition,
+                    zoomScale: 1.0
+                ) { nodeId in
                     print("Tapped node \(nodeId) in 'after' diagram")
                 }
             }

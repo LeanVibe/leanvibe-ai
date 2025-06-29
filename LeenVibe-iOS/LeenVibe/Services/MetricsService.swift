@@ -1,6 +1,7 @@
-
 import Foundation
 
+@available(macOS 10.15, iOS 13.0, *)
+@MainActor
 class MetricsService: ObservableObject {
     private let baseURL = URL(string: "http://localhost:8000")!
 

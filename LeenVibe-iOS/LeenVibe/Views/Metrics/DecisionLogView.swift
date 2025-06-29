@@ -28,18 +28,18 @@ struct DecisionLogView: View {
                 .cornerRadius(8)
                 .padding(.horizontal)
 
-            List(filteredDecisions) {
+            List(filteredDecisions) { decision in
                 VStack(alignment: .leading) {
-                    Text($0.decision)
+                    Text(decision.decision)
                         .font(.subheadline)
-                    Text($0.reason)
+                    Text(decision.reason)
                         .font(.caption)
                         .foregroundColor(.gray)
                     HStack {
-                        Text("Confidence: \($0.confidenceScore, specifier: "%.2f")")
+                        Text("Confidence: \(decision.confidenceScore, specifier: "%.2f")")
                             .font(.caption2)
                         Spacer()
-                        Text($0.timestamp, style: .relative)
+                        Text(decision.timestamp, style: .relative)
                             .font(.caption2)
                     }
                 }

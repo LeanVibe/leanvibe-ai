@@ -222,10 +222,11 @@ struct VoiceStatusBadge: View {
                 projectManager: ProjectManager(),
                 voiceProcessor: DashboardVoiceProcessor(
                     projectManager: ProjectManager(),
-                    webSocketService: WebSocketService()
+                    webSocketService: WebSocketService(),
+                    settingsManager: SettingsManager.shared
                 )
             ),
-            speechService: SpeechRecognitionService(webSocketService: WebSocketService()),
+            speechService: SpeechRecognitionService(),
             permissionManager: VoicePermissionManager(),
             webSocketService: WebSocketService()
         )

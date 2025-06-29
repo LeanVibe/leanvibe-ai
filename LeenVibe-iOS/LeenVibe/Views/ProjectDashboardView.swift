@@ -33,13 +33,17 @@ struct ProjectDashboardView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingAddProject = true }) {
+                    Button(action: { 
+                        PremiumHaptics.contextualFeedback(for: .buttonTap)
+                        showingAddProject = true 
+                    }) {
                         Image(systemName: "plus.circle.fill")
                             .font(.title2)
                     }
                 }
             }
             .refreshable {
+                PremiumHaptics.pullToRefresh()
                 await projectManager.refreshProjects()
             }
             .sheet(isPresented: $showingAddProject) {

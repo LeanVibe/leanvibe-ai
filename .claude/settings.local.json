@@ -77,7 +77,15 @@
       "Bash(uv run:*)",
       "Bash(uv sync:*)",
       "Bash(timeout 10 uv run:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-cli-enhancements log --oneline -3)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-ios-notifications log --oneline -3)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-ios-notifications log --oneline -5)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-ios-settings log --oneline -3)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-ios-settings show --name-only db1597e)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-ios-settings show db1597e --name-only)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-cli-enhancements log --oneline -5)",
+      "Bash(git -C /Users/bogdan/work/leenvibe-qa-automation log --oneline -3)"
     ],
     "deny": []
   }

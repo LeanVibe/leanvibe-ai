@@ -166,6 +166,10 @@ class ConnectionStorageManager: ObservableObject {
         persistCurrentConnection()
     }
     
+    func clearConnection() {
+        clearStoredConnection()
+    }
+    
     // MARK: - Private Methods
     
     private func loadConnections() {

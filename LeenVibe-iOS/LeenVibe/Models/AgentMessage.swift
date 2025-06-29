@@ -27,19 +27,20 @@ struct WebSocketMessage: Codable, Sendable {
     let type: String
     let content: String
     let timestamp: String
-    let clientId: String?
+    let clientId: String
+    let priority: MessagePriority
     
     enum CodingKeys: String, CodingKey {
-        case type, content, timestamp
+        case type, content, timestamp, priority
         case clientId = "client_id"
     }
-    
-    init(type: String, content: String, timestamp: String, clientId: String? = nil) {
-        self.type = type
-        self.content = content
-        self.timestamp = timestamp
-        self.clientId = clientId
-    }
+}
+
+enum MessagePriority: Int, Codable, Sendable {
+    case low = 1
+    case normal = 2
+    case high = 3
+    case critical = 4
 }
 
 struct AgentResponse: Codable, Sendable {

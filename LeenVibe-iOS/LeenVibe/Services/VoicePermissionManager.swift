@@ -1,77 +1,113 @@
 import Foundation
 import Speech
 import AVFoundation
+import SwiftUI
+import _Concurrency
 
 @MainActor
 class VoicePermissionManager: ObservableObject {
-    @Published var speechAuthorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
-    @Published var microphoneAuthorizationStatus: AVAudioSession.RecordPermission = .undetermined
+    @Published var hasMicrophonePermission = false
+    @Published var hasSpeechRecognitionPermission = false
+    @Published var permissionStatus: PermissionStatus = .notDetermined
     @Published var isFullyAuthorized = false
     @Published var permissionError: String?
     
-    var canRequestPermissions: Bool {
-        speechAuthorizationStatus == .notDetermined || microphoneAuthorizationStatus == .undetermined
-    }
+    private var speechAuthorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
+    private var microphoneAuthorizationStatus: AVAudioSession.RecordPermission = .undetermined
     
-    var needsPermissions: Bool {
-        speechAuthorizationStatus != .authorized || microphoneAuthorizationStatus != .granted
-    }
-    
-    var permissionStatusDescription: String {
-        if isFullyAuthorized {
-            return "Voice commands are ready to use"
-        } else if speechAuthorizationStatus == .denied || microphoneAuthorizationStatus == .denied {
-            return "Voice permissions denied. Please enable in Settings"
-        } else if speechAuthorizationStatus == .restricted {
-            return "Speech recognition is restricted on this device"
-        } else {
-            return "Voice permissions needed for voice commands"
-        }
+    enum PermissionStatus {
+        case notDetermined
+        case granted
+        case denied
+        case restricted
     }
     
     init() {
+        checkPermissions()
+    }
+    
+    func checkPermissions() {
+        checkMicrophonePermission()
+        checkSpeechRecognitionPermission()
+        updateOverallStatus()
+    }
+    
+    private func checkMicrophonePermission() {
+        let status = AVAudioSession.sharedInstance().recordPermission
+        hasMicrophonePermission = (status == .granted)
+    }
+    
+    private func checkSpeechRecognitionPermission() {
+        let status = SFSpeechRecognizer.authorizationStatus()
+        hasSpeechRecognitionPermission = (status == .authorized)
+    }
+    
+    func requestPermissions(completion: @escaping (Bool) -> Void) {
+        requestMicrophonePermission { [weak self] micGranted in
+            guard let self = self else { return }
+            if micGranted {
+                self.requestSpeechRecognitionPermission { speechGranted in
+                    let allGranted = micGranted && speechGranted
+                    _Concurrency.Task { @MainActor in
+                        self.updateOverallStatus()
+                        completion(allGranted)
+                    }
+                }
+            } else {
+                _Concurrency.Task { @MainActor in
+                    self.updateOverallStatus()
+                    completion(false)
+                }
+            }
+        }
+    }
+    
+    func requestFullPermissions(completion: @escaping (Bool) -> Void) {
+        requestPermissions(completion: completion)
+    }
+    
+    private func requestMicrophonePermission(completion: @escaping (Bool) -> Void) {
+        AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            DispatchQueue.main.async {
+                self.hasMicrophonePermission = granted
+                completion(granted)
+            }
+        }
+    }
+    
+    private func requestSpeechRecognitionPermission(completion: @escaping (Bool) -> Void) {
+        SFSpeechRecognizer.requestAuthorization { status in
+            DispatchQueue.main.async {
+                self.hasSpeechRecognitionPermission = (status == .authorized)
+                completion(status == .authorized)
+            }
+        }
+    }
+    
+    private func updateOverallStatus() {
+        if hasMicrophonePermission && hasSpeechRecognitionPermission {
+            permissionStatus = .granted
+            isFullyAuthorized = true
+        } else {
+            let micStatus = AVAudioSession.sharedInstance().recordPermission
+            let speechStatus = SFSpeechRecognizer.authorizationStatus()
+            
+            if micStatus == .denied || speechStatus == .denied {
+                permissionStatus = .denied
+            } else if micStatus == .undetermined || speechStatus == .notDetermined {
+                permissionStatus = .notDetermined
+            } else {
+                permissionStatus = .restricted
+            }
+            isFullyAuthorized = false
+        }
         updateAuthorizationStatus()
-    }
-    
-    func requestAllPermissions() async {
-        await requestSpeechRecognitionPermission()
-        await requestMicrophonePermission()
-        updateFullAuthorizationStatus()
-    }
-    
-    private func requestSpeechRecognitionPermission() async {
-        return await withCheckedContinuation { continuation in
-            SFSpeechRecognizer.requestAuthorization { [weak self] status in
-                DispatchQueue.main.async {
-                    self?.speechAuthorizationStatus = status
-                    self?.updatePermissionError()
-                    continuation.resume()
-                }
-            }
-        }
-    }
-    
-    private func requestMicrophonePermission() async {
-        return await withCheckedContinuation { continuation in
-            AVAudioSession.sharedInstance().requestRecordPermission { [weak self] granted in
-                DispatchQueue.main.async {
-                    self?.microphoneAuthorizationStatus = granted ? .granted : .denied
-                    self?.updatePermissionError()
-                    continuation.resume()
-                }
-            }
-        }
     }
     
     private func updateAuthorizationStatus() {
         speechAuthorizationStatus = SFSpeechRecognizer.authorizationStatus()
         microphoneAuthorizationStatus = AVAudioSession.sharedInstance().recordPermission
-        updateFullAuthorizationStatus()
         updatePermissionError()
-    }
-    
-    private func updateFullAuthorizationStatus() {
-        isFullyAuthorized = speechAuthorizationStatus == .authorized && microphoneAuthorizationStatus == .granted
     }
     
     private func updatePermissionError() {
@@ -89,7 +125,7 @@ class VoicePermissionManager: ObservableObject {
         }
     }
     
-    func openAppSettings() {
+    func openSettings() {
         guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else {
             return
         }
@@ -159,7 +195,7 @@ extension AVAudioSession.RecordPermission {
     var description: String {
         switch self {
         case .undetermined:
-            return "Not determined"
+            return "Undetermined"
         case .denied:
             return "Denied"
         case .granted:
@@ -167,5 +203,9 @@ extension AVAudioSession.RecordPermission {
         @unknown default:
             return "Unknown"
         }
+    }
+    
+    var isGranted: Bool {
+        return self == .granted
     }
 }

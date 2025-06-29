@@ -414,21 +414,7 @@ enum TaskStatus: String, CaseIterable, Codable {
     }
 }
 
-enum TaskPriority: String, CaseIterable, Codable {
-    case low = "low"
-    case medium = "medium"
-    case high = "high"
-    case critical = "critical"
-    
-    var color: Color {
-        switch self {
-        case .low: return .green
-        case .medium: return .yellow
-        case .high: return .orange
-        case .critical: return .red
-        }
-    }
-}
+// TaskPriority extension is removed - use the one from Task.swift
 
 struct KanbanColumn: Identifiable, Codable {
     let id: String

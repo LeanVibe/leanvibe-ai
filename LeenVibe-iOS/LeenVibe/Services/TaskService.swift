@@ -1,8 +1,11 @@
 import Foundation
 import Combine
+import SwiftUI
+import _Concurrency
 
 // MARK: - Task Service for Backend Integration
 
+@available(macOS 10.15, iOS 13.0, *)
 class TaskService: ObservableObject {
     @Published var taskMetrics: TaskMetrics?
     @Published var kanbanStatistics: KanbanStatistics?
@@ -22,6 +25,7 @@ class TaskService: ObservableObject {
     
     // MARK: - Task Statistics
     
+    @MainActor
     func loadTaskStatistics() async {
         await MainActor.run {
             isLoading = true
@@ -61,6 +65,7 @@ class TaskService: ObservableObject {
     
     // MARK: - Kanban Statistics
     
+    @MainActor
     func loadKanbanStatistics() async {
         // Generate mock statistics for now since backend doesn't provide this yet
         let utilization = ColumnUtilization(
@@ -108,13 +113,14 @@ class TaskService: ObservableObject {
         Timer.publish(every: 30, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                Task {
+                _Concurrency.Task {
                     await self?.updatePerformanceMetrics()
                 }
             }
             .store(in: &cancellables)
     }
     
+    @MainActor
     private func updatePerformanceMetrics() async {
         // Simulate real performance metrics
         let metrics = PerformanceMetrics(
@@ -132,6 +138,7 @@ class TaskService: ObservableObject {
     
     // MARK: - System Health
     
+    @MainActor
     func checkSystemHealth() async {
         await MainActor.run {
             isLoading = true
@@ -232,11 +239,12 @@ class TaskService: ObservableObject {
     
     // MARK: - Auto Refresh
     
+    @MainActor
     func startAutoRefresh() {
         Timer.publish(every: 60, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                Task {
+                _Concurrency.Task {
                     await self?.loadTaskStatistics()
                     await self?.loadKanbanStatistics()
                     await self?.checkSystemHealth()
@@ -245,6 +253,7 @@ class TaskService: ObservableObject {
             .store(in: &cancellables)
     }
     
+    @MainActor
     func stopAutoRefresh() {
         cancellables.removeAll()
     }

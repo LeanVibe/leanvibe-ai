@@ -2,6 +2,7 @@ import SwiftUI
 import Foundation
 import Combine
 
+@available(macOS 10.15, iOS 13.0, *)
 @MainActor
 class GlobalVoiceManager: ObservableObject {
     @Published var isListening = false
@@ -16,10 +17,11 @@ class GlobalVoiceManager: ObservableObject {
     
     private var cancellables = Set<AnyCancellable>()
     
-    init(webSocketService: WebSocketService, projectManager: ProjectManager) {
+    init(webSocketService: WebSocketService, projectManager: ProjectManager, settingsManager: SettingsManager) {
         self.voiceProcessor = DashboardVoiceProcessor(
             projectManager: projectManager,
-            webSocketService: webSocketService
+            webSocketService: webSocketService,
+            settingsManager: settingsManager
         )
         
         self.wakePhraseManager = WakePhraseManager(
@@ -28,7 +30,7 @@ class GlobalVoiceManager: ObservableObject {
             voiceProcessor: voiceProcessor
         )
         
-        self.speechRecognition = SpeechRecognitionService(webSocketService: webSocketService)
+        self.speechRecognition = SpeechRecognitionService()
         
         setupVoiceObservers()
     }
@@ -47,6 +49,24 @@ class GlobalVoiceManager: ObservableObject {
         wakePhraseManager.$isWakeListening
             .sink { [weak self] listening in
                 self?.isWakeListening = listening
+            }
+            .store(in: &cancellables)
+        
+        // Observe recognition completion
+        speechRecognition.$recognitionState
+            .sink { [weak self] state in
+                guard let self = self else { return }
+                switch state {
+                case .completed:
+                    let text = self.speechRecognition.recognizedText
+                    self.voiceCommandText = text
+                    _Concurrency.Task { await self.processVoiceCommand(text) }
+                case .error(let error):
+                    print("Voice recognition error: \(error)")
+                    self.dismissVoiceCommand()
+                default:
+                    break
+                }
             }
             .store(in: &cancellables)
     }
@@ -72,19 +92,8 @@ class GlobalVoiceManager: ObservableObject {
         wakePhraseManager.stopWakeListening()
         
         // Start listening for command
-        speechRecognition.startListening { [weak self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let text):
-                    self?.voiceCommandText = text
-                    Task {
-                        await self?.processVoiceCommand(text)
-                    }
-                case .failure(let error):
-                    print("Voice recognition error: \(error)")
-                    self?.dismissVoiceCommand()
-                }
-            }
+        _Concurrency.Task {
+            await speechRecognition.startListening()
         }
     }
     
@@ -158,5 +167,3 @@ class GlobalVoiceManager: ObservableObject {
         }
     }
 }
-
-import Combine

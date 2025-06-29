@@ -3,8 +3,9 @@ import Combine
 
 /// Centralized settings management for all LeenVibe features
 /// Coordinates settings for Voice, Kanban, Architecture, and other systems
+@MainActor
 class SettingsManager: ObservableObject {
-    static let shared = SettingsManager()
+    @MainActor static let shared = SettingsManager()
     
     // MARK: - Published Settings
     
@@ -12,8 +13,51 @@ class SettingsManager: ObservableObject {
     @Published var voiceSettings = VoiceSettings()
     @Published var kanbanSettings = KanbanSettings()
     @Published var notificationSettings = NotificationSettings()
-    @Published var connectionSettings = ConnectionSettings()
     @Published var accessibilitySettings = AccessibilitySettings()
+    
+    // Voice Settings
+    @Published var isVoiceEnabled: Bool = true
+    @Published var voiceSensitivity: Double = 0.5
+    @Published var wakePhraseEnabled: Bool = true
+    @Published var selectedWakePhrase: String = "Hey LeenVibe"
+    @Published var voiceLanguage: String = "en-US"
+    @Published var continuousListening: Bool = false
+    @Published var backgroundListening: Bool = false
+    
+    // Notification Settings  
+    @Published var notificationsEnabled: Bool = true
+    @Published var terminalNotifications: Bool = true
+    @Published var buildNotifications: Bool = true
+    @Published var errorNotifications: Bool = true
+    @Published var soundEnabled: Bool = true
+    @Published var vibrationEnabled: Bool = true
+    @Published var quietHoursEnabled: Bool = false
+    @Published var quietHoursStart: Date = Calendar.current.date(from: DateComponents(hour: 22, minute: 0)) ?? Date()
+    @Published var quietHoursEnd: Date = Calendar.current.date(from: DateComponents(hour: 8, minute: 0)) ?? Date()
+    
+    // Server Settings
+    @Published var serverURL: String = "http://localhost:8000"
+    @Published var autoReconnect: Bool = true
+    @Published var connectionTimeout: Double = 30.0
+    @Published var maxRetries: Int = 3
+    
+    // Kanban Settings
+    @Published var autoArchive: Bool = true
+    @Published var archiveDays: Int = 30
+    @Published var showMetrics: Bool = true
+    @Published var taskAnimations: Bool = true
+    
+    // Architecture Settings
+    @Published var autoRefreshDiagrams: Bool = true
+    @Published var refreshInterval: Double = 60.0
+    @Published var diagramTheme: String = "default"
+    @Published var showNodeLabels: Bool = true
+    
+    // Accessibility Settings
+    @Published var fontSize: Double = 16.0
+    @Published var highContrast: Bool = false
+    @Published var reduceMotion: Bool = false
+    @Published var voiceOver: Bool = false
     
     // MARK: - Private Properties
     
@@ -35,8 +79,8 @@ class SettingsManager: ObservableObject {
         voiceSettings = VoiceSettings.load()
         kanbanSettings = KanbanSettings.load()
         notificationSettings = NotificationSettings.load()
-        connectionSettings = ConnectionSettings.load()
         accessibilitySettings = AccessibilitySettings.load()
+        loadSettings()
     }
     
     /// Save all settings to persistent storage
@@ -45,8 +89,8 @@ class SettingsManager: ObservableObject {
         voiceSettings.save()
         kanbanSettings.save()
         notificationSettings.save()
-        connectionSettings.save()
         accessibilitySettings.save()
+        saveSettings()
     }
     
     /// Reset all settings to defaults
@@ -55,7 +99,6 @@ class SettingsManager: ObservableObject {
         voiceSettings = VoiceSettings()
         kanbanSettings = KanbanSettings()
         notificationSettings = NotificationSettings()
-        connectionSettings = ConnectionSettings()
         accessibilitySettings = AccessibilitySettings()
         saveAllSettings()
     }
@@ -75,9 +118,6 @@ class SettingsManager: ObservableObject {
         case is NotificationSettings.Type:
             notificationSettings = NotificationSettings()
             notificationSettings.save()
-        case is ConnectionSettings.Type:
-            connectionSettings = ConnectionSettings()
-            connectionSettings.save()
         case is AccessibilitySettings.Type:
             accessibilitySettings = AccessibilitySettings()
             accessibilitySettings.save()
@@ -93,7 +133,6 @@ class SettingsManager: ObservableObject {
             voice: voiceSettings,
             kanban: kanbanSettings,
             notifications: notificationSettings,
-            connection: connectionSettings,
             accessibility: accessibilitySettings,
             exportDate: Date()
         )
@@ -109,7 +148,6 @@ class SettingsManager: ObservableObject {
         voiceSettings = importData.voice
         kanbanSettings = importData.kanban
         notificationSettings = importData.notifications
-        connectionSettings = importData.connection
         accessibilitySettings = importData.accessibility
         
         saveAllSettings()
@@ -118,20 +156,107 @@ class SettingsManager: ObservableObject {
     // MARK: - Private Methods
     
     private func setupAutoSave() {
-        // Auto-save when any settings change
-        Publishers.CombineLatest6(
-            $appSettings,
-            $voiceSettings,
-            $kanbanSettings,
-            $notificationSettings,
-            $connectionSettings,
-            $accessibilitySettings
+        // Use CombineLatest4 instead of CombineLatest5 since CombineLatest5 doesn't exist
+        Publishers.CombineLatest4(
+            $isVoiceEnabled,
+            $notificationsEnabled,
+            $serverURL,
+            $autoReconnect
         )
         .debounce(for: .seconds(1), scheduler: RunLoop.main)
-        .sink { [weak self] _ in
-            self?.saveAllSettings()
+        .sink { [weak self] (_: Bool, _: Bool, _: String, _: Bool) in
+            self?.saveSettings()
         }
         .store(in: &cancellables)
+        
+        // Setup another combiner for the remaining settings
+        Publishers.CombineLatest4(
+            $voiceSensitivity,
+            $fontSize,
+            $refreshInterval,
+            $connectionTimeout
+        )
+        .debounce(for: .seconds(1), scheduler: RunLoop.main)
+        .sink { [weak self] (_: Double, _: Double, _: Double, _: Double) in
+            self?.saveSettings()
+        }
+        .store(in: &cancellables)
+    }
+    
+    private func saveSettings() {
+        let encoder = JSONEncoder()
+        
+        let settingsData = SettingsData(
+            isVoiceEnabled: isVoiceEnabled,
+            voiceSensitivity: voiceSensitivity,
+            wakePhraseEnabled: wakePhraseEnabled,
+            selectedWakePhrase: selectedWakePhrase,
+            voiceLanguage: voiceLanguage,
+            notificationsEnabled: notificationsEnabled,
+            terminalNotifications: terminalNotifications,
+            buildNotifications: buildNotifications,
+            errorNotifications: errorNotifications,
+            soundEnabled: soundEnabled,
+            vibrationEnabled: vibrationEnabled,
+            serverURL: serverURL,
+            autoReconnect: autoReconnect,
+            connectionTimeout: connectionTimeout,
+            maxRetries: maxRetries,
+            autoArchive: autoArchive,
+            archiveDays: archiveDays,
+            showMetrics: showMetrics,
+            taskAnimations: taskAnimations,
+            autoRefreshDiagrams: autoRefreshDiagrams,
+            refreshInterval: refreshInterval,
+            diagramTheme: diagramTheme,
+            showNodeLabels: showNodeLabels,
+            fontSize: fontSize,
+            highContrast: highContrast,
+            reduceMotion: reduceMotion,
+            voiceOver: voiceOver
+        )
+        
+        do {
+            let data = try encoder.encode(settingsData)
+            UserDefaults.standard.set(data, forKey: "LeenVibeSettings")
+        } catch {
+            print("Failed to save settings: \(error)")
+        }
+    }
+    
+    private func loadSettings() {
+        guard let data = UserDefaults.standard.data(forKey: "LeenVibeSettings"),
+              let settingsData = try? JSONDecoder().decode(SettingsData.self, from: data) else {
+            return
+        }
+        
+        isVoiceEnabled = settingsData.isVoiceEnabled
+        voiceSensitivity = settingsData.voiceSensitivity
+        wakePhraseEnabled = settingsData.wakePhraseEnabled
+        selectedWakePhrase = settingsData.selectedWakePhrase
+        voiceLanguage = settingsData.voiceLanguage
+        notificationsEnabled = settingsData.notificationsEnabled
+        terminalNotifications = settingsData.terminalNotifications
+        buildNotifications = settingsData.buildNotifications
+        errorNotifications = settingsData.errorNotifications
+        soundEnabled = settingsData.soundEnabled
+        vibrationEnabled = settingsData.vibrationEnabled
+        serverURL = settingsData.serverURL
+        autoReconnect = settingsData.autoReconnect
+        connectionTimeout = settingsData.connectionTimeout
+        maxRetries = settingsData.maxRetries
+        autoArchive = settingsData.autoArchive
+        archiveDays = settingsData.archiveDays
+        showMetrics = settingsData.showMetrics
+        taskAnimations = settingsData.taskAnimations
+        autoRefreshDiagrams = settingsData.autoRefreshDiagrams
+        refreshInterval = settingsData.refreshInterval
+        diagramTheme = settingsData.diagramTheme
+        showNodeLabels = settingsData.showNodeLabels
+        fontSize = settingsData.fontSize
+        highContrast = settingsData.highContrast
+        reduceMotion = settingsData.reduceMotion
+        voiceOver = settingsData.voiceOver
     }
 }
 
@@ -249,27 +374,11 @@ struct KanbanSettings: SettingsProtocol {
     var compactMode = false
     var enableAnimations = true
     
-    // Columns configuration
-    var columnOrder = ["backlog", "in_progress", "testing", "done"]
-    var showColumnTaskCounts = true
-    var enableColumnCustomization = true
-    
-    // Task management
-    var enableVoiceTaskCreation = true
-    var showTaskIds = false
-    var defaultTaskPriority = "medium"
-    var autoAssignTasks = false
-    var enableTaskNotifications = true
-    
-    // Performance
-    var maxTasksPerColumn = 100
-    var enableInfiniteScroll = true
-    var prefetchTaskDetails = true
-    
-    // Integration
-    var syncWithBackend = true
-    var offlineModeEnabled = true
-    var conflictResolution: ConflictResolution = .askUser
+    // Task display
+    var showAssignee = true
+    var showDueDate = true
+    var showPriority = true
+    var taskCardSize: TaskCardSize = .medium
     
     static func load() -> KanbanSettings {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
@@ -286,50 +395,44 @@ struct KanbanSettings: SettingsProtocol {
     }
 }
 
-enum ConflictResolution: String, CaseIterable, Codable {
-    case askUser = "ask_user"
-    case useLocal = "use_local"
-    case useRemote = "use_remote"
-    case mergeChanges = "merge_changes"
+enum TaskCardSize: String, CaseIterable, Codable {
+    case small = "small"
+    case medium = "medium"
+    case large = "large"
     
     var displayName: String {
         switch self {
-        case .askUser: return "Ask User"
-        case .useLocal: return "Use Local Changes"
-        case .useRemote: return "Use Remote Changes"
-        case .mergeChanges: return "Merge Changes"
+        case .small: return "Small"
+        case .medium: return "Medium"
+        case .large: return "Large"
         }
     }
 }
+
 
 // MARK: - Notification Settings
 
 struct NotificationSettings: SettingsProtocol {
     static let storageKey = "NotificationSettings"
     
-    // Push notifications
-    var pushNotificationsEnabled = false
-    var taskNotificationsEnabled = true
-    var voiceNotificationsEnabled = true
-    var systemNotificationsEnabled = true
-    
-    // In-app notifications
-    var bannerNotificationsEnabled = true
-    var soundEffectsEnabled = true
-    var hapticFeedbackEnabled = true
-    var notificationBadgeEnabled = true
+    // General notification settings
+    var notificationsEnabled = true
+    var alertStyle: AlertStyle = .banner
+    var soundEnabled = true
+    var vibrationEnabled = true
+    var showPreviews: ShowPreviews = .always
     
     // Notification types
-    var taskCreatedNotifications = true
-    var taskCompletedNotifications = true
-    var taskOverdueNotifications = true
-    var voiceCommandResultNotifications = true
-    var serverConnectionNotifications = true
+    var taskUpdates = true
+    var agentMentions = true
+    var projectStatusChanges = true
+    var newDecisionLogs = true
+    var systemAlerts = true
     
     // Quiet hours
     var quietHoursEnabled = false
-    var quietHoursStart = Calendar.current.date(from: DateComponents(hour: 22)) ?? Date()
-    var quietHoursEnd = Calendar.current.date(from: DateComponents(hour: 8)) ?? Date()
+    var quietHoursStart = "22:00"
+    var quietHoursEnd = "08:00"
     
     static func load() -> NotificationSettings {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
@@ -346,68 +449,34 @@ struct NotificationSettings: SettingsProtocol {
     }
 }
 
-// MARK: - Connection Settings
-
-struct ConnectionSettings: SettingsProtocol {
-    static let storageKey = "ConnectionSettings"
-    
-    // Server configuration
-    var serverURL = ""
-    var serverPort = 8000
-    var useHTTPS = false
-    var apiVersion = "v1"
-    
-    // Connection behavior
-    var autoReconnect = true
-    var connectionTimeout: TimeInterval = 30.0
-    var retryAttempts = 3
-    var retryDelay: TimeInterval = 5.0
-    
-    // WebSocket settings
-    var webSocketEnabled = true
-    var webSocketHeartbeat: TimeInterval = 30.0
-    var webSocketReconnectDelay: TimeInterval = 5.0
-    
-    // Sync preferences
-    var syncInterval: TimeInterval = 60.0
-    var backgroundSyncEnabled = true
-    var wifiOnlySync = false
-    
-    static func load() -> ConnectionSettings {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
-              let settings = try? JSONDecoder().decode(ConnectionSettings.self, from: data) else {
-            return ConnectionSettings()
-        }
-        return settings
-    }
-    
-    func save() {
-        if let data = try? JSONEncoder().encode(self) {
-            UserDefaults.standard.set(data, forKey: Self.storageKey)
-        }
-    }
+enum AlertStyle: String, CaseIterable, Codable {
+    case banner = "banner"
+    case alert = "alert"
+    case none = "none"
 }
+
+enum ShowPreviews: String, CaseIterable, Codable {
+    case always = "always"
+    case whenUnlocked = "when_unlocked"
+    case never = "never"
+}
+
 
 // MARK: - Accessibility Settings
 
 struct AccessibilitySettings: SettingsProtocol {
     static let storageKey = "AccessibilitySettings"
     
-    // Visual accessibility
-    var highContrastMode = false
+    // Text size and contrast
+    var dynamicTypeEnabled = true
+    var largerTextEnabled = false
+    var highContrastEnabled = false
+    
+    // Motion and animation
     var reduceMotion = false
-    var largeFontSize = false
-    var boldText = false
     
-    // Voice accessibility
-    var voiceOverOptimizations = true
-    var speechRateAdjustment: Double = 1.0
-    var extendedVoiceCommands = false
-    
-    // Motor accessibility
-    var extendedTouchTargets = false
-    var reduceGestures = false
-    var oneHandedMode = false
+    // VoiceOver
+    var voiceOverEnabled = false
     
     static func load() -> AccessibilitySettings {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
@@ -424,42 +493,44 @@ struct AccessibilitySettings: SettingsProtocol {
     }
 }
 
-// MARK: - Settings Export/Import
+// MARK: - Settings Export Structure
 
 struct SettingsExport: Codable {
     let app: AppSettings
     let voice: VoiceSettings
     let kanban: KanbanSettings
     let notifications: NotificationSettings
-    let connection: ConnectionSettings
     let accessibility: AccessibilitySettings
     let exportDate: Date
-    let version: String = "1.0"
 }
 
-// MARK: - Settings Notifications
-
-extension SettingsManager {
-    
-    /// Post notification when settings change
-    func notifySettingsChanged(category: SettingsCategory) {
-        NotificationCenter.default.post(
-            name: .settingsDidChange,
-            object: self,
-            userInfo: ["category": category]
-        )
-    }
-}
-
-enum SettingsCategory: String, CaseIterable {
-    case app = "app"
-    case voice = "voice"
-    case kanban = "kanban"
-    case notifications = "notifications"
-    case connection = "connection"
-    case accessibility = "accessibility"
-}
-
-extension Notification.Name {
-    static let settingsDidChange = Notification.Name("settingsDidChange")
-}
+// Supporting data structure for encoding/decoding
+private struct SettingsData: Codable {
+    let isVoiceEnabled: Bool
+    let voiceSensitivity: Double
+    let wakePhraseEnabled: Bool
+    let selectedWakePhrase: String
+    let voiceLanguage: String
+    let notificationsEnabled: Bool
+    let terminalNotifications: Bool
+    let buildNotifications: Bool
+    let errorNotifications: Bool
+    let soundEnabled: Bool
+    let vibrationEnabled: Bool
+    let serverURL: String
+    let autoReconnect: Bool
+    let connectionTimeout: Double
+    let maxRetries: Int
+    let autoArchive: Bool
+    let archiveDays: Int
+    let showMetrics: Bool
+    let taskAnimations: Bool
+    let autoRefreshDiagrams: Bool
+    let refreshInterval: Double
+    let diagramTheme: String
+    let showNodeLabels: Bool
+    let fontSize: Double
+    let highContrast: Bool
+    let reduceMotion: Bool
+    let voiceOver: Bool
+} 
