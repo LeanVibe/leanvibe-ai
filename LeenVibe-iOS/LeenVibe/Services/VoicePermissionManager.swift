@@ -4,6 +4,7 @@ import AVFoundation
 import SwiftUI
 import _Concurrency
 
+@available(iOS 14.0, macOS 10.15, *)
 @MainActor
 class VoicePermissionManager: ObservableObject {
     @Published var hasMicrophonePermission = false
@@ -13,7 +14,9 @@ class VoicePermissionManager: ObservableObject {
     @Published var permissionError: String?
     
     @Published private(set) var speechAuthorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
+    #if os(iOS)
     @Published private(set) var microphoneAuthorizationStatus: AVAudioSession.RecordPermission = .undetermined
+    #endif
     
     enum PermissionStatus {
         case notDetermined

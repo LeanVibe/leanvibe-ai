@@ -162,6 +162,23 @@ enum TaskPriority: String, CaseIterable, Codable, Sendable {
     }
 }
 
+import SwiftUI
+
+extension TaskPriority {
+    var color: Color {
+        switch self {
+        case .low:
+            return .green
+        case .medium:
+            return .blue
+        case .high:
+            return .orange
+        case .critical:
+            return .red
+        }
+    }
+}
+
 enum ConfidenceLevel: String, CaseIterable, Sendable {
     case high = "high"
     case medium = "medium"

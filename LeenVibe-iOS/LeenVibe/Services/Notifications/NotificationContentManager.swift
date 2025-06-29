@@ -643,6 +643,7 @@ class NotificationContentGenerator {
     }
 }
 
+@MainActor
 class NotificationPersonalizer {
     func personalizeContent(
         template: NotificationTemplate,
@@ -693,6 +694,7 @@ class NotificationPersonalizer {
     }
 }
 
+@MainActor
 class IntelligentScheduler {
     func calculateOptimalDeliveryTime(
         for type: NotificationType,

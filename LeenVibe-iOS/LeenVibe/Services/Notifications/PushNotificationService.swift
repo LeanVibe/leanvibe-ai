@@ -3,11 +3,12 @@ import UserNotifications
 #if canImport(UIKit)
 import UIKit
 #endif
-import Combine
+import CoreLocation
 import os.log
 
 /// Standalone Push Notification Service for LeenVibe iOS App
 /// Handles APNs registration, local notifications, and delivery management
+@available(iOS 14.0, macOS 11.0, *)
 @MainActor
 class PushNotificationService: NSObject, ObservableObject {
     
@@ -24,7 +25,6 @@ class PushNotificationService: NSObject, ObservableObject {
     
     // MARK: - Configuration
     
-    private let notificationCenter = UNUserNotificationCenter.current()
     private let logger = Logger(subsystem: "com.leenvibe.notifications", category: "PushService")
     
     // MARK: - Notification Categories
@@ -62,7 +62,7 @@ class PushNotificationService: NSObject, ObservableObject {
     // MARK: - Setup
     
     private func setupNotificationCenter() {
-        notificationCenter.delegate = self
+        UNUserNotificationCenter.current().delegate = self
         registerNotificationCategories()
     }
     
@@ -133,7 +133,7 @@ class PushNotificationService: NSObject, ObservableObject {
             options: []
         )
         
-        notificationCenter.setNotificationCategories([
+        UNUserNotificationCenter.current().setNotificationCategories([
             generalCategory,
             reminderCategory,
             socialCategory,
@@ -146,9 +146,9 @@ class PushNotificationService: NSObject, ObservableObject {
     
     // MARK: - Permission Management
     
-    func requestNotificationPermissions() async -> Bool {
+    nonisolated func requestNotificationPermissions() async -> Bool {
         do {
-            let granted = try await notificationCenter.requestAuthorization(
+            let granted = try await UNUserNotificationCenter.current().requestAuthorization(
                 options: [.alert, .sound, .badge, .provisional, .criticalAlert]
             )
             
@@ -168,17 +168,19 @@ class PushNotificationService: NSObject, ObservableObject {
         }
     }
     
-    func updatePermissionStatus() async {
-        let settings = await notificationCenter.notificationSettings()
+    nonisolated func updatePermissionStatus() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
         await MainActor.run {
             notificationPermissionStatus = settings.authorizationStatus
         }
     }
     
     private func registerForRemoteNotifications() {
+        #if os(iOS)
         DispatchQueue.main.async {
             UIApplication.shared.registerForRemoteNotifications()
         }
+        #endif
     }
     
     // MARK: - Device Token Management
@@ -220,7 +222,7 @@ class PushNotificationService: NSObject, ObservableObject {
     
     // MARK: - Local Notifications
     
-    func scheduleLocalNotification(_ notification: LocalNotificationRequest) async -> Bool {
+    nonisolated func scheduleLocalNotification(_ notification: LocalNotificationRequest) async -> Bool {
         do {
             let content = createNotificationContent(from: notification)
             let trigger = createNotificationTrigger(from: notification.trigger)
@@ -231,7 +233,7 @@ class PushNotificationService: NSObject, ObservableObject {
                 trigger: trigger
             )
             
-            try await notificationCenter.add(request)
+            try await UNUserNotificationCenter.current().add(request)
             
             // Track pending notification
             let pendingNotification = PendingNotification(
@@ -242,7 +244,9 @@ class PushNotificationService: NSObject, ObservableObject {
                 category: notification.category
             )
             
-            pendingNotifications.append(pendingNotification)
+            await MainActor.run {
+                pendingNotifications.append(pendingNotification)
+            }
             
             logger.info("Scheduled local notification: \(notification.id)")
             return true
@@ -254,20 +258,20 @@ class PushNotificationService: NSObject, ObservableObject {
     }
     
     func cancelNotification(withId id: String) {
-        notificationCenter.removePendingNotificationRequests(withIdentifiers: [id])
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
         pendingNotifications.removeAll { $0.id == id }
         logger.info("Cancelled notification: \(id)")
     }
     
     func cancelAllNotifications() {
-        notificationCenter.removeAllPendingNotificationRequests()
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         pendingNotifications.removeAll()
         logger.info("Cancelled all pending notifications")
     }
     
     // MARK: - Notification Content Creation
     
-    private func createNotificationContent(from request: LocalNotificationRequest) -> UNMutableNotificationContent {
+    private nonisolated func createNotificationContent(from request: LocalNotificationRequest) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         
         content.title = request.title
@@ -302,7 +306,7 @@ class PushNotificationService: NSObject, ObservableObject {
         return content
     }
     
-    private func createNotificationTrigger(from trigger: NotificationTrigger) -> UNNotificationTrigger? {
+    private nonisolated func createNotificationTrigger(from trigger: NotificationTrigger) -> UNNotificationTrigger? {
         switch trigger {
         case .immediate:
             return UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
@@ -315,7 +319,11 @@ class PushNotificationService: NSObject, ObservableObject {
             return UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: repeats)
             
         case .location(let region, let repeats):
+            #if os(iOS)
             return UNLocationNotificationTrigger(region: region, repeats: repeats)
+            #else
+            return nil
+            #endif
         }
     }
     
@@ -336,8 +344,8 @@ class PushNotificationService: NSObject, ObservableObject {
     func sendDailyReminderNotification(at date: Date) async {
         let notification = LocalNotificationRequest(
             id: "daily_reminder_\(UUID().uuidString)",
-            title: "Time for Your Daily Practice 🧘‍♀️",
-            body: "Take a moment to center yourself with a quick meditation session.",
+            title: "Daily Reminder 🔔",
+            body: "Don't forget to check your LeenVibe progress today!",
             category: NotificationCategory.reminder,
             trigger: .date(date)
         )
@@ -345,11 +353,11 @@ class PushNotificationService: NSObject, ObservableObject {
         await scheduleLocalNotification(notification)
     }
     
-    func sendAchievementNotification(achievement: String) async {
+    func sendAchievementNotification(title: String, body: String) async {
         let notification = LocalNotificationRequest(
             id: "achievement_\(UUID().uuidString)",
-            title: "Achievement Unlocked! 🏆",
-            body: "Congratulations! You've earned: \(achievement)",
+            title: title,
+            body: body,
             category: NotificationCategory.achievement,
             trigger: .immediate
         )
@@ -359,8 +367,8 @@ class PushNotificationService: NSObject, ObservableObject {
     
     // MARK: - Notification History
     
-    func getDeliveredNotifications() async -> [DeliveredNotification] {
-        let delivered = await notificationCenter.deliveredNotifications()
+    nonisolated func getDeliveredNotifications() async -> [DeliveredNotification] {
+        let delivered = await UNUserNotificationCenter.current().deliveredNotifications()
         
         return delivered.map { notification in
             DeliveredNotification(
@@ -373,8 +381,8 @@ class PushNotificationService: NSObject, ObservableObject {
         }
     }
     
-    func getPendingNotifications() async -> [PendingNotification] {
-        let pending = await notificationCenter.pendingNotificationRequests()
+    nonisolated func getPendingNotifications() async -> [PendingNotification] {
+        let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
         
         return pending.compactMap { request in
             guard let trigger = request.trigger as? UNCalendarNotificationTrigger,
@@ -395,9 +403,11 @@ class PushNotificationService: NSObject, ObservableObject {
     // MARK: - Badge Management
     
     func updateBadgeCount(_ count: Int) {
+        #if os(iOS)
         DispatchQueue.main.async {
             UIApplication.shared.applicationIconBadgeNumber = count
         }
+        #endif
         logger.debug("Updated badge count to: \(count)")
     }
     
@@ -432,12 +442,12 @@ class PushNotificationService: NSObject, ObservableObject {
     // MARK: - Analytics
     
     private func trackNotificationEvent(_ event: NotificationEvent) {
-        logger.info("Notification event: \(String(describing: event.type)) for ID: \(event.notificationId)")
+        logger.info("Notification event: \(String(describing: event.type)) for ID: \(event.id)")
         // Implementation would send analytics to backend
     }
     
     private func handleReplyAction(notification: UNNotification, text: String) {
-        logger.info("Handling reply action for notification: \\(notification.request.identifier), text: \\(text)")
+        logger.info("Handling reply action for notification: \(notification.request.identifier), text: \(text)")
         // Implementation would send reply to appropriate service
     }
 }
@@ -450,7 +460,7 @@ extension PushNotificationService: UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         // Handle the notification when it's being presented
-        completionHandler([.alert, .badge, .sound])
+        completionHandler([.banner, .badge, .sound])
     }
     
     nonisolated func userNotificationCenter(
@@ -554,27 +564,3 @@ struct NotificationPreferences: Codable {
     var preferredTime = "09:00"
 }
 
-/*
-struct NotificationEvent {
-    let type: NotificationEventType
-    let notificationId: String
-    let timestamp: Date
-    let actionId: String?
-    
-    init(type: NotificationEventType, notificationId: String, timestamp: Date, actionId: String? = nil) {
-        self.type = type
-        self.notificationId = notificationId
-        self.timestamp = timestamp
-        self.actionId = actionId
-    }
-}
-
-enum NotificationEventType {
-    case scheduled
-    case presented
-    case interacted
-    case dismissed
-}
-*/
-
-import CoreLocation

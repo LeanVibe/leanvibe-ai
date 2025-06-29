@@ -1,7 +1,13 @@
 import SwiftUI
-import AVFoundation
+@preconcurrency import AVFoundation
 import AudioToolbox
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
+#if canImport(UIKit)
+@available(iOS 13.0, macOS 10.15, *)
 struct LeenVibeQRScannerView: View {
     @Binding var isPresented: Bool
     @ObservedObject var webSocketService: WebSocketService
@@ -51,18 +57,16 @@ struct LeenVibeQRScannerView: View {
     private func handleQRCode(_ code: String) {
         isScanning = false
         
-        // Parse and connect using QR code
-        webSocketService.connectWithQRCode(code) { success, error in
-            DispatchQueue.main.async {
-                if success {
-                    isPresented = false
-                } else {
-                    errorMessage = error ?? "Failed to connect"
-                    // Resume scanning after 2 seconds
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                        errorMessage = nil
-                        isScanning = true
-                    }
+        Task {
+            do {
+                try await webSocketService.connectWithQRCode(code)
+                isPresented = false
+            } catch {
+                errorMessage = error.localizedDescription
+                // Resume scanning after 2 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    errorMessage = nil
+                    isScanning = true
                 }
             }
         }
@@ -73,6 +77,7 @@ struct LeenVibeQRScannerView: View {
     }
 }
 
+@available(iOS 13.0, macOS 10.15, *)
 struct CameraView: UIViewRepresentable {
     @Binding var isScanning: Bool
     let onQRCodeDetected: (String) -> Void
@@ -131,14 +136,17 @@ struct CameraView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
+        let coordinator = context.coordinator
         if isScanning {
-            if !(context.coordinator.captureSession?.isRunning ?? false) {
+            if !(coordinator.captureSession?.isRunning ?? false) {
                 DispatchQueue.global(qos: .background).async {
-                    context.coordinator.captureSession?.startRunning()
+                    coordinator.captureSession?.startRunning()
                 }
             }
         } else {
-            context.coordinator.captureSession?.stopRunning()
+            DispatchQueue.global(qos: .background).async {
+                coordinator.captureSession?.stopRunning()
+            }
         }
     }
     
@@ -159,15 +167,22 @@ struct CameraView: UIViewRepresentable {
                 guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
                 guard let stringValue = readableObject.stringValue else { return }
                 
-                // Vibrate to indicate scan
-                AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
+                // Extract the callback outside the async context
+                let parentRef = parent
                 
-                parent.onQRCodeDetected(stringValue)
+                DispatchQueue.main.async {
+                    // Vibrate to indicate scan
+                    AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
+                    
+                    parentRef.onQRCodeDetected(stringValue)
+                }
             }
         }
     }
 }
+#endif
 
+@available(iOS 13.0, macOS 10.15, *)
 struct ScannerOverlay: View {
     var body: some View {
         ZStack {

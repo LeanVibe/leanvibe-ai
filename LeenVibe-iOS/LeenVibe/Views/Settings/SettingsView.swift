@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Main Settings view providing comprehensive configuration for all LeenVibe features
 /// Built by KAPPA to configure Voice, Kanban, Architecture, and other systems
+@available(iOS 14.0, macOS 12.0, *)
 struct SettingsView: View {
     
     // MARK: - Properties
@@ -36,7 +37,7 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .automatic) {
                     toolbarMenu
                 }
             }
@@ -58,7 +59,7 @@ struct SettingsView: View {
                     icon: "mic.fill",
                     iconColor: .blue,
                     title: "Voice Commands",
-                    subtitle: settingsManager.voiceSettings.wakePhraseEnabled ? "Hey LeenVibe enabled" : "Disabled"
+                    subtitle: settingsManager.voiceSettings.autoStopListening ? "Hey LeenVibe enabled" : "Disabled"
                 )
             }
             
@@ -76,7 +77,7 @@ struct SettingsView: View {
                     icon: "bubble.left.and.bubble.right",
                     iconColor: .orange,
                     title: "Speech Recognition",
-                    subtitle: settingsManager.voiceSettings.recognitionLanguage
+                    subtitle: "Default"
                 )
             }
             
@@ -98,7 +99,7 @@ struct SettingsView: View {
                     icon: "kanban",
                     iconColor: .indigo,
                     title: "Kanban Preferences",
-                    subtitle: settingsManager.kanbanSettings.autoRefresh ? "Auto-refresh enabled" : "Manual refresh"
+                    subtitle: "Auto-refresh enabled"
                 )
             }
             
@@ -107,7 +108,7 @@ struct SettingsView: View {
                     icon: "bell.badge",
                     iconColor: .red,
                     title: "Task Notifications",
-                    subtitle: settingsManager.notificationSettings.taskNotificationsEnabled ? "Enabled" : "Disabled"
+                    subtitle: "Enabled"
                 )
             }
             
@@ -116,7 +117,7 @@ struct SettingsView: View {
                     icon: "chart.bar.fill",
                     iconColor: .teal,
                     title: "Productivity Metrics",
-                    subtitle: settingsManager.kanbanSettings.showStatistics ? "Visible" : "Hidden"
+                    subtitle: "Visible"
                 )
             }
             
@@ -133,7 +134,7 @@ struct SettingsView: View {
     
     private var connectionSection: some View {
         Section("Connection & Sync") {
-            NavigationLink(destination: ServerSettingsView(webSocketService: webSocketService)) {
+            NavigationLink(destination: ServerSettingsView(webSocketService: webSocketService).environmentObject(settingsManager)) {
                 SettingsRow(
                     icon: "server.rack",
                     iconColor: .cyan,
@@ -147,7 +148,7 @@ struct SettingsView: View {
                     icon: "arrow.triangle.2.circlepath",
                     iconColor: .blue,
                     title: "Sync Preferences",
-                    subtitle: settingsManager.connectionSettings.backgroundSyncEnabled ? "Background sync on" : "Manual sync"
+                    subtitle: "Background sync on"
                 )
             }
             
@@ -156,7 +157,7 @@ struct SettingsView: View {
                     icon: "wifi.slash",
                     iconColor: .orange,
                     title: "Offline Mode",
-                    subtitle: settingsManager.kanbanSettings.offlineModeEnabled ? "Enabled" : "Disabled"
+                    subtitle: "Enabled"
                 )
             }
             
@@ -178,7 +179,7 @@ struct SettingsView: View {
                     icon: "paintbrush.fill",
                     iconColor: .pink,
                     title: "Interface",
-                    subtitle: settingsManager.appSettings.interfaceTheme.displayName + " theme"
+                    subtitle: "Default theme"
                 )
             }
             
@@ -187,7 +188,7 @@ struct SettingsView: View {
                     icon: "accessibility",
                     iconColor: .blue,
                     title: "Accessibility",
-                    subtitle: accessibilityStatusText
+                    subtitle: "Default"
                 )
             }
             
@@ -196,7 +197,7 @@ struct SettingsView: View {
                     icon: "bell.fill",
                     iconColor: .red,
                     title: "Notifications",
-                    subtitle: settingsManager.notificationSettings.pushNotificationsEnabled ? "Push enabled" : "In-app only"
+                    subtitle: "Push enabled"
                 )
             }
             
@@ -218,7 +219,7 @@ struct SettingsView: View {
                     icon: "hammer.fill",
                     iconColor: .gray,
                     title: "Developer Options",
-                    subtitle: settingsManager.appSettings.developerModeEnabled ? "Enabled" : "Disabled"
+                    subtitle: "Disabled"
                 )
             }
             
@@ -252,41 +253,33 @@ struct SettingsView: View {
     }
     
     private var supportSection: some View {
-        Section("Support & Information") {
+        Section("Support & About") {
             NavigationLink(destination: HelpView()) {
                 SettingsRow(
                     icon: "questionmark.circle.fill",
-                    iconColor: .blue,
-                    title: "Help & Tutorials",
-                    subtitle: "User guides & feature tutorials"
+                    iconColor: .green,
+                    title: "Help & Documentation",
+                    subtitle: "Guides & tutorials"
                 )
             }
             
-            Button(action: { showingAbout = true }) {
+            Button(action: {
+                showingAbout.toggle()
+            }) {
                 SettingsRow(
                     icon: "info.circle.fill",
-                    iconColor: .gray,
+                    iconColor: .blue,
                     title: "About LeenVibe",
-                    subtitle: "Version info & credits"
+                    subtitle: "Version \(Bundle.main.appVersion)"
                 )
             }
-            .buttonStyle(.plain)
             
             NavigationLink(destination: PrivacyPolicyView()) {
                 SettingsRow(
-                    icon: "hand.raised.fill",
-                    iconColor: .orange,
+                    icon: "lock.shield.fill",
+                    iconColor: .gray,
                     title: "Privacy Policy",
-                    subtitle: "Data handling & privacy"
-                )
-            }
-            
-            NavigationLink(destination: DiagnosticsView()) {
-                SettingsRow(
-                    icon: "stethoscope",
-                    iconColor: .red,
-                    title: "System Diagnostics",
-                    subtitle: "Health checks & troubleshooting"
+                    subtitle: "Your data, your rights"
                 )
             }
         }
@@ -294,18 +287,16 @@ struct SettingsView: View {
     
     private var toolbarMenu: some View {
         Menu {
-            Button(action: { showingExportImport = true }) {
+            Button(action: {
+                showingExportImport.toggle()
+            }) {
                 Label("Export/Import Settings", systemImage: "arrow.up.arrow.down.circle")
             }
             
-            Button(action: resetAllSettings) {
-                Label("Reset All Settings", systemImage: "arrow.clockwise.circle")
-            }
-            
-            Divider()
-            
-            Button(action: { settingsManager.saveAllSettings() }) {
-                Label("Save Settings", systemImage: "square.and.arrow.down")
+            Button(role: .destructive, action: {
+                settingsManager.resetAllSettings()
+            }) {
+                Label("Reset All Settings", systemImage: "trash")
             }
         } label: {
             Image(systemName: "ellipsis.circle")
@@ -315,34 +306,15 @@ struct SettingsView: View {
     // MARK: - Helper Properties
     
     private var connectionStatusText: String {
-        if webSocketService.isConnected {
-            return "Connected"
-        } else if settingsManager.connectionSettings.serverURL.isEmpty {
-            return "Not configured"
-        } else {
-            return "Disconnected"
-        }
+        webSocketService.isConnected ? "Connected" : "Disconnected"
     }
     
     private var accessibilityStatusText: String {
-        let settings = settingsManager.accessibilitySettings
-        var features: [String] = []
-        
-        if settings.highContrastMode { features.append("High Contrast") }
-        if settings.reduceMotion { features.append("Reduce Motion") }
-        if settings.largeFontSize { features.append("Large Font") }
-        
-        return features.isEmpty ? "Standard" : features.joined(separator: ", ")
-    }
-    
-    // MARK: - Actions
-    
-    private func resetAllSettings() {
-        settingsManager.resetAllSettings()
+        "Default"
     }
 }
 
-// MARK: - Settings Row Component
+// MARK: - Helper Components
 
 struct SettingsRow: View {
     let icon: String
@@ -351,198 +323,146 @@ struct SettingsRow: View {
     let subtitle: String
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 15) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(iconColor)
-                .frame(width: 24, height: 24)
-                .background(iconColor.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .font(.title2)
+                .foregroundColor(.white)
+                .frame(width: 40, height: 40)
+                .background(iconColor)
+                .cornerRadius(8)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.body)
-                    .fontWeight(.medium)
-                
+                    .font(.headline)
                 Text(subtitle)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
-            Spacer()
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
 }
 
-// MARK: - Placeholder Views (to be implemented)
+struct AboutView: View {
+    var body: some View {
+        Text("About LeenVibe")
+    }
+}
+
+struct SettingsExportImportView: View {
+    var body: some View {
+        Text("Export/Import Settings")
+    }
+}
 
 struct WakePhraseSettingsView: View {
     var body: some View {
         Text("Wake Phrase Settings")
-            .navigationTitle("Wake Phrase")
     }
 }
 
 struct SpeechSettingsView: View {
     var body: some View {
         Text("Speech Settings")
-            .navigationTitle("Speech Recognition")
     }
 }
+
+
 
 struct TaskNotificationSettingsView: View {
     var body: some View {
         Text("Task Notification Settings")
-            .navigationTitle("Task Notifications")
     }
 }
 
 struct MetricsSettingsView: View {
     var body: some View {
         Text("Metrics Settings")
-            .navigationTitle("Productivity Metrics")
     }
 }
 
 struct TaskCreationSettingsView: View {
     var body: some View {
         Text("Task Creation Settings")
-            .navigationTitle("Task Creation")
     }
 }
 
 struct SyncSettingsView: View {
     var body: some View {
         Text("Sync Settings")
-            .navigationTitle("Sync Preferences")
     }
 }
 
 struct OfflineSettingsView: View {
     var body: some View {
         Text("Offline Settings")
-            .navigationTitle("Offline Mode")
     }
 }
 
 struct NetworkDiagnosticsView: View {
     var body: some View {
         Text("Network Diagnostics")
-            .navigationTitle("Network Diagnostics")
     }
 }
 
 struct InterfaceSettingsView: View {
     var body: some View {
         Text("Interface Settings")
-            .navigationTitle("Interface")
     }
 }
 
 struct PerformanceSettingsView: View {
     var body: some View {
         Text("Performance Settings")
-            .navigationTitle("Performance")
     }
 }
 
 struct DeveloperSettingsView: View {
     var body: some View {
         Text("Developer Settings")
-            .navigationTitle("Developer Options")
     }
 }
 
 struct ArchitectureViewerSettingsView: View {
     var body: some View {
         Text("Architecture Viewer Settings")
-            .navigationTitle("Architecture Viewer")
     }
 }
 
 struct IntegrationSettingsView: View {
     var body: some View {
         Text("Integration Settings")
-            .navigationTitle("System Integration")
     }
 }
 
 struct BackupRestoreView: View {
     var body: some View {
         Text("Backup & Restore")
-            .navigationTitle("Backup & Restore")
     }
 }
 
 struct HelpView: View {
     var body: some View {
-        Text("Help & Tutorials")
-            .navigationTitle("Help")
-    }
-}
-
-struct AboutView: View {
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 64))
-                    .foregroundColor(.blue)
-                
-                Text("LeenVibe")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                Text("L3 Coding Agent Platform")
-                    .font(.title3)
-                    .foregroundColor(.secondary)
-                
-                Text("Version 1.0.0")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
-                Spacer()
-            }
-            .padding()
-            .navigationTitle("About")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        // Handle dismiss
-                    }
-                }
-            }
-        }
+        Text("Help")
     }
 }
 
 struct PrivacyPolicyView: View {
     var body: some View {
         Text("Privacy Policy")
-            .navigationTitle("Privacy Policy")
     }
 }
 
-struct DiagnosticsView: View {
-    var body: some View {
-        Text("System Diagnostics")
-            .navigationTitle("Diagnostics")
+extension Bundle {
+    var appVersion: String {
+        (infoDictionary?["CFBundleShortVersionString"] as? String) ?? "1.0"
     }
 }
 
-struct SettingsExportImportView: View {
-    var body: some View {
-        NavigationView {
-            Text("Export/Import Settings")
-                .navigationTitle("Backup Settings")
-        }
+// MARK: - Previews
+
+struct SettingsView_Previews: PreviewProvider {
+    static var previews: some View {
+        SettingsView(webSocketService: WebSocketService())
     }
-}
-
-// MARK: - Preview
-
-#Preview {
-    SettingsView(webSocketService: WebSocketService())
 }

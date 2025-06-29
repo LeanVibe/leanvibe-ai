@@ -208,23 +208,35 @@ struct OptimizedTaskCardView: View {
         .rotationEffect(.degrees(isDragged ? 3 : 0))
         
         // Conditional animation optimization
-        .if(shouldOptimize) { view in
-            view.animation(.linear(duration: 0.1), value: isDragged)
-                .animation(.linear(duration: 0.1), value: isPressed)
-        } else: { view in
-            view.performanceOptimizedAnimation(isDragged)
-                .performanceOptimizedAnimation(isPressed)
-        }
+        .modifier(ConditionalAnimationModifier(shouldOptimize: shouldOptimize, isDragged: isDragged, isPressed: isPressed))
         
-        .onLongPressGesture(minimumDuration: 0) { pressing in
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
             withAnimation(.easeInOut(duration: 0.1)) {
                 isPressed = pressing
             }
-        }
+        }, perform: {})
     }
 }
 
 // MARK: - Supporting Views
+
+struct ConditionalAnimationModifier: ViewModifier {
+    let shouldOptimize: Bool
+    let isDragged: Bool
+    let isPressed: Bool
+    
+    func body(content: Content) -> some View {
+        if shouldOptimize {
+            content
+                .animation(.linear(duration: 0.1), value: isDragged)
+                .animation(.linear(duration: 0.1), value: isPressed)
+        } else {
+            content
+                .performanceOptimizedAnimation(isDragged)
+                .performanceOptimizedAnimation(isPressed)
+        }
+    }
+}
 
 struct TaskPriorityIndicator: View {
     let priority: TaskPriority
@@ -452,10 +464,10 @@ class KanbanViewModel: ObservableObject {
         
         // Sample tasks
         tasks = [
-            Task(title: "Design UI Components", status: .todo, priority: .high, columnId: columns[0].id),
-            Task(title: "Implement API Integration", status: .inProgress, priority: .medium, assignee: "John", columnId: columns[1].id),
-            Task(title: "Write Unit Tests", status: .review, priority: .low, assignee: "Sarah", columnId: columns[2].id),
-            Task(title: "Deploy to Production", status: .done, priority: .critical, assignee: "Mike", columnId: columns[3].id)
+            AnimationTask(title: "Design UI Components", status: .todo, priority: .high, columnId: columns[0].id),
+            AnimationTask(title: "Implement API Integration", status: .inProgress, priority: .medium, assignee: "John", columnId: columns[1].id),
+            AnimationTask(title: "Write Unit Tests", status: .review, priority: .low, assignee: "Sarah", columnId: columns[2].id),
+            AnimationTask(title: "Deploy to Production", status: .done, priority: .critical, assignee: "Mike", columnId: columns[3].id)
         ]
     }
 }

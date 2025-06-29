@@ -2,11 +2,17 @@ import SwiftUI
 import Foundation
 import WebKit
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
+@available(iOS 13.0, macOS 10.15, *)
 @MainActor
 class OptimizedArchitectureService: ObservableObject {
     @Published var currentDiagram: ArchitectureDiagram?
     @Published var isLoading = false
     @Published var memoryUsage: Double = 0
+    @Published var isOptimized: Bool = false
     
     // Wrapper class to allow structs in NSCache
     private class CachedDiagram: NSObject {
@@ -20,6 +26,11 @@ class OptimizedArchitectureService: ObservableObject {
     private var webViewPool = WebViewPool()
     private let memoryMonitor = MemoryMonitor()
     
+    private let defaultCacheCountLimit = 10
+    private let optimizedCacheCountLimit = 3
+    private let defaultCacheTotalCostLimit = 50 * 1024 * 1024 // 50MB
+    private let optimizedCacheTotalCostLimit = 15 * 1024 * 1024 // 15MB
+    
     // Performance metrics
     private var renderTimes: [TimeInterval] = []
     private let maxRenderHistory = 10
@@ -27,7 +38,9 @@ class OptimizedArchitectureService: ObservableObject {
     init() {
         configureDiagramCache()
         setupMemoryMonitoring()
+        #if canImport(UIKit)
         setupMemoryWarningObserver()
+        #endif
     }
     
     deinit {
@@ -36,14 +49,24 @@ class OptimizedArchitectureService: ObservableObject {
     
     // MARK: - Memory Optimization
     
+    func toggleOptimization() {
+        isOptimized.toggle()
+        configureDiagramCache()
+        
+        if isOptimized {
+            handleMemoryWarning()
+        }
+    }
+    
     private func configureDiagramCache() {
-        diagramCache.countLimit = 10 // Limit cached diagrams
-        diagramCache.totalCostLimit = 50 * 1024 * 1024 // 50MB limit
+        diagramCache.countLimit = isOptimized ? optimizedCacheCountLimit : defaultCacheCountLimit
+        diagramCache.totalCostLimit = isOptimized ? optimizedCacheTotalCostLimit : defaultCacheTotalCostLimit
         
         // Eviction handler to cleanup resources
         diagramCache.evictsObjectsWithDiscardedContent = true
     }
     
+    #if canImport(UIKit)
     private func setupMemoryWarningObserver() {
         NotificationCenter.default.addObserver(
             forName: UIApplication.didReceiveMemoryWarningNotification,
@@ -53,6 +76,7 @@ class OptimizedArchitectureService: ObservableObject {
             Task { await self?.handleMemoryWarning() }
         }
     }
+    #endif
     
     private func handleMemoryWarning() {
         // Aggressive cleanup on memory warning
@@ -274,20 +298,31 @@ class OptimizedArchitectureService: ObservableObject {
 @MainActor
 class WebViewPool {
     private var pool: [WKWebView] = []
-    private let maxPoolSize = 3
+    private let maxPoolSize = 5
     
     func getWebView() async -> WKWebView {
         if let webView = pool.popLast() {
             return webView
-        } else {
-            return createWebView()
         }
+        return createWebView()
     }
     
     func returnWebView(_ webView: WKWebView) {
-        if pool.count < maxPoolSize {
-            pool.append(webView)
+        guard pool.count < maxPoolSize else {
+            // Discard if pool is full
+            return
         }
+        pool.append(webView)
+    }
+    
+    private func createWebView() -> WKWebView {
+        let configuration = WKWebViewConfiguration()
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        #if canImport(UIKit)
+        webView.backgroundColor = .clear
+        webView.scrollView.backgroundColor = .clear
+        #endif
+        return webView
     }
     
     func cleanupIdleWebViews() {
@@ -302,14 +337,6 @@ class WebViewPool {
     
     func optimizePool() {
         // Based on usage, can decide to shrink or grow pool
-    }
-    
-    private func createWebView() -> WKWebView {
-        let configuration = WKWebViewConfiguration()
-        let webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.isOpaque = false
-        webView.backgroundColor = .clear
-        return webView
     }
 }
 

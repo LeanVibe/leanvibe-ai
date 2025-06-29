@@ -3,6 +3,7 @@ import Combine
 
 /// Centralized settings management for all LeenVibe features
 /// Coordinates settings for Voice, Kanban, Architecture, and other systems
+@available(iOS 14.0, macOS 10.15, *)
 @MainActor
 class SettingsManager: ObservableObject {
     @MainActor static let shared = SettingsManager()
@@ -14,6 +15,7 @@ class SettingsManager: ObservableObject {
     @Published var kanbanSettings = KanbanSettings()
     @Published var notificationSettings = NotificationSettings()
     @Published var accessibilitySettings = AccessibilitySettings()
+    @Published var connectionSettings = ConnectionPreferences()
     
     // Voice Settings
     @Published var isVoiceEnabled: Bool = true
@@ -80,6 +82,7 @@ class SettingsManager: ObservableObject {
         kanbanSettings = KanbanSettings.load()
         notificationSettings = NotificationSettings.load()
         accessibilitySettings = AccessibilitySettings.load()
+        connectionSettings = ConnectionPreferences.load()
         loadSettings()
     }
     
@@ -90,6 +93,7 @@ class SettingsManager: ObservableObject {
         kanbanSettings.save()
         notificationSettings.save()
         accessibilitySettings.save()
+        connectionSettings.save()
         saveSettings()
     }
     
@@ -100,6 +104,7 @@ class SettingsManager: ObservableObject {
         kanbanSettings = KanbanSettings()
         notificationSettings = NotificationSettings()
         accessibilitySettings = AccessibilitySettings()
+        connectionSettings = ConnectionPreferences()
         saveAllSettings()
     }
     
@@ -121,6 +126,9 @@ class SettingsManager: ObservableObject {
         case is AccessibilitySettings.Type:
             accessibilitySettings = AccessibilitySettings()
             accessibilitySettings.save()
+        case is ConnectionPreferences.Type:
+            connectionSettings = ConnectionPreferences()
+            connectionSettings.save()
         default:
             break
         }
@@ -134,6 +142,7 @@ class SettingsManager: ObservableObject {
             kanban: kanbanSettings,
             notifications: notificationSettings,
             accessibility: accessibilitySettings,
+            connection: connectionSettings,
             exportDate: Date()
         )
         
@@ -149,6 +158,7 @@ class SettingsManager: ObservableObject {
         kanbanSettings = importData.kanban
         notificationSettings = importData.notifications
         accessibilitySettings = importData.accessibility
+        connectionSettings = importData.connection
         
         saveAllSettings()
     }
@@ -441,6 +451,10 @@ struct NotificationSettings: SettingsProtocol {
     var quietHoursStart = "22:00"
     var quietHoursEnd = "08:00"
     
+    // Push notifications
+    var pushNotificationsEnabled: Bool = true
+    var mentionNotificationsEnabled: Bool = true
+    
     static func load() -> NotificationSettings {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
               let settings = try? JSONDecoder().decode(NotificationSettings.self, from: data) else {
@@ -485,10 +499,56 @@ struct AccessibilitySettings: SettingsProtocol {
     // VoiceOver
     var voiceOverEnabled = false
     
+    // High contrast mode
+    var highContrastMode: Bool = false
+    
+    // Large font size
+    var largeFontSize: Bool = false
+    
+    // Dynamic type support
+    var dynamicTypeSupport: Bool = true
+    
     static func load() -> AccessibilitySettings {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
               let settings = try? JSONDecoder().decode(AccessibilitySettings.self, from: data) else {
             return AccessibilitySettings()
+        }
+        return settings
+    }
+    
+    func save() {
+        if let data = try? JSONEncoder().encode(self) {
+            UserDefaults.standard.set(data, forKey: Self.storageKey)
+        }
+    }
+}
+
+// MARK: - Connection Settings
+
+struct ConnectionPreferences: SettingsProtocol {
+    static let storageKey = "ConnectionSettings"
+    
+    var backgroundSyncEnabled: Bool = true
+    var autoConnect: Bool = true
+    var connectionTimeout: Double = 30.0
+    
+    // Server connection properties
+    var serverURL: String = ""
+    var serverPort: Int = 8000
+    var useHTTPS: Bool = false
+    var autoReconnect: Bool = true
+    var retryAttempts: Int = 3
+    var retryDelay: Double = 5.0
+    
+    // WebSocket properties
+    var webSocketEnabled: Bool = true
+    var webSocketHeartbeat: Double = 30.0
+    var webSocketReconnectDelay: Double = 5.0
+    
+    static func load() -> ConnectionPreferences {
+        guard let data = UserDefaults.standard.data(forKey: storageKey),
+              let settings = try? JSONDecoder().decode(ConnectionPreferences.self, from: data) else {
+            return ConnectionPreferences()
         }
         return settings
     }
@@ -508,6 +568,7 @@ struct SettingsExport: Codable {
     let kanban: KanbanSettings
     let notifications: NotificationSettings
     let accessibility: AccessibilitySettings
+    let connection: ConnectionPreferences
     let exportDate: Date
 }
 

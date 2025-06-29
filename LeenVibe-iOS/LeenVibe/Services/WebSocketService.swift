@@ -1,6 +1,7 @@
 import Foundation
 import Starscream
 
+@available(iOS 13.0, macOS 10.15, *)
 @MainActor
 class WebSocketService: ObservableObject, WebSocketDelegate {
     @Published var isConnected = false
@@ -11,7 +12,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     private var socket: WebSocket?
     private let clientId = "ios-client-\(UUID().uuidString.prefix(8))"
     private let storageManager = ConnectionStorageManager()
-    private var qrConnectionCompletion: ((Bool, String?) -> Void)?
+    private var qrConnectionContinuation: CheckedContinuation<Void, Error>?
     
     init() {
         // Try to auto-connect with stored settings on init
@@ -109,10 +110,9 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     
     // MARK: - QR Code Connection
     
-    func connectWithQRCode(_ qrData: String, completion: @escaping (Bool, String?) -> Void) {
+    func connectWithQRCode(_ qrData: String) async throws {
         guard let config = parseQRConfig(qrData) else {
-            completion(false, "Invalid QR code format")
-            return
+            throw NSError(domain: "WebSocketService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid QR code format"])
         }
         
         // Create connection settings from QR config
@@ -129,11 +129,11 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         // Update status and connect
         connectionStatus = "Connecting to \(connectionSettings.displayName)..."
         
-        // Store completion for later
-        qrConnectionCompletion = completion
-        
         // Connect using the new settings
-        connectWithSettings(connectionSettings)
+        return try await withCheckedThrowingContinuation { continuation in
+            self.qrConnectionContinuation = continuation
+            connectWithSettings(connectionSettings)
+        }
     }
     
     private func parseQRConfig(_ qrData: String) -> ServerConfig? {
@@ -192,9 +192,9 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 self.lastError = nil
                 
                 // Handle QR code connection completion
-                if let completion = self.qrConnectionCompletion {
-                    completion(true, nil)
-                    self.qrConnectionCompletion = nil
+                if let continuation = self.qrConnectionContinuation {
+                    continuation.resume()
+                    self.qrConnectionContinuation = nil
                 }
                 
                 // Send initial status request
@@ -208,9 +208,9 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 self.connectionStatus = "Disconnected"
                 
                 // Handle QR code connection failure
-                if let completion = self.qrConnectionCompletion {
-                    completion(false, "Connection failed: \(reason)")
-                    self.qrConnectionCompletion = nil
+                if let continuation = self.qrConnectionContinuation {
+                    continuation.resume(throwing: NSError(domain: "WebSocketService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(reason)"]))
+                    self.qrConnectionContinuation = nil
                 }
             }
             
@@ -229,13 +229,14 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         case .error(let error):
             let errorMessage = error?.localizedDescription ?? "Unknown WebSocket error"
             Task { @MainActor [weak self] in
-                self?.lastError = errorMessage
-                self?.connectionStatus = "Error: \(errorMessage)"
+                guard let self = self else { return }
+                self.lastError = errorMessage
+                self.connectionStatus = "Error: \(errorMessage)"
                 
                 // Handle QR code connection error
-                if let completion = self?.qrConnectionCompletion {
-                    completion(false, errorMessage)
-                    self?.qrConnectionCompletion = nil
+                if let continuation = self.qrConnectionContinuation {
+                    continuation.resume(throwing: error ?? NSError(domain: "WebSocketService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Unknown WebSocket error"]))
+                    self.qrConnectionContinuation = nil
                 }
             }
             

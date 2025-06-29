@@ -3,6 +3,7 @@ import UserNotifications
 
 /// Notification Settings view for configuring push notifications and in-app alerts
 /// Manages all notification preferences for the LeenVibe app
+@available(iOS 14.0, macOS 11.0, *)
 struct NotificationSettingsView: View {
     
     // MARK: - Properties
@@ -125,7 +126,7 @@ struct NotificationSettingsView: View {
                         if settingsManager.notificationSettings.taskNotificationsEnabled {
                             NotificationPreview(
                                 title: "Task Completed",
-                                body: "Fix login bug has been moved to Done",
+                                message: "Fix login bug has been moved to Done",
                                 type: .task
                             )
                         }
@@ -133,7 +134,7 @@ struct NotificationSettingsView: View {
                         if settingsManager.notificationSettings.voiceNotificationsEnabled {
                             NotificationPreview(
                                 title: "Voice Command",
-                                body: "Successfully created task: Review settings",
+                                message: "Successfully created task: Review settings",
                                 type: .voice
                             )
                         }
@@ -141,7 +142,7 @@ struct NotificationSettingsView: View {
                         if settingsManager.notificationSettings.systemNotificationsEnabled {
                             NotificationPreview(
                                 title: "Connection Lost",
-                                body: "Reconnecting to LeenVibe server...",
+                                message: "Reconnecting to LeenVibe server...",
                                 type: .system
                             )
                         }
@@ -413,8 +414,9 @@ struct NotificationSettingsView: View {
     
     private func checkNotificationPermission() {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
-            DispatchQueue.main.async {
-                notificationAuthStatus = settings.authorizationStatus
+            let authStatus = settings.authorizationStatus
+            Task { @MainActor in
+                notificationAuthStatus = authStatus
             }
         }
     }

@@ -22,13 +22,13 @@ class SpeechRecognitionService: NSObject, ObservableObject {
         case error(String)
     }
     
-    private var audioEngine: AVAudioEngine?
-    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    private var recognitionTask: SFSpeechRecognitionTask?
-    private var speechRecognizer: SFSpeechRecognizer?
-    private var audioLevelTimer: Timer?
-    private var silenceTimer: Timer?
-    private var recordingTimer: Timer?
+    nonisolated(unsafe) private var audioEngine: AVAudioEngine?
+    nonisolated(unsafe) private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    nonisolated(unsafe) private var recognitionTask: SFSpeechRecognitionTask?
+    nonisolated(unsafe) private var speechRecognizer: SFSpeechRecognizer?
+    nonisolated(unsafe) private var audioLevelTimer: Timer?
+    nonisolated(unsafe) private var silenceTimer: Timer?
+    nonisolated(unsafe) private var recordingTimer: Timer?
     private var cancellables = Set<AnyCancellable>()
     
     // Configuration

@@ -319,16 +319,7 @@ struct ServerSettingsView: View {
     }
     
     private var connectionStatusText: String {
-        switch webSocketService.connectionState {
-        case .connected:
-            return "Connected"
-        case .connecting:
-            return "Connecting..."
-        case .disconnected:
-            return "Disconnected"
-        case .error(let error):
-            return "Error: \(error?.localizedDescription ?? "Unknown")"
-        }
+        return webSocketService.connectionStatus
     }
     
     private var fullServerURL: String {
