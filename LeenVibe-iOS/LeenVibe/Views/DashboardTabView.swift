@@ -14,11 +14,16 @@ struct DashboardTabView: View {
     init() {
         let webSocket = WebSocketService()
         let projectMgr = ProjectManager()
-        let voiceProcessor = DashboardVoiceProcessor(projectManager: projectMgr, webSocketService: webSocket)
+        let settingsMgr = SettingsManager.shared
+        let voiceProcessor = DashboardVoiceProcessor(
+            projectManager: projectMgr, 
+            webSocketService: webSocket, 
+            settingsManager: settingsMgr
+        )
         
         self._webSocketService = StateObject(wrappedValue: webSocket)
         self._projectManager = StateObject(wrappedValue: projectMgr)
-        self._speechService = StateObject(wrappedValue: SpeechRecognitionService(webSocketService: webSocket))
+        self._speechService = StateObject(wrappedValue: SpeechRecognitionService())
         self._wakePhraseManager = StateObject(wrappedValue: WakePhraseManager(
             webSocketService: webSocket,
             projectManager: projectMgr,
@@ -41,7 +46,13 @@ struct DashboardTabView: View {
                     .navigationDestination(for: String.self) { destination in
                         if destination.hasPrefix("project-") {
                             let projectId = String(destination.dropFirst("project-".count))
-                            ProjectDetailView(projectId: projectId, projectManager: projectManager)
+                            if let project = projectManager.projects.first(where: { $0.id == projectId }) {
+                                ProjectDetailView(
+                                    project: project, 
+                                    projectManager: projectManager,
+                                    webSocketService: webSocketService
+                                )
+                            }
                         }
                     }
                 }
