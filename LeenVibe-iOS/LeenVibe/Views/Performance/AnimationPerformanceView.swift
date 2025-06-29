@@ -40,7 +40,7 @@ extension View {
 
 struct OptimizedKanbanBoardView: View {
     @StateObject private var viewModel = KanbanViewModel()
-    @State private var draggedTask: Task?
+    @State private var draggedTask: AnimationTask?
     @State private var dragOffset = CGSize.zero
     @GestureState private var isDragging = false
     
@@ -78,8 +78,8 @@ struct OptimizedKanbanBoardView: View {
 
 struct ColumnView: View {
     let column: KanbanColumn
-    let tasks: [Task]
-    @Binding var draggedTask: Task?
+    let tasks: [AnimationTask]
+    @Binding var draggedTask: AnimationTask?
     let shouldOptimize: Bool
     
     @State private var isHighlighted = false
@@ -152,7 +152,7 @@ struct ColumnView: View {
 }
 
 struct OptimizedTaskCardView: View {
-    let task: Task
+    let task: AnimationTask
     let isDragged: Bool
     let shouldOptimize: Bool
     
@@ -237,7 +237,7 @@ struct TaskPriorityIndicator: View {
 }
 
 struct TaskStatusBadge: View {
-    let status: TaskStatus
+    let status: AnimationTaskStatus
     
     var body: some View {
         Text(status.displayName)
@@ -254,9 +254,9 @@ struct TaskStatusBadge: View {
 // MARK: - Drop Delegate
 
 struct TaskDropDelegate: DropDelegate {
-    let task: Task
+    let task: AnimationTask
     let column: KanbanColumn
-    @Binding var draggedTask: Task?
+    @Binding var draggedTask: AnimationTask?
     
     func performDrop(info: DropInfo) -> Bool {
         guard let draggedTask = draggedTask else { return false }
@@ -369,16 +369,17 @@ class AnimationPerformanceMonitor: ObservableObject {
 
 // MARK: - Supporting Types
 
-struct Task: Identifiable, Codable {
+// Use a different name to avoid conflict with global Task model
+struct AnimationTask: Identifiable, Codable {
     let id: String
     let title: String
     let description: String?
-    let status: TaskStatus
+    let status: AnimationTaskStatus
     let priority: TaskPriority
     let assignee: String?
     let columnId: String
     
-    init(id: String = UUID().uuidString, title: String, description: String? = nil, status: TaskStatus, priority: TaskPriority, assignee: String? = nil, columnId: String) {
+    init(id: String = UUID().uuidString, title: String, description: String? = nil, status: AnimationTaskStatus, priority: TaskPriority, assignee: String? = nil, columnId: String) {
         self.id = id
         self.title = title
         self.description = description
@@ -389,7 +390,7 @@ struct Task: Identifiable, Codable {
     }
 }
 
-enum TaskStatus: String, CaseIterable, Codable {
+enum AnimationTaskStatus: String, CaseIterable, Codable {
     case todo = "todo"
     case inProgress = "in_progress"
     case review = "review"
@@ -414,8 +415,6 @@ enum TaskStatus: String, CaseIterable, Codable {
     }
 }
 
-// TaskPriority extension is removed - use the one from Task.swift
-
 struct KanbanColumn: Identifiable, Codable {
     let id: String
     let title: String
@@ -433,13 +432,13 @@ struct KanbanColumn: Identifiable, Codable {
 @MainActor
 class KanbanViewModel: ObservableObject {
     @Published var columns: [KanbanColumn] = []
-    @Published var tasks: [Task] = []
+    @Published var tasks: [AnimationTask] = []
     
     init() {
         loadDefaultData()
     }
     
-    func tasksFor(_ column: KanbanColumn) -> [Task] {
+    func tasksFor(_ column: KanbanColumn) -> [AnimationTask] {
         return tasks.filter { $0.columnId == column.id }
     }
     

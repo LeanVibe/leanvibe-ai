@@ -5,7 +5,7 @@ import Combine
 
 @MainActor
 class PerformanceAnalytics: ObservableObject {
-    @Published var metrics = PerformanceMetrics()
+    @Published var metrics = AnalyticsPerformanceMetrics()
     @Published var alerts: [PerformanceAlert] = []
     @Published var isMonitoring = false
     @Published var optimizationRecommendations: [OptimizationRecommendation] = []
@@ -420,7 +420,7 @@ class PerformanceAnalytics: ObservableObject {
 
 // MARK: - Supporting Types
 
-struct PerformanceMetrics {
+struct AnalyticsPerformanceMetrics {
     var frameRate: Double = 60.0
     var droppedFrames: Int = 0
     var memoryUsage: Double = 0.0
@@ -525,7 +525,7 @@ struct OptimizationRecommendation: Identifiable {
 }
 
 struct PerformanceReport {
-    let currentMetrics: PerformanceMetrics
+    let currentMetrics: AnalyticsPerformanceMetrics
     let averageFrameRate: Double
     let averageMemoryUsage: Double
     let totalAlerts: Int

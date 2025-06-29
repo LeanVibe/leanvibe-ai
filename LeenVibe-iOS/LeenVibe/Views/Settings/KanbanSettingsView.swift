@@ -501,7 +501,7 @@ struct TaskDefaultsView: View {
     }
 }
 
-struct PerformanceSettingsView: View {
+struct KanbanPerformanceSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {

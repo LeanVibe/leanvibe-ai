@@ -9,6 +9,21 @@ struct PremiumDesignSystem {
     static let cardShadow = Color.black.opacity(0.1)
     static let elevatedShadow = Color.black.opacity(0.2)
     
+    // MARK: - Shadow Definitions
+    struct Shadow {
+        let color: Color
+        let radius: CGFloat
+        let x: CGFloat
+        let y: CGFloat
+    }
+    
+    struct Shadows {
+        static let card = Shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+        static let elevated = Shadow(color: Color.black.opacity(0.2), radius: 12, x: 0, y: 8)
+        static let floating = Shadow(color: Color.black.opacity(0.25), radius: 20, x: 0, y: 12)
+        static let subtle = Shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+    }
+    
     // MARK: - Spacing & Layout
     static let cornerRadius: CGFloat = 16
     static let smallCornerRadius: CGFloat = 8
@@ -256,11 +271,35 @@ struct PremiumButtonStyle: ButtonStyle {
 // MARK: - Sophisticated Haptic Feedback System
 
 class PremiumHaptics {
-    private static let lightImpactGenerator = UIImpactFeedbackGenerator(style: .light)
-    private static let mediumImpactGenerator = UIImpactFeedbackGenerator(style: .medium)
-    private static let heavyImpactGenerator = UIImpactFeedbackGenerator(style: .heavy)
-    private static let notificationGenerator = UINotificationFeedbackGenerator()
-    private static let selectionGenerator = UISelectionFeedbackGenerator()
+    private static let lightImpactGenerator: UIImpactFeedbackGenerator = {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.prepare()
+        return generator
+    }()
+    
+    private static let mediumImpactGenerator: UIImpactFeedbackGenerator = {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.prepare()
+        return generator
+    }()
+    
+    private static let heavyImpactGenerator: UIImpactFeedbackGenerator = {
+        let generator = UIImpactFeedbackGenerator(style: .heavy)
+        generator.prepare()
+        return generator
+    }()
+    
+    private static let notificationGenerator: UINotificationFeedbackGenerator = {
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        return generator
+    }()
+    
+    private static let selectionGenerator: UISelectionFeedbackGenerator = {
+        let generator = UISelectionFeedbackGenerator()
+        generator.prepare()
+        return generator
+    }()
     
     // MARK: - Basic Haptics
     
@@ -403,18 +442,21 @@ struct PremiumTransitions {
     static let microInteraction = Animation.easeInOut(duration: PremiumDesignSystem.microInteractionDuration)
     
     // MARK: - Page Transitions
+    @MainActor
     static let pageTransition = AnyTransition.asymmetric(
         insertion: .move(edge: .trailing).combined(with: .opacity),
         removal: .move(edge: .leading).combined(with: .opacity)
     )
     
     // MARK: - Modal Transitions
+    @MainActor
     static let modalTransition = AnyTransition.asymmetric(
         insertion: .move(edge: .bottom).combined(with: .opacity),
         removal: .move(edge: .bottom).combined(with: .opacity)
     )
     
     // MARK: - Card Transitions
+    @MainActor
     static let cardTransition = AnyTransition.asymmetric(
         insertion: .scale(scale: 0.8).combined(with: .opacity),
         removal: .scale(scale: 1.1).combined(with: .opacity)

@@ -1,0 +1,99 @@
+name: LeenVibe
+options:
+  bundleIdPrefix: com.leenvibe
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: en
+  xcodeVersion: "16.0"
+  usesTabs: false
+  tabWidth: 4
+  indentWidth: 4
+  createIntermediateGroups: true
+  groupSortPosition: top
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    ENABLE_BITCODE: false
+    SUPPORTS_MACCATALYST: false
+    SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: false
+    SWIFT_EMIT_LOC_STRINGS: true
+    INFOPLIST_KEY_CFBundleDisplayName: "LeenVibe"
+    INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.developer-tools"
+    PRODUCT_BUNDLE_IDENTIFIER: "com.leenvibe.app"
+
+packages:
+  Starscream:
+    url: https://github.com/daltoniam/Starscream.git
+    from: "4.0.0"
+
+targets:
+  LeenVibe:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: LeenVibe
+        excludes:
+          - "**/.DS_Store"
+          - "**/README.md"
+          - "**/Testing/**"
+          - "**/*Tests.swift"
+          - "**/*Test.swift"
+    resources:
+      - path: LeenVibe/Resources
+        optional: true
+    dependencies:
+      - package: Starscream
+        product: Starscream
+    info:
+      path: LeenVibe/Info.plist
+      properties:
+        CFBundleDisplayName: LeenVibe
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchStoryboardName: LaunchScreen
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIRequiredDeviceCapabilities:
+          - armv7
+        UIApplicationSupportsIndirectInputEvents: true
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: "Default Configuration"
+                UISceneDelegateClassName: "$(PRODUCT_MODULE_NAME).SceneDelegate"
+        NSCameraUsageDescription: "LeenVibe needs camera access to scan QR codes for backend connection"
+        NSMicrophoneUsageDescription: "LeenVibe needs microphone access for voice commands"
+        NSSpeechRecognitionUsageDescription: "LeenVibe uses speech recognition for voice commands"
+        NSUserNotificationUsageDescription: "LeenVibe sends notifications about task updates"
+        NSLocalNetworkUsageDescription: "LeenVibe connects to your local development server"
+        NSBonjourServices:
+          - "_leenvibe._tcp"
+        UIBackgroundModes:
+          - audio
+          - remote-notification
+          - voip
+    settings:
+      base:
+        INFOPLIST_FILE: LeenVibe/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.leenvibe.app
+        PRODUCT_NAME: LeenVibe
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_PREVIEWS: true
+        SWIFT_EMIT_LOC_STRINGS: true

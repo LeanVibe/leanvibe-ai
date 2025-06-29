@@ -8,7 +8,15 @@ class OptimizedArchitectureService: ObservableObject {
     @Published var isLoading = false
     @Published var memoryUsage: Double = 0
     
-    private var diagramCache = NSCache<NSString, ArchitectureDiagram>()
+    // Wrapper class to allow structs in NSCache
+    private class CachedDiagram: NSObject {
+        let diagram: ArchitectureDiagram
+        init(diagram: ArchitectureDiagram) {
+            self.diagram = diagram
+        }
+    }
+    
+    private var diagramCache = NSCache<NSString, CachedDiagram>()
     private var webViewPool = WebViewPool()
     private let memoryMonitor = MemoryMonitor()
     

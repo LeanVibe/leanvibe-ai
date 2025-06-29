@@ -135,7 +135,7 @@ struct PendingNotificationsView: View {
 
 struct NotificationHistoryCard: View {
     let title: String
-    let body: String
+    let message: String
     let date: Date
     let category: String
     let status: NotificationStatus
@@ -143,7 +143,7 @@ struct NotificationHistoryCard: View {
     
     init(title: String, body: String, date: Date, category: String, status: NotificationStatus, onCancel: (() -> Void)? = nil) {
         self.title = title
-        self.body = body
+        self.message = body
         self.date = date
         self.category = category
         self.status = status
@@ -178,7 +178,7 @@ struct NotificationHistoryCard: View {
                 StatusBadge(status: status)
             }
             
-            Text(body)
+            Text(message)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .lineLimit(3)
@@ -301,6 +301,7 @@ struct EmptyStateView: View {
 }
 
 enum NotificationStatus: String, CaseIterable, Identifiable {
+    var id: String { self.rawValue }
     case delivered
     case pending
 }

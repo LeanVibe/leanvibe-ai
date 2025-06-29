@@ -113,7 +113,7 @@ struct MonitoringView: View {
     }
 }
 
-struct MetricCard: View {
+struct MonitoringMetricCard: View {
     let title: String
     let value: String
     let icon: String

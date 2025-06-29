@@ -513,7 +513,7 @@ struct NotificationTypeRow: View {
 
 struct NotificationPreview: View {
     let title: String
-    let body: String
+    let message: String
     let type: NotificationType
     
     enum NotificationType {
@@ -547,7 +547,7 @@ struct NotificationPreview: View {
                     .font(.caption)
                     .fontWeight(.semibold)
                 
-                Text(body)
+                Text(message)
                     .font(.caption2)
                     .foregroundColor(.secondary)
             }
@@ -583,17 +583,6 @@ struct QuietHoursSettingsView: View {
     }
 }
 
-struct NotificationHistoryView: View {
-    var body: some View {
-        List {
-            Section("Recent Notifications") {
-                Text("Notification history will appear here")
-                    .foregroundColor(.secondary)
-            }
-        }
-        .navigationTitle("Notification History")
-    }
-}
 
 // MARK: - Preview
 

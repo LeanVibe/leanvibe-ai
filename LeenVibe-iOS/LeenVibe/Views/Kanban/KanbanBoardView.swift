@@ -4,8 +4,8 @@ import SwiftUI
 struct KanbanBoardView: View {
     @ObservedObject var taskService: TaskService
     @State private var showingCreateTask = false
-    @State private var selectedTask: Task?
-    @State private var editingTask: Task?
+    @State private var selectedTask: LeenVibeTask?
+    @State private var editingTask: LeenVibeTask?
 
     private var columns: [GridItem] {
         // ... existing code ...
@@ -99,7 +99,7 @@ struct KanbanBoardView: View {
         }
     }
     
-    private func filteredTasks(for status: TaskStatus) -> [Task] {
+    private func filteredTasks(for status: TaskStatus) -> [LeenVibeTask] {
         let statusTasks = taskService.tasksByStatus(status)
         let filtered = searchText.isEmpty ? statusTasks : statusTasks.filter {
             $0.title.localizedCaseInsensitiveContains(searchText) ||
@@ -121,10 +121,10 @@ struct KanbanBoardView: View {
 
 struct KanbanColumnView: View {
     let status: TaskStatus
-    let tasks: [Task]
+    let tasks: [LeenVibeTask]
     let taskService: TaskService
-    @Binding var draggedTask: Task?
-    @Binding var selectedTask: Task?
+    @Binding var draggedTask: LeenVibeTask?
+    @Binding var selectedTask: LeenVibeTask?
     let columnWidth: CGFloat
     
     @State private var isTargeted = false
@@ -200,7 +200,7 @@ struct KanbanColumnView: View {
 }
 
 struct TaskCardView: View {
-    let task: Task
+    let task: LeenVibeTask
     let onTap: () -> Void
     let onDragStart: () -> Void
     let onDragEnd: () -> Void
