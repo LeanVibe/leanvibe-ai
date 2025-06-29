@@ -8,6 +8,8 @@ struct DashboardTabView: View {
     @StateObject private var permissionManager = VoicePermissionManager()
     @StateObject private var globalVoice: GlobalVoiceManager
     @StateObject private var navigationCoordinator = NavigationCoordinator()
+    @StateObject private var performanceAnalytics = PerformanceAnalytics()
+    @StateObject private var batteryManager = BatteryOptimizedManager()
     
     @State private var showingVoiceInterface = false
     
@@ -37,6 +39,11 @@ struct DashboardTabView: View {
     
     var body: some View {
         ZStack {
+            // Premium background with glassmorphism
+            Rectangle()
+                .fill(PremiumDesignSystem.Colors.background)
+                .ignoresSafeArea()
+            
             TabView(selection: $navigationCoordinator.selectedTab) {
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     ProjectDashboardView(
@@ -61,6 +68,7 @@ struct DashboardTabView: View {
                           systemImage: NavigationCoordinator.Tab.projects.systemImage)
                 }
                 .tag(NavigationCoordinator.Tab.projects.rawValue)
+                .hapticFeedback(.tabSwitch)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     ChatView(webSocketService: webSocketService)
@@ -70,6 +78,7 @@ struct DashboardTabView: View {
                           systemImage: NavigationCoordinator.Tab.agent.systemImage)
                 }
                 .tag(NavigationCoordinator.Tab.agent.rawValue)
+                .hapticFeedback(.tabSwitch)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     MonitoringView(
@@ -88,6 +97,7 @@ struct DashboardTabView: View {
                           systemImage: NavigationCoordinator.Tab.monitor.systemImage)
                 }
                 .tag(NavigationCoordinator.Tab.monitor.rawValue)
+                .hapticFeedback(.tabSwitch)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     SettingsTabView(webSocketService: webSocketService)
@@ -97,6 +107,7 @@ struct DashboardTabView: View {
                           systemImage: NavigationCoordinator.Tab.settings.systemImage)
                 }
                 .tag(NavigationCoordinator.Tab.settings.rawValue)
+                .hapticFeedback(.tabSwitch)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     VoiceTabView(
@@ -117,7 +128,10 @@ struct DashboardTabView: View {
                     }
                 }
                 .tag(NavigationCoordinator.Tab.voice.rawValue)
+                .hapticFeedback(.tabSwitch)
             }
+            .premiumShadow(PremiumDesignSystem.Shadows.elevated)
+            .animation(PremiumTransitions.easeInOut, value: navigationCoordinator.selectedTab)
             
             // Floating voice indicator (appears on all tabs except Voice tab)
             FloatingVoiceIndicator(
@@ -127,9 +141,10 @@ struct DashboardTabView: View {
                 webSocketService: webSocketService
             )
             
-            // Global voice command overlay
+            // Global voice command overlay with premium transitions
             if globalVoice.isVoiceCommandActive {
                 GlobalVoiceCommandView(globalVoice: globalVoice)
+                    .transition(PremiumTransitions.modalTransition)
                     .zIndex(999)
             }
         }
@@ -138,14 +153,23 @@ struct DashboardTabView: View {
             // Initialize project manager with WebSocket service
             projectManager.configure(with: webSocketService)
             
+            // Start performance monitoring
+            performanceAnalytics.startPerformanceMonitoring()
+            
             // Start global voice listening if permissions are available
             if permissionManager.isFullyAuthorized {
                 globalVoice.startGlobalVoiceListening()
             }
+            
+            // Premium haptic feedback for app launch
+            PremiumHaptics.contextualFeedback(for: .buttonTap)
         }
         .onDisappear {
             // Stop global voice listening when view disappears
             globalVoice.stopGlobalVoiceListening()
+            
+            // Stop performance monitoring
+            performanceAnalytics.stopPerformanceMonitoring()
         }
         .onOpenURL { url in
             navigationCoordinator.handleURL(url)
