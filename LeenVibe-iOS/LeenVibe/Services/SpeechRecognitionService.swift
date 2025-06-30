@@ -119,8 +119,9 @@ class SpeechRecognitionService: NSObject, ObservableObject {
         stopTimers()
         
         // Process final recognition
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.recognitionState = .completed
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            self?.recognitionState = .completed
         }
     }
     
@@ -229,7 +230,7 @@ extension SpeechRecognitionService {
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
             self?.recognitionRequest?.append(buffer)
             let level = self?.calculateAudioLevel(from: buffer) ?? 0.0
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 self?.audioLevel = level
             }
         }
@@ -243,7 +244,7 @@ extension SpeechRecognitionService {
         recognitionRequest.shouldReportPartialResults = true
         recognitionRequest.requiresOnDeviceRecognition = false
         recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-            DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
                 self?.handleRecognitionResult(result: result, error: error)
             }
         }

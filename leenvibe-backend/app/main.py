@@ -557,7 +557,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
             sequence_number=reconnection_service.client_sessions[
                 client_id
             ].sequence_number,
-            last_activity=datetime.now(),
+            last_seen=datetime.now(),
         )
 
         reconnection_data = await reconnection_service.client_reconnected(

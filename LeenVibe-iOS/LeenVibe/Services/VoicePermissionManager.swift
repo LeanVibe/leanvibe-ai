@@ -78,8 +78,8 @@ class VoicePermissionManager: ObservableObject {
     
     private func requestMicrophonePermission(completion: @escaping (Bool) -> Void) {
         AVAudioSession.sharedInstance().requestRecordPermission { granted in
-            DispatchQueue.main.async {
-                self.hasMicrophonePermission = granted
+            Task { @MainActor [weak self] in
+                self?.hasMicrophonePermission = granted
                 completion(granted)
             }
         }
@@ -87,8 +87,8 @@ class VoicePermissionManager: ObservableObject {
     
     private func requestSpeechRecognitionPermission(completion: @escaping (Bool) -> Void) {
         SFSpeechRecognizer.requestAuthorization { status in
-            DispatchQueue.main.async {
-                self.hasSpeechRecognitionPermission = (status == .authorized)
+            Task { @MainActor [weak self] in
+                self?.hasSpeechRecognitionPermission = (status == .authorized)
                 completion(status == .authorized)
             }
         }

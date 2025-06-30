@@ -31,6 +31,7 @@ dependencies = [
     "pydantic>=2.5.0",
     "plyer>=2.1.0",  # Cross-platform notifications
     "win10toast>=0.9; sys_platform == 'win32'",  # Windows notifications
+    "qrcode>=8.2",  # QR code generation
 ]
 
 [project.optional-dependencies]

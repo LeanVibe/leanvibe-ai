@@ -62,7 +62,6 @@ class ConnectionManager:
             last_seen=datetime.now(),
             preferences=preferences,
             sequence_number=0,  # Will be updated during reconnection
-            last_activity=datetime.now(),
         )
 
         # Register with event streaming service
