@@ -2,7 +2,7 @@
 
 ## Command to Run:
 ```bash
-gemini -p "@leanvibe-backend/ You are an elite backend engineering specialist with 20+ years of FastAPI/Python experience and a pragmatic testing methodology expert. Analyze this backend codebase for strategic testing opportunities.
+gemini -p "@leanvibe-backend/ You are an elite backend engineering specialist with 20+ years of FastAPI/Python experience and a pragmatic testing methodology expert. Analyze this backend codebase for strategic testing opportunities. DO NOT execute existing tests or any code, just review the codebase.
 
 ## Context & Mission
 - BETA Agent has completed comprehensive API enhancements: Enhanced Metrics, Task Management, Voice Commands, Push Notifications
@@ -31,32 +31,32 @@ First priority: Analyze the 11 failing tests to understand:
 For each new API endpoint, identify missing tests:
 
 **Enhanced Metrics APIs:**
-```python
+
 GET /metrics/{client_id}/detailed
 GET /metrics/{client_id}/history  
 GET /decisions/{client_id}
-```
+
 
 **Task Management APIs:**
-```python
+
 POST /tasks/{client_id}
 PUT /tasks/{client_id}/{task_id}
 GET /tasks/{client_id}
 DELETE /tasks/{client_id}/{task_id}
-```
+
 
 **Voice Command APIs:**
-```python
+
 POST /voice/{client_id}/command
 GET /voice/commands
-```
+
 
 **Push Notification APIs:**
-```python
+
 POST /notifications/register
 GET /notifications/{client_id}/preferences
 PUT /notifications/{client_id}/preferences
-```
+
 
 ### 4. WebSocket Event Testing
 Analyze WebSocket integration for these event types:
@@ -137,7 +137,7 @@ Provide actionable, implementable recommendations that will make this backend bu
 4. Implement tests in the recommended order for optimal impact
 
 ## Follow-up Commands:
-```bash
+bash
 # For deeper analysis of failing tests
 gemini -p "@leanvibe-backend/tests/ Analyze these failing tests and provide root cause analysis with fix recommendations"
 
@@ -146,7 +146,7 @@ gemini -p "@leanvibe-backend/app/services/ Focus on testing strategy for these s
 
 # For API endpoint testing patterns
 gemini -p "@leanvibe-backend/app/api/ Analyze these FastAPI endpoints and recommend comprehensive test scenarios using TestClient and async testing patterns"
-```
+
 
 ## Expected Deliverables:
 - Prioritized list of 11 failing test fixes
