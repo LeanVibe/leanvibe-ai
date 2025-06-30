@@ -160,7 +160,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         qrConnectionTimeoutTask?.cancel()
         qrConnectionTimeoutTask = nil
         
-        // Resume continuation if needed
+        // Resume continuation if needed - ALWAYS resume to prevent leaks
         if let continuation = qrConnectionContinuation {
             qrConnectionContinuation = nil
             if let result = result {
@@ -170,6 +170,13 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 case .failure(let error):
                     continuation.resume(throwing: error)
                 }
+            } else {
+                // If no result provided, resume with generic error to prevent leak
+                continuation.resume(throwing: NSError(
+                    domain: "WebSocketService", 
+                    code: 5, 
+                    userInfo: [NSLocalizedDescriptionKey: "Connection cleanup without result"]
+                ))
             }
         }
     }
@@ -280,6 +287,13 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 guard let self else { return }
                 self.isConnected = false
                 self.connectionStatus = "Connection closed"
+                
+                // Handle QR code connection cancellation
+                self.cleanupQRConnection(resumeWith: .failure(NSError(
+                    domain: "WebSocketService", 
+                    code: 6, 
+                    userInfo: [NSLocalizedDescriptionKey: "Connection was cancelled or closed by peer"]
+                )))
             }
             
         default:
