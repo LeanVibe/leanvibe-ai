@@ -74,7 +74,7 @@ if __name__ == "__main__":
     print(greeter.greet("Python"))
 '''
 
-        tree, errors = await tree_sitter_manager.parse_file("test.py", python_code)
+        tree, errors = await tree_sitter_manager.async_parse_file("test.py", python_code)
 
         assert tree is not None
         assert len(errors) == 0
@@ -106,7 +106,7 @@ class Greeter {
 export { Greeter, helloWorld };
 """
 
-        tree, errors = await tree_sitter_manager.parse_file("test.js", js_code)
+        tree, errors = await tree_sitter_manager.async_parse_file("test.js", js_code)
 
         assert tree is not None
         assert len(errors) == 0

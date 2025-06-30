@@ -27,11 +27,15 @@ dependencies = [
     "rich>=13.7.0",
     "httpx>=0.25.2",
     "asyncio-throttle>=1.0.2",
-    "typer>=0.9.0",  # For future enhancement
+    "typer>=0.9.0", # For future enhancement
     "pydantic>=2.5.0",
-    "plyer>=2.1.0",  # Cross-platform notifications
-    "win10toast>=0.9; sys_platform == 'win32'",  # Windows notifications
-    "qrcode>=8.2",  # QR code generation
+    "plyer>=2.1.0", # Cross-platform notifications
+    "win10toast>=0.9; sys_platform == 'win32'", # Windows notifications
+    "qrcode>=8.2", # QR code generation
+    "websocket-client>=1.8.0",
+    "requests>=2.32.4",
+    "markdown-it-py>=3.0.0",
+    "pygments>=2.19.2",
 ]
 
 [project.optional-dependencies]
@@ -51,10 +55,10 @@ Homepage = "https://github.com/leanvibe-ai/leenvibe-cli"
 Repository = "https://github.com/leanvibe-ai/leenvibe-cli"
 
 [project.scripts]
-leenvibe = "leenvibe_cli.main:main"
+leanvibe = "leanvibe_cli.main:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["leenvibe_cli"]
+packages = ["leanvibe_cli"]
 
 [tool.black]
 line-length = 88

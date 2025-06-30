@@ -23,12 +23,24 @@ class AIService:
             "/help": self._get_help,
         }
         self.mlx_available = False
-        self.model_health = {"status": "unknown", "model_loaded": False}
+        self.model_health = {
+            "status": "unknown", 
+            "model_loaded": False, 
+            "last_check": None
+        }
 
     async def initialize(self):
         """Initialize AI service (no MLX loading here)"""
         logger.info("Initializing AI service (command dispatcher only)...")
         self.is_initialized = True
+        
+        # Update model health status since this is command dispatcher only
+        self.model_health = {
+            "status": "mock_mode",
+            "model_loaded": False,
+            "last_check": time.time()
+        }
+        
         logger.info("AI service initialized successfully.")
 
     def _calculate_confidence_score(self, response: str, command_type: str) -> float:

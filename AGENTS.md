@@ -126,8 +126,14 @@ For more detailed information, please consult the `memory-bank/` directory.
 * Checking for presence of certain coding patterns acros the entire codebase
 
 Examples:
- gemini -p "@src/main.py Explain this file's purpose and structure"
- gemini -p "@src/ Summarize the architecture of this codebase"
- gemini -p "@docs/ Summarize the PRDs and evaluate the MVP specs"
+
+# For deeper analysis of failing tests
+gemini -p "@leanvibe-backend/tests/ Analyze these failing tests and provide root cause analysis with fix recommendations"
+
+# For specific service testing guidance
+gemini -p "@leanvibe-backend/app/services/ Focus on testing strategy for these service classes, identifying complex business logic that needs unit test coverage"
+
+# For API endpoint testing patterns
+gemini -p "@leanvibe-backend/app/api/ Analyze these FastAPI endpoints and recommend comprehensive test scenarios using TestClient and async testing patterns"
 
 ## Prefix all messages with: 🐙

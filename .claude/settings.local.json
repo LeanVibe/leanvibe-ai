@@ -107,7 +107,8 @@
       "Bash(then)",
       "Bash(fi)",
       "Bash(if ! grep -q \"@available\" \"$file\")",
-      "Bash(if grep -q \"struct.*SettingsView.*: View\" \"$file\")"
+      "Bash(if grep -q \"struct.*SettingsView.*: View\" \"$file\")",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .agent.session_manager import SessionManager
 from .api.endpoints.code_completion import get_enhanced_agent
 from .api.endpoints.code_completion import router as code_completion_router
+from .api.endpoints.tasks import router as tasks_router
 from .api.models import CodeCompletionRequest
 from .core.connection_manager import ConnectionManager
 from .models.event_models import ClientPreferences, EventType
@@ -37,6 +38,7 @@ app.add_middleware(
 
 # Register API routers
 app.include_router(code_completion_router)
+app.include_router(tasks_router)
 
 
 # Code completion WebSocket handler
@@ -206,10 +208,26 @@ async def shutdown_event():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint with comprehensive LLM metrics"""
     session_stats = session_manager.get_stats()
     streaming_stats = event_streaming_service.get_stats()
-    return {
+    
+    # Get LLM metrics from production model service
+    llm_metrics = None
+    if (ai_service.is_initialized and 
+        hasattr(ai_service, 'mlx_service') and 
+        ai_service.mlx_service.production_service):
+        try:
+            production_health = ai_service.mlx_service.production_service.get_health_status()
+            llm_metrics = production_health.get("llm_metrics")
+        except Exception as e:
+            logger.warning(f"Failed to get LLM metrics: {e}")
+            llm_metrics = {
+                "error": "Failed to retrieve LLM metrics",
+                "message": str(e)
+            }
+    
+    response = {
         "status": "healthy",
         "service": "leanvibe-backend",
         "version": "0.2.0",
@@ -218,6 +236,12 @@ async def health_check():
         "sessions": session_stats,
         "event_streaming": streaming_stats,
     }
+    
+    # Add LLM metrics if available
+    if llm_metrics:
+        response["llm_metrics"] = llm_metrics
+    
+    return response
 
 
 @app.get("/")

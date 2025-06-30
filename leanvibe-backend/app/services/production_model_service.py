@@ -10,12 +10,25 @@ import asyncio
 import logging
 import os
 import time
+import uuid
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import httpx
 import mlx.core as mx
+
+# Import LLM metrics models
+from ..models.llm_metrics_models import (
+    DeploymentMode,
+    GenerationMetrics,
+    LLMHealthStatus,
+    ModelInformation,
+    ModelStatus,
+    SessionMetrics,
+    TokenUsage,
+)
 
 # Try to import MLX-LM for direct integration
 try:
@@ -65,11 +78,37 @@ class ProductionModelService:
         self.is_initialized = False
         self.deployment_mode = None
         self.http_client = None
+        self.start_time = datetime.now()
 
         # Expand cache directory
         self.cache_dir = Path(self.config.cache_dir).expanduser()
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
+        # Initialize LLM metrics
+        self.model_info = ModelInformation(
+            model_name=self.config.model_name,
+            deployment_mode=DeploymentMode.MOCK,  # Will be updated during initialization
+            status=ModelStatus.NOT_INITIALIZED,
+            default_temperature=self.config.temperature,
+            default_max_tokens=self.config.max_tokens,
+            mlx_available=True,  # MLX core is available
+            mlx_lm_available=MLX_LM_AVAILABLE,
+        )
+        
+        # Current session metrics (tracks metrics for the lifetime of this service)
+        self.current_session = SessionMetrics(
+            session_id=f"prod_model_{int(time.time())}",
+            start_time=self.start_time,
+        )
+        
+        # LLM health status
+        self.llm_health_status = LLMHealthStatus(
+            model_info=self.model_info,
+            current_session=self.current_session,
+            is_ready=False,
+        )
+
+        # Legacy health status for backward compatibility
         self.health_status = {
             "status": "not_initialized",
             "deployment_mode": None,
@@ -88,26 +127,74 @@ class ProductionModelService:
                 f"Initializing Production Model Service: {self.config.model_name}"
             )
 
+            # Update model status to initializing
+            self.model_info.status = ModelStatus.INITIALIZING
+            self.llm_health_status.model_info.status = ModelStatus.INITIALIZING
+
             # Determine deployment mode
             mode = await self._determine_deployment_mode()
             self.deployment_mode = mode
             self.health_status["deployment_mode"] = mode
+            
+            # Update LLM metrics with deployment mode
+            if mode == "direct":
+                self.model_info.deployment_mode = DeploymentMode.DIRECT
+            elif mode == "server":
+                self.model_info.deployment_mode = DeploymentMode.SERVER
+            elif mode == "mock":
+                self.model_info.deployment_mode = DeploymentMode.MOCK
+            
+            self.llm_health_status.model_info.deployment_mode = self.model_info.deployment_mode
 
             logger.info(f"Using deployment mode: {mode}")
 
+            success = False
             if mode == "direct":
-                return await self._initialize_direct_mode()
+                success = await self._initialize_direct_mode()
             elif mode == "server":
-                return await self._initialize_server_mode()
+                success = await self._initialize_server_mode()
             elif mode == "mock":
-                return await self._initialize_mock_mode()
+                success = await self._initialize_mock_mode()
             else:
                 logger.error(f"Unknown deployment mode: {mode}")
+                return False
+
+            if success:
+                self.model_info.status = ModelStatus.READY
+                self.llm_health_status.model_info.status = ModelStatus.READY
+                self.llm_health_status.is_ready = True
+                self.is_initialized = True
+                
+                # Update model capabilities based on the specific model
+                if "Phi-3" in self.config.model_name:
+                    self.model_info.context_length = 131072  # 128k context
+                    self.model_info.parameter_count = "3.8B"
+                    self.model_info.estimated_memory_gb = 8.0
+                elif "Qwen" in self.config.model_name:
+                    self.model_info.context_length = 32768
+                    self.model_info.parameter_count = "30B"
+                    self.model_info.estimated_memory_gb = 20.0
+                
+                self.model_info.last_health_check = datetime.now()
+                self.model_info.health_status = "healthy"
+                
+                # Update uptime
+                self.llm_health_status.uptime_seconds = (datetime.now() - self.start_time).total_seconds()
+                
+                logger.info(f"Model service initialized successfully with {mode} mode")
+                return True
+            else:
+                self.model_info.status = ModelStatus.ERROR
+                self.llm_health_status.model_info.status = ModelStatus.ERROR
+                self.llm_health_status.is_ready = False
                 return False
 
         except Exception as e:
             logger.error(f"Failed to initialize model service: {e}")
             self.health_status["status"] = "error"
+            self.model_info.status = ModelStatus.ERROR
+            self.llm_health_status.model_info.status = ModelStatus.ERROR
+            self.llm_health_status.is_ready = False
             return False
 
     async def _determine_deployment_mode(self) -> str:
@@ -205,9 +292,14 @@ class ProductionModelService:
         if temperature is None:
             temperature = self.config.temperature
 
+        # Create a unique request ID
+        request_id = str(uuid.uuid4())
         start_time = time.time()
 
         try:
+            # Estimate input tokens (rough approximation: ~4 chars per token)
+            estimated_input_tokens = max(1, len(prompt) // 4)
+            
             if self.deployment_mode == "direct":
                 response = await self._generate_direct(prompt, max_tokens, temperature)
             elif self.deployment_mode == "server":
@@ -217,25 +309,80 @@ class ProductionModelService:
             else:
                 raise RuntimeError(f"Unknown deployment mode: {self.deployment_mode}")
 
-            # Update metrics
-            inference_time = time.time() - start_time
-            self.health_status["last_inference_time"] = inference_time
-            self.health_status["total_inferences"] += 1
-
+            # Calculate generation time and performance metrics
+            generation_time = time.time() - start_time
+            
+            # Estimate output tokens (rough approximation: ~4 chars per token)
+            estimated_output_tokens = max(1, len(response) // 4)
+            
+            # Calculate tokens per second
+            tokens_per_second = estimated_output_tokens / generation_time if generation_time > 0 else 0
+            
+            # Get current memory usage
+            current_memory_mb = 0.0
             try:
-                self.health_status["memory_usage_mb"] = (
-                    mx.get_active_memory() / 1024 / 1024
-                )
+                current_memory_mb = mx.get_active_memory() / 1024 / 1024
             except:
                 pass
 
+            # Create token usage metrics
+            token_usage = TokenUsage(
+                input_tokens=estimated_input_tokens,
+                output_tokens=estimated_output_tokens
+            )
+            token_usage.update_total()
+
+            # Create generation metrics
+            generation_metrics = GenerationMetrics(
+                request_id=request_id,
+                token_usage=token_usage,
+                generation_time_seconds=generation_time,
+                tokens_per_second=tokens_per_second,
+                memory_usage_mb=current_memory_mb,
+                prompt_length=len(prompt),
+                response_length=len(response),
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+
+            # Update LLM health status with new metrics
+            self.llm_health_status.add_generation_metrics(generation_metrics)
+            self.llm_health_status.current_memory_mb = current_memory_mb
+            self.llm_health_status.uptime_seconds = (datetime.now() - self.start_time).total_seconds()
+
+            # Update session metrics
+            self.current_session.update_from_generation(generation_metrics, success=True)
+            self.llm_health_status.current_session = self.current_session
+
+            # Update legacy health status for backward compatibility
+            self.health_status["last_inference_time"] = generation_time
+            self.health_status["total_inferences"] += 1
+            self.health_status["memory_usage_mb"] = current_memory_mb
+
             logger.info(
-                f"Generation completed in {inference_time:.2f}s using {self.deployment_mode} mode"
+                f"Generation completed: {generation_time:.2f}s, "
+                f"{tokens_per_second:.1f} tokens/sec, "
+                f"{estimated_input_tokens}→{estimated_output_tokens} tokens, "
+                f"{self.deployment_mode} mode"
             )
             return response
 
         except Exception as e:
-            logger.error(f"Generation failed: {e}")
+            # Track failed generation
+            generation_time = time.time() - start_time
+            failed_metrics = GenerationMetrics(
+                request_id=request_id,
+                generation_time_seconds=generation_time,
+                prompt_length=len(prompt),
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            
+            # Update session with failed request
+            self.current_session.update_from_generation(failed_metrics, success=False)
+            self.llm_health_status.current_session = self.current_session
+            
+            logger.error(f"Generation failed after {generation_time:.2f}s: {e}")
             raise
 
     async def _generate_direct(
@@ -368,7 +515,11 @@ Mock generation successful!"""
 """
 
     def get_health_status(self) -> Dict[str, Any]:
-        """Get current health status"""
+        """Get current health status with comprehensive LLM metrics"""
+        # Update uptime
+        self.llm_health_status.uptime_seconds = (datetime.now() - self.start_time).total_seconds()
+        
+        # Legacy status for backward compatibility
         status = self.health_status.copy()
         status["is_initialized"] = self.is_initialized
         status["config"] = {
@@ -378,7 +529,74 @@ Mock generation successful!"""
             "cache_dir": str(self.cache_dir),
         }
 
+        # Add comprehensive LLM metrics
+        status["llm_metrics"] = {
+            "model_info": {
+                "name": self.model_info.model_name,
+                "version": self.model_info.model_version,
+                "deployment_mode": self.model_info.deployment_mode.value,
+                "status": self.model_info.status.value,
+                "context_length": self.model_info.context_length,
+                "parameter_count": self.model_info.parameter_count,
+                "estimated_memory_gb": self.model_info.estimated_memory_gb,
+                "mlx_available": self.model_info.mlx_available,
+                "mlx_lm_available": self.model_info.mlx_lm_available,
+                "last_health_check": self.model_info.last_health_check.isoformat() if self.model_info.last_health_check else None,
+            },
+            "performance": {
+                "is_ready": self.llm_health_status.is_ready,
+                "uptime_seconds": self.llm_health_status.uptime_seconds,
+                "recent_average_speed_tokens_per_sec": self.llm_health_status.get_recent_average_speed(),
+                "recent_average_latency_seconds": self.llm_health_status.get_recent_average_latency(),
+                "total_recent_requests": len(self.llm_health_status.recent_generations),
+                "last_request_time": self.llm_health_status.last_request_time.isoformat() if self.llm_health_status.last_request_time else None,
+            },
+            "memory": {
+                "current_usage_mb": self.llm_health_status.current_memory_mb,
+                "available_mb": self.llm_health_status.available_memory_mb,
+            },
+            "session_metrics": {
+                "session_id": self.current_session.session_id,
+                "total_requests": self.current_session.total_requests,
+                "successful_requests": self.current_session.successful_requests,
+                "failed_requests": self.current_session.failed_requests,
+                "error_rate": self.current_session.error_rate,
+                "total_input_tokens": self.current_session.total_input_tokens,
+                "total_output_tokens": self.current_session.total_output_tokens,
+                "total_tokens": self.current_session.total_tokens,
+                "average_generation_time": self.current_session.average_generation_time,
+                "average_tokens_per_second": self.current_session.average_tokens_per_second,
+                "min_generation_time": self.current_session.min_generation_time,
+                "max_generation_time": self.current_session.max_generation_time,
+                "average_memory_usage_mb": self.current_session.average_memory_usage_mb,
+                "peak_memory_usage_mb": self.current_session.peak_memory_usage_mb,
+                "session_start_time": self.current_session.start_time.isoformat(),
+            },
+            "recent_generations": [
+                {
+                    "request_id": gen.request_id,
+                    "timestamp": gen.timestamp.isoformat(),
+                    "input_tokens": gen.token_usage.input_tokens,
+                    "output_tokens": gen.token_usage.output_tokens,
+                    "total_tokens": gen.token_usage.total_tokens,
+                    "generation_time_seconds": gen.generation_time_seconds,
+                    "tokens_per_second": gen.tokens_per_second,
+                    "memory_usage_mb": gen.memory_usage_mb,
+                    "prompt_length": gen.prompt_length,
+                    "response_length": gen.response_length,
+                }
+                for gen in self.llm_health_status.recent_generations[-5:]  # Last 5 generations
+            ]
+        }
+
         return status
+    
+    def get_llm_metrics_snapshot(self) -> Dict[str, Any]:
+        """Get a formatted snapshot of LLM metrics for API responses"""
+        from ..models.llm_metrics_models import LLMMetricsSnapshot
+        
+        snapshot = LLMMetricsSnapshot(health_status=self.llm_health_status)
+        return snapshot.to_dict()
 
     async def cleanup(self):
         """Cleanup resources"""
