@@ -149,6 +149,7 @@ markers = [
     "mlx_real_inference: marks tests that require real MLX model inference (slow)",
     "websocket: marks tests that require WebSocket functionality",
     "performance: marks performance benchmark tests",
+    "stress: marks stress tests that run high load scenarios",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
