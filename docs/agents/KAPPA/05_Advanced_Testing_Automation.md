@@ -1,7 +1,7 @@
 # KAPPA Agent - Task 05: Advanced Testing Automation & QA Excellence
 
 **Assignment Date**: Post Integration Testing Completion  
-**Worktree**: Continue in `../leenvibe-testing` + Create `../leenvibe-qa-automation`  
+**Worktree**: Continue in `../leanvibe-testing` + Create `../leanvibe-qa-automation`  
 **Branch**: `feature/advanced-testing-automation`  
 **Status**: 📋 PREPARED (Assign after Task 4 completion)
 
@@ -18,7 +18,7 @@ Incredible work completing the voice system, integration, AND comprehensive test
 
 ## Your New Mission
 
-Create a **comprehensive automated testing and QA framework** that ensures LeenVibe maintains production quality through continuous integration, automated regression detection, and advanced testing methodologies.
+Create a **comprehensive automated testing and QA framework** that ensures LeanVibe maintains production quality through continuous integration, automated regression detection, and advanced testing methodologies.
 
 ## Advanced Testing Automation Scope
 
@@ -28,7 +28,7 @@ Create a **comprehensive automated testing and QA framework** that ensures LeenV
 // Voice system automated testing
 class VoiceSystemUITests: XCTestCase {
     func testWakePhraseDetectionFlow() {
-        // Simulate "Hey LeenVibe" detection
+        // Simulate "Hey LeanVibe" detection
         // Verify VoiceCommandView opens
         // Test voice command execution
         // Validate dashboard updates
@@ -373,7 +373,7 @@ class ProductionQualityMonitor {
 
 ## Expected Outcome
 
-A world-class automated testing and QA framework that ensures LeenVibe maintains production quality, prevents regressions, and provides confidence for rapid development and deployment.
+A world-class automated testing and QA framework that ensures LeanVibe maintains production quality, prevents regressions, and provides confidence for rapid development and deployment.
 
 Your expertise evolution: Voice System → Integration Testing → **QA Excellence Leadership** 🧪🚀⚡️
 

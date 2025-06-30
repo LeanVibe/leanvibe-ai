@@ -1,8 +1,8 @@
-# LeenVibe Worktree Development Guide
+# LeanVibe Worktree Development Guide
 
 ## Overview
 
-This guide explains how to use the git worktrees set up for parallel development of LeenVibe iOS app enhancement features. Each worktree enables independent development of specific features while maintaining integration with the main codebase.
+This guide explains how to use the git worktrees set up for parallel development of LeanVibe iOS app enhancement features. Each worktree enables independent development of specific features while maintaining integration with the main codebase.
 
 ## Worktree Structure
 
@@ -10,12 +10,12 @@ This guide explains how to use the git worktrees set up for parallel development
 
 | Worktree Directory | Branch | Purpose | Phase |
 |-------------------|--------|---------|-------|
-| `../leenvibe-ios-dashboard` | `feature/ios-dashboard-foundation` | Project dashboard and navigation architecture | 1-2 |
-| `../leenvibe-ios-kanban` | `feature/ios-kanban-board` | Interactive Kanban board system | 3 |
-| `../leenvibe-ios-voice` | `feature/ios-voice-interface` | Voice command system | 5 |
-| `../leenvibe-ios-visualization` | `feature/ios-architecture-viewer` | Architecture visualization | 4 |
-| `../leenvibe-backend-apis` | `feature/ios-support-apis` | Backend API enhancements | All |
-| `../leenvibe-testing` | `feature/ios-integration-testing` | End-to-end testing and validation | 8 |
+| `../leanvibe-ios-dashboard` | `feature/ios-dashboard-foundation` | Project dashboard and navigation architecture | 1-2 |
+| `../leanvibe-ios-kanban` | `feature/ios-kanban-board` | Interactive Kanban board system | 3 |
+| `../leanvibe-ios-voice` | `feature/ios-voice-interface` | Voice command system | 5 |
+| `../leanvibe-ios-visualization` | `feature/ios-architecture-viewer` | Architecture visualization | 4 |
+| `../leanvibe-backend-apis` | `feature/ios-support-apis` | Backend API enhancements | All |
+| `../leanvibe-testing` | `feature/ios-integration-testing` | End-to-end testing and validation | 8 |
 | `../leanvibe-ai` | `sprint-1-foundation` | Main integration and coordination | All |
 
 ## Development Workflow
@@ -24,7 +24,7 @@ This guide explains how to use the git worktrees set up for parallel development
 
 ```bash
 # Navigate to the appropriate worktree
-cd ../leenvibe-ios-dashboard
+cd ../leanvibe-ios-dashboard
 
 # Verify you're on the correct branch
 git branch
@@ -34,7 +34,7 @@ git branch
 git pull origin sprint-1-foundation
 
 # Start development
-open LeenVibe-iOS/LeenVibe.xcodeproj
+open LeanVibe-iOS/LeanVibe.xcodeproj
 ```
 
 ### 2. iOS Development Setup
@@ -43,11 +43,11 @@ Each iOS worktree contains the complete iOS app structure:
 
 ```bash
 # Verify iOS app builds in worktree
-cd ../leenvibe-ios-dashboard/LeenVibe-iOS
-xcodebuild -project LeenVibe.xcodeproj -scheme LeenVibe build
+cd ../leanvibe-ios-dashboard/LeanVibe-iOS
+xcodebuild -project LeanVibe.xcodeproj -scheme LeanVibe build
 
 # Open in Xcode for development
-open LeenVibe.xcodeproj
+open LeanVibe.xcodeproj
 ```
 
 ### 3. Backend Development Setup
@@ -56,7 +56,7 @@ The backend APIs worktree is for enhancing backend endpoints:
 
 ```bash
 # Navigate to backend worktree
-cd ../leenvibe-backend-apis/leenvibe-backend
+cd ../leanvibe-backend-apis/leanvibe-backend
 
 # Install dependencies
 uv sync
@@ -96,8 +96,8 @@ git merge feature/ios-dashboard-foundation
 git merge feature/ios-kanban-board
 
 # Test integration
-cd leenvibe-backend && ./start.sh
-cd ../LeenVibe-iOS && xcodebuild -project LeenVibe.xcodeproj -scheme LeenVibe build
+cd leanvibe-backend && ./start.sh
+cd ../LeanVibe-iOS && xcodebuild -project LeanVibe.xcodeproj -scheme LeanVibe build
 
 # If tests pass, merge to main
 git checkout sprint-1-foundation
@@ -106,12 +106,12 @@ git merge integration/week-X-features
 
 ## Feature Development Guidelines
 
-### iOS Dashboard Worktree (`../leenvibe-ios-dashboard`)
+### iOS Dashboard Worktree (`../leanvibe-ios-dashboard`)
 **Focus**: Project cards, navigation, project detail views
 
 ```swift
 // Expected file structure additions:
-LeenVibe-iOS/LeenVibe/
+LeanVibe-iOS/LeanVibe/
 ├── Views/
 │   ├── Dashboard/
 │   │   ├── ProjectDashboardView.swift
@@ -127,12 +127,12 @@ LeenVibe-iOS/LeenVibe/
     └── ProjectMetrics.swift
 ```
 
-### iOS Kanban Worktree (`../leenvibe-ios-kanban`)
+### iOS Kanban Worktree (`../leanvibe-ios-kanban`)
 **Focus**: Task management, drag-and-drop, real-time updates
 
 ```swift
 // Expected file structure additions:
-LeenVibe-iOS/LeenVibe/
+LeanVibe-iOS/LeanVibe/
 ├── Views/
 │   ├── Kanban/
 │   │   ├── KanbanBoardView.swift
@@ -148,12 +148,12 @@ LeenVibe-iOS/LeenVibe/
     └── TaskStatus.swift
 ```
 
-### iOS Voice Worktree (`../leenvibe-ios-voice`)
+### iOS Voice Worktree (`../leanvibe-ios-voice`)
 **Focus**: Speech recognition, voice commands, wake phrase
 
 ```swift
 // Expected file structure additions:
-LeenVibe-iOS/LeenVibe/
+LeanVibe-iOS/LeanVibe/
 ├── Views/
 │   ├── Voice/
 │   │   ├── VoiceCommandView.swift
@@ -168,12 +168,12 @@ LeenVibe-iOS/LeenVibe/
     └── SpeechRecognitionResult.swift
 ```
 
-### Backend APIs Worktree (`../leenvibe-backend-apis`)
+### Backend APIs Worktree (`../leanvibe-backend-apis`)
 **Focus**: New endpoints for iOS features
 
 ```python
 # Expected file structure additions:
-leenvibe-backend/app/
+leanvibe-backend/app/
 ├── api/endpoints/
 │   ├── tasks.py          # Task management endpoints
 │   ├── projects.py       # Project management endpoints
@@ -194,18 +194,18 @@ leenvibe-backend/app/
 ### Unit Testing in Each Worktree
 ```bash
 # iOS Testing
-cd ../leenvibe-ios-dashboard/LeenVibe-iOS
-xcodebuild test -project LeenVibe.xcodeproj -scheme LeenVibe
+cd ../leanvibe-ios-dashboard/LeanVibe-iOS
+xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe
 
 # Backend Testing
-cd ../leenvibe-backend-apis/leenvibe-backend
+cd ../leanvibe-backend-apis/leanvibe-backend
 python run_tests.py
 ```
 
 ### Integration Testing
 ```bash
 # In testing worktree
-cd ../leenvibe-testing
+cd ../leanvibe-testing
 
 # Create end-to-end test scenarios
 mkdir -p tests/ios-integration/
@@ -222,7 +222,7 @@ mkdir -p tests/ios-integration/
 ### Resolution Process
 ```bash
 # For Xcode project conflicts
-git checkout --theirs LeenVibe-iOS/LeenVibe.xcodeproj/project.pbxproj
+git checkout --theirs LeanVibe-iOS/LeanVibe.xcodeproj/project.pbxproj
 # Then manually re-add your changes in Xcode
 
 # For model conflicts
@@ -257,7 +257,7 @@ git worktree list
 ### Remove Completed Worktree
 ```bash
 # After feature is merged and no longer needed
-git worktree remove ../leenvibe-ios-dashboard
+git worktree remove ../leanvibe-ios-dashboard
 git branch -d feature/ios-dashboard-foundation
 ```
 
@@ -266,12 +266,12 @@ git branch -d feature/ios-dashboard-foundation
 # Script to sync all worktrees with latest main
 #!/bin/bash
 WORKTREES=(
-    "../leenvibe-ios-dashboard"
-    "../leenvibe-ios-kanban" 
-    "../leenvibe-ios-voice"
-    "../leenvibe-ios-visualization"
-    "../leenvibe-backend-apis"
-    "../leenvibe-testing"
+    "../leanvibe-ios-dashboard"
+    "../leanvibe-ios-kanban" 
+    "../leanvibe-ios-voice"
+    "../leanvibe-ios-visualization"
+    "../leanvibe-backend-apis"
+    "../leanvibe-testing"
 )
 
 for worktree in "${WORKTREES[@]}"; do
@@ -289,12 +289,12 @@ done
 Each iOS worktree can be opened independently in Xcode, or create a master workspace:
 
 ```xml
-<!-- LeenVibeWorkspace.xcworkspace/contents.xcworkspacedata -->
+<!-- LeanVibeWorkspace.xcworkspace/contents.xcworkspacedata -->
 <?xml version="1.0" encoding="UTF-8"?>
 <Workspace version = "1.0">
-   <FileRef location = "group:../leenvibe-ios-dashboard/LeenVibe-iOS/LeenVibe.xcodeproj">
+   <FileRef location = "group:../leanvibe-ios-dashboard/LeanVibe-iOS/LeanVibe.xcodeproj">
    </FileRef>
-   <FileRef location = "group:../leenvibe-ios-kanban/LeenVibe-iOS/LeenVibe.xcodeproj">
+   <FileRef location = "group:../leanvibe-ios-kanban/LeanVibe-iOS/LeanVibe.xcodeproj">
    </FileRef>
    <!-- Add other worktrees as needed -->
 </Workspace>
@@ -304,16 +304,16 @@ Each iOS worktree can be opened independently in Xcode, or create a master works
 ```json
 {
     "folders": [
-        {"path": "../leenvibe-ios-dashboard"},
-        {"path": "../leenvibe-ios-kanban"},
-        {"path": "../leenvibe-backend-apis"},
+        {"path": "../leanvibe-ios-dashboard"},
+        {"path": "../leanvibe-ios-kanban"},
+        {"path": "../leanvibe-backend-apis"},
         {"path": "."}
     ],
     "settings": {
         "git.ignoredRepositories": [
-            "../leenvibe-ios-dashboard",
-            "../leenvibe-ios-kanban",
-            "../leenvibe-backend-apis"
+            "../leanvibe-ios-dashboard",
+            "../leanvibe-ios-kanban",
+            "../leanvibe-backend-apis"
         ]
     }
 }
@@ -360,7 +360,7 @@ Each iOS worktree can be opened independently in Xcode, or create a master works
    ```bash
    # Ensure only one instance of project open
    # Check file permissions
-   chmod -R 755 LeenVibe-iOS/
+   chmod -R 755 LeanVibe-iOS/
    ```
 
 3. **Backend port conflicts**

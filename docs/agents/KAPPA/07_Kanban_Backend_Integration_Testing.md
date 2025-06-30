@@ -1,7 +1,7 @@
 # KAPPA Agent - Task 07: Kanban Backend Integration & Testing Validation
 
 **Assignment Date**: Sprint 1 Integration Phase  
-**Worktree**: Use existing `../leenvibe-ios-visualization`  
+**Worktree**: Use existing `../leanvibe-ios-visualization`  
 **Branch**: `feature/kanban-backend-integration`  
 **Status**: 🚨 **HIGH PRIORITY** - Validate Your 2,662+ Line Kanban UI Works!
 
@@ -157,7 +157,7 @@ Your Kanban UI is the **centerpiece of the MVP**. With these backend connections
 - Project managers can track tasks in real-time
 - Multiple users can collaborate simultaneously  
 - Changes persist across app restarts
-- The full vision of LeenVibe comes to life
+- The full vision of LeanVibe comes to life
 
 ## Resources
 

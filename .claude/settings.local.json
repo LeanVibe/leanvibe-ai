@@ -96,7 +96,8 @@
       "Bash(for file in ./Production/ProductionReadinessView.swift ./Performance/PerformanceValidationView.swift ./Performance/AnimationPerformanceView.swift)",
       "Bash(ruff check:*)",
       "Bash(uv venv:*)",
-      "Bash(source:*)"
+      "Bash(source:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }

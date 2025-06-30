@@ -7,15 +7,15 @@ The connection persistence feature has been fully implemented. Here's how to tes
 ## 🧪 Manual Testing Procedure
 
 ### Test 1: Initial QR Connection & Storage
-1. **Start Backend**: Run `cd leenvibe-backend && ./start.sh`
+1. **Start Backend**: Run `cd leanvibe-backend && ./start.sh`
 2. **Deploy iOS App**: Build and run on device
 3. **Scan QR Code**: Tap "Scan QR" and scan the terminal QR code
 4. **Verify Connection**: Should connect automatically
 5. **Check Storage**: Go to Settings → See connection saved under "Saved Connections"
 
 ### Test 2: App Restart Persistence  
-1. **Force Close App**: Swipe up and close LeenVibe app
-2. **Reopen App**: Launch LeenVibe again
+1. **Force Close App**: Swipe up and close LeanVibe app
+2. **Reopen App**: Launch LeanVibe again
 3. **Auto-Reconnect**: Should show "Reconnect" button instead of "Scan QR"
 4. **Tap Reconnect**: Should connect to saved server automatically
 5. **Verify**: Connection should work without scanning QR again

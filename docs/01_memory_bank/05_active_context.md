@@ -1,4 +1,4 @@
-# Active Context: LeenVibe
+# Active Context: LeanVibe
 
 ## 1. Current Sprint: 2.3 - Real-time Terminal Notifications
 
@@ -15,8 +15,8 @@ The primary objective of this sprint is to transform the CLI into a live, reacti
 **Technical Debt Addressed**:
 - ✅ Created comprehensive `.gitignore` to prevent cache/build files from being tracked
 - ✅ Moved integration tests from root to proper `tests/integration/` directory
-- ✅ Consolidated iOS implementations - kept `LeenVibe-iOS` (with QR scanner) as canonical
-- ✅ Archived older iOS implementations (`LeenVibe-iOS` and `LeenVibe-SwiftPM`) to `docs/archive/ios-implementations/`
+- ✅ Consolidated iOS implementations - kept `LeanVibe-iOS` (with QR scanner) as canonical
+- ✅ Archived older iOS implementations (`LeanVibe-iOS` and `LeanVibe-SwiftPM`) to `docs/archive/ios-implementations/`
 - ✅ Moved single-use scripts to `docs/archive/single-use-scripts/`
 - ✅ Cleaned up duplicate directories and cache files
 - ✅ Removed outdated `requirements.txt` (project uses `pyproject.toml` with `uv`)

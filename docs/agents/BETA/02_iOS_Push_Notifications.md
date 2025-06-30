@@ -1,7 +1,7 @@
 # BETA Agent - Task 02: iOS Push Notifications Implementation Specialist
 
 **Assignment Date**: Post Backend API Completion  
-**Worktree**: Create new worktree `../leenvibe-ios-notifications`  
+**Worktree**: Create new worktree `../leanvibe-ios-notifications`  
 **Branch**: `feature/ios-push-notifications`  
 **Status**: 🔄 ASSIGNED  
 
@@ -22,8 +22,8 @@ Implement the complete iOS push notification system that integrates with your ba
 
 ## Working Directory
 
-**New Worktree**: `../leenvibe-ios-notifications`  
-**Integration Target**: `/Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/`
+**New Worktree**: `../leanvibe-ios-notifications`  
+**Integration Target**: `/Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/`
 
 ## Backend APIs You Built (Available for Integration)
 
@@ -45,7 +45,7 @@ PUT    /notifications/{client_id}/preferences # Update settings
 ### 1. Notification Permission & Registration
 **Files to Create**:
 ```
-LeenVibe-iOS-App/LeenVibe/
+LeanVibe-iOS-App/LeanVibe/
 ├── Services/
 │   ├── NotificationManager.swift     # Core notification handling
 │   ├── APNSRegistrationService.swift # Device registration with APNS
@@ -67,7 +67,7 @@ LeenVibe-iOS-App/LeenVibe/
 - **Build Status**: "Build completed successfully for [ProjectName]" 
 - **Error Alerts**: "Error detected in [ProjectName]: [ErrorDescription]"
 - **Task Updates**: "New task created: [TaskTitle]"
-- **Agent Status**: "LeenVibe agent connected/disconnected"
+- **Agent Status**: "LeanVibe agent connected/disconnected"
 
 **Real-time Integration Events**:
 - **Voice Commands**: "Voice command executed: [Command]"

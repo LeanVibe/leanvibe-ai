@@ -1,8 +1,8 @@
-# System Patterns: LeenVibe
+# System Patterns: LeanVibe
 
 ## 1. System Architecture
 
-LeenVibe employs a multi-component, client-server architecture designed for local-first operation.
+LeanVibe employs a multi-component, client-server architecture designed for local-first operation.
 
 *   **Backend (FastAPI)**: A robust Python backend built with FastAPI serves as the central hub. It is responsible for:
     *   Hosting the AI models (`MLXModelService`).

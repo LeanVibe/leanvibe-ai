@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The LeenVibe iOS app integration revealed catastrophic failures in multi-agent AI collaboration, resulting in:
+The LeanVibe iOS app integration revealed catastrophic failures in multi-agent AI collaboration, resulting in:
 - **100+ compilation errors** from mismatched interfaces
 - **6+ hours of debugging** to fix integration issues
 - **Zero tests passing** due to broken build
@@ -15,7 +15,7 @@ This document analyzes the root causes and proposes a robust workflow for future
 ### 1. Interface Contract Violations (40% of errors)
 **Problem**: Different AI agents made incompatible assumptions about data models
 - Agent A created `Task` model
-- Agent B expected `LeenVibeTask` 
+- Agent B expected `LeanVibeTask` 
 - Agent C used `project.displayName` while model had `project.name`
 - Properties like `issueCount` vs `issuesCount` caused widespread failures
 
@@ -82,7 +82,7 @@ There was no concept of stopping when error count exceeded threshold.
 # project-schema.yaml
 models:
   Task:
-    name: LeenVibeTask  # Canonical name
+    name: LeanVibeTask  # Canonical name
     properties:
       - id: UUID
       - title: String
@@ -156,7 +156,7 @@ echo "Build successful - safe to continue"
 ### B. Decision Log
 ```markdown
 ## Decision Log Entry
-- Decision: Use `LeenVibeTask` instead of `Task`
+- Decision: Use `LeanVibeTask` instead of `Task`
 - Reason: Avoid conflict with Swift.Task
 - Impact: All task-related code
 - Agent: Claude-2
@@ -275,7 +275,7 @@ struct FeatureFlags {
 
 ## Conclusion
 
-The LeenVibe integration failure was not due to individual agent incompetence but rather systemic process failures. By implementing:
+The LeanVibe integration failure was not due to individual agent incompetence but rather systemic process failures. By implementing:
 
 1. **Strict interface contracts**
 2. **Continuous build verification**

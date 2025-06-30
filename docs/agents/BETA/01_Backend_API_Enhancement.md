@@ -1,7 +1,7 @@
 # BETA Agent - Task 01: Backend API Enhancement Specialist
 
 **Assignment Date**: Sprint 1 Foundation  
-**Worktree**: `../leenvibe-backend-apis`  
+**Worktree**: `../leanvibe-backend-apis`  
 **Branch**: `feature/ios-support-apis`  
 **Status**: ✅ COMPLETED  
 
@@ -13,8 +13,8 @@ You are the **Backend API Enhancement Specialist** responsible for building the 
 
 - **Current Backend**: Basic WebSocket communication and session management
 - **Target Enhancement**: Comprehensive APIs for iOS dashboard, task management, voice commands, and push notifications
-- **Working Directory**: `../leenvibe-backend-apis`
-- **Integration Target**: Main backend at `leenvibe-backend/`
+- **Working Directory**: `../leanvibe-backend-apis`
+- **Integration Target**: Main backend at `leanvibe-backend/`
 
 ## Phase Coverage
 
@@ -91,7 +91,7 @@ PUT    /notifications/{client_id}/preferences # Update settings
 
 **Files to Create**:
 ```
-leenvibe-backend/app/
+leanvibe-backend/app/
 ├── api/endpoints/
 │   ├── enhanced_metrics.py    # Comprehensive metrics with AI analytics
 │   ├── tasks.py              # Task management endpoints
@@ -162,7 +162,7 @@ leenvibe-backend/app/
 
 **Test Files to Create**:
 ```
-leenvibe-backend/tests/
+leanvibe-backend/tests/
 ├── test_enhanced_metrics.py
 ├── test_task_management.py
 ├── test_voice_commands.py

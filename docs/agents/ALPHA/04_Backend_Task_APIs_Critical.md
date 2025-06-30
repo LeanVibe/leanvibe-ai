@@ -1,7 +1,7 @@
 # ALPHA Agent - Task 04: Backend Task Management APIs (Critical Blocker)
 
 **Assignment Date**: Emergency Redistribution - DELTA Holiday Departure  
-**Worktree**: Create `../leenvibe-backend-task-apis`  
+**Worktree**: Create `../leanvibe-backend-task-apis`  
 **Branch**: `feature/backend-task-apis`  
 **Status**: 🚨 **CRITICAL EMERGENCY** - Unblocks 2,662+ lines of completed Kanban UI
 
@@ -41,7 +41,7 @@ PUT    /api/kanban/tasks/{task_id}/move # Move between columns
 
 ### 1. Database Models (SQLAlchemy)
 ```python
-# leenvibe-backend/app/models/task.py
+# leanvibe-backend/app/models/task.py
 class Task(Base):
     __tablename__ = "tasks"
     
@@ -58,7 +58,7 @@ class Task(Base):
 
 ### 2. FastAPI Endpoints
 ```python
-# leenvibe-backend/app/api/endpoints/tasks.py
+# leanvibe-backend/app/api/endpoints/tasks.py
 @router.post("/api/tasks")
 async def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     """Create task for Kanban board"""

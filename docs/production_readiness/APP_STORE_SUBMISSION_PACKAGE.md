@@ -1,14 +1,14 @@
-# LeenVibe App Store Submission Readiness Package
+# LeanVibe App Store Submission Readiness Package
 
 **Package Date**: December 29, 2025  
 **App Version**: 1.0.0  
-**Bundle ID**: com.leenvibe.ios  
+**Bundle ID**: com.leanvibe.ios  
 **Target Release**: Q1 2025  
 **Submission Status**: Pre-submission Preparation
 
 ## 🎯 Executive Summary
 
-This package provides all necessary materials and checklists for successful App Store submission of LeenVibe iOS application. Current readiness: **75%** with 2 critical items pending resolution.
+This package provides all necessary materials and checklists for successful App Store submission of LeanVibe iOS application. Current readiness: **75%** with 2 critical items pending resolution.
 
 ### Submission Blockers:
 1. **Xcode project build configuration** (In progress - ALPHA Agent)
@@ -25,7 +25,7 @@ This package provides all necessary materials and checklists for successful App 
 
 #### Build & Configuration
 - [ ] **Xcode Project Configuration** (CRITICAL - In Progress)
-  - [ ] Valid bundle identifier: `com.leenvibe.ios`
+  - [ ] Valid bundle identifier: `com.leanvibe.ios`
   - [ ] Version number: 1.0.0
   - [ ] Build number: 1
   - [ ] Deployment target: iOS 16.0+ (Needs clarification vs iOS 18)
@@ -34,11 +34,11 @@ This package provides all necessary materials and checklists for successful App 
 
 #### Capabilities & Permissions
 - [x] **Camera Usage** - QR code scanning
-  - Description: "LeenVibe needs camera access to scan QR codes for pairing with your development server."
+  - Description: "LeanVibe needs camera access to scan QR codes for pairing with your development server."
 - [x] **Microphone Usage** - Voice commands
-  - Description: "LeenVibe uses microphone access for voice commands and 'Hey LeenVibe' wake phrase detection."
+  - Description: "LeanVibe uses microphone access for voice commands and 'Hey LeanVibe' wake phrase detection."
 - [ ] **Push Notifications** (In Progress)
-  - Description: "LeenVibe sends notifications about build status, task updates, and important project events."
+  - Description: "LeanVibe sends notifications about build status, task updates, and important project events."
 - [x] **Background Modes** - Audio (for wake phrase)
   - Justified use case documented
 
@@ -53,7 +53,7 @@ This package provides all necessary materials and checklists for successful App 
 
 #### App Information
 ```yaml
-App Name: LeenVibe
+App Name: LeanVibe
 Subtitle: AI-Powered Local Development Assistant
 Category: Developer Tools
 Secondary Category: Productivity
@@ -63,11 +63,11 @@ Price: Free (with potential Pro upgrade)
 
 #### App Description (Max 4000 characters)
 ```
-LeenVibe is your AI-powered local development assistant that runs entirely on your device, ensuring complete code privacy and security. Designed for senior developers who value efficiency and control, LeenVibe brings sophisticated code analysis and real-time assistance directly to your fingertips.
+LeanVibe is your AI-powered local development assistant that runs entirely on your device, ensuring complete code privacy and security. Designed for senior developers who value efficiency and control, LeanVibe brings sophisticated code analysis and real-time assistance directly to your fingertips.
 
 KEY FEATURES:
 
-• Voice-Controlled Development: Use natural voice commands with our innovative "Hey LeenVibe" wake phrase. Navigate projects, check build status, and manage tasks hands-free while you code.
+• Voice-Controlled Development: Use natural voice commands with our innovative "Hey LeanVibe" wake phrase. Navigate projects, check build status, and manage tasks hands-free while you code.
 
 • Real-Time Project Dashboard: Monitor multiple projects simultaneously with live status updates, build notifications, and performance metrics displayed in an intuitive interface.
 
@@ -75,7 +75,7 @@ KEY FEATURES:
 
 • Architecture Visualization: Instantly generate and explore interactive architecture diagrams of your codebase using advanced visualization technology.
 
-• WebSocket Integration: Seamless real-time communication with your local LeenVibe backend server for instant updates and zero-latency interactions.
+• WebSocket Integration: Seamless real-time communication with your local LeanVibe backend server for instant updates and zero-latency interactions.
 
 • Privacy-First Design: All processing happens locally on your device. Your code never leaves your development environment, ensuring complete privacy and security.
 
@@ -88,11 +88,11 @@ PERFECT FOR:
 - Anyone tired of cloud-based tools with privacy concerns
 
 REQUIREMENTS:
-- LeenVibe backend server running on your local development machine
+- LeanVibe backend server running on your local development machine
 - iOS 16.0 or later
 - Compatible with iPhone and iPad
 
-Transform your development workflow with LeenVibe - where AI meets local-first privacy.
+Transform your development workflow with LeanVibe - where AI meets local-first privacy.
 ```
 
 #### Keywords (100 characters max)
@@ -101,9 +101,9 @@ AI,code,developer,programming,voice,assistant,local,privacy,kanban,productivity,
 ```
 
 #### Support Information
-- **Support URL**: https://github.com/leenvibe/support
-- **Marketing URL**: https://leenvibe.ai
-- **Privacy Policy URL**: https://leenvibe.ai/privacy
+- **Support URL**: https://github.com/leanvibe/support
+- **Marketing URL**: https://leanvibe.ai
+- **Privacy Policy URL**: https://leanvibe.ai/privacy
 - **Terms of Use**: Standard Apple EULA
 
 ### Screenshots Requirements (6.5", 5.5", iPad)
@@ -124,7 +124,7 @@ AI,code,developer,programming,voice,assistant,local,privacy,kanban,productivity,
 ### App Preview Video (Optional but Recommended)
 
 #### Video Outline (15-30 seconds):
-1. Opening: "Hey LeenVibe" wake phrase activation
+1. Opening: "Hey LeanVibe" wake phrase activation
 2. Dashboard overview with project cards
 3. Voice command demonstration
 4. Kanban board task management
@@ -216,15 +216,15 @@ AI,code,developer,programming,voice,assistant,local,privacy,kanban,productivity,
 
 ### What's New (Version 1.0.0)
 ```
-Welcome to LeenVibe - your private AI development assistant!
+Welcome to LeanVibe - your private AI development assistant!
 
-• Voice Control: "Hey LeenVibe" wake phrase for hands-free development
+• Voice Control: "Hey LeanVibe" wake phrase for hands-free development
 • Project Dashboard: Monitor multiple projects in real-time
 • Kanban Board: Visual task management with drag-and-drop
 • Architecture Viewer: Interactive codebase visualization
 • Complete Privacy: Everything runs locally on your device
 
-Get started by pairing with your LeenVibe backend server using QR code scanning.
+Get started by pairing with your LeanVibe backend server using QR code scanning.
 ```
 
 ## 📊 Post-Submission Monitoring
@@ -286,7 +286,7 @@ Get started by pairing with your LeenVibe backend server using QR code scanning.
 2. **Documentation Site**: Comprehensive guides
 3. **FAQ Section**: Common questions addressed
 4. **Video Tutorials**: Setup and feature guides
-5. **Email Support**: support@leenvibe.ai
+5. **Email Support**: support@leanvibe.ai
 
 ### Day 1 Support Plan:
 - Monitor app reviews actively

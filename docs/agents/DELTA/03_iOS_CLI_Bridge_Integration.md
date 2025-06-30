@@ -1,7 +1,7 @@
 # DELTA Agent - Task 03: iOS-CLI Bridge & Performance Integration
 
 **Assignment Date**: Post Task Management APIs Completion  
-**Worktree**: Use existing worktree `../leenvibe-cli-enhancement`  
+**Worktree**: Use existing worktree `../leanvibe-cli-enhancement`  
 **Branch**: `feature/ios-cli-bridge`  
 **Status**: 🔄 ASSIGNED  
 
@@ -14,7 +14,7 @@ Outstanding work completing the Backend Task Management APIs! The Kanban system 
 - ✅ **Your Backend APIs**: Task Management APIs successfully deployed and tested
 - ✅ **Kanban Integration**: iOS Kanban Board now fully functional with backend
 - ✅ **iOS App**: 95% MVP complete with voice, dashboard, architecture viewer
-- ✅ **CLI Foundation**: Basic CLI structure in place at `leenvibe-cli/`
+- ✅ **CLI Foundation**: Basic CLI structure in place at `leanvibe-cli/`
 - ❌ **Missing**: iOS ↔ CLI bridge for unified developer experience
 - ❌ **Missing**: Integration of BETA's 5,213+ lines of performance optimization
 
@@ -25,8 +25,8 @@ Create a **sophisticated iOS-CLI bridge** that provides seamless integration bet
 ## Working Directory
 
 **Main CLI Enhancement**: `/Users/bogdan/work/leanvibe-cli-enhancement/`  
-**Integration Target**: `/Users/bogdan/work/leanvibe-ai/leenvibe-cli/`  
-**iOS Integration**: `/Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/`  
+**Integration Target**: `/Users/bogdan/work/leanvibe-ai/leanvibe-cli/`  
+**iOS Integration**: `/Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/`  
 **Performance Code**: BETA's optimization work needs integration
 
 ## 🌉 iOS-CLI Bridge Architecture
@@ -74,9 +74,9 @@ def voice(command: str):
     """Execute iOS voice commands from CLI
     
     Examples:
-      leenvibe voice "analyze project"
-      leenvibe voice "show architecture" 
-      leenvibe voice "refresh dashboard"
+      leanvibe voice "analyze project"
+      leanvibe voice "show architecture" 
+      leanvibe voice "refresh dashboard"
     """
     voice_bridge = VoiceCLIBridge()
     
@@ -389,12 +389,12 @@ def run_full_project_analysis():
 ### Complete Feature Parity
 | iOS Feature | CLI Equivalent | Status |
 |------------|----------------|---------|
-| Dashboard Tabs | `leenvibe dashboard` | 🔄 Implement |
-| Project Cards | `leenvibe projects list` | 🔄 Implement |
-| Kanban Board | `leenvibe kanban` | 🔄 Implement |
-| Voice Commands | `leenvibe voice "command"` | 🔄 Implement |
-| Architecture Viewer | `leenvibe architecture` | 🔄 Implement |
-| Settings | `leenvibe config` | 🔄 Implement |
+| Dashboard Tabs | `leanvibe dashboard` | 🔄 Implement |
+| Project Cards | `leanvibe projects list` | 🔄 Implement |
+| Kanban Board | `leanvibe kanban` | 🔄 Implement |
+| Voice Commands | `leanvibe voice "command"` | 🔄 Implement |
+| Architecture Viewer | `leanvibe architecture` | 🔄 Implement |
+| Settings | `leanvibe config` | 🔄 Implement |
 | Real-time Sync | WebSocket bridge | 🔄 Implement |
 
 ### CLI-Exclusive Features

@@ -1,8 +1,8 @@
-# LeenVibe Sprint-Based Development Plan
+# LeanVibe Sprint-Based Development Plan
 
 ## Executive Summary
 
-**CRITICAL SCOPE ASSESSMENT**: LeenVibe has evolved into a sophisticated enterprise-grade codebase analysis platform, significantly beyond the original MVP specification. This document reflects the current state and outlines the path to bridge existing infrastructure with core AI functionality.
+**CRITICAL SCOPE ASSESSMENT**: LeanVibe has evolved into a sophisticated enterprise-grade codebase analysis platform, significantly beyond the original MVP specification. This document reflects the current state and outlines the path to bridge existing infrastructure with core AI functionality.
 
 ## Current State Analysis
 
@@ -240,7 +240,7 @@ graph TB
 ### Sprint 2.5: Project-aware CLI Integration (Final Sprint 2)
 **Objective**: Smart project context awareness
 **Implementation**:
-1. Add automatic project detection (.git, .leenvibe, package.json, etc.)
+1. Add automatic project detection (.git, .leanvibe, package.json, etc.)
 2. Implement project-specific configuration inheritance
 3. Add workspace-aware command suggestions
 4. Create project initialization and setup commands
@@ -313,4 +313,4 @@ graph TB
 
 **Current Status**: Sprint 2.2 Complete ✅  
 **Next Action**: Begin Sprint 2.3 implementation with real-time terminal notifications  
-**CLI Demo**: `leenvibe info`, `leenvibe status --detailed`, `leenvibe analyze` showcase sophisticated backend integration
+**CLI Demo**: `leanvibe info`, `leanvibe status --detailed`, `leanvibe analyze` showcase sophisticated backend integration

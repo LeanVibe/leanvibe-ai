@@ -1,18 +1,18 @@
 # KAPPA Agent - Task 03: iOS Voice Integration Specialist
 
 **Assignment Date**: Post Voice Interface Completion  
-**Worktree**: `../leenvibe-ios-voice` → Switch to main iOS project  
+**Worktree**: `../leanvibe-ios-voice` → Switch to main iOS project  
 **Branch**: `feature/ios-voice-interface` → Integrate to main  
 **Status**: 🔄 ASSIGNED  
 
 ## Mission Brief
 
-Outstanding work! You've delivered an exceptional voice interface system with "Hey LeenVibe" wake phrase detection and comprehensive speech recognition - 2 weeks ahead of schedule! Your 2,800+ lines of code represent a complete voice solution that's ready for integration.
+Outstanding work! You've delivered an exceptional voice interface system with "Hey LeanVibe" wake phrase detection and comprehensive speech recognition - 2 weeks ahead of schedule! Your 2,800+ lines of code represent a complete voice solution that's ready for integration.
 
 ## Context
 
 - ✅ Your voice system is complete in `feature/ios-voice-interface` branch
-- ✅ Dashboard Foundation has been integrated into main iOS project at `LeenVibe-iOS/`
+- ✅ Dashboard Foundation has been integrated into main iOS project at `LeanVibe-iOS/`
 - ✅ Backend APIs for voice commands are ready and waiting
 - ❌ Missing: Integration of your voice system with the main dashboard
 
@@ -22,13 +22,13 @@ Integrate your complete voice interface system into the main iOS dashboard, crea
 
 ## Working Directory Change
 
-**From**: `../leenvibe-ios-voice` (feature branch)  
-**To**: `/Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/` (main integration)
+**From**: `../leanvibe-ios-voice` (feature branch)  
+**To**: `/Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/` (main integration)
 
 ## Integration Tasks
 
 ### 1. File Migration
-Integrate your 8 voice files into main `LeenVibe-iOS/` structure:
+Integrate your 8 voice files into main `LeanVibe-iOS/` structure:
 
 **Your Voice Files to Migrate**:
 ```
@@ -45,7 +45,7 @@ From: feature/ios-voice-interface branch
 
 **Integration Target**:
 ```
-LeenVibe-iOS/LeenVibe/
+LeanVibe-iOS/LeanVibe/
 ├── Models/ (add VoiceCommand.swift)
 ├── Services/ (add 3 voice services)
 └── Views/ (add Voice/ folder with 3 views)
@@ -55,7 +55,7 @@ LeenVibe-iOS/LeenVibe/
 Connect voice commands to ProjectManager and dashboard actions:
 
 **Voice-to-Dashboard Mapping**:
-- "Hey LeenVibe, analyze project" → `projectManager.analyzeProject()`
+- "Hey LeanVibe, analyze project" → `projectManager.analyzeProject()`
 - "refresh dashboard" → `projectManager.refreshProjects()`
 - "show project details" → Navigate to ProjectDetailView
 - "switch to agent chat" → Navigate to Agent tab
@@ -113,8 +113,8 @@ Integrate microphone permissions with app onboarding:
 
 ### Modified Files (Main Project)
 ```
-LeenVibe-iOS/LeenVibe/
-├── LeenVibeApp.swift              # Add voice imports
+LeanVibe-iOS/LeanVibe/
+├── LeanVibeApp.swift              # Add voice imports
 ├── Views/
 │   ├── DashboardTabView.swift     # Add voice tab or button
 │   ├── ProjectDashboardView.swift # Add voice command integration
@@ -152,7 +152,7 @@ struct DashboardTabView: View {
 
 ## Success Criteria
 
-- [ ] "Hey LeenVibe" wake phrase works in dashboard
+- [ ] "Hey LeanVibe" wake phrase works in dashboard
 - [ ] Voice commands control project operations ("analyze project", "refresh dashboard")
 - [ ] Voice interface accessible from dashboard (tab or floating button)
 - [ ] Real-time voice status shows in dashboard UI
@@ -194,7 +194,7 @@ struct DashboardTabView: View {
 
 ## Expected Outcome
 
-A seamlessly integrated voice-controlled dashboard where users can say "Hey LeenVibe" and control all project management functions, making the iOS app a truly hands-free development companion.
+A seamlessly integrated voice-controlled dashboard where users can say "Hey LeanVibe" and control all project management functions, making the iOS app a truly hands-free development companion.
 
 ## Your Achievement Journey
 

@@ -1,13 +1,13 @@
 # BETA Agent - Task 05: Performance Code Integration & System Optimization
 
 **Assignment Date**: Sprint 1 Integration Phase  
-**Worktree**: Create `../leenvibe-performance-integration`  
+**Worktree**: Create `../leanvibe-performance-integration`  
 **Branch**: `feature/performance-optimization-merge`  
 **Status**: 🚀 **HIGH PRIORITY** - Integrate Your 5,213+ Lines of Performance Excellence!
 
 ## Mission Brief
 
-**PERFORMANCE INTEGRATION**: Your 5,213+ lines of performance optimization code need to be integrated into the main iOS project. Additionally, the CLI-iOS integration features you designed need implementation. This will bring production-grade performance to the entire LeenVibe system.
+**PERFORMANCE INTEGRATION**: Your 5,213+ lines of performance optimization code need to be integrated into the main iOS project. Additionally, the CLI-iOS integration features you designed need implementation. This will bring production-grade performance to the entire LeanVibe system.
 
 ## Critical Context
 
@@ -203,7 +203,7 @@ class PerformanceBenchmarkSuite {
 
 ## Why This Is Critical
 
-Your performance optimizations transform LeenVibe from a "working prototype" to a "production-ready system" that can handle real-world usage. Without these optimizations:
+Your performance optimizations transform LeanVibe from a "working prototype" to a "production-ready system" that can handle real-world usage. Without these optimizations:
 - App would lag with 50+ tasks
 - Memory usage would cause crashes
 - Battery drain would frustrate users
@@ -228,4 +228,4 @@ With your code integrated:
 
 **🚀 HIGH** - Performance is the difference between demo and production!
 
-**Task 5**: Make LeenVibe lightning fast with your performance mastery! ⚡📱🏎️
+**Task 5**: Make LeanVibe lightning fast with your performance mastery! ⚡📱🏎️

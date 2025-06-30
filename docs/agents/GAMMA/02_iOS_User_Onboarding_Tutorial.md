@@ -1,7 +1,7 @@
 # GAMMA Agent - Task 02: iOS User Onboarding & Tutorial System
 
 **Assignment Date**: Post Architecture Viewer Completion  
-**Worktree**: Create new worktree `../leenvibe-ios-onboarding`  
+**Worktree**: Create new worktree `../leanvibe-ios-onboarding`  
 **Branch**: `feature/ios-user-onboarding`  
 **Status**: 🔄 ASSIGNED  
 
@@ -18,7 +18,7 @@ Fantastic work completing the Interactive Architecture Viewer! You've delivered 
 
 ## Your New Mission
 
-Create a **comprehensive user onboarding and tutorial system** that guides new users through LeenVibe's sophisticated features, ensuring rapid adoption and feature discovery in an intuitive, progressive way.
+Create a **comprehensive user onboarding and tutorial system** that guides new users through LeanVibe's sophisticated features, ensuring rapid adoption and feature discovery in an intuitive, progressive way.
 
 ## User Onboarding Scope
 
@@ -76,7 +76,7 @@ struct VoiceCommandTutorial: View {
     var body: some View {
         VStack {
             // Interactive voice command practice
-            TutorialSpeechBubble("Say 'Hey LeenVibe' to begin")
+            TutorialSpeechBubble("Say 'Hey LeanVibe' to begin")
             
             // Real-time feedback during tutorial
             if wakePhraseManager.wakePhraseDetected {
@@ -273,7 +273,7 @@ struct WelcomeOnboardingView: View {
             
             // Feature highlights
             FeatureHighlights([
-                "🎤 Voice Control - 'Hey LeenVibe'",
+                "🎤 Voice Control - 'Hey LeanVibe'",
                 "📊 Real-time Project Monitoring", 
                 "🏗️ Interactive Architecture Diagrams",
                 "📋 Intelligent Task Management"
@@ -302,7 +302,7 @@ struct VoiceOnboardingDemo: View {
                         .frame(height: 100)
                 }
                 
-                Text("Try saying: 'Hey LeenVibe, show project status'")
+                Text("Try saying: 'Hey LeanVibe, show project status'")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -324,7 +324,7 @@ struct IntegratedWorkflowTutorial: View {
     var body: some View {
         WorkflowDemonstration {
             // Step 1: Voice command
-            DemoStep("Voice: 'Hey LeenVibe, analyze project'")
+            DemoStep("Voice: 'Hey LeanVibe, analyze project'")
             
             // Step 2: Dashboard update
             DemoStep("Dashboard shows real-time analysis")
@@ -468,7 +468,7 @@ extension SettingsTabView {
 
 ## Expected Outcome
 
-An exceptional onboarding experience that transforms new users into power users, showcasing LeenVibe's sophisticated capabilities while ensuring rapid feature adoption and user success.
+An exceptional onboarding experience that transforms new users into power users, showcasing LeanVibe's sophisticated capabilities while ensuring rapid feature adoption and user success.
 
 Your expertise journey: Architecture Visualization → **User Experience Excellence** 🎯📱✨
 

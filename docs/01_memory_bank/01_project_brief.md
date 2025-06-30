@@ -1,16 +1,16 @@
-# Project Brief: LeenVibe
+# Project Brief: LeanVibe
 
 ## 1. Project Name
 
-LeenVibe
+LeanVibe
 
 ## 2. Project Type
 
-LeenVibe is a local-first, AI-powered coding assistant designed to operate as an enterprise-grade codebase analysis platform.
+LeanVibe is a local-first, AI-powered coding assistant designed to operate as an enterprise-grade codebase analysis platform.
 
 ## 3. Core Goal
 
-The primary goal of LeenVibe is to develop a sophisticated, local-first AI coding assistant that provides deep codebase analysis and real-time assistance to developers.
+The primary goal of LeanVibe is to develop a sophisticated, local-first AI coding assistant that provides deep codebase analysis and real-time assistance to developers.
 
 ## 4. Scope and Core Features
 
@@ -20,6 +20,6 @@ The project's scope encompasses a backend service, a command-line interface (CLI
 
 *   **Local AI Code Assistant**: Provides offline, on-device code completion, analysis, and generation.
 *   **Terminal-First CLI**: A rich, interactive command-line client for interacting with the AI backend.
-*   **iOS Monitoring App**: A companion app for monitoring the status and activity of the LeenVibe agent.
+*   **iOS Monitoring App**: A companion app for monitoring the status and activity of the LeanVibe agent.
 
 The project has since evolved to include more advanced features, moving towards a comprehensive analysis platform. 

@@ -1,4 +1,4 @@
-# Product Context: LeenVibe
+# Product Context: LeanVibe
 
 ## 1. Problem Statement
 
@@ -6,7 +6,7 @@ Modern software development often requires tools that can deeply understand a co
 
 ## 2. Solution
 
-LeenVibe is a **local-first AI coding assistant** that addresses these challenges by running entirely on the user's local machine. This approach guarantees that a user's code never leaves their computer, providing maximum privacy and security. It is designed to be a powerful, context-aware "co-pilot" for developers.
+LeanVibe is a **local-first AI coding assistant** that addresses these challenges by running entirely on the user's local machine. This approach guarantees that a user's code never leaves their computer, providing maximum privacy and security. It is designed to be a powerful, context-aware "co-pilot" for developers.
 
 ## 3. User Experience Goals
 
@@ -16,7 +16,7 @@ LeenVibe is a **local-first AI coding assistant** that addresses these challenge
 
 ## 4. How It Works
 
-LeenVibe's architecture consists of three main components:
+LeanVibe's architecture consists of three main components:
 
 1.  **Backend (Python/FastAPI)**: The core of the system. It handles AI model inference, codebase analysis (AST, vector embeddings), and serves data to the clients via REST and WebSocket APIs.
 2.  **CLI Client (Python/Click)**: The main entry point for developers to interact with the system. It communicates with the backend to execute commands.

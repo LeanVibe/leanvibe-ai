@@ -1,4 +1,4 @@
-# Technical Debt Analysis - LeenVibe MVP Recovery
+# Technical Debt Analysis - LeanVibe MVP Recovery
 
 *Assessment Date: December 27, 2024*
 
@@ -29,7 +29,7 @@
 
 ### Technical Architecture Mismatch
 
-**Original MVP Scope** (leenvibe-mvp-specification.md):
+**Original MVP Scope** (leanvibe-mvp-specification.md):
 - L3 coding agent with MLX
 - iOS control of Mac coding assistant  
 - Terminal-first workflow (vim+tmux)
@@ -50,7 +50,7 @@
 ### 1. Import Architecture Debt (HIGH)
 
 **Issue**: Circular imports between config systems
-- Legacy `leenvibe_cli.config` vs new `leenvibe_cli.config/*` 
+- Legacy `leanvibe_cli.config` vs new `leanvibe_cli.config/*` 
 - CLIConfig class needed by all components but causes import cycles
 - Tests cannot run due to import failures
 

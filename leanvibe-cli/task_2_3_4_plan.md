@@ -1,7 +1,7 @@
 # Task 2.3.4: Notification Configuration Management Plan
 
 ## Overview
-Add comprehensive notification configuration management to the LeenVibe CLI, allowing users to configure, persist, and manage notification settings through dedicated CLI commands.
+Add comprehensive notification configuration management to the LeanVibe CLI, allowing users to configure, persist, and manage notification settings through dedicated CLI commands.
 
 ## Goals
 1. Create a `config` command group for notification settings management
@@ -14,24 +14,24 @@ Add comprehensive notification configuration management to the LeenVibe CLI, all
 
 ### 1. Configuration Command Structure
 ```bash
-leenvibe config                          # Show current configuration
-leenvibe config set KEY VALUE            # Set a configuration value
-leenvibe config get KEY                  # Get a specific configuration value
-leenvibe config reset [KEY]              # Reset to defaults (all or specific)
-leenvibe config wizard                   # Interactive configuration wizard
-leenvibe config profile list             # List available profiles
-leenvibe config profile create NAME      # Create a new profile
-leenvibe config profile switch NAME      # Switch to a profile
-leenvibe config profile delete NAME      # Delete a profile
-leenvibe config export [--file PATH]     # Export configuration
-leenvibe config import [--file PATH]     # Import configuration
+leanvibe config                          # Show current configuration
+leanvibe config set KEY VALUE            # Set a configuration value
+leanvibe config get KEY                  # Get a specific configuration value
+leanvibe config reset [KEY]              # Reset to defaults (all or specific)
+leanvibe config wizard                   # Interactive configuration wizard
+leanvibe config profile list             # List available profiles
+leanvibe config profile create NAME      # Create a new profile
+leanvibe config profile switch NAME      # Switch to a profile
+leanvibe config profile delete NAME      # Delete a profile
+leanvibe config export [--file PATH]     # Export configuration
+leanvibe config import [--file PATH]     # Import configuration
 ```
 
 ### 2. Configuration Schema
 
 #### Core Settings
 ```yaml
-# ~/.leenvibe/config.yml
+# ~/.leanvibe/config.yml
 version: "1.0"
 active_profile: "default"
 
@@ -112,7 +112,7 @@ profiles:
 
   # Additional profiles
   production:
-    backend_url: "https://api.leenvibe.com"
+    backend_url: "https://api.leanvibe.com"
     notifications:
       minimum_priority: "high"
       desktop_enabled: true
@@ -128,7 +128,7 @@ profiles:
 ### 3. File Structure
 
 ```
-leenvibe_cli/
+leanvibe_cli/
 ├── commands/
 │   └── config.py                    # New: Config command group
 ├── config/
@@ -148,10 +148,10 @@ leenvibe_cli/
 #### 4.1 Configuration Manager (`config/manager.py`)
 ```python
 class ConfigurationManager:
-    """Manages LeenVibe CLI configuration with profiles and validation"""
+    """Manages LeanVibe CLI configuration with profiles and validation"""
     
     def __init__(self, config_dir: Path = None):
-        self.config_dir = config_dir or Path.home() / ".leenvibe"
+        self.config_dir = config_dir or Path.home() / ".leanvibe"
         self.config_file = self.config_dir / "config.yml"
         self.config_data: Dict[str, Any] = {}
         self.active_profile: str = "default"
@@ -251,7 +251,7 @@ class ConfigurationWizard:
 @click.group()
 @click.pass_context
 def config(ctx):
-    """Manage LeenVibe CLI configuration"""
+    """Manage LeanVibe CLI configuration"""
     ctx.ensure_object(dict)
     ctx.obj['config_manager'] = ConfigurationManager()
 

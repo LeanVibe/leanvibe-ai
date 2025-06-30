@@ -1,4 +1,4 @@
-# LeenVibe AI Integration Status
+# LeanVibe AI Integration Status
 
 ## 🎯 Overview
 
@@ -221,7 +221,7 @@ self.temperature = 0.7
 
 ### Updated Files
 - `app/services/ai_service.py` - Real MLX integration
-- `LeenVibe-SwiftPM/Sources/LeenVibe/` - Enhanced iOS models and UI
+- `LeanVibe-SwiftPM/Sources/LeanVibe/` - Enhanced iOS models and UI
 - `tests/test_ai_service_enhanced.py` - Comprehensive test suite
 - `SETUP_GUIDE.md` - Updated with MLX installation instructions
 
@@ -233,4 +233,4 @@ self.temperature = 0.7
 
 ---
 
-*LeenVibe now features real AI integration with intelligent fallbacks, confidence scoring, and health monitoring - providing a production-ready foundation for the L3 coding agent vision.*
+*LeanVibe now features real AI integration with intelligent fallbacks, confidence scoring, and health monitoring - providing a production-ready foundation for the L3 coding agent vision.*

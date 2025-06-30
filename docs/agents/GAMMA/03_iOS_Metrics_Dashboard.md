@@ -13,7 +13,7 @@ The backend APIs for this feature should have been implemented by Agent Beta in 
 
 ## 2. Worktree & Branch
 
--   **Worktree**: `../leenvibe-ios-dashboard`
+-   **Worktree**: `../leanvibe-ios-dashboard`
 -   **Branch**: Create a new branch `feature/ios-metrics-dashboard` from `sprint-1-foundation`.
 
 **Action**: All work for this task must be committed to this new branch within the dashboard worktree.
@@ -45,10 +45,10 @@ You will create a new view, accessible from the main `TabView`, that contains tw
 
 ### 3.3. File Structure
 
-Create the following new files within the `LeenVibe-iOS` project:
+Create the following new files within the `LeanVibe-iOS` project:
 
 ```
-LeenVibe-iOS/LeenVibe/
+LeanVibe-iOS/LeanVibe/
 ├── Views/
 │   ├── Metrics/
 │   │   ├── MetricsDashboardView.swift   # Main container view
@@ -75,6 +75,6 @@ This task is complete when:
 -   [ ] The `DecisionLogView` correctly displays a filterable list of AI decisions.
 -   [ ] The frontend successfully fetches and displays data from the backend metrics APIs.
 -   [ ] The UI includes proper loading, empty, and error states.
--   [ ] All new code is committed to the `feature/ios-metrics-dashboard` branch in the `../leenvibe-ios-dashboard` worktree.
+-   [ ] All new code is committed to the `feature/ios-metrics-dashboard` branch in the `../leanvibe-ios-dashboard` worktree.
 
 This task is critical for providing users with transparency into the AI's operations and delivering on a core promise of the MVP. 

@@ -1,11 +1,11 @@
-# LeenVibe App Icon Setup Guide
+# LeanVibe App Icon Setup Guide
 
 ## 🎨 New App Icon Design
 Your new "LB" logo design features:
 - Sleek cyan/turquoise circuit-style lettering
 - Black background
 - Modern, tech-focused aesthetic
-- Perfect for the LeenVibe development tool brand
+- Perfect for the LeanVibe development tool brand
 
 ## 📱 Required Icon Sizes
 
@@ -38,7 +38,7 @@ I'll help you create a script to generate all sizes from your source image:
 # Then run this script to generate all required sizes
 
 #!/bin/bash
-cd /Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/LeenVibe/Resources/Assets.xcassets/AppIcon.appiconset
+cd /Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/LeanVibe/Resources/Assets.xcassets/AppIcon.appiconset
 
 # iPhone sizes
 sips -z 40 40 source-icon.png --out icon_20@2x.png
@@ -70,7 +70,7 @@ echo "All app icon sizes generated!"
 ### Method 2: Using Xcode Asset Catalog
 
 1. Open Xcode
-2. Navigate to `LeenVibe/Resources/Assets.xcassets/AppIcon.appiconset`
+2. Navigate to `LeanVibe/Resources/Assets.xcassets/AppIcon.appiconset`
 3. Drag your 1024x1024 source image into the App Store slot
 4. Xcode can automatically generate other sizes
 
@@ -97,7 +97,7 @@ The Contents.json file is already configured with all the correct filenames:
 Once you have your source image ready, run:
 
 ```bash
-cd /Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/LeenVibe/Resources/Assets.xcassets/AppIcon.appiconset
+cd /Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/LeanVibe/Resources/Assets.xcassets/AppIcon.appiconset
 # Place your source-icon.png here first
 # Then run the generation script above
 ```
@@ -111,4 +111,4 @@ After setup, verify:
 - [ ] Icon appears correctly in Settings > Apps
 - [ ] Icon appears correctly in App Store (1024x1024)
 
-Your new "LB" logo will give LeenVibe a professional, modern appearance that reflects its role as a sophisticated development tool!
+Your new "LB" logo will give LeanVibe a professional, modern appearance that reflects its role as a sophisticated development tool!

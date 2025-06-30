@@ -1,4 +1,4 @@
-# 🎯 LeenVibe QR Connection - Ready for Testing!
+# 🎯 LeanVibe QR Connection - Ready for Testing!
 
 ## ✅ System Status: FULLY FUNCTIONAL
 
@@ -8,7 +8,7 @@ The QR code connection system is complete and ready for end-to-end testing.
 
 ### Step 1: Start Backend with QR Code
 ```bash
-cd /Users/bogdan/work/leanvibe-ai/leenvibe-backend
+cd /Users/bogdan/work/leanvibe-ai/leanvibe-backend
 ./start.sh
 ```
 You'll see:
@@ -19,7 +19,7 @@ You'll see:
 ### Step 2: Deploy iOS App to Device
 ```bash
 # Open Xcode project
-open /Users/bogdan/work/leanvibe-ai/LeenVibe-iOS-App/LeenVibe.xcodeproj
+open /Users/bogdan/work/leanvibe-ai/LeanVibe-iOS-App/LeanVibe.xcodeproj
 
 # In Xcode:
 # 1. Select your physical iOS device (not simulator)
@@ -62,7 +62,7 @@ open /Users/bogdan/work/leanvibe-ai/LeenVibe-iOS-App/LeenVibe.xcodeproj
 ## 📱 QR Code Contains
 ```json
 {
-  "leenvibe": {
+  "leanvibe": {
     "version": "1.0",
     "server": {
       "host": "192.168.1.202",
@@ -93,12 +93,12 @@ open /Users/bogdan/work/leanvibe-ai/LeenVibe-iOS-App/LeenVibe.xcodeproj
 **QR code not scanning**: Ensure good lighting and steady camera
 **Connection fails**: Check that backend is running and ports are open
 **Build errors**: Clean build folder (Cmd+Shift+K) and rebuild
-**Camera permission**: Check iOS Settings → LeenVibe → Camera
+**Camera permission**: Check iOS Settings → LeanVibe → Camera
 
 ---
 
 ## 🎯 FEATURE COMPLETE!
 
-The QR code connection system is **fully implemented and ready for production use**. Users can now connect their iOS devices to the LeenVibe backend simply by scanning a QR code - no manual IP entry required!
+The QR code connection system is **fully implemented and ready for production use**. Users can now connect their iOS devices to the LeanVibe backend simply by scanning a QR code - no manual IP entry required!
 
 **Next step**: Deploy and test on your physical device to verify the complete flow.

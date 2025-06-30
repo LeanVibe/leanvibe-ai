@@ -1,4 +1,4 @@
-# LeenVibe Documentation Improvement Plan & Deployment Guide
+# LeanVibe Documentation Improvement Plan & Deployment Guide
 
 **Document Version**: 1.0  
 **Last Updated**: December 29, 2025  
@@ -7,7 +7,7 @@
 
 ## 🎯 Executive Summary
 
-This comprehensive guide provides a structured approach to improving LeenVibe's documentation from its current 72% completeness to a production-ready 95%+, along with detailed deployment procedures for all system components.
+This comprehensive guide provides a structured approach to improving LeanVibe's documentation from its current 72% completeness to a production-ready 95%+, along with detailed deployment procedures for all system components.
 
 ### Key Objectives:
 1. **Close documentation gaps** identified in the audit
@@ -30,7 +30,7 @@ This comprehensive guide provides a structured approach to improving LeenVibe's 
 **Priority**: CRITICAL  
 
 ```markdown
-# LeenVibe - AI-Powered Local Development Assistant
+# LeanVibe - AI-Powered Local Development Assistant
 
 ## 🚀 Quick Start
 ### Prerequisites
@@ -41,8 +41,8 @@ This comprehensive guide provides a structured approach to improving LeenVibe's 
 
 ### Installation
 1. Clone the repository
-2. Install backend: `cd leenvibe-backend && ./start.sh`
-3. Install iOS app: Open `LeenVibe-iOS/Package.swift` in Xcode
+2. Install backend: `cd leanvibe-backend && ./start.sh`
+3. Install iOS app: Open `LeanVibe-iOS/Package.swift` in Xcode
 4. Pair using QR code
 
 ## 🏗️ Architecture Overview
@@ -52,18 +52,18 @@ This comprehensive guide provides a structured approach to improving LeenVibe's 
 - **CLI**: Rich terminal interface with monitoring
 
 ## 📱 Components
-### LeenVibe Backend
+### LeanVibe Backend
 - Local AI processing with MLX
 - WebSocket server for real-time communication
 - REST API for configuration
 
-### LeenVibe iOS
-- Voice-controlled interface ("Hey LeenVibe")
+### LeanVibe iOS
+- Voice-controlled interface ("Hey LeanVibe")
 - Real-time project monitoring
 - Interactive Kanban board
 - Architecture visualization
 
-### LeenVibe CLI
+### LeanVibe CLI
 - Terminal-based interaction
 - Project analysis commands
 - Real-time monitoring
@@ -84,7 +84,7 @@ MIT License - see [LICENSE](./LICENSE)
 
 Structure:
 ```
-LeenVibe-iOS/docs/
+LeanVibe-iOS/docs/
 ├── USER_GUIDE.md
 ├── GETTING_STARTED.md
 ├── FEATURES/
@@ -120,10 +120,10 @@ Key Sections:
 **Priority**: CRITICAL  
 
 ```markdown
-# LeenVibe Production Deployment Guide
+# LeanVibe Production Deployment Guide
 
 ## 🚀 Deployment Overview
-This guide covers deployment of all LeenVibe components for production use.
+This guide covers deployment of all LeanVibe components for production use.
 
 ## 📋 Pre-Deployment Checklist
 - [ ] Hardware requirements verified
@@ -137,11 +137,11 @@ This guide covers deployment of all LeenVibe components for production use.
 ### 1. Environment Setup
 ```bash
 # Create production directory
-mkdir -p /opt/leenvibe/backend
-cd /opt/leenvibe/backend
+mkdir -p /opt/leanvibe/backend
+cd /opt/leanvibe/backend
 
 # Clone repository
-git clone https://github.com/leenvibe/backend.git .
+git clone https://github.com/leanvibe/backend.git .
 
 # Create virtual environment
 python3.11 -m venv venv
@@ -163,17 +163,17 @@ LOG_LEVEL = "INFO"
 
 ### 3. Service Setup
 ```systemd
-# /etc/systemd/system/leenvibe.service
+# /etc/systemd/system/leanvibe.service
 [Unit]
-Description=LeenVibe Backend Service
+Description=LeanVibe Backend Service
 After=network.target
 
 [Service]
 Type=exec
-User=leenvibe
-WorkingDirectory=/opt/leenvibe/backend
-Environment="PATH=/opt/leenvibe/backend/venv/bin"
-ExecStart=/opt/leenvibe/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+User=leanvibe
+WorkingDirectory=/opt/leanvibe/backend
+Environment="PATH=/opt/leanvibe/backend/venv/bin"
+ExecStart=/opt/leanvibe/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=always
 
 [Install]
@@ -184,10 +184,10 @@ WantedBy=multi-user.target
 ```nginx
 server {
     listen 443 ssl http2;
-    server_name api.leenvibe.com;
+    server_name api.leanvibe.com;
     
-    ssl_certificate /etc/ssl/certs/leenvibe.crt;
-    ssl_certificate_key /etc/ssl/private/leenvibe.key;
+    ssl_certificate /etc/ssl/certs/leanvibe.crt;
+    ssl_certificate_key /etc/ssl/private/leanvibe.key;
     
     location / {
         proxy_pass http://localhost:8000;
@@ -209,10 +209,10 @@ server {
 ### 2. TestFlight Deployment
 ```bash
 # Archive the app
-xcodebuild archive -scheme LeenVibe -archivePath ./build/LeenVibe.xcarchive
+xcodebuild archive -scheme LeanVibe -archivePath ./build/LeanVibe.xcarchive
 
 # Export for App Store
-xcodebuild -exportArchive -archivePath ./build/LeenVibe.xcarchive -exportPath ./build -exportOptionsPlist ExportOptions.plist
+xcodebuild -exportArchive -archivePath ./build/LeanVibe.xcarchive -exportPath ./build -exportOptionsPlist ExportOptions.plist
 ```
 
 ### 3. App Store Submission
@@ -257,7 +257,7 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
 app = FastAPI(
-    title="LeenVibe API",
+    title="LeanVibe API",
     description="AI-powered local development assistant API",
     version="1.0.0",
     docs_url="/docs",
@@ -268,9 +268,9 @@ def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
-        title="LeenVibe API",
+        title="LeanVibe API",
         version="1.0.0",
-        description="Complete API documentation for LeenVibe",
+        description="Complete API documentation for LeanVibe",
         routes=app.routes,
     )
     app.openapi_schema = openapi_schema
@@ -286,7 +286,7 @@ app.openapi = custom_openapi
 **Priority**: HIGH  
 
 ```markdown
-# Contributing to LeenVibe
+# Contributing to LeanVibe
 
 ## 🤝 Code of Conduct
 [Include code of conduct]
@@ -526,7 +526,7 @@ docs/
 
 ## 📋 Conclusion
 
-This comprehensive plan transforms LeenVibe's documentation from 72% to 95%+ completeness while establishing sustainable maintenance processes. The phased approach ensures critical gaps are addressed first while building towards a world-class documentation experience.
+This comprehensive plan transforms LeanVibe's documentation from 72% to 95%+ completeness while establishing sustainable maintenance processes. The phased approach ensures critical gaps are addressed first while building towards a world-class documentation experience.
 
 **Success Factors**:
 1. Clear ownership and timelines

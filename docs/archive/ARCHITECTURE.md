@@ -1,8 +1,8 @@
-# LeenVibe Architecture Documentation
+# LeanVibe Architecture Documentation
 
 ## Executive Summary
 
-LeenVibe has evolved into a sophisticated enterprise-grade codebase analysis platform that provides real-time monitoring, intelligent suggestions, and comprehensive project understanding through advanced AST analysis, graph database relationships, and smart caching systems.
+LeanVibe has evolved into a sophisticated enterprise-grade codebase analysis platform that provides real-time monitoring, intelligent suggestions, and comprehensive project understanding through advanced AST analysis, graph database relationships, and smart caching systems.
 
 ## System Overview
 
@@ -405,7 +405,7 @@ sequenceDiagram
 ### Development Environment
 ```bash
 # Backend setup
-cd leenvibe-backend
+cd leanvibe-backend
 python3.11 -m venv venv
 source venv/bin/activate  
 pip install -r requirements.txt
@@ -415,7 +415,7 @@ docker-compose up neo4j
 uvicorn app.main:app --reload
 
 # iOS development
-cd LeenVibe-SwiftPM
+cd LeanVibe-SwiftPM
 swift build
 ```
 
@@ -425,7 +425,7 @@ swift build
 docker-compose -f docker-compose.prod.yml up -d
 
 # Kubernetes deployment (future)
-kubectl apply -f k8s/leenvibe-deployment.yaml
+kubectl apply -f k8s/leanvibe-deployment.yaml
 ```
 
 ### System Requirements

@@ -1,6 +1,6 @@
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" class="logo" width="120"/>
 
-## First Principles Approach to LeenVibe UI/UX Asset Iteration
+## First Principles Approach to LeanVibe UI/UX Asset Iteration
 
 ### 1. Identify Fundamental Truths
 

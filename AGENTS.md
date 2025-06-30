@@ -1,15 +1,15 @@
-# LeenVibe Agent Guide
+# LeanVibe Agent Guide
 
-This document is the primary entry point for developers and AI agents working on the LeenVibe project. For a deeper understanding of the project's context, architecture, and progress, please refer to the documents in the `memory-bank/` directory.
+This document is the primary entry point for developers and AI agents working on the LeanVibe project. For a deeper understanding of the project's context, architecture, and progress, please refer to the documents in the `memory-bank/` directory.
 
 ## 1. Project Overview
 
-LeenVibe is a local-first, AI-powered coding assistant designed to provide deep codebase analysis and real-time assistance to developers. It runs entirely on-device, ensuring code privacy and security.
+LeanVibe is a local-first, AI-powered coding assistant designed to provide deep codebase analysis and real-time assistance to developers. It runs entirely on-device, ensuring code privacy and security.
 
 The system consists of three main components:
-*   **Backend (`leenvibe-backend`)**: A Python/FastAPI application that serves the AI models, performs code analysis, and manages client communication.
-*   **CLI (`leenvibe-cli`)**: An interactive command-line client for developers to interact with the backend.
-*   **iOS App (`LeenVibe-iOS-App`)**: A companion app for real-time monitoring.
+*   **Backend (`leanvibe-backend`)**: A Python/FastAPI application that serves the AI models, performs code analysis, and manages client communication.
+*   **CLI (`leanvibe-cli`)**: An interactive command-line client for developers to interact with the backend.
+*   **iOS App (`LeanVibe-iOS-App`)**: A companion app for real-time monitoring.
 
 ## 2. Setup and Installation
 
@@ -20,7 +20,7 @@ The system consists of three main components:
 ### Backend Setup
 ```bash
 # Navigate to the backend directory
-cd leenvibe-backend
+cd leanvibe-backend
 
 # Make the startup script executable
 chmod +x start.sh
@@ -33,7 +33,7 @@ chmod +x start.sh
 ### iOS App Setup
 ```bash
 # The simplest method is to open the Swift Package directly in Xcode
-cd LeenVibe-SwiftPM
+cd LeanVibe-SwiftPM
 open Package.swift
 
 # Then, select an iOS Simulator and press Cmd+R to build and run.
@@ -43,8 +43,8 @@ open Package.swift
 
 ### Quality Checks (Run Before Committing)
 ```bash
-# From the leenvibe-backend directory:
-cd leenvibe-backend
+# From the leanvibe-backend directory:
+cd leanvibe-backend
 
 # Format, lint, and sort imports with a single command
 ruff check . --fix
@@ -58,7 +58,7 @@ python run_tests.py
 ### Backend Development
 ```bash
 # Navigate to the backend directory
-cd leenvibe-backend
+cd leanvibe-backend
 
 # Install/sync dependencies
 uv sync
@@ -70,7 +70,7 @@ uv sync
 ### iOS Development
 ```bash
 # Open the Xcode project
-open LeenVibe-iOS-App/LeenVibe.xcodeproj
+open LeanVibe-iOS-App/LeanVibe.xcodeproj
 
 # Use standard Xcode commands to build (⌘+B) and test (⌘+U)
 ```
@@ -104,7 +104,7 @@ open LeenVibe-iOS-App/LeenVibe.xcodeproj
 ## 7. Troubleshooting
 
 ### Backend Issues
-*   **`ModuleNotFoundError`**: Run `uv sync` in the `leenvibe-backend` directory.
+*   **`ModuleNotFoundError`**: Run `uv sync` in the `leanvibe-backend` directory.
 *   **`Address already in use`**: Find and stop the process on port 8000 with `lsof -ti:8000 | xargs kill -9`.
 *   **Permission errors**: Ensure scripts are executable with `chmod +x *.sh`.
 

@@ -1,7 +1,7 @@
 # KAPPA Agent - Task 06: iOS Architecture Viewer Completion
 
 **Assignment Date**: Emergency Redistribution - GAMMA Holiday Departure  
-**Worktree**: Continue in `../leenvibe-ios-visualization`  
+**Worktree**: Continue in `../leanvibe-ios-visualization`  
 **Branch**: `feature/ios-architecture-viewer`  
 **Status**: 🔄 **HIGH PRIORITY** - Complete GAMMA's Started Work
 
@@ -255,7 +255,7 @@ struct ArchitectureTabView: View {
 
 ### Integration Excellence
 - [ ] Seamless integration with existing dashboard navigation
-- [ ] Voice command support: "Hey LeenVibe, show architecture"
+- [ ] Voice command support: "Hey LeanVibe, show architecture"
 - [ ] Real-time updates when project structure changes
 - [ ] Export functionality for diagrams
 - [ ] Performance optimized for large codebases

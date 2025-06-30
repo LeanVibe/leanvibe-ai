@@ -1,7 +1,7 @@
 # ALPHA Agent - Task 02: Xcode Project Creation & Build System Setup
 
 **Assignment Date**: Post Dashboard Foundation Completion  
-**Worktree**: `../leenvibe-ios-dashboard`  
+**Worktree**: `../leanvibe-ios-dashboard`  
 **Branch**: `feature/ios-dashboard-foundation`  
 **Status**: 🔄 ASSIGNED  
 
@@ -11,7 +11,7 @@ You've successfully completed the iOS Dashboard Foundation milestone! Your Swift
 
 ## Context
 
-- ✅ Your 10 Swift files have been merged into `LeenVibe-iOS/LeenVibe/`
+- ✅ Your 10 Swift files have been merged into `LeanVibe-iOS/LeanVibe/`
 - ✅ App architecture transforms 15% → 85% MVP delivery 
 - ✅ DashboardTabView, ProjectManager, and all views integrated
 - ❌ Missing: Xcode project file for build testing and device deployment
@@ -22,11 +22,11 @@ Create complete Xcode project infrastructure to enable build testing and validat
 
 ## Working Directory
 
-`/Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/`
+`/Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/`
 
 ## Specific Tasks
 
-1. **Create Xcode Project File**: Generate `LeenVibe.xcodeproj` with proper targets and schemes
+1. **Create Xcode Project File**: Generate `LeanVibe.xcodeproj` with proper targets and schemes
 2. **Configure Build Settings**: iOS 18+, Swift 6.0, appropriate capabilities 
 3. **Add Dependencies**: Starscream WebSocket framework integration
 4. **Build Validation**: Ensure clean compilation of your integrated Swift files
@@ -36,10 +36,10 @@ Create complete Xcode project infrastructure to enable build testing and validat
 ## File Structure to Support
 
 ```
-LeenVibe-iOS/
-├── LeenVibe.xcodeproj/          # CREATE THIS
-├── LeenVibe/
-│   ├── LeenVibeApp.swift ✅
+LeanVibe-iOS/
+├── LeanVibe.xcodeproj/          # CREATE THIS
+├── LeanVibe/
+│   ├── LeanVibeApp.swift ✅
 │   ├── Models/
 │   │   ├── AgentMessage.swift ✅  
 │   │   └── Project.swift ✅       # Your creation
@@ -55,7 +55,7 @@ LeenVibe-iOS/
 
 ## Success Criteria
 
-- [ ] `xcodebuild -project LeenVibe.xcodeproj -scheme LeenVibe build` succeeds
+- [ ] `xcodebuild -project LeanVibe.xcodeproj -scheme LeanVibe build` succeeds
 - [ ] App launches to your dashboard interface (not chat)
 - [ ] All 4 tabs navigate correctly (Projects, Agent, Monitor, Settings)  
 - [ ] QR scanner opens with camera permissions
@@ -72,7 +72,7 @@ LeenVibe-iOS/
 **Required Permissions** (Info.plist):
 ```xml
 <key>NSCameraUsageDescription</key>
-<string>Camera access required for QR code scanning to connect to LeenVibe agent</string>
+<string>Camera access required for QR code scanning to connect to LeanVibe agent</string>
 <key>NSMicrophoneUsageDescription</key>
 <string>Microphone access required for voice commands</string>
 ```
@@ -104,7 +104,7 @@ After project creation, validate:
 ## Handoff Deliverables
 
 Upon completion:
-1. Working `LeenVibe.xcodeproj` file
+1. Working `LeanVibe.xcodeproj` file
 2. Build configuration documentation
 3. Dependency setup instructions
 4. Testing validation report

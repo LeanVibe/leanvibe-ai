@@ -1,14 +1,14 @@
 # KAPPA Agent - Task 08: Settings & Configuration System - COMPLETE ✅
 
 **Assignment Date**: Post Major Integration Completion  
-**Worktree**: `../leenvibe-ios-settings`  
+**Worktree**: `../leanvibe-ios-settings`  
 **Branch**: `feature/settings-configuration-system`  
 **Status**: ✅ **COMPLETE** - June 29, 2025
 **Completion Hash**: `db1597e`
 
 ## Mission Completion Summary
 
-Outstanding achievement! Task 08 Settings & Configuration System has been **successfully completed** with a comprehensive implementation that provides complete control over all LeenVibe features built in previous tasks.
+Outstanding achievement! Task 08 Settings & Configuration System has been **successfully completed** with a comprehensive implementation that provides complete control over all LeanVibe features built in previous tasks.
 
 ## 🎯 **Delivered: 3,878 Lines of Production-Ready Settings Code**
 
@@ -83,7 +83,7 @@ class SettingsManager: ObservableObject {
 struct VoiceSettings: SettingsProtocol {
     // Wake phrase configuration
     var wakePhraseEnabled = true
-    var wakePhrasePhrase = "Hey LeenVibe"
+    var wakePhrasePhrase = "Hey LeanVibe"
     var wakePhraseSensitivity: Double = 0.7
     
     // Speech recognition
@@ -252,10 +252,10 @@ struct KanbanSettings: SettingsProtocol {
 
 ## 🔄 **Ready for Next Assignment**
 
-Task 08 represents the completion of the core LeenVibe iOS app functionality. The Settings & Configuration System provides users with complete control over all the sophisticated features built in previous tasks.
+Task 08 represents the completion of the core LeanVibe iOS app functionality. The Settings & Configuration System provides users with complete control over all the sophisticated features built in previous tasks.
 
 **Awaiting Task 09** or new assignment from PM in `/docs/agents/KAPPA/`.
 
 ---
 
-*The Settings & Configuration System perfectly complements KAPPA's previous work, providing users with intuitive control over the voice interface, Kanban board, and all other LeenVibe features. This completes the core iOS application experience.* ⚙️✨📱🎉
+*The Settings & Configuration System perfectly complements KAPPA's previous work, providing users with intuitive control over the voice interface, Kanban board, and all other LeanVibe features. This completes the core iOS application experience.* ⚙️✨📱🎉

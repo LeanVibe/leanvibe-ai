@@ -1,4 +1,4 @@
-# Production Deployment Complete - LeenVibe AI
+# Production Deployment Complete - LeanVibe AI
 
 *Completed: December 27, 2024*
 
@@ -9,7 +9,7 @@
 ## 🚀 **What's Been Delivered**
 
 ### ✅ **Single-Script Deployment**
-- **`./deploy-leenvibe.sh`** - One command deploys everything
+- **`./deploy-leanvibe.sh`** - One command deploys everything
 - **Auto-detection** - Automatically finds best deployment mode
 - **Environment validation** - Checks macOS, Apple Silicon, memory, Python
 - **Dependency management** - Handles all Python packages with uv
@@ -24,20 +24,20 @@
 
 ### ✅ **Infrastructure Management**
 - **Process monitoring**: PID tracking, health checks, auto-restart
-- **Log management**: Centralized logging in `~/.leenvibe/logs/`
+- **Log management**: Centralized logging in `~/.leanvibe/logs/`
 - **Configuration**: YAML config with environment overrides
 - **Service scripts**: Start, stop, status scripts for easy management
 
 ## 📊 **Deployment Test Results**
 
 ```bash
-./deploy-leenvibe.sh --mode mock
+./deploy-leanvibe.sh --mode mock
 ```
 
 **✅ Results:**
 - **Environment validation**: ✅ macOS, Apple Silicon, 48GB RAM
 - **Dependency installation**: ✅ All packages installed with uv
-- **Service startup**: ✅ LeenVibe backend started on port 8000
+- **Service startup**: ✅ LeanVibe backend started on port 8000
 - **Health checks**: ✅ Service responding properly
 - **iOS integration**: ✅ QR code generation and network detection
 - **Process management**: ✅ Scripts created, PIDs tracked
@@ -47,37 +47,37 @@
 ### **Quick Start (One Command)**
 ```bash
 # Deploy with your existing Qwen3 server
-./deploy-leenvibe.sh
+./deploy-leanvibe.sh
 
 # Or deploy with auto-detection
-./deploy-leenvibe.sh --mode auto
+./deploy-leanvibe.sh --mode auto
 
 # Setup only (no start)
-./deploy-leenvibe.sh --setup-only
+./deploy-leanvibe.sh --setup-only
 ```
 
 ### **Management Commands**
 ```bash
 # Check status
-~/.leenvibe/status.sh
+~/.leanvibe/status.sh
 
 # Stop services
-~/.leenvibe/stop.sh
+~/.leanvibe/stop.sh
 
 # View logs
-tail -f ~/.leenvibe/logs/leenvibe.log
-tail -f ~/.leenvibe/logs/mlx-server.log
+tail -f ~/.leanvibe/logs/leanvibe.log
+tail -f ~/.leanvibe/logs/mlx-server.log
 ```
 
 ### **Configuration**
 ```yaml
-# ~/.leenvibe/config.yaml
+# ~/.leanvibe/config.yaml
 model:
   name: "Qwen/Qwen3-30B-A3B-MLX-4bit"
   deployment_mode: "auto"  # auto, direct, server, mock
   
 server:
-  leenvibe_port: 8000
+  leanvibe_port: 8000
   mlx_port: 8082
 ```
 
@@ -102,7 +102,7 @@ server:
 
 The deployment script automatically:
 1. **Detects network interfaces** and generates connection URLs
-2. **Starts QR code generation** in the LeenVibe server
+2. **Starts QR code generation** in the LeanVibe server
 3. **Provides connection info** for iOS app
 
 ```
@@ -135,7 +135,7 @@ The deployment script automatically:
 
 ### **Senior Engineering Deliverables Met:**
 
-1. **✅ Single-Script Setup**: `./deploy-leenvibe.sh` handles everything
+1. **✅ Single-Script Setup**: `./deploy-leanvibe.sh` handles everything
 2. **✅ Production Model Integration**: Qwen3-30B ready with multiple modes
 3. **✅ Process Management**: Auto-restart, monitoring, health checks
 4. **✅ Environment Configuration**: Flexible config with overrides
@@ -159,8 +159,8 @@ The system is designed to work perfectly with your existing setup:
 # Your current server
 mlx_lm.server --model Qwen/Qwen3-30B-A3B-MLX-4bit --port 8082
 
-# Deploy LeenVibe (will auto-detect and connect)
-./deploy-leenvibe.sh
+# Deploy LeanVibe (will auto-detect and connect)
+./deploy-leanvibe.sh
 ```
 
 **The production deployment system is complete and ready for use!**

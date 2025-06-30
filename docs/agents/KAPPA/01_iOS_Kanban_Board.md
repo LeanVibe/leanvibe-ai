@@ -1,7 +1,7 @@
 # KAPPA Agent - Task 01: iOS Kanban Board System Specialist
 
 **Assignment Date**: Sprint 1 Foundation  
-**Worktree**: `../leenvibe-ios-kanban`  
+**Worktree**: `../leanvibe-ios-kanban`  
 **Branch**: `feature/ios-kanban-board`  
 **Status**: ✅ COMPLETED  
 
@@ -13,7 +13,7 @@ You are the **iOS Kanban Board System Specialist** responsible for Phase 3 of th
 
 - **Phase**: 3 - Task Management (High Priority)
 - **Duration**: 2.5 weeks
-- **Working Directory**: `../leenvibe-ios-kanban`
+- **Working Directory**: `../leanvibe-ios-kanban`
 - **Integration Target**: Main iOS project dashboard system
 
 ## Specific Tasks
@@ -38,7 +38,7 @@ You are the **iOS Kanban Board System Specialist** responsible for Phase 3 of th
 
 **Files to Create**:
 ```
-LeenVibe-iOS-App/LeenVibe/
+LeanVibe-iOS-App/LeanVibe/
 ├── Views/
 │   ├── Kanban/
 │   │   ├── KanbanBoardView.swift     # Main board container

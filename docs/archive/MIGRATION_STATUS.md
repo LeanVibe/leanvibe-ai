@@ -1,4 +1,4 @@
-# LeenVibe Migration Status: SwiftPM + UV
+# LeanVibe Migration Status: SwiftPM + UV
 
 ## 🎯 Migration Overview
 
@@ -68,7 +68,7 @@
 
 ### Backend Structure
 ```
-leenvibe-backend/
+leanvibe-backend/
 ├── pyproject.toml           # Modern Python project config
 ├── uv.lock                  # Dependency lock file (auto-generated)
 ├── start.sh                 # Updated startup script with uv
@@ -79,14 +79,14 @@ leenvibe-backend/
 
 ### iOS Structure
 ```
-LeenVibe-SwiftPM/
+LeanVibe-SwiftPM/
 ├── Package.swift            # Swift Package Manager manifest
-├── Sources/LeenVibe/        # Source code
-│   ├── LeenVibeApp.swift   # App entry point
+├── Sources/LeanVibe/        # Source code
+│   ├── LeanVibeApp.swift   # App entry point
 │   ├── Models/             # Data models
 │   ├── Services/           # WebSocket service with Starscream
 │   └── Views/              # SwiftUI views
-├── Tests/LeenVibeTests/     # Unit tests
+├── Tests/LeanVibeTests/     # Unit tests
 └── README.md               # SPM-specific documentation
 ```
 
@@ -94,21 +94,21 @@ LeenVibe-SwiftPM/
 
 ### Backend (uv)
 ```bash
-cd leenvibe-backend
+cd leanvibe-backend
 ./start.sh                  # Automatic setup and start
 ```
 
 ### iOS Swift Package
 ```bash
-cd LeenVibe-SwiftPM
+cd LeanVibe-SwiftPM
 swift build                 # Build package
 swift test                  # Run tests
-swift run LeenVibe          # Run iOS app (in simulator)
+swift run LeanVibe          # Run iOS app (in simulator)
 ```
 
 ### iOS as Xcode Project
 ```bash
-cd LeenVibe-SwiftPM
+cd LeanVibe-SwiftPM
 open Package.swift          # Open in Xcode
 # Press Cmd+R to build and run
 ```
@@ -117,7 +117,7 @@ open Package.swift          # Open in Xcode
 
 ### Backend Tests
 ```bash
-cd leenvibe-backend
+cd leanvibe-backend
 uv run python run_tests.py
 # ✅ All AI service tests pass
 # ✅ Connection manager works
@@ -126,7 +126,7 @@ uv run python run_tests.py
 
 ### iOS Tests
 ```bash
-cd LeenVibe-SwiftPM
+cd LeanVibe-SwiftPM
 swift test
 # ✅ AgentMessage model tests pass
 # ✅ WebSocket message encoding works

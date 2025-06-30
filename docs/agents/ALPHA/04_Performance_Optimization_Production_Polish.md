@@ -1,7 +1,7 @@
 # ALPHA Agent - Task 04: Performance Optimization & Production Polish
 
 **Assignment Date**: Post GAMMA Agent Transition  
-**Worktree**: Create new worktree `../leenvibe-ios-performance-polish`  
+**Worktree**: Create new worktree `../leanvibe-ios-performance-polish`  
 **Branch**: `feature/performance-optimization-polish`  
 **Status**: ✅ COMPLETE  
 **Previous Assignment**: GAMMA Task 04 (Performance Optimization & Polish) - Reassigned due to agent unavailability
@@ -21,12 +21,12 @@ Outstanding achievement completing the Final Integration & Polish work! Your dee
 
 ## Your New Mission
 
-Complete the final performance optimization and user experience polish that transforms LeenVibe from an impressive MVP into a production-ready, premium iOS application worthy of App Store deployment.
+Complete the final performance optimization and user experience polish that transforms LeanVibe from an impressive MVP into a production-ready, premium iOS application worthy of App Store deployment.
 
 ## Working Directory
 
-**New Worktree**: `../leenvibe-ios-performance-polish`  
-**Integration Target**: `/Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/`  
+**New Worktree**: `../leanvibe-ios-performance-polish`  
+**Integration Target**: `/Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/`  
 **Branch**: `feature/performance-optimization-polish`
 
 ## 🚀 Performance Optimization Scope
@@ -513,4 +513,4 @@ class BatteryOptimizedManager: ObservableObject {
 **Task 3**: ✅ Production-Ready Architecture (COMPLETE)  
 **Task 4**: 🔄 Performance Optimization & Production Polish
 
-You're perfectly positioned for this final optimization because you understand the complete integrated system architecture and have demonstrated ability to deliver production-ready iOS applications. Let's make LeenVibe truly premium! 🚀⚡️✨
+You're perfectly positioned for this final optimization because you understand the complete integrated system architecture and have demonstrated ability to deliver production-ready iOS applications. Let's make LeanVibe truly premium! 🚀⚡️✨

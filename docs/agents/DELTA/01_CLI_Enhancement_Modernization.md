@@ -1,14 +1,14 @@
 # DELTA Agent - Task 01: CLI Enhancement & Modernization Specialist
 
-**Welcome to the LeenVibe Team!** 🎉  
+**Welcome to the LeanVibe Team!** 🎉  
 **Assignment Date**: Team Expansion - CLI/Backend Enhancement  
-**Worktree**: Create new worktree `../leenvibe-cli-enhancement`  
+**Worktree**: Create new worktree `../leanvibe-cli-enhancement`  
 **Branch**: `feature/cli-modernization`  
 **Status**: 🔄 ASSIGNED  
 
 ## Mission Brief
 
-Welcome to LeenVibe! You're joining an elite team that has achieved **95% MVP delivery** for our iOS mobile development companion. While the iOS app is sophisticated and feature-complete, there's a critical opportunity to enhance the **CLI experience** that powers the backend and developer workflow.
+Welcome to LeanVibe! You're joining an elite team that has achieved **95% MVP delivery** for our iOS mobile development companion. While the iOS app is sophisticated and feature-complete, there's a critical opportunity to enhance the **CLI experience** that powers the backend and developer workflow.
 
 ## 🏗️ Team Context & Achievements
 
@@ -24,33 +24,33 @@ You're joining a **5-specialist team** with incredible momentum:
 ### What's Already Built (Your Foundation)
 - ✅ **iOS App**: 95% MVP complete with dashboard, voice, kanban, architecture viewer, onboarding
 - ✅ **Backend APIs**: Enhanced metrics, tasks, voice commands, push notifications
-- ✅ **Voice Interface**: "Hey LeenVibe" wake phrase + comprehensive voice commands
+- ✅ **Voice Interface**: "Hey LeanVibe" wake phrase + comprehensive voice commands
 - ✅ **Real-time Integration**: WebSocket communication throughout the system
 - ⏳ **CLI Experience**: Basic functionality but needs modernization and enhancement
 
 ## 🎯 Your Mission: CLI Enhancement & Developer Experience
 
 ### The Vision
-Transform the LeenVibe CLI from a basic command-line interface into a **sophisticated, modern developer tool** that matches the quality and innovation of our iOS app, providing an exceptional developer experience for power users.
+Transform the LeanVibe CLI from a basic command-line interface into a **sophisticated, modern developer tool** that matches the quality and innovation of our iOS app, providing an exceptional developer experience for power users.
 
 ### Why This Matters
 - **Developer Productivity**: CLI power users need efficient, intuitive command interfaces
 - **iOS App Integration**: CLI should complement and enhance the mobile experience
 - **Backend Optimization**: Improve server performance and developer workflows
-- **Developer Onboarding**: Make LeenVibe easier to set up and use for new developers
+- **Developer Onboarding**: Make LeanVibe easier to set up and use for new developers
 
 ## 🔧 Working Directory
 
-**New Worktree**: `../leenvibe-cli-enhancement`  
-**Integration Target**: `/Users/bogdan/work/leanvibe-ai/leenvibe-cli/`  
-**Backend Integration**: `/Users/bogdan/work/leanvibe-ai/leenvibe-backend/`
+**New Worktree**: `../leanvibe-cli-enhancement`  
+**Integration Target**: `/Users/bogdan/work/leanvibe-ai/leanvibe-cli/`  
+**Backend Integration**: `/Users/bogdan/work/leanvibe-ai/leanvibe-backend/`
 
 ## 📱 Current CLI Analysis
 
 ### Existing CLI Structure
 ```
-leenvibe-cli/
-├── leenvibe_cli/
+leanvibe-cli/
+├── leanvibe_cli/
 │   ├── commands/
 │   │   ├── analyze.py       # Project analysis
 │   │   ├── info.py          # System information
@@ -95,7 +95,7 @@ class ModernCLI:
         
     def show_project_dashboard(self):
         """Beautiful project dashboard in terminal"""
-        table = Table(title="LeenVibe Projects")
+        table = Table(title="LeanVibe Projects")
         table.add_column("Project", style="cyan")
         table.add_column("Status", style="green")
         table.add_column("Health", justify="right", style="magenta")
@@ -190,8 +190,8 @@ def workflow():
 # Interactive CLI onboarding
 @app.command()
 def onboard():
-    """Interactive onboarding for new LeenVibe users"""
-    console.print(Panel.fit("Welcome to LeenVibe CLI!", style="bold blue"))
+    """Interactive onboarding for new LeanVibe users"""
+    console.print(Panel.fit("Welcome to LeanVibe CLI!", style="bold blue"))
     
     # Step-by-step setup wizard
     setup_backend_connection()
@@ -202,7 +202,7 @@ def onboard():
 # Enhanced help system
 @app.command()
 def learn(topic: str = None):
-    """Interactive learning system for LeenVibe features"""
+    """Interactive learning system for LeanVibe features"""
     if topic == "voice":
         show_voice_command_tutorial()
     elif topic == "projects":
@@ -215,7 +215,7 @@ def learn(topic: str = None):
 # Command discovery
 @app.command()
 def discover():
-    """Discover LeenVibe features based on your workflow"""
+    """Discover LeanVibe features based on your workflow"""
     analyze_user_patterns()
     suggest_relevant_commands()
     show_power_user_tips()
@@ -278,7 +278,7 @@ class CLIVoiceIntegration:
     
     def voice_to_cli_bridge(self):
         """Execute iOS voice commands from CLI"""
-        # "Hey LeenVibe" detection in terminal
+        # "Hey LeanVibe" detection in terminal
         # Voice command parsing and execution
         # Audio feedback for CLI actions
         
@@ -309,7 +309,7 @@ aiofiles>=23.0.0         # Async file operations
 **Hierarchical Command Organization**:
 ```python
 # Modern command structure
-leenvibe
+leanvibe
 ├── projects
 │   ├── list              # Enhanced project listing
 │   ├── add               # Interactive project wizard
@@ -408,7 +408,7 @@ class PerformanceOptimization:
 
 ## 🎉 Your Achievement Target
 
-Transform the LeenVibe CLI into a **best-in-class developer tool** that:
+Transform the LeanVibe CLI into a **best-in-class developer tool** that:
 - Matches the sophistication of our iOS app
 - Provides unparalleled developer productivity
 - Seamlessly integrates with all existing systems
@@ -416,7 +416,7 @@ Transform the LeenVibe CLI into a **best-in-class developer tool** that:
 
 ## Priority
 
-**HIGH** - CLI enhancement completes our developer tooling ecosystem and ensures LeenVibe serves both mobile and power users effectively. Your expertise will bridge the gap between mobile innovation and command-line efficiency.
+**HIGH** - CLI enhancement completes our developer tooling ecosystem and ensures LeanVibe serves both mobile and power users effectively. Your expertise will bridge the gap between mobile innovation and command-line efficiency.
 
 Welcome to the team, DELTA! Let's build the ultimate developer CLI experience! 🚀💻⚡️
 

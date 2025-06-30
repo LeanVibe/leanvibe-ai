@@ -1,4 +1,4 @@
-# LeenVibe Production Readiness Assessment
+# LeanVibe Production Readiness Assessment
 
 **Assessment Date**: December 29, 2025  
 **Version**: 0.2.0  
@@ -19,7 +19,7 @@
 - **Code Quality**: Well-structured SwiftUI with proper separation of concerns
 - **Feature Completeness**: 
   - Multi-project dashboard ✅
-  - Voice interface with "Hey LeenVibe" wake phrase ✅
+  - Voice interface with "Hey LeanVibe" wake phrase ✅
   - Kanban task management ✅
   - Real-time WebSocket communication ✅
   - QR code pairing system ✅
@@ -29,7 +29,7 @@
 ### ⚠️ Critical Issues
 1. **Build System Configuration** (CRITICAL)
    - Status: Xcode project exists but build validation incomplete
-   - Location: `/LeenVibe-iOS/LeenVibe.xcodeproj/`
+   - Location: `/LeanVibe-iOS/LeanVibe.xcodeproj/`
    - Risk: Cannot deploy without functional build system
    - Timeline: 2-3 days to resolve
 
@@ -163,5 +163,5 @@ The system demonstrates strong architecture and feature completeness but require
 
 ---
 
-*Assessment conducted using the LeenVibe Production Readiness Audit Framework*  
+*Assessment conducted using the LeanVibe Production Readiness Audit Framework*  
 *Next review scheduled for completion of Phase 1 critical fixes*

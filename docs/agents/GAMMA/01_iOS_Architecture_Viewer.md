@@ -1,14 +1,14 @@
 # GAMMA Agent - Task 01: iOS Architecture Viewer Implementation Specialist
 
-**Welcome to the LeenVibe Team!** 🎉  
+**Welcome to the LeanVibe Team!** 🎉  
 **Assignment Date**: Team Expansion - Phase 4 Architecture Visualization  
-**Worktree**: `../leenvibe-ios-visualization`  
+**Worktree**: `../leanvibe-ios-visualization`  
 **Branch**: `feature/ios-architecture-viewer`  
 **Status**: 🔄 ASSIGNED  
 
 ## Mission Brief
 
-Welcome to LeenVibe! You're joining an elite team delivering a revolutionary iOS mobile development companion. We've achieved 90% MVP delivery through parallel development, and your expertise will complete one of our most sophisticated features: the **Interactive Architecture Viewer**.
+Welcome to LeanVibe! You're joining an elite team delivering a revolutionary iOS mobile development companion. We've achieved 90% MVP delivery through parallel development, and your expertise will complete one of our most sophisticated features: the **Interactive Architecture Viewer**.
 
 ## 🏗️ Team Context & Achievements
 
@@ -22,7 +22,7 @@ You're joining a **4-specialist team** with incredible momentum:
 
 ### What's Already Built (Your Foundation)
 - ✅ **Dashboard Foundation**: 4-tab iOS app with real-time project management
-- ✅ **Voice Interface**: "Hey LeenVibe" wake phrase + comprehensive voice commands
+- ✅ **Voice Interface**: "Hey LeanVibe" wake phrase + comprehensive voice commands
 - ✅ **Kanban Board**: Interactive task management with drag-and-drop
 - ✅ **Backend APIs**: Enhanced metrics, tasks, voice commands, push notifications
 - ✅ **WebSocket Integration**: Real-time communication throughout the app
@@ -43,8 +43,8 @@ Create an **interactive architectural diagram viewer** that transforms complex c
 
 ## 🔧 Working Directory
 
-**New Worktree**: `../leenvibe-ios-visualization`  
-**Integration Target**: `/Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/`  
+**New Worktree**: `../leanvibe-ios-visualization`  
+**Integration Target**: `/Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/`  
 **Backend Endpoint**: Already available at `/visualization/{client_id}/generate`
 
 ## 📱 Technical Architecture
@@ -52,7 +52,7 @@ Create an **interactive architectural diagram viewer** that transforms complex c
 ### 1. WebKit Integration for Mermaid.js
 **Files to Create**:
 ```
-LeenVibe-iOS/LeenVibe/
+LeanVibe-iOS/LeanVibe/
 ├── Views/
 │   ├── Architecture/
 │   │   ├── ArchitectureTabView.swift          # Main architecture viewer
@@ -234,7 +234,7 @@ NavigationLink("View Architecture") {
 
 ### 2. Voice Command Integration
 ```swift
-// Enable voice navigation: "Hey LeenVibe, show architecture"
+// Enable voice navigation: "Hey LeanVibe, show architecture"
 // KAPPA's voice system can trigger architecture viewing
 voiceProcessor.registerCommand("show architecture") {
     navigationPath.append(.architecture)
@@ -317,7 +317,7 @@ Section("Architecture Viewer") {
 **Worktree Setup**:
 ```bash
 # Your dedicated development environment
-cd /Users/bogdan/work/leenvibe-ios-visualization
+cd /Users/bogdan/work/leanvibe-ios-visualization
 
 # Independent development with full project history
 git status  # feature/ios-architecture-viewer branch

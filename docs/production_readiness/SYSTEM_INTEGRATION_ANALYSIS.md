@@ -1,4 +1,4 @@
-# LeenVibe System Integration Analysis
+# LeanVibe System Integration Analysis
 
 **Assessment Date**: December 29, 2025  
 **Scope**: Complete system integration architecture and gap analysis  
@@ -15,9 +15,9 @@
 ## 🏗️ System Architecture Overview
 
 ### Primary Components
-1. **iOS App (LeenVibe-iOS)** - Swift/SwiftUI client application
-2. **Backend Service (leenvibe-backend)** - Python/FastAPI server
-3. **CLI Tool (leenvibe-cli)** - Command-line interface
+1. **iOS App (LeanVibe-iOS)** - Swift/SwiftUI client application
+2. **Backend Service (leanvibe-backend)** - Python/FastAPI server
+3. **CLI Tool (leanvibe-cli)** - Command-line interface
 4. **WebSocket Bridge** - Real-time communication layer
 5. **External Services** - APNS, MLX AI models
 

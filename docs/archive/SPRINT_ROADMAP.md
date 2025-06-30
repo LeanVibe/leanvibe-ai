@@ -1,4 +1,4 @@
-# Sprint-Based MVP Roadmap - LeenVibe L3 Coding Assistant
+# Sprint-Based MVP Roadmap - LeanVibe L3 Coding Assistant
 
 ## Current Status Summary  
 **Completion**: ~75% of infrastructure built (MAJOR SCOPE EXPANSION DETECTED)
@@ -105,7 +105,7 @@
 
 ### Must-Have Features
 1. **Python Click CLI Tool**
-   - Create `leenvibe` command-line interface
+   - Create `leanvibe` command-line interface
    - Implement core commands (suggest, explain, refactor)
    - Add configuration management
    - Build project initialization

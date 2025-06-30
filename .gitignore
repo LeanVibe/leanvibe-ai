@@ -39,10 +39,15 @@ htmlcov/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# LeenVibe specific cache and session files
+# LeanVibe specific cache and session files
+.leanvibe_cache/
 .leenvibe_cache/
 .sessions/
 *.cache
+server.log
+backend.log
+*.session
+session_*
 
 # macOS
 .DS_Store
@@ -87,6 +92,13 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
 
 # IDE
 .vscode/

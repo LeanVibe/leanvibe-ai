@@ -1,7 +1,7 @@
 # KAPPA Agent - Task 08: Settings & Configuration System
 
 **Assignment Date**: Post Major Integration Completion  
-**Worktree**: Create new worktree `../leenvibe-ios-settings`  
+**Worktree**: Create new worktree `../leanvibe-ios-settings`  
 **Branch**: `feature/settings-configuration-system`  
 **Status**: ✅ COMPLETE & OFFBOARDED (See OFFBOARDING_COMPLETE.md)  
 
@@ -12,7 +12,7 @@ Outstanding achievement on your previous deliveries! Your Kanban Board, Voice In
 ## Context & Current Status
 
 - ✅ **Your Kanban Board**: Successfully integrated with backend APIs working
-- ✅ **Your Voice Interface**: "Hey LeenVibe" wake phrase system fully integrated
+- ✅ **Your Voice Interface**: "Hey LeanVibe" wake phrase system fully integrated
 - ✅ **Your Integration Testing**: Complete validation framework delivered
 - ✅ **Main Project**: 78 Swift files unified with all your work included
 - ❌ **Missing**: Settings system to configure all the features you built
@@ -20,12 +20,12 @@ Outstanding achievement on your previous deliveries! Your Kanban Board, Voice In
 
 ## Your New Mission
 
-Create a comprehensive Settings & Configuration System that allows users to configure all the sophisticated features you've built, providing a polished and user-friendly way to customize their LeenVibe experience.
+Create a comprehensive Settings & Configuration System that allows users to configure all the sophisticated features you've built, providing a polished and user-friendly way to customize their LeanVibe experience.
 
 ## Working Directory
 
-**New Worktree**: `../leenvibe-ios-settings`  
-**Integration Target**: `/Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/`  
+**New Worktree**: `../leanvibe-ios-settings`  
+**Integration Target**: `/Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/`  
 **Branch**: `feature/settings-configuration-system`
 
 ## 🛠️ Settings System Architecture
@@ -74,7 +74,7 @@ struct SettingsTabView: View {
                 // About & Help
                 Section("Support") {
                     NavigationLink("Help & Tutorials", destination: HelpView())
-                    NavigationLink("About LeenVibe", destination: AboutView())
+                    NavigationLink("About LeanVibe", destination: AboutView())
                     NavigationLink("Privacy Policy", destination: PrivacyView())
                 }
             }
@@ -98,7 +98,7 @@ struct VoiceSettingsView: View {
     var body: some View {
         List {
             Section("Wake Phrase") {
-                Toggle("Enable 'Hey LeenVibe'", isOn: $wakePhraseEnabled)
+                Toggle("Enable 'Hey LeanVibe'", isOn: $wakePhraseEnabled)
                     .onChange(of: wakePhraseEnabled) { enabled in
                         if enabled {
                             voiceManager.startWakePhraseDetection()
@@ -294,7 +294,7 @@ class SettingsManager: ObservableObject {
 ```swift
 struct VoiceSettings: Codable {
     var wakePhraseEnabled = true
-    var wakePhrasePhrase = "Hey LeenVibe"
+    var wakePhrasePhrase = "Hey LeanVibe"
     var wakePhraseTimeout = 5.0
     var voiceFeedbackEnabled = true
     var backgroundListening = false
@@ -364,7 +364,7 @@ struct VoiceTestView: View {
                 Text("Wake Phrase Test")
                     .font(.headline)
                 
-                Button(isListening ? "Stop Listening" : "Test 'Hey LeenVibe'") {
+                Button(isListening ? "Stop Listening" : "Test 'Hey LeanVibe'") {
                     if isListening {
                         stopWakePhraseTest()
                     } else {
@@ -427,7 +427,7 @@ struct VoiceTestView: View {
     private func wakePhraseDetected() {
         recognizedText = "Wake phrase detected!"
         let result = VoiceTestResult(
-            input: "Hey LeenVibe",
+            input: "Hey LeanVibe",
             confidence: Double.random(in: 80...95),
             timestamp: Date()
         )

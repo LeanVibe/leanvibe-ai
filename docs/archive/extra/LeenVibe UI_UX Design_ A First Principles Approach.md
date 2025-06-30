@@ -1,10 +1,10 @@
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" class="logo" width="120"/>
 
-# LeenVibe UI/UX Design: A First Principles Approach
+# LeanVibe UI/UX Design: A First Principles Approach
 
 ## 1. Identifying Fundamental Truths
 
-When designing LeenVibe's interface, we must start by identifying the most basic truths about our users, their context, and their needs[^1][^2]:
+When designing LeanVibe's interface, we must start by identifying the most basic truths about our users, their context, and their needs[^1][^2]:
 
 ### User Truths
 
@@ -26,9 +26,9 @@ When designing LeenVibe's interface, we must start by identifying the most basic
 - Visual processing is faster than textual for status comprehension[^13][^8]
 - Trust in AI suggestions correlates with transparency of confidence metrics[^14][^10]
 
-![LeenVibe UI Design System - Mac Terminal (top) and iOS Liquid Glass (bottom) interfaces showing the cohesive design language across platforms](https://pplx-res.cloudinary.com/image/upload/v1750509822/gpt4o_images/fo7d9cyihuzc4jyclnxt.png)
+![LeanVibe UI Design System - Mac Terminal (top) and iOS Liquid Glass (bottom) interfaces showing the cohesive design language across platforms](https://pplx-res.cloudinary.com/image/upload/v1750509822/gpt4o_images/fo7d9cyihuzc4jyclnxt.png)
 
-LeenVibe UI Design System - Mac Terminal (top) and iOS Liquid Glass (bottom) interfaces showing the cohesive design language across platforms
+LeanVibe UI Design System - Mac Terminal (top) and iOS Liquid Glass (bottom) interfaces showing the cohesive design language across platforms
 
 ## 2. Questioning Assumptions
 
@@ -301,7 +301,7 @@ The final design system provides clear guidelines for development[^1][^13][^8]:
 
 ## 8. Conclusion
 
-By designing from first principles rather than conventions, LeenVibe's interface achieves the perfect balance between powerful functionality and intuitive usability[^1][^2][^13]. The unified design language across terminal and mobile creates a seamless experience that respects each platform's strengths while maintaining a consistent mental model[^7][^8][^12]. This approach ensures that senior engineers can leverage the full power of their local Apple Silicon hardware while enjoying the flexibility of mobile monitoring and control[^4][^9][^10].
+By designing from first principles rather than conventions, LeanVibe's interface achieves the perfect balance between powerful functionality and intuitive usability[^1][^2][^13]. The unified design language across terminal and mobile creates a seamless experience that respects each platform's strengths while maintaining a consistent mental model[^7][^8][^12]. This approach ensures that senior engineers can leverage the full power of their local Apple Silicon hardware while enjoying the flexibility of mobile monitoring and control[^4][^9][^10].
 
 <div style="text-align: center">⁂</div>
 

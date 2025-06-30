@@ -1,6 +1,6 @@
-# Technology Context: LeenVibe
+# Technology Context: LeanVibe
 
-This document outlines the technology stack, development setup, and technical constraints for the LeenVibe project.
+This document outlines the technology stack, development setup, and technical constraints for the LeanVibe project.
 
 ## 1. Backend
 
@@ -39,31 +39,31 @@ This document outlines the technology stack, development setup, and technical co
 
 This section provides common commands for development and testing.
 
-### Backend (leenvibe-backend)
+### Backend (leanvibe-backend)
 
 - **Run development server:**
   ```bash
-  cd leenvibe-backend && ./start.sh
+  cd leanvibe-backend && ./start.sh
   ```
 - **Run tests:**
   ```bash
-  cd leenvibe-backend
+  cd leanvibe-backend
   python run_tests.py
   # Or, for verbose output:
   pytest tests/ -v
   ```
 - **Run code quality checks:**
   ```bash
-  cd leenvibe-backend
+  cd leanvibe-backend
   black app/ tests/
   isort app/ tests/
   flake8 app/ tests/
   mypy app/
   ```
 
-### iOS (LeenVibe-iOS-App)
+### iOS (LeanVibe-iOS-App)
 
 - **Open project in Xcode:**
   ```bash
-  open LeenVibe-iOS-App/LeenVibe.xcodeproj
+  open LeanVibe-iOS-App/LeanVibe.xcodeproj
   ``` 

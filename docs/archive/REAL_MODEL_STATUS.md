@@ -1,4 +1,4 @@
-# Real Model Testing Status - LeenVibe AI
+# Real Model Testing Status - LeanVibe AI
 
 *Updated: December 27, 2024*
 

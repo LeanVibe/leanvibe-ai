@@ -1,7 +1,7 @@
 # ALPHA Agent - Task 01: iOS Dashboard Foundation Specialist
 
 **Assignment Date**: Sprint 1 Foundation  
-**Worktree**: `../leenvibe-ios-dashboard`  
+**Worktree**: `../leanvibe-ios-dashboard`  
 **Branch**: `feature/ios-dashboard-foundation`  
 **Status**: ✅ COMPLETED  
 
@@ -13,8 +13,8 @@ You are the **iOS Dashboard Foundation Specialist** responsible for Phase 1-2 of
 
 - **Current State**: iOS app has only basic chat interface (15% of MVP features)
 - **Target State**: Multi-project dashboard with navigation, project cards, and real-time metrics (85% of MVP features)
-- **Working Directory**: `../leenvibe-ios-dashboard`
-- **Integration Target**: Main iOS project at `LeenVibe-iOS/`
+- **Working Directory**: `../leanvibe-ios-dashboard`
+- **Integration Target**: Main iOS project at `LeanVibe-iOS/`
 
 ## Specific Tasks
 
@@ -40,7 +40,7 @@ You are the **iOS Dashboard Foundation Specialist** responsible for Phase 1-2 of
 
 **Files to Create**:
 ```
-LeenVibe-iOS-App/LeenVibe/
+LeanVibe-iOS-App/LeanVibe/
 ├── Models/
 │   └── Project.swift - Core project data models and enums
 ├── Services/
@@ -65,7 +65,7 @@ LeenVibe-iOS-App/LeenVibe/
 ```swift
 // Before:
 @main
-struct LeenVibeApp: App {
+struct LeanVibeApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView() // Single chat view
@@ -75,7 +75,7 @@ struct LeenVibeApp: App {
 
 // After:
 @main
-struct LeenVibeApp: App {
+struct LeanVibeApp: App {
     var body: some Scene {
         WindowGroup {
             DashboardTabView() // Multi-project dashboard
@@ -111,9 +111,9 @@ struct LeenVibeApp: App {
 The iOS Dashboard Foundation will be implemented with 10 new Swift files that need to be added to the Xcode project build target.
 
 **Integration Steps**:
-1. Open Xcode Project: `open LeenVibe.xcodeproj`
-2. Add New Files to Target: Right-click folders → "Add Files to 'LeenVibe'"
-3. Ensure "LeenVibe" target is checked for each file
+1. Open Xcode Project: `open LeanVibe.xcodeproj`
+2. Add New Files to Target: Right-click folders → "Add Files to 'LeanVibe'"
+3. Ensure "LeanVibe" target is checked for each file
 4. Build and Test: Clean build folder → Build project → Run on simulator
 
 ## Success Criteria

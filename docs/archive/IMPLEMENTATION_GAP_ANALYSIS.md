@@ -1,4 +1,4 @@
-# Implementation Gap Analysis - LeenVibe MVP
+# Implementation Gap Analysis - LeanVibe MVP
 
 ## Current State vs MVP Requirements Analysis
 
@@ -52,7 +52,7 @@
 
 7. **Memory Management**
    - **Current**: No session persistence beyond WebSocket
-   - **Required**: `.leenvibe/sessions/` with automatic pruning
+   - **Required**: `.leanvibe/sessions/` with automatic pruning
    - **Gap**: No long-term context retention
 
 8. **Performance Optimization**
@@ -80,8 +80,8 @@
 
 1. **CLAUDE.md Issues**:
    - Lists PostgreSQL/Neo4j (not implemented)
-   - References `leenvibe-backend/` (incorrect path structure)
-   - Shows commands that don't exist (`leenvibe status`)
+   - References `leanvibe-backend/` (incorrect path structure)
+   - Shows commands that don't exist (`leanvibe status`)
    - Performance targets mismatch current capability
 
 2. **AGENTS.md Issues**:
@@ -90,8 +90,8 @@
    - Missing actual build process documentation
 
 3. **Project Structure Mismatch**:
-   - Docs reference `leenvibe-backend/` 
-   - Actual structure uses `leenvibe-backend/`
+   - Docs reference `leanvibe-backend/` 
+   - Actual structure uses `leanvibe-backend/`
    - iOS app has duplicate directories
 
 ### Architecture Gaps

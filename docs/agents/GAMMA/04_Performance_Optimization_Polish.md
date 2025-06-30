@@ -1,7 +1,7 @@
 # GAMMA Agent - Task 04: Performance Optimization & Polish
 
 **Assignment Date**: Post Major System Integration Completion  
-**Worktree**: Create new worktree `../leenvibe-ios-performance`  
+**Worktree**: Create new worktree `../leanvibe-ios-performance`  
 **Branch**: `feature/performance-optimization`  
 **Status**: 🔄 REASSIGNED TO ALPHA (GAMMA no longer available)  
 
@@ -21,12 +21,12 @@ Excellent work completing the Architecture Viewer, User Onboarding, and Metrics 
 
 ## Your New Mission
 
-Optimize the performance of the entire integrated LeenVibe system and add the final polish that creates a premium, responsive user experience worthy of the sophisticated features you and the team have built.
+Optimize the performance of the entire integrated LeanVibe system and add the final polish that creates a premium, responsive user experience worthy of the sophisticated features you and the team have built.
 
 ## Working Directory
 
-**New Worktree**: `../leenvibe-ios-performance`  
-**Integration Target**: `/Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/`  
+**New Worktree**: `../leanvibe-ios-performance`  
+**Integration Target**: `/Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/`  
 **Branch**: `feature/performance-optimization`
 
 ## 🚀 Performance Optimization Scope
@@ -372,7 +372,7 @@ class ProgressiveDataLoader: ObservableObject {
 ```swift
 // Premium error handling
 struct PremiumErrorView: View {
-    let error: LeenVibeError
+    let error: LeanVibeError
     let onRetry: () -> Void
     let onReport: () -> Void
     
@@ -551,4 +551,4 @@ class BatteryOptimizedManager: ObservableObject {
 **Task 3**: ✅ iOS Metrics Dashboard (COMPLETE)  
 **Task 4**: 🔄 Performance Optimization & Polish
 
-You're perfectly positioned for this final optimization because you understand the complexity of the integrated system and have demonstrated ability to deliver sophisticated, high-performance UI components. Let's make LeenVibe feel truly premium! 🚀⚡️✨
+You're perfectly positioned for this final optimization because you understand the complexity of the integrated system and have demonstrated ability to deliver sophisticated, high-performance UI components. Let's make LeanVibe feel truly premium! 🚀⚡️✨

@@ -1,7 +1,7 @@
 # BETA Agent - Task 04: CLI Enhancement & iOS Integration
 
 **Assignment Date**: Emergency Redistribution - DELTA Holiday Departure  
-**Worktree**: Create `../leenvibe-cli-enhancement`  
+**Worktree**: Create `../leanvibe-cli-enhancement`  
 **Branch**: `feature/cli-modernization`  
 **Status**: 🔄 **MEDIUM PRIORITY** - Complete CLI-iOS Integration
 
@@ -30,7 +30,7 @@ Leverage your **backend API mastery** and **iOS notification expertise** to crea
 ## Strategic Focus Areas
 
 ### 1. iOS Notification Integration (Your Expertise)
-**File**: `leenvibe-cli/leenvibe_cli/services/ios_notification_bridge.py`
+**File**: `leanvibe-cli/leanvibe_cli/services/ios_notification_bridge.py`
 ```python
 import asyncio
 import aiohttp
@@ -73,7 +73,7 @@ class iOSNotificationBridge:
 ```
 
 ### 2. CLI-iOS State Synchronization
-**File**: `leenvibe-cli/leenvibe_cli/services/ios_sync_service.py`
+**File**: `leanvibe-cli/leanvibe_cli/services/ios_sync_service.py`
 ```python
 class iOSSyncService:
     """Synchronize CLI state with iOS app"""
@@ -100,7 +100,7 @@ class iOSSyncService:
 ```
 
 ### 3. Voice Command CLI Equivalents
-**File**: `leenvibe-cli/leenvibe_cli/commands/voice_simulate.py`
+**File**: `leanvibe-cli/leanvibe_cli/commands/voice_simulate.py`
 ```python
 @click.command()
 @click.argument('voice_command')
@@ -117,8 +117,8 @@ def voice_simulate(voice_command: str, ios_notify: bool):
         asyncio.run(simulate_voice_refresh(ios_notify))
     
 async def simulate_voice_analysis(notify_ios: bool):
-    """CLI version of 'Hey LeenVibe, analyze project'"""
-    console.print("🎤 [cyan]Simulating: 'Hey LeenVibe, analyze project'[/cyan]")
+    """CLI version of 'Hey LeanVibe, analyze project'"""
+    console.print("🎤 [cyan]Simulating: 'Hey LeanVibe, analyze project'[/cyan]")
     
     # Execute analysis
     await analyze_current_project()
@@ -133,7 +133,7 @@ async def simulate_voice_analysis(notify_ios: bool):
 ```
 
 ### 4. Enhanced CLI Commands with iOS Integration
-**Enhance**: `leenvibe-cli/leenvibe_cli/commands/analyze.py`
+**Enhance**: `leanvibe-cli/leanvibe_cli/commands/analyze.py`
 ```python
 @click.option('--notify-ios', is_flag=True, help='Send results to iOS app')
 @click.option('--sync-dashboard', is_flag=True, help='Update iOS dashboard')
@@ -159,7 +159,7 @@ async def analyze_command(..., notify_ios: bool, sync_dashboard: bool):
 ```
 
 ### 5. Cross-Platform Workflow Commands
-**File**: `leenvibe-cli/leenvibe_cli/commands/ios.py`
+**File**: `leanvibe-cli/leanvibe_cli/commands/ios.py`
 ```python
 @click.group()
 def ios():
@@ -191,7 +191,7 @@ async def status():
 
 ### CLI-Specific Endpoints
 ```python
-# leenvibe-backend/app/api/endpoints/cli_integration.py
+# leanvibe-backend/app/api/endpoints/cli_integration.py
 @router.post("/api/cli/notify-ios")
 async def cli_notify_ios(notification: CLINotification):
     """Send CLI-triggered notifications to iOS"""

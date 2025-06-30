@@ -18,7 +18,7 @@ This document reviews each screen’s PRD definitions and delivers first-draft c
 
 #### Content Draft
 
-- **Title**: “Welcome to LeenVibe”
+- **Title**: “Welcome to LeanVibe”
 - **Steps**:
 
 1. License agreement with frosted-panel background
@@ -69,7 +69,7 @@ This document reviews each screen’s PRD definitions and delivers first-draft c
 
 #### Content Draft
 
-- **Header**: “Pair with LeenVibe iOS App”
+- **Header**: “Pair with LeanVibe iOS App”
 - **Main**: QR code centered in frosted glass card
 - **Instructions**: text uses high-contrast Liquid Glass label with subtle gloss
 - **Status**: live Bluetooth/Wi-Fi indicator pill
@@ -92,7 +92,7 @@ This document reviews each screen’s PRD definitions and delivers first-draft c
 
 #### Content Draft
 
-- **Screen 1**: “Welcome to LeenVibe” with header glass banner
+- **Screen 1**: “Welcome to LeanVibe” with header glass banner
 - **Screen 2**: “Enable Notifications” using pill-shaped allow/deny buttons
 - **Screen 3**: “Scan QR to Pair” with glassy camera overlay
 

@@ -1,4 +1,4 @@
-# LeenVibe Mobile App Enhancement Plan - Delivering on MVP Promises
+# LeanVibe Mobile App Enhancement Plan - Delivering on MVP Promises
 
 ## Executive Summary
 
@@ -34,12 +34,12 @@ Successfully created 6 specialized worktrees:
 ```
 /Users/bogdan/work/
 ├── leanvibe-ai/                     # Main integration branch
-├── leenvibe-ios-dashboard/          # Project management UI (Phase 1-2)
-├── leenvibe-ios-kanban/             # Task management system (Phase 3)
-├── leenvibe-ios-voice/              # Voice interface (Phase 5)
-├── leenvibe-ios-visualization/      # Architecture diagrams (Phase 4)
-├── leenvibe-backend-apis/           # iOS-supporting APIs (All phases)
-└── leenvibe-testing/                # Integration testing (Phase 8)
+├── leanvibe-ios-dashboard/          # Project management UI (Phase 1-2)
+├── leanvibe-ios-kanban/             # Task management system (Phase 3)
+├── leanvibe-ios-voice/              # Voice interface (Phase 5)
+├── leanvibe-ios-visualization/      # Architecture diagrams (Phase 4)
+├── leanvibe-backend-apis/           # iOS-supporting APIs (All phases)
+└── leanvibe-testing/                # Integration testing (Phase 8)
 ```
 
 Each worktree is an independent development environment with full project history and the ability to develop features in parallel.
@@ -49,7 +49,7 @@ Each worktree is an independent development environment with full project histor
 ### Phase 1: Foundation Enhancement (2 weeks)
 **Critical Priority - Core UI Architecture**
 
-**Worktree**: `leenvibe-ios-dashboard`
+**Worktree**: `leanvibe-ios-dashboard`
 **Branch**: `feature/ios-dashboard-foundation`
 
 **Deliverables**:
@@ -64,7 +64,7 @@ Each worktree is an independent development environment with full project histor
 ### Phase 2: Project Dashboard (2 weeks)
 **High Priority - Core User Interface**
 
-**Worktree**: `leenvibe-ios-dashboard`
+**Worktree**: `leanvibe-ios-dashboard`
 
 **Deliverables**:
 - Project cards grid layout (2x2 responsive)
@@ -78,7 +78,7 @@ Each worktree is an independent development environment with full project histor
 ### Phase 3: Kanban Board System (2.5 weeks)
 **High Priority - Task Management**
 
-**Worktree**: `leenvibe-ios-kanban`
+**Worktree**: `leanvibe-ios-kanban`
 **Branch**: `feature/ios-kanban-board`
 
 **Deliverables**:
@@ -94,7 +94,7 @@ Each worktree is an independent development environment with full project histor
 ### Phase 4: Architecture Visualization (2 weeks)
 **Medium Priority - Advanced Feature**
 
-**Worktree**: `leenvibe-ios-visualization`
+**Worktree**: `leanvibe-ios-visualization`
 **Branch**: `feature/ios-architecture-viewer`
 
 **Deliverables**:
@@ -109,12 +109,12 @@ Each worktree is an independent development environment with full project histor
 ### Phase 5: Voice Interface System (2 weeks)
 **High Priority - Unique Differentiator**
 
-**Worktree**: `leenvibe-ios-voice`
+**Worktree**: `leanvibe-ios-voice`
 **Branch**: `feature/ios-voice-interface`
 
 **Deliverables**:
 - iOS Speech framework integration
-- Wake phrase detection ("Hey LeenVibe")
+- Wake phrase detection ("Hey LeanVibe")
 - Voice command processing and confirmation
 - Animated voice UI with waveform
 
@@ -151,7 +151,7 @@ Each worktree is an independent development environment with full project histor
 ### Phase 8: Testing & Polish (3 weeks)
 **Critical Priority - Production Readiness**
 
-**Worktree**: `leenvibe-testing`
+**Worktree**: `leanvibe-testing`
 **Branch**: `feature/ios-integration-testing`
 
 **Deliverables**:
@@ -218,14 +218,14 @@ Each phase must meet these criteria before proceeding:
 ### Daily Process
 ```bash
 # Navigate to feature worktree
-cd ../leenvibe-ios-dashboard
+cd ../leanvibe-ios-dashboard
 
 # Sync with latest changes
 git fetch origin
 git merge origin/sprint-1-foundation
 
 # Develop feature
-open LeenVibe-iOS/LeenVibe.xcodeproj
+open LeanVibe-iOS/LeanVibe.xcodeproj
 
 # Commit and push daily
 git add .
@@ -244,8 +244,8 @@ git merge feature/ios-dashboard-foundation
 git merge feature/ios-kanban-board
 
 # Test full integration
-cd leenvibe-backend && ./start.sh
-cd ../LeenVibe-iOS && xcodebuild build
+cd leanvibe-backend && ./start.sh
+cd ../LeanVibe-iOS && xcodebuild build
 
 # If tests pass, merge to main
 git checkout sprint-1-foundation
@@ -318,4 +318,4 @@ This comprehensive plan addresses the critical 85% feature gap in the iOS app by
 
 **Expected Outcome**: Transform the basic chat interface into a sophisticated iOS app that delivers 100% of the promised MVP features, providing users with the comprehensive monitoring and control platform originally specified.
 
-**Next Steps**: Begin Phase 1 development in the `leenvibe-ios-dashboard` worktree with navigation architecture and project management foundation.
+**Next Steps**: Begin Phase 1 development in the `leanvibe-ios-dashboard` worktree with navigation architecture and project management foundation.

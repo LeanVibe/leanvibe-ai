@@ -1,6 +1,6 @@
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" class="logo" width="120"/>
 
-### Revised LeenVibe Technical Blueprint with Manus AI Integration
+### Revised LeanVibe Technical Blueprint with Manus AI Integration
 
 #### 1. Enhanced Multi-Agent Architecture
 
@@ -158,9 +158,9 @@ C -->|No| E[Human Alert]
 
 [^4]: LeanVibe-1c036e9f74a5807aa39ada18e274015e.md
 
-[^5]: LeenVibe-L3-Coding-Agent_-Complete-MVP-Specificati.md
+[^5]: LeanVibe-L3-Coding-Agent_-Complete-MVP-Specificati.md
 
-[^6]: LeenVibe-Product-Strategy-UX-Architecture-Docume.md
+[^6]: LeanVibe-Product-Strategy-UX-Architecture-Docume.md
 
 [^7]: https://www.perplexity.ai/search/c7cf769a-233d-4e11-812b-aebff548c150
 

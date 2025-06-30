@@ -1,4 +1,4 @@
-# LeenVibe Vertical Slice - Implementation Status
+# LeanVibe Vertical Slice - Implementation Status
 
 ## 🎯 Executive Summary
 
@@ -39,7 +39,7 @@
 
 ## 🚀 Quick Start
 
-1. **Backend**: `cd leenvibe-backend && ./start.sh`
+1. **Backend**: `cd leanvibe-backend && ./start.sh`
 2. **iOS**: Open Xcode, create project, copy source files
 3. **Test**: Connect iOS app to localhost:8000
 
@@ -166,7 +166,7 @@ iOS:
 
 ## 🏆 Summary
 
-The LeenVibe vertical slice successfully demonstrates the core technical feasibility and user experience of the L3 Coding Agent concept. All major risks have been mitigated, and the foundation supports the full product vision.
+The LeanVibe vertical slice successfully demonstrates the core technical feasibility and user experience of the L3 Coding Agent concept. All major risks have been mitigated, and the foundation supports the full product vision.
 
 **Recommendation**: Proceed with user testing and iterative enhancement based on the solid foundation established in this vertical slice.
 

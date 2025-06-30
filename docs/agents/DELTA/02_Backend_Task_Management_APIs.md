@@ -1,7 +1,7 @@
 # DELTA Agent - Task 02: Backend Task Management APIs Implementation
 
 **Assignment Date**: Critical Blocker Resolution  
-**Worktree**: Create new worktree `../leenvibe-backend-task-apis`  
+**Worktree**: Create new worktree `../leanvibe-backend-task-apis`  
 **Branch**: `feature/backend-task-apis`  
 **Status**: 🚨 **CRITICAL PRIORITY** - Unblocks Kanban Integration
 
@@ -24,7 +24,7 @@ Implement the **Backend Task Management APIs** that the iOS Kanban Board expects
 ## 🔍 Required API Analysis
 
 ### APIs Expected by iOS Kanban Board
-Based on KAPPA's iOS implementation in `/Users/bogdan/work/leenvibe-ios-kanban`, the following APIs are expected:
+Based on KAPPA's iOS implementation in `/Users/bogdan/work/leanvibe-ios-kanban`, the following APIs are expected:
 
 ```python
 # Task Management Endpoints (Missing)
@@ -50,7 +50,7 @@ POST   /api/decisions/{decision_id}/reject    # Reject decision
 ## 🛠️ Backend Implementation Plan
 
 ### 1. Task Data Models
-**File**: `leenvibe-backend/app/models/task.py`
+**File**: `leanvibe-backend/app/models/task.py`
 ```python
 from sqlalchemy import Column, Integer, String, DateTime, Float, Text, Boolean
 from sqlalchemy.dialects.postgresql import UUID
@@ -98,7 +98,7 @@ class AgentDecision(Base):
 ```
 
 ### 2. API Endpoints Implementation
-**File**: `leenvibe-backend/app/api/endpoints/tasks.py`
+**File**: `leanvibe-backend/app/api/endpoints/tasks.py`
 ```python
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -170,7 +170,7 @@ async def update_task_status(task_id: UUID, new_status: str, db: Session = Depen
 ```
 
 ### 3. Kanban Board Endpoints
-**File**: `leenvibe-backend/app/api/endpoints/kanban.py`
+**File**: `leanvibe-backend/app/api/endpoints/kanban.py`
 ```python
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -229,7 +229,7 @@ async def move_task(task_id: UUID, target_column: str, position: int = 0, db: Se
 ```
 
 ### 4. Integration with Main FastAPI App
-**Update**: `leenvibe-backend/app/main.py`
+**Update**: `leanvibe-backend/app/main.py`
 ```python
 # Add to existing imports
 from .api.endpoints.tasks import router as tasks_router

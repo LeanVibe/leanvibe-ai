@@ -1,12 +1,12 @@
-I'll help you conduct market research and create an implementation plan for LeenVibe. Let me start by searching for relevant project knowledge to inform our approach.# LeenVibe: Market Research and Implementation Plan
+I'll help you conduct market research and create an implementation plan for LeanVibe. Let me start by searching for relevant project knowledge to inform our approach.# LeanVibe: Market Research and Implementation Plan
 
 ## Market Research & Analysis
 
 ### 1. Problem Validation
 
-Using the project knowledge framework, I'll conduct systematic market research for LeenVibe.
+Using the project knowledge framework, I'll conduct systematic market research for LeanVibe.
 
-**Strategic Niche Identification**: The foundation of successful AI-enhanced product development begins with systematic niche selection. LeenVibe targets a super-niche: passionate senior engineers (10+ years experience) with unfinished side projects who own high-end Mac hardware.
+**Strategic Niche Identification**: The foundation of successful AI-enhanced product development begins with systematic niche selection. LeanVibe targets a super-niche: passionate senior engineers (10+ years experience) with unfinished side projects who own high-end Mac hardware.
 
 #### Target Market Size
 - **Primary Market**: Senior engineers with 10+ years experience
@@ -21,7 +21,7 @@ Key competitors in the AI coding assistant space:
 - **Tabnine**: Privacy-focused but no iOS integration
 - **Codeium**: Fast but limited autonomous capabilities
 
-**LeenVibe's Unique Value Proposition**:
+**LeanVibe's Unique Value Proposition**:
 1. **Local Processing**: Runs on user's own hardware (privacy + control)
 2. **iOS Control**: Unique mobile command center for coding
 3. **Semi-Autonomous**: Works independently with clear human gates
@@ -37,7 +37,7 @@ Founders must identify specific problems within that market segment. This involv
 - Decision fatigue on implementation details
 - Time constraints requiring efficient async work
 
-**Solution Validation**: LeenVibe addresses these through:
+**Solution Validation**: LeanVibe addresses these through:
 - Autonomous coding agent that maintains context
 - iOS app for quick status checks and decision-making
 - Human gates only for critical architectural decisions
@@ -129,7 +129,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 **iOS Implementation**:
 ```swift
-// iOS/LeenVibe/WebSocketManager.swift
+// iOS/LeanVibe/WebSocketManager.swift
 import Foundation
 import Starscream
 
@@ -279,9 +279,9 @@ class CodeGenerationAgent:
 
 **TDD Test Suite**:
 ```swift
-// iOS/LeenVibeTests/DashboardTests.swift
+// iOS/LeanVibeTests/DashboardTests.swift
 import XCTest
-@testable import LeenVibe
+@testable import LeanVibe
 
 class DashboardTests: XCTestCase {
     func testTaskBoardDisplay() {
@@ -306,7 +306,7 @@ class DashboardTests: XCTestCase {
 
 **iOS Dashboard Implementation**:
 ```swift
-// iOS/LeenVibe/Views/DashboardView.swift
+// iOS/LeanVibe/Views/DashboardView.swift
 import SwiftUI
 import Charts
 
@@ -331,7 +331,7 @@ struct DashboardView: View {
                 }
                 .padding()
             }
-            .navigationTitle("LeenVibe")
+            .navigationTitle("LeanVibe")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     VoiceChatButton()
@@ -464,8 +464,8 @@ The validation architecture ensures that each layer functions correctly both ind
 ### Automated Testing Pipeline
 
 ```yaml
-# .github/workflows/leenvibe-ci.yml
-name: LeenVibe CI/CD
+# .github/workflows/leanvibe-ci.yml
+name: LeanVibe CI/CD
 
 on: [push, pull_request]
 
@@ -484,7 +484,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Run iOS Tests
         run: |
-          xcodebuild test -scheme LeenVibe
+          xcodebuild test -scheme LeanVibe
           
   integration-tests:
     runs-on: macos-latest
@@ -607,6 +607,6 @@ class RollbackManager:
 
 ## Conclusion
 
-This implementation plan provides a systematic approach to building LeenVibe using TDD and vertical slices, with clearly defined human testing gates at critical decision points. The phased approach ensures continuous validation while maintaining development velocity.
+This implementation plan provides a systematic approach to building LeanVibe using TDD and vertical slices, with clearly defined human testing gates at critical decision points. The phased approach ensures continuous validation while maintaining development velocity.
 
 The key to success is starting with the simplest vertical slice (basic command execution) and building complexity incrementally, always with comprehensive tests written first and human validation at strategic points.

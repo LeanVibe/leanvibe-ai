@@ -1,4 +1,4 @@
-# LeenVibe Documentation Audit Report
+# LeanVibe Documentation Audit Report
 
 **Assessment Date**: December 29, 2025  
 **Scope**: Complete project documentation ecosystem  
@@ -24,21 +24,21 @@
 
 ### Component-Specific Documentation
 
-#### Backend (leenvibe-backend/)
+#### Backend (leanvibe-backend/)
 | Document | Status | Quality | Completeness |
 |----------|--------|---------|--------------|
 | **README.md** | ✅ Good | 85% | 80% |
 | **L3_AGENT_INTEGRATION.md** | ✅ Good | 80% | 75% |
 | **SPRINT_1_5_SUMMARY.md** | ✅ Good | 75% | 70% |
 
-#### iOS App (LeenVibe-iOS/)
+#### iOS App (LeanVibe-iOS/)
 | Document | Status | Quality | Completeness |
 |----------|--------|---------|--------------|
 | **Main README** | ❌ Missing | N/A | 0% |
 | **PUSH_NOTIFICATION_SYSTEM_DOCUMENTATION.md** | ✅ Excellent | 95% | 90% |
 | **Code Documentation** | ⚠️ Limited | 40% | 30% |
 
-#### CLI (leenvibe-cli/)
+#### CLI (leanvibe-cli/)
 | Document | Status | Quality | Completeness |
 |----------|--------|---------|--------------|
 | **README.md** | ✅ Good | 75% | 70% |
@@ -223,7 +223,7 @@
 
 #### Main Project README Template:
 ```markdown
-# LeenVibe - AI-Powered Local Development Assistant
+# LeanVibe - AI-Powered Local Development Assistant
 
 ## Quick Start
 ## Architecture Overview  
@@ -236,7 +236,7 @@
 
 #### User Manual Template:
 ```markdown
-# LeenVibe User Guide
+# LeanVibe User Guide
 
 ## Getting Started
 ## Features Overview

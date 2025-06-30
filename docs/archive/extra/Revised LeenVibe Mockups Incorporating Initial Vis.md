@@ -1,6 +1,6 @@
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" class="logo" width="120"/>
 
-# Revised LeenVibe Mockups Incorporating Initial Vision
+# Revised LeanVibe Mockups Incorporating Initial Vision
 
 ## Core Design Principles Integration
 
@@ -31,7 +31,7 @@
 ### 1. iOS Dashboard - Football Manager Tactical Board
 
 ```
-/imagine LeenVibe iOS Dashboard: Football Manager-style tactical board showing coding tasks as player cards with position-based priority mapping, stamina bars for CPU/RAM usage (green/yellow/red), swipe gestures for reprioritization, Liquid Glass depth effects with context-aware translucency, SF Pro Text typography, palette #0D1117 #0A84FF #32D74B #FF9500, iPhone 15 Pro frame, resolution 1680x882
+/imagine LeanVibe iOS Dashboard: Football Manager-style tactical board showing coding tasks as player cards with position-based priority mapping, stamina bars for CPU/RAM usage (green/yellow/red), swipe gestures for reprioritization, Liquid Glass depth effects with context-aware translucency, SF Pro Text typography, palette #0D1117 #0A84FF #32D74B #FF9500, iPhone 15 Pro frame, resolution 1680x882
 ```
 
 *Key Features*:
@@ -45,7 +45,7 @@
 ### 2. Agent Debug Console - Match Replay Interface
 
 ```
-/imagine LeenVibe Debug Console: Football Manager-style match replay interface showing agent decision timeline with timestamped code diffs, debug timeline scrubber with before/after views, Liquid Glass panels showing resource utilization, palette #0D1117 #0A84FF #BF5AF2 #FF453A, MacBook Pro 16-inch frame, resolution 1680x882
+/imagine LeanVibe Debug Console: Football Manager-style match replay interface showing agent decision timeline with timestamped code diffs, debug timeline scrubber with before/after views, Liquid Glass panels showing resource utilization, palette #0D1117 #0A84FF #BF5AF2 #FF453A, MacBook Pro 16-inch frame, resolution 1680x882
 ```
 
 *Key Features*:
@@ -59,7 +59,7 @@
 ### 3. Voice Command Interface - Multi-Modal Alerts
 
 ```
-/imagine LeenVibe Voice Interface: Alan AI SDK-powered voice command with spatialized audio alerts ("Security risk in line 42"), 3-pulse haptic feedback, animated border highlighting code sections, Liquid Glass waveform visualization rising from bottom sheet, palette #000000 #0A84FF #FF453A #32D74B, iPhone 15 Pro frame, resolution 1680x882
+/imagine LeanVibe Voice Interface: Alan AI SDK-powered voice command with spatialized audio alerts ("Security risk in line 42"), 3-pulse haptic feedback, animated border highlighting code sections, Liquid Glass waveform visualization rising from bottom sheet, palette #000000 #0A84FF #FF453A #32D74B, iPhone 15 Pro frame, resolution 1680x882
 ```
 
 *Key Features*:
@@ -73,7 +73,7 @@
 ### 4. Architecture Viewer - Interactive Blueprint
 
 ```
-/imagine LeenVibe Architecture Viewer: Interactive Mermaid.js blueprint with zoomable dependency graphs, Football Manager-style player position mapping for components, change impact heatmaps, Liquid Glass annotations showing code relationships, palette #0D1117 #0A84FF #64D2FF, iPhone 15 Pro frame, resolution 1680x882
+/imagine LeanVibe Architecture Viewer: Interactive Mermaid.js blueprint with zoomable dependency graphs, Football Manager-style player position mapping for components, change impact heatmaps, Liquid Glass annotations showing code relationships, palette #0D1117 #0A84FF #64D2FF, iPhone 15 Pro frame, resolution 1680x882
 ```
 
 *Key Features*:
@@ -87,7 +87,7 @@
 ### 5. Human Gate Review - Tactical Decision Interface
 
 ```
-/imagine LeenVibe Human Gate: Football Manager-style decision interface showing code changes as "player substitutions", approve/reject/modify options as tactical choices, confidence meters with Liquid Glass depth effects, palette #0D1117 #0A84FF #FF9500 #FF453A, iPhone 15 Pro frame, resolution 1680x882
+/imagine LeanVibe Human Gate: Football Manager-style decision interface showing code changes as "player substitutions", approve/reject/modify options as tactical choices, confidence meters with Liquid Glass depth effects, palette #0D1117 #0A84FF #FF9500 #FF453A, iPhone 15 Pro frame, resolution 1680x882
 ```
 
 *Key Features*:
@@ -101,7 +101,7 @@
 ### 6. CLI Integration - Vim/Tmux War Room
 
 ```
-/imagine LeenVibe CLI War Room: tmux session showing vim editor with agent suggestions in split-pane, Football Manager-style tactical views for code structure, real-time resource telemetry in status bar, Liquid Glass command prompts, palette #282C34 #56B6C2 #E06C75, MacBook Pro 16-inch frame, resolution 1680x882
+/imagine LeanVibe CLI War Room: tmux session showing vim editor with agent suggestions in split-pane, Football Manager-style tactical views for code structure, real-time resource telemetry in status bar, Liquid Glass command prompts, palette #282C34 #56B6C2 #E06C75, MacBook Pro 16-inch frame, resolution 1680x882
 ```
 
 *Key Features*:
@@ -115,7 +115,7 @@
 ### 7. Security Dashboard - eBPF Monitoring
 
 ```
-/imagine LeenVibe Security Dashboard: eBPF runtime monitoring visualization showing blocked syscalls, threat heatmaps, cryptographic attestation status, Liquid Glass anomaly detection alerts, palette #0D1117 #BF5AF2 #FF453A, MacBook Pro 16-inch frame, resolution 1680x882
+/imagine LeanVibe Security Dashboard: eBPF runtime monitoring visualization showing blocked syscalls, threat heatmaps, cryptographic attestation status, Liquid Glass anomaly detection alerts, palette #0D1117 #BF5AF2 #FF453A, MacBook Pro 16-inch frame, resolution 1680x882
 ```
 
 *Key Features*:
@@ -143,9 +143,9 @@ These mockups blend Football Manager's tactical visualization with Manus AI's di
 
 [^1]: LeanVibe-1c036e9f74a5807aa39ada18e274015e.md
 
-[^2]: LeenVibe-Product-Strategy-UX-Architecture-Docume.md
+[^2]: LeanVibe-Product-Strategy-UX-Architecture-Docume.md
 
-[^3]: LeenVibe-L3-Coding-Agent_-Complete-MVP-Specificati.md
+[^3]: LeanVibe-L3-Coding-Agent_-Complete-MVP-Specificati.md
 
 [^4]: paste-4.txt
 

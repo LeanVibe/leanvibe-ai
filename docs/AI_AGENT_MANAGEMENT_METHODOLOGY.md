@@ -47,10 +47,10 @@ Each agent gets their own worktree to:
 # Agent workspace structure
 /Users/bogdan/work/
 ├── leanvibe-ai/                    # Main project
-├── leenvibe-ios-dashboard/         # ALPHA's worktree
-├── leenvibe-backend-apis/          # BETA's worktree
-├── leenvibe-ios-voice/             # KAPPA's worktree
-└── leenvibe-ios-performance/       # GAMMA's worktree
+├── leanvibe-ios-dashboard/         # ALPHA's worktree
+├── leanvibe-backend-apis/          # BETA's worktree
+├── leanvibe-ios-voice/             # KAPPA's worktree
+└── leanvibe-ios-performance/       # GAMMA's worktree
 ```
 
 ## 📝 **3. Documentation Standards**
@@ -248,19 +248,19 @@ Closes KAPPA Task 08.
 ### **Worktree Management**
 ```bash
 # Create agent worktree
-git worktree add ../leenvibe-[feature] feature/[branch-name]
+git worktree add ../leanvibe-[feature] feature/[branch-name]
 
 # List all worktrees
 git worktree list
 
 # Remove completed worktree
-git worktree remove ../leenvibe-[feature] --force
+git worktree remove ../leanvibe-[feature] --force
 ```
 
 ### **Agent Status Checking**
 ```bash
 # Check agent's recent work
-cd ../leenvibe-[agent-feature]
+cd ../leanvibe-[agent-feature]
 git log --oneline -n 10
 
 # Find agent assignments

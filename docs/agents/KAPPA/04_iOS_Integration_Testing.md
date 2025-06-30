@@ -1,7 +1,7 @@
 # KAPPA Agent - Task 04: iOS Integration Testing & End-to-End Validation
 
 **Assignment Date**: Post Voice Integration Completion  
-**Worktree**: Use main project + testing worktree `../leenvibe-testing`  
+**Worktree**: Use main project + testing worktree `../leanvibe-testing`  
 **Branch**: `feature/ios-integration-testing`  
 **Status**: 🔄 ASSIGNED  
 
@@ -23,15 +23,15 @@ Create and execute comprehensive integration tests to validate the complete iOS 
 
 ## Working Directory
 
-**Main Project**: `/Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/`  
-**Testing Worktree**: `../leenvibe-testing` (create new worktree)  
+**Main Project**: `/Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/`  
+**Testing Worktree**: `../leanvibe-testing` (create new worktree)  
 **Integration Target**: End-to-end user workflows
 
 ## Systems You Built to Test
 
 ### 1. Voice System Integration
 **Your Components**:
-- `WakePhraseManager` - "Hey LeenVibe" detection
+- `WakePhraseManager` - "Hey LeanVibe" detection
 - `SpeechRecognitionService` - Voice command processing  
 - `VoiceTabView` - Voice interface tab
 - `FloatingVoiceIndicator` - Cross-tab voice status
@@ -40,7 +40,7 @@ Create and execute comprehensive integration tests to validate the complete iOS 
 **Test Scenarios**:
 ```swift
 // Test 1: Wake phrase triggers voice command modal
-"Hey LeenVibe" → WakePhraseManager detection → VoiceCommandView opens
+"Hey LeanVibe" → WakePhraseManager detection → VoiceCommandView opens
 
 // Test 2: Voice command execution
 Voice: "Analyze project" → SpeechRecognitionService → WebSocket → Backend response
@@ -76,7 +76,7 @@ Voice command → WebSocket message → Dashboard update → User confirmation
 ### 1. XCTest Integration Test Suite
 **Files to Create**:
 ```
-LeenVibe-iOS/Tests/
+LeanVibe-iOS/Tests/
 ├── IntegrationTests/
 │   ├── VoiceIntegrationTests.swift      # Your voice system tests
 │   ├── DashboardIntegrationTests.swift  # Dashboard ↔ Voice tests
@@ -97,14 +97,14 @@ LeenVibe-iOS/Tests/
 1. App launch → DashboardTabView loads
 2. Voice tab → VoicePermissionSetupView
 3. Grant permissions → Wake phrase becomes active
-4. "Hey LeenVibe" → Voice modal opens
+4. "Hey LeanVibe" → Voice modal opens
 5. Voice command → Dashboard responds
 ```
 
 **Workflow 2: Developer Using Voice Commands**
 ```
 1. Developer analyzing project on Projects tab
-2. Says "Hey LeenVibe, show project status"
+2. Says "Hey LeanVibe, show project status"
 3. Wake phrase detection → Speech recognition
 4. Voice command → WebSocket → Backend processing
 5. Response → Dashboard updates → User sees results
@@ -125,7 +125,7 @@ LeenVibe-iOS/Tests/
 ```swift
 class VoiceIntegrationTests: XCTestCase {
     func testWakePhraseDetection() {
-        // Test "Hey LeenVibe" detection across pronunciation variants
+        // Test "Hey LeanVibe" detection across pronunciation variants
         // Verify WakePhraseManager triggers correctly
         // Validate wake phrase sensitivity settings
     }
@@ -214,7 +214,7 @@ class PerformanceIntegrationTests: XCTestCase {
 
 ## Success Criteria
 
-- [ ] "Hey LeenVibe" wake phrase works reliably (>95% accuracy)
+- [ ] "Hey LeanVibe" wake phrase works reliably (>95% accuracy)
 - [ ] Voice commands execute successfully and update dashboard
 - [ ] FloatingVoiceIndicator provides consistent status across tabs
 - [ ] Voice system gracefully handles permissions and errors
@@ -242,8 +242,8 @@ swift test --filter DashboardIntegrationTests
 swift test --filter EndToEndWorkflowTests
 
 # Performance benchmarking
-instruments -t "Time Profiler" LeenVibe.app
-instruments -t "Allocations" LeenVibe.app
+instruments -t "Time Profiler" LeanVibe.app
+instruments -t "Allocations" LeanVibe.app
 ```
 
 ## Priority

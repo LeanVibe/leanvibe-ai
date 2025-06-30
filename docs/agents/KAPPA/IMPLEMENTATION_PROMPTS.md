@@ -6,7 +6,7 @@ This document contains the key prompts, patterns, and implementation approaches 
 
 ### Core Implementation Prompt
 ```
-Create a comprehensive Settings & Configuration System for LeenVibe iOS app that provides complete control over all features built in previous tasks:
+Create a comprehensive Settings & Configuration System for LeanVibe iOS app that provides complete control over all features built in previous tasks:
 
 1. Voice System Configuration (KAPPA's specialty)
 2. Kanban Board Customization (KAPPA's creation)  
@@ -60,7 +60,7 @@ struct VoiceSettingsView: View {
     
     private var wakePhraseSection: some View {
         Section("Wake Phrase") {
-            Toggle("Enable 'Hey LeenVibe'", isOn: $settingsManager.voiceSettings.wakePhraseEnabled)
+            Toggle("Enable 'Hey LeanVibe'", isOn: $settingsManager.voiceSettings.wakePhraseEnabled)
                 .onChange(of: settingsManager.voiceSettings.wakePhraseEnabled) { _, enabled in
                     handleWakePhraseToggle(enabled) // Integrate with VoiceManager
                 }
@@ -128,9 +128,9 @@ struct QRScannerView: View {
     }
     
     private func parseQRCode(_ content: String) -> ServerConfig? {
-        // Parse "leenvibe://server/host:port?ssl=true" format
+        // Parse "leanvibe://server/host:port?ssl=true" format
         guard let url = URL(string: content),
-              url.scheme == "leenvibe" else { return nil }
+              url.scheme == "leanvibe" else { return nil }
         // ... parsing logic
     }
 }

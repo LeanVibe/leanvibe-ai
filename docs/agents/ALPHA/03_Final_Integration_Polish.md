@@ -1,7 +1,7 @@
 # ALPHA Agent - Task 03: Final Integration & Polish
 
 **Assignment Date**: Post Major Integration Completion  
-**Worktree**: Use existing worktree `../leenvibe-ios-dashboard`  
+**Worktree**: Use existing worktree `../leanvibe-ios-dashboard`  
 **Branch**: `feature/final-integration-polish`  
 **Status**: 🔄 ASSIGNED  
 
@@ -23,8 +23,8 @@ Complete the final integration polish that transforms our unified codebase into 
 
 ## Working Directory
 
-**Main Integration Work**: `/Users/bogdan/work/leanvibe-ai/LeenVibe-iOS/`  
-**Your Worktree**: `/Users/bogdan/work/leenvibe-ios-dashboard/`  
+**Main Integration Work**: `/Users/bogdan/work/leanvibe-ai/LeanVibe-iOS/`  
+**Your Worktree**: `/Users/bogdan/work/leanvibe-ios-dashboard/`  
 **Integration Target**: Main project (all your work already integrated)
 
 ## 🔗 Critical Integration Tasks
@@ -57,9 +57,9 @@ class AppCoordinator: ObservableObject {
     }
 }
 
-// Update LeenVibeApp.swift to use proper coordinator
+// Update LeanVibeApp.swift to use proper coordinator
 @main
-struct LeenVibeApp: App {
+struct LeanVibeApp: App {
     @StateObject private var coordinator = AppCoordinator()
     
     var body: some Scene {
@@ -81,7 +81,7 @@ struct LeenVibeApp: App {
 ```
 
 ### 2. Voice Wake Phrase Background Integration
-**Enable "Hey LeenVibe" across the entire app**
+**Enable "Hey LeanVibe" across the entire app**
 
 ```swift
 // Current Issue: Voice components exist but aren't globally active
@@ -95,7 +95,7 @@ class GlobalVoiceManager: ObservableObject {
     private let speechRecognition = SpeechRecognitionService()
     
     func startGlobalVoiceListening() {
-        // Enable background "Hey LeenVibe" detection
+        // Enable background "Hey LeanVibe" detection
         voiceManager.startWakePhraseDetection { [weak self] in
             DispatchQueue.main.async {
                 self?.triggerVoiceCommand()
@@ -241,14 +241,14 @@ struct LaunchScreenView: View {
     
     var body: some View {
         VStack {
-            Image("LeenVibeLogo")
+            Image("LeanVibeLogo")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 120, height: 120)
                 .scaleEffect(isAnimating ? 1.1 : 1.0)
                 .animation(.easeInOut(duration: 1.0).repeatForever(), value: isAnimating)
             
-            Text("LeenVibe")
+            Text("LeanVibe")
                 .font(.largeTitle)
                 .fontWeight(.bold)
             
@@ -358,7 +358,7 @@ class PerformanceManager: ObservableObject {
 ## 🔧 Technical Implementation Requirements
 
 ### Integration Points
-1. **Update LeenVibeApp.swift** with proper app coordinator
+1. **Update LeanVibeApp.swift** with proper app coordinator
 2. **Enhance DashboardTabView.swift** with global voice integration  
 3. **Connect QRScannerView** to onboarding flow
 4. **Add app lifecycle management** to all major views
@@ -366,8 +366,8 @@ class PerformanceManager: ObservableObject {
 
 ### Files to Modify/Create
 ```
-LeenVibe-iOS/LeenVibe/
-├── LeenVibeApp.swift                    # Update with app coordinator
+LeanVibe-iOS/LeanVibe/
+├── LeanVibeApp.swift                    # Update with app coordinator
 ├── Coordinators/
 │   ├── AppCoordinator.swift            # New: Main app coordination
 │   ├── NavigationCoordinator.swift     # New: Navigation management
@@ -391,7 +391,7 @@ LeenVibe-iOS/LeenVibe/
 
 ### Critical Integration Requirements
 - [ ] QR Scanner successfully connects to backend and saves configuration
-- [ ] "Hey LeenVibe" wake phrase works from any tab
+- [ ] "Hey LeanVibe" wake phrase works from any tab
 - [ ] App launches smoothly with proper state checking
 - [ ] Voice commands trigger properly across the entire app
 - [ ] Error states provide clear recovery paths

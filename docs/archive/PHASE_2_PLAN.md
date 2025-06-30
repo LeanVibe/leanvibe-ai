@@ -39,12 +39,12 @@
 **Priority**: CRITICAL (blocks all validation)
 
 #### Problem
-Circular imports between `leenvibe_cli.config` and `leenvibe_cli.config/*` prevent test execution
+Circular imports between `leanvibe_cli.config` and `leanvibe_cli.config/*` prevent test execution
 
 #### Solution Strategy
 ```python
 # Move CLIConfig to resolve circular dependency
-leenvibe_cli/
+leanvibe_cli/
 ├── config.py              # Legacy CLIConfig (keep as-is)
 ├── config/
 │   ├── __init__.py        # Remove circular import
@@ -120,7 +120,7 @@ Feed existing AST analysis and symbol extraction into L3 agent context for intel
 
 #### Implementation Strategy
 ```python
-# File: leenvibe-backend/app/agent/ast_context_provider.py
+# File: leanvibe-backend/app/agent/ast_context_provider.py
 
 class ASTContextProvider:
     """Provides rich AST context to L3 agent"""
@@ -178,7 +178,7 @@ Create sophisticated mock responses that simulate real MLX output to validate en
 
 #### Implementation Strategy
 ```python
-# File: leenvibe-backend/app/services/mock_mlx_service.py
+# File: leanvibe-backend/app/services/mock_mlx_service.py
 
 class MockMLXService:
     """Sophisticated mock MLX service for workflow validation"""
@@ -248,7 +248,7 @@ Create simple, well-tested endpoint that combines AST context + L3 agent + mock 
 
 #### Implementation Strategy
 ```python
-# File: leenvibe-backend/app/api/completion.py
+# File: leanvibe-backend/app/api/completion.py
 
 @router.post("/api/completion/suggest")
 async def suggest_code_completion(request: CodeCompletionRequest) -> CodeCompletionResponse:
@@ -317,7 +317,7 @@ Add specific coding assistant commands to iOS WebSocket interface
 
 #### Implementation Strategy
 ```python
-# File: leenvibe-backend/app/websocket/coding_commands.py
+# File: leanvibe-backend/app/websocket/coding_commands.py
 
 class CodingCommandHandler:
     """Handle iOS coding assistant commands"""
@@ -356,7 +356,7 @@ class CodingCommandHandler:
 
 #### iOS Integration
 ```swift
-// File: LeenVibe-SwiftPM/Sources/LeenVibe/Services/CodingAssistantService.swift
+// File: LeanVibe-SwiftPM/Sources/LeanVibe/Services/CodingAssistantService.swift
 
 class CodingAssistantService {
     func suggestCode(for filePath: String, at position: Int, context: String) async -> CodeSuggestions? {
@@ -481,7 +481,7 @@ Replace mock MLX service with real Phi-3-Mini inference
 
 #### Implementation Strategy
 ```python
-# File: leenvibe-backend/app/services/mlx_service.py
+# File: leanvibe-backend/app/services/mlx_service.py
 
 class MLXService:
     """Real MLX service using Phi-3-Mini-128K-Instruct"""

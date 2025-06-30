@@ -1,4 +1,4 @@
-# MVP Status Report - LeenVibe L3 Coding Assistant
+# MVP Status Report - LeanVibe L3 Coding Assistant
 
 *Assessment Date: December 27, 2024*
 
@@ -15,7 +15,7 @@
 
 ### MVP Specification Analysis
 
-**Original Target** (leenvibe-mvp-specification.md):
+**Original Target** (leanvibe-mvp-specification.md):
 - Simple L3 coding agent with local MLX inference
 - iOS mobile control of Mac coding assistant  
 - Basic dependency mapping with Tree-sitter
@@ -171,7 +171,7 @@
 - [ ] iOS app can trigger code suggestions on Mac
 - [ ] Real AI-powered coding assistance working end-to-end  
 - [ ] Sub-2 second response time for suggestions
-- [ ] Core workflow: "Hey LeenVibe, suggest improvements to this function"
+- [ ] Core workflow: "Hey LeanVibe, suggest improvements to this function"
 
 ### Quality Validation
 - [ ] Performance: <2s for code suggestions

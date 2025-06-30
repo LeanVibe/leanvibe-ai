@@ -1,4 +1,4 @@
-# LeenVibe User Workflow Validation Report
+# LeanVibe User Workflow Validation Report
 
 **Assessment Date**: December 29, 2025  
 **Scope**: End-to-End User Journey Analysis  
@@ -56,7 +56,7 @@
 ### 3. Voice Interface Workflow (95% Complete)
 
 #### User Journey:
-1. **Wake Phrase Detection** → "Hey LeenVibe"
+1. **Wake Phrase Detection** → "Hey LeanVibe"
 2. **Voice Command Recognition** → Speech processing
 3. **Command Execution** → Backend integration
 4. **Visual Feedback** → UI updates and confirmations

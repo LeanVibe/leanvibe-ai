@@ -1,6 +1,6 @@
-# LeenVibe Vertical Slice Setup Guide
+# LeanVibe Vertical Slice Setup Guide
 
-This guide will help you set up and run the LeenVibe L3 Coding Agent vertical slice in under 30 minutes. Perfect for junior engineers or anyone wanting to test the system.
+This guide will help you set up and run the LeanVibe L3 Coding Agent vertical slice in under 30 minutes. Perfect for junior engineers or anyone wanting to test the system.
 
 ## 🎯 What You'll Build
 
@@ -8,7 +8,7 @@ By the end of this guide, you'll have:
 - A local AI agent running on your Mac
 - An iOS app that communicates with the agent
 - Real-time command execution and responses
-- A working demonstration of the core LeenVibe concept
+- A working demonstration of the core LeanVibe concept
 
 ## 📋 Prerequisites
 
@@ -43,13 +43,13 @@ system_profiler SPHardwareDataType | grep Memory
 cd /path/to/leanvibe-ai
 
 # Verify backend files exist
-ls leenvibe-backend/
+ls leanvibe-backend/
 # Should see: app/ pyproject.toml start.sh README.md tests/
 ```
 
 ### Step 2: Quick Start Script
 ```bash
-cd leenvibe-backend
+cd leanvibe-backend
 
 # Make startup script executable
 chmod +x start.sh
@@ -72,7 +72,7 @@ Open a new terminal window and test:
 curl http://localhost:8000/health
 
 # Expected response:
-# {"status":"healthy","service":"leenvibe-backend","ai_ready":true}
+# {"status":"healthy","service":"leanvibe-backend","ai_ready":true}
 ```
 
 If you see this response, your backend is ready! 🎉
@@ -99,7 +99,7 @@ Choose one of these options:
 
 1. **Navigate to Swift Package**:
    ```bash
-   cd LeenVibe-SwiftPM
+   cd LeanVibe-SwiftPM
    ```
 
 2. **Open in Xcode**:
@@ -119,23 +119,23 @@ Choose one of these options:
    - Select "Create a new Xcode project"
    - Choose **iOS** → **App**
    - Configure your project:
-     - Product Name: `LeenVibe`
+     - Product Name: `LeanVibe`
      - Interface: **SwiftUI**
      - Language: **Swift**
      - Minimum Deployment: **iOS 16.0**
 
 2. **Add Package Dependency**:
    - File → Add Package Dependencies
-   - Enter local path: `/path/to/LeenVibe-SwiftPM`
+   - Enter local path: `/path/to/LeanVibe-SwiftPM`
    - Click "Add Package"
 
 3. **Update App Entry Point**:
    ```swift
    import SwiftUI
-   import LeenVibe
+   import LeanVibe
 
    @main
-   struct MyLeenVibeApp: App {
+   struct MyLeanVibeApp: App {
        var body: some Scene {
            WindowGroup {
                ContentView()
@@ -192,7 +192,7 @@ In the iOS app, try these commands:
 **Problem**: `ModuleNotFoundError: No module named 'fastapi'`
 ```bash
 # Solution: Sync dependencies with uv
-cd leenvibe-backend
+cd leanvibe-backend
 uv sync
 ```
 
@@ -232,7 +232,7 @@ chmod -R 755 app/
 # Solution: Update Swift package dependencies
 # In Xcode: File → Packages → Update to Latest Package Versions
 # Or in terminal:
-cd LeenVibe-SwiftPM
+cd LeanVibe-SwiftPM
 swift package update
 ```
 
@@ -298,11 +298,11 @@ This vertical slice demonstrates:
 - Command processing and responses
 - Error handling and reconnection
 
-The full LeenVibe system will add:
+The full LeanVibe system will add:
 - True MLX model integration (CodeLlama-32B)
 - Advanced agent autonomy with confidence scoring
 - Kanban board visualization
 - Voice command integration
 - Multi-project support
 
-Congratulations! You now have a working foundation for the LeenVibe L3 Coding Agent. 🎊
+Congratulations! You now have a working foundation for the LeanVibe L3 Coding Agent. 🎊

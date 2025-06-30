@@ -2,10 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# LeenVibe L3 Coding Assistant Project
+# LeanVibe L3 Coding Assistant Project
 
 ## Project Overview
-LeenVibe is an L3 autonomous coding assistant designed for senior engineers. It provides AI-powered development acceleration while maintaining human control, running entirely on local hardware with privacy-first architecture.
+LeanVibe is an L3 autonomous coding assistant designed for senior engineers. It provides AI-powered development acceleration while maintaining human control, running entirely on local hardware with privacy-first architecture.
 
 **Current Status**: Foundation phase - iOS companion app and backend WebSocket communication working. **✅ Real MLX model inference implemented and tested successfully!**
 
@@ -39,11 +39,11 @@ LeenVibe is an L3 autonomous coding assistant designed for senior engineers. It 
 
 ```bash
 # Development Setup (Current)
-cd leenvibe-backend && uv sync
+cd leanvibe-backend && uv sync
 ./start.sh  # Starts server with QR code
 
 # Testing (Current)
-cd leenvibe-backend
+cd leanvibe-backend
 python run_tests.py  # or uv run pytest
 pytest tests/ -v
 pytest --cov=app --cov-report=html
@@ -55,7 +55,7 @@ flake8 app/ tests/
 mypy app/
 
 # iOS Development (Current)
-open LeenVibe-iOS-App/LeenVibe.xcodeproj  # Current working iOS project
+open LeanVibe-iOS-App/LeanVibe.xcodeproj  # Current working iOS project
 # SwiftUI app with QR scanner and WebSocket connection
 
 # iOS Development - Testing
@@ -145,7 +145,7 @@ open LeenVibe-iOS-App/LeenVibe.xcodeproj  # Current working iOS project
 4. **Limited Error Handling**: Basic error cases covered ⚠️ (Improving)
 
 ## Memory Management - Planned
-- Session state persisted to `.leenvibe/sessions/` ⚠️
+- Session state persisted to `.leanvibe/sessions/` ⚠️
 - Context pruning at 80% capacity ⚠️
 - Automatic consolidation of long-running sessions ⚠️
 
@@ -189,10 +189,10 @@ Before any PR:
 ### Debug Commands
 ```bash
 # Check agent status
-leenvibe status --verbose
+leanvibe status --verbose
 
 # Analyze context usage
-leenvibe context --analyze
+leanvibe context --analyze
 
 # Performance profiling
 python -m cProfile -o profile.out app/main.py

@@ -1,7 +1,7 @@
 # BETA Agent - Task 03: iOS Performance Optimization & Advanced Notifications
 
 **Assignment Date**: Post iOS Notifications Completion  
-**Worktree**: Continue in `../leenvibe-ios-notifications` + Main project  
+**Worktree**: Continue in `../leanvibe-ios-notifications` + Main project  
 **Branch**: `feature/ios-performance-optimization`  
 **Status**: 📋 PREPARED (Assign after Task 2 completion)
 
@@ -18,7 +18,7 @@ Outstanding work completing the backend APIs AND iOS push notifications! You've 
 
 ## Your New Mission
 
-Transform the LeenVibe iOS app into a **high-performance, battery-efficient application** with advanced notification intelligence and comprehensive performance monitoring.
+Transform the LeanVibe iOS app into a **high-performance, battery-efficient application** with advanced notification intelligence and comprehensive performance monitoring.
 
 ## Performance Optimization Scope
 

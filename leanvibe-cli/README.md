@@ -1,10 +1,10 @@
-# LeenVibe CLI
+# LeanVibe CLI
 
 Terminal-native interface for enterprise codebase analysis and real-time monitoring.
 
 ## Overview
 
-LeenVibe CLI is a minimal viable command-line interface that connects to the sophisticated LeenVibe backend infrastructure. It provides real-time codebase monitoring, AST-powered analysis, and intelligent suggestions through a terminal-native experience.
+LeanVibe CLI is a minimal viable command-line interface that connects to the sophisticated LeanVibe backend infrastructure. It provides real-time codebase monitoring, AST-powered analysis, and intelligent suggestions through a terminal-native experience.
 
 ## Features
 
@@ -18,81 +18,81 @@ LeenVibe CLI is a minimal viable command-line interface that connects to the sop
 
 ```bash
 # Install from source (development)
-cd leenvibe-cli
+cd leanvibe-cli
 pip install -e .
 
 # Or install directly
-pip install leenvibe-cli
+pip install leanvibe-cli
 ```
 
 ## Quick Start
 
 ```bash
 # Check backend connection and status
-leenvibe status
+leanvibe status
 
 # Start real-time monitoring
-leenvibe monitor
+leanvibe monitor
 
 # Analyze your codebase
-leenvibe analyze --all
+leanvibe analyze --all
 
 # Ask the AI agent questions
-leenvibe query "What are the main components of this project?"
+leanvibe query "What are the main components of this project?"
 
 # Interactive session with the L3 agent
-leenvibe query --interactive
+leanvibe query --interactive
 ```
 
 ## Commands
 
-### `leenvibe status`
+### `leanvibe status`
 Show backend health, connection status, and project information.
 
 ```bash
-leenvibe status                  # Basic status
-leenvibe status --detailed       # Detailed information
-leenvibe status --json          # JSON output
+leanvibe status                  # Basic status
+leanvibe status --detailed       # Detailed information
+leanvibe status --json          # JSON output
 ```
 
-### `leenvibe monitor`
+### `leanvibe monitor`
 Real-time file monitoring with event notifications.
 
 ```bash
-leenvibe monitor                 # Start monitoring
-leenvibe monitor -f high         # Filter high-priority events only
-leenvibe monitor -t 60           # Monitor for 60 seconds
-leenvibe monitor --json          # JSON event stream
+leanvibe monitor                 # Start monitoring
+leanvibe monitor -f high         # Filter high-priority events only
+leanvibe monitor -t 60           # Monitor for 60 seconds
+leanvibe monitor --json          # JSON event stream
 ```
 
-### `leenvibe analyze`
+### `leanvibe analyze`
 Trigger AST analysis and display codebase insights.
 
 ```bash
-leenvibe analyze                 # Project overview
-leenvibe analyze --complexity    # Code complexity analysis
-leenvibe analyze --architecture  # Architecture patterns
-leenvibe analyze --dependencies  # Circular dependency detection
-leenvibe analyze --all           # All analysis types
-leenvibe analyze -s "MyClass"    # Analyze specific symbol
+leanvibe analyze                 # Project overview
+leanvibe analyze --complexity    # Code complexity analysis
+leanvibe analyze --architecture  # Architecture patterns
+leanvibe analyze --dependencies  # Circular dependency detection
+leanvibe analyze --all           # All analysis types
+leanvibe analyze -s "MyClass"    # Analyze specific symbol
 ```
 
-### `leenvibe query`
+### `leanvibe query`
 Natural language interaction with the L3 agent.
 
 ```bash
-leenvibe query "Find all classes that inherit from BaseClass"
-leenvibe query --interactive     # Start interactive session
-leenvibe query "/status"         # Execute slash command
-leenvibe query --workspace /path/to/project "Analyze this project"
+leanvibe query "Find all classes that inherit from BaseClass"
+leanvibe query --interactive     # Start interactive session
+leanvibe query "/status"         # Execute slash command
+leanvibe query --workspace /path/to/project "Analyze this project"
 ```
 
 ## Configuration
 
-LeenVibe CLI uses YAML configuration files:
+LeanVibe CLI uses YAML configuration files:
 
-- Project-specific: `.leenvibe/cli-config.yaml`
-- User-wide: `~/.leenvibe/cli-config.yaml`
+- Project-specific: `.leanvibe/cli-config.yaml`
+- User-wide: `~/.leanvibe/cli-config.yaml`
 
 Example configuration:
 
@@ -118,10 +118,10 @@ exclude_patterns:
 
 ## Backend Requirements
 
-LeenVibe CLI requires a running LeenVibe backend service:
+LeanVibe CLI requires a running LeanVibe backend service:
 
 ```bash
-# Start the backend (from leenvibe-backend directory)
+# Start the backend (from leanvibe-backend directory)
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -129,7 +129,7 @@ The CLI will auto-detect a local backend on `localhost:8000` by default.
 
 ## Interactive Mode
 
-Use `leenvibe query --interactive` for a persistent session with the L3 agent:
+Use `leanvibe query --interactive` for a persistent session with the L3 agent:
 
 ```
 ❯ What files have high complexity?
@@ -156,7 +156,7 @@ Goodbye!
 The monitor command provides live updates of file changes, architectural violations, and system events:
 
 ```bash
-leenvibe monitor
+leanvibe monitor
 ```
 
 This displays:
@@ -170,37 +170,37 @@ This displays:
 ### Basic Project Analysis
 ```bash
 # Get project overview
-leenvibe analyze
+leanvibe analyze
 
 # Check for issues
-leenvibe analyze --complexity --dependencies
+leanvibe analyze --complexity --dependencies
 
 # Monitor for violations
-leenvibe monitor -f high
+leanvibe monitor -f high
 ```
 
 ### AI-Powered Exploration
 ```bash
 # Ask about code structure
-leenvibe query "What design patterns are used in this codebase?"
+leanvibe query "What design patterns are used in this codebase?"
 
 # Find specific code
-leenvibe query "Where is the database connection handled?"
+leanvibe query "Where is the database connection handled?"
 
 # Get refactoring suggestions
-leenvibe query "What can be improved in the authentication module?"
+leanvibe query "What can be improved in the authentication module?"
 ```
 
 ### Development Workflow
 ```bash
 # Start monitoring in background
-leenvibe monitor &
+leanvibe monitor &
 
 # Check status periodically
-leenvibe status
+leanvibe status
 
 # Ask questions as you code
-leenvibe query "Is this change following the existing patterns?"
+leanvibe query "Is this change following the existing patterns?"
 ```
 
 ## Integration
@@ -210,8 +210,8 @@ leenvibe query "Is this change following the existing patterns?"
 - `LEENVIBE_CONFIG_PATH`: Custom config file path
 
 ### Project Detection
-LeenVibe CLI automatically detects project context by looking for:
-- `.leenvibe/` directory
+LeanVibe CLI automatically detects project context by looking for:
+- `.leanvibe/` directory
 - `.git/` repository
 - `pyproject.toml`, `package.json`, etc.
 
@@ -220,15 +220,15 @@ LeenVibe CLI automatically detects project context by looking for:
 ```bash
 # Clone and install in development mode
 git clone <repository>
-cd leenvibe-cli
+cd leanvibe-cli
 pip install -e .
 
 # Run tests
 pytest
 
 # Format code
-black leenvibe_cli/
-isort leenvibe_cli/
+black leanvibe_cli/
+isort leanvibe_cli/
 ```
 
 ## Troubleshooting
@@ -236,37 +236,37 @@ isort leenvibe_cli/
 ### Connection Issues
 ```bash
 # Check backend status
-leenvibe status
+leanvibe status
 
 # Verify backend URL
-leenvibe status --detailed
+leanvibe status --detailed
 
 # Test with explicit URL
-leenvibe --backend-url http://localhost:8000 status
+leanvibe --backend-url http://localhost:8000 status
 ```
 
 ### Configuration Issues
 ```bash
 # Check current config
-leenvibe --verbose status
+leanvibe --verbose status
 
 # Reset configuration
-rm ~/.leenvibe/cli-config.yaml
-leenvibe status  # Will recreate with defaults
+rm ~/.leanvibe/cli-config.yaml
+leanvibe status  # Will recreate with defaults
 ```
 
 ### Performance Issues
 ```bash
 # Check backend performance
-leenvibe status --detailed
+leanvibe status --detailed
 
 # Monitor with reduced frequency
-leenvibe monitor -f critical
+leanvibe monitor -f critical
 ```
 
 ## Architecture
 
-LeenVibe CLI is designed as a thin client that leverages the sophisticated backend infrastructure:
+LeanVibe CLI is designed as a thin client that leverages the sophisticated backend infrastructure:
 
 - **HTTP Client**: REST API communication for analysis requests
 - **WebSocket Client**: Real-time event streaming and L3 agent interaction  

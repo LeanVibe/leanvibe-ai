@@ -1,6 +1,6 @@
-# LeenVibe MVP Development: Comprehensive Research Report
+# LeanVibe MVP Development: Comprehensive Research Report
 
-The AI coding assistant market is experiencing explosive growth, projected to reach $99.10 billion by 2034. The landscape has evolved from simple autocomplete tools to sophisticated autonomous agents, with senior engineers demanding control, transparency, and deep integration over flashy features. This research provides actionable insights across all 10 requested areas for building LeenVibe as a semi-autonomous coding agent.
+The AI coding assistant market is experiencing explosive growth, projected to reach $99.10 billion by 2034. The landscape has evolved from simple autocomplete tools to sophisticated autonomous agents, with senior engineers demanding control, transparency, and deep integration over flashy features. This research provides actionable insights across all 10 requested areas for building LeanVibe as a semi-autonomous coding agent.
 
 ## Current state of AI coding assistants in 2025
 
@@ -8,7 +8,7 @@ The market has reached an inflection point where "copilot" capabilities are evol
 
 The "70% problem" remains critical - agents handle routine tasks well but struggle with the final 30% requiring human judgment. Successful tools are adopting a "pair programming" model where AI augments rather than replaces developers. Market leaders are implementing multi-model support (GPT-4, Claude 3.5, local models) to avoid vendor lock-in and optimize for different task types.
 
-## Python-based AI agent architectures for LeenVibe
+## Python-based AI agent architectures for LeanVibe
 
 Modern architectures favor **graph-based workflows** using LangGraph for complex state management and agent orchestration. The recommended approach combines an Actor Model pattern for agent independence with event-driven communication for scalability. CrewAI offers 5.76x faster performance than LangGraph for multi-agent scenarios, making it ideal for performance-critical applications.
 
@@ -80,7 +80,7 @@ Voice coding has evolved from GitHub Copilot Voice to VS Code Speech extension w
 
 Siri Shortcuts enable workflow automation like "run the build script" or "commit changes." For custom recognition, Whisper API offers high accuracy with technical vocabulary, supporting both local processing (privacy) and cloud options (accuracy). Voice UI requires clear feedback, error recovery, progressive disclosure, and multimodal interaction combining voice, touch, and visual elements.
 
-## Implementation roadmap for LeenVibe
+## Implementation roadmap for LeanVibe
 
 **Immediate priorities**: Establish local-first architecture with MLX for inference, implement multi-layered memory system, create VS Code extension with minimal setup, build security foundations with sandboxing, and design conversational interface for debugging.
 

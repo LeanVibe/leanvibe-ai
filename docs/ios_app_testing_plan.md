@@ -1,7 +1,7 @@
-# LeenVibe iOS App - Comprehensive Testing & Validation Plan
+# LeanVibe iOS App - Comprehensive Testing & Validation Plan
 
 ## 📋 Overview
-This document provides a systematic approach to testing all LeenVibe iOS app functionalities. Follow this plan to validate each feature incrementally and document issues for dev/QA onboarding.
+This document provides a systematic approach to testing all LeanVibe iOS app functionalities. Follow this plan to validate each feature incrementally and document issues for dev/QA onboarding.
 
 ---
 
@@ -47,14 +47,14 @@ xcrun devicectl device log stream --device 00008120-000654961A10C01E --style com
 - No crashes during permission flow
 
 **How to Test:**
-- Go to Settings → Privacy & Security → Microphone → LeenVibe (should be ON)
-- Go to Settings → Privacy & Security → Speech Recognition → LeenVibe (should be ON)
+- Go to Settings → Privacy & Security → Microphone → LeanVibe (should be ON)
+- Go to Settings → Privacy & Security → Speech Recognition → LeanVibe (should be ON)
 
 ### 2.2 Speech Recognition Core Functionality
 **Test Steps:**
 1. Find voice command button/trigger
 2. Start speech recognition
-3. Speak clearly: "Hello LeenVibe"
+3. Speak clearly: "Hello LeanVibe"
 4. Verify text recognition
 5. Test silence timeout (stop speaking for 3+ seconds)
 6. Test maximum duration timeout (speak for 30+ seconds)
@@ -102,7 +102,7 @@ xcrun devicectl device log stream --device 00008120-000654961A10C01E --style com
 
 **QR Code Format Expected:**
 ```
-leenvibe://server/localhost:8000?ssl=false
+leanvibe://server/localhost:8000?ssl=false
 ```
 
 ### 3.2 Manual Server Connection
@@ -268,20 +268,20 @@ leenvibe://server/localhost:8000?ssl=false
 # Stream device logs
 xcrun devicectl device log stream --device 00008120-000654961A10C01E --style compact
 
-# Filter for LeenVibe logs
-xcrun devicectl device log stream --device 00008120-000654961A10C01E --style compact | grep LeenVibe
+# Filter for LeanVibe logs
+xcrun devicectl device log stream --device 00008120-000654961A10C01E --style compact | grep LeanVibe
 ```
 
 ### Check Permissions
 ```bash
 # Check current permissions
-xcrun simctl privacy list all | grep LeenVibe
+xcrun simctl privacy list all | grep LeanVibe
 ```
 
 ### Reset App State
 ```bash
 # Uninstall and reinstall for clean state
-xcrun devicectl device uninstall app --device 00008120-000654961A10C01E com.bogdan.leenvibe.LeenVibe
+xcrun devicectl device uninstall app --device 00008120-000654961A10C01E com.bogdan.leanvibe.LeanVibe
 # Then reinstall with xcodebuild
 ```
 

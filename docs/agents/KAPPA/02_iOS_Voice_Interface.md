@@ -1,25 +1,25 @@
 # KAPPA Agent - Task 02: iOS Voice Interface System Specialist
 
 **Assignment Date**: Post Kanban Completion  
-**Worktree**: `../leenvibe-ios-voice`  
+**Worktree**: `../leanvibe-ios-voice`  
 **Branch**: `feature/ios-voice-interface`  
 **Status**: ✅ COMPLETED  
 
 ## Mission Brief
 
-Congratulations on completing the Kanban board system 2 weeks ahead of schedule! You're now being reassigned to the **iOS Voice Interface System Specialist** role for Phase 5 of the enhancement plan - building the voice-controlled interface with "Hey LeenVibe" wake phrase detection.
+Congratulations on completing the Kanban board system 2 weeks ahead of schedule! You're now being reassigned to the **iOS Voice Interface System Specialist** role for Phase 5 of the enhancement plan - building the voice-controlled interface with "Hey LeanVibe" wake phrase detection.
 
 ## Context
 
 - **Previous Achievement**: ✅ Kanban board system completed early
 - **New Phase**: 5 - Voice Interface (High Priority - Unique Differentiator)  
 - **Duration**: 2 weeks
-- **Working Directory**: `../leenvibe-ios-voice`
+- **Working Directory**: `../leanvibe-ios-voice`
 - **New Branch**: `feature/ios-voice-interface`
 
 ## Your New Mission
 
-Build a comprehensive voice interface system that allows users to control the LeenVibe agent and dashboard using natural speech commands, starting with "Hey LeenVibe" wake phrase detection.
+Build a comprehensive voice interface system that allows users to control the LeanVibe agent and dashboard using natural speech commands, starting with "Hey LeanVibe" wake phrase detection.
 
 ## Specific Tasks
 
@@ -28,7 +28,7 @@ Build a comprehensive voice interface system that allows users to control the Le
 **Voice Recognition Infrastructure**:
 - iOS Speech framework integration
 - Privacy-first on-device speech recognition
-- "Hey LeenVibe" wake phrase detection
+- "Hey LeanVibe" wake phrase detection
 - Continuous listening with battery optimization
 - Voice command processing and confirmation
 
@@ -49,7 +49,7 @@ Build a comprehensive voice interface system that allows users to control the Le
 
 **Files to Create**:
 ```
-LeenVibe-iOS-App/LeenVibe/
+LeanVibe-iOS-App/LeanVibe/
 ├── Models/
 │   └── VoiceCommand.swift           # Voice command data models
 ├── Services/
@@ -73,8 +73,8 @@ LeenVibe-iOS-App/LeenVibe/
 
 **Wake Phrase Implementation**:
 ```swift
-// Continuous listening for "Hey LeenVibe"
-// Variants: "Hey Lean Vibe", "Hi LeenVibe", "Hello LeenVibe"
+// Continuous listening for "Hey LeanVibe"
+// Variants: "Hey Lean Vibe", "Hi LeanVibe", "Hello LeanVibe"
 // Background processing with minimal battery impact
 ```
 
@@ -108,9 +108,9 @@ GET    /voice/commands                 # List available commands
 **Required Permissions**:
 ```xml
 <key>NSMicrophoneUsageDescription</key>
-<string>Microphone access required for voice commands to control LeenVibe agent</string>
+<string>Microphone access required for voice commands to control LeanVibe agent</string>
 <key>NSSpeechRecognitionUsageDescription</key>
-<string>Speech recognition enables voice control of LeenVibe features</string>
+<string>Speech recognition enables voice control of LeanVibe features</string>
 ```
 
 ## Performance Requirements
@@ -131,7 +131,7 @@ GET    /voice/commands                 # List available commands
 - Error states and retry mechanisms
 
 **Interaction Flow**:
-1. User says "Hey LeenVibe" or taps voice button
+1. User says "Hey LeanVibe" or taps voice button
 2. System activates with visual/haptic feedback
 3. User speaks command naturally
 4. System shows recognized text for confirmation
@@ -166,7 +166,7 @@ GET    /voice/commands                 # List available commands
 
 ## Quality Gates
 
-- [ ] "Hey LeenVibe" wake phrase detection working
+- [ ] "Hey LeanVibe" wake phrase detection working
 - [ ] Natural voice commands processed accurately
 - [ ] Integration with WebSocket and backend APIs
 - [ ] Voice interface accessible from dashboard
@@ -191,6 +191,6 @@ GET    /voice/commands                 # List available commands
 
 ## Expected Outcome
 
-A sophisticated voice interface system that enables hands-free control of the LeenVibe agent and dashboard, providing a unique differentiator for the iOS app with "Hey LeenVibe" wake phrase activation.
+A sophisticated voice interface system that enables hands-free control of the LeanVibe agent and dashboard, providing a unique differentiator for the iOS app with "Hey LeanVibe" wake phrase activation.
 
 **Your Achievement**: From Kanban specialist to Voice interface specialist - building two critical MVP features ahead of schedule! 🎤🚀

@@ -1,7 +1,7 @@
 # ALPHA Agent - Task 05: Documentation, Quality Gates & Dashboard Integration
 
 **Assignment Date**: Sprint 1 Integration Phase  
-**Worktree**: Use existing or create `../leenvibe-documentation`  
+**Worktree**: Use existing or create `../leanvibe-documentation`  
 **Branch**: `feature/production-readiness`  
 **Status**: 🏆 **CRITICAL** - Final Quality Gates Before Production!
 
@@ -78,10 +78,10 @@ struct TaskMetricsWidget: View {
 
 #### A. System Architecture Document
 ```markdown
-# LeenVibe System Architecture
+# LeanVibe System Architecture
 
 ## Overview
-LeenVibe is a production-ready L3 AI coding assistant with iOS companion app...
+LeanVibe is a production-ready L3 AI coding assistant with iOS companion app...
 
 ## Components
 1. **Backend (FastAPI)**
@@ -110,7 +110,7 @@ LeenVibe is a production-ready L3 AI coding assistant with iOS companion app...
 
 #### B. Deployment Guide
 ```markdown
-# LeenVibe Production Deployment Guide
+# LeanVibe Production Deployment Guide
 
 ## Prerequisites
 - macOS 13+ with Apple Silicon
@@ -295,4 +295,4 @@ struct PerformanceMonitoringView: View {
 
 **🏆 CRITICAL** - No production deployment without your quality approval!
 
-**Task 5**: Make LeenVibe production-perfect with your quality expertise! 📚✅🚀
+**Task 5**: Make LeanVibe production-perfect with your quality expertise! 📚✅🚀

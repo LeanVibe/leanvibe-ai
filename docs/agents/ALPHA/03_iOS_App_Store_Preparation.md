@@ -1,7 +1,7 @@
 # ALPHA Agent - Task 03: iOS App Store Preparation & Production Deployment
 
 **Assignment Date**: Post Xcode Project Completion  
-**Worktree**: Continue in `../leenvibe-ios-dashboard` + Main project  
+**Worktree**: Continue in `../leanvibe-ios-dashboard` + Main project  
 **Branch**: `feature/ios-production-ready`  
 **Status**: 📋 PREPARED (Assign after Task 2 completion)
 
@@ -18,7 +18,7 @@ Excellent work completing the iOS Dashboard Foundation AND Xcode project creatio
 
 ## Your New Mission
 
-Transform the LeenVibe iOS app from a development build into a **production-ready, App Store compliant application** with professional polish, proper metadata, and deployment infrastructure.
+Transform the LeanVibe iOS app from a development build into a **production-ready, App Store compliant application** with professional polish, proper metadata, and deployment infrastructure.
 
 ## Production Readiness Tasks
 
@@ -45,8 +45,8 @@ App Store Connect Setup:
 **Production Build Settings**:
 ```swift
 // Build Configuration
-PRODUCT_NAME = "LeenVibe"
-BUNDLE_IDENTIFIER = "com.leenvibe.ios"
+PRODUCT_NAME = "LeanVibe"
+BUNDLE_IDENTIFIER = "com.leanvibe.ios"
 VERSION = "1.0.0"
 BUILD_NUMBER = "1"
 
@@ -135,7 +135,7 @@ steps:
   - name: Build and Test
     run: |
       xcodebuild clean build test
-      xcodebuild archive -scheme LeenVibe
+      xcodebuild archive -scheme LeanVibe
       
   - name: Upload to TestFlight
     run: |
@@ -163,20 +163,20 @@ Screenshot Set:
 ### 3. App Store Description Optimization
 **Compelling App Description**:
 ```markdown
-# LeenVibe - Your AI Development Companion
+# LeanVibe - Your AI Development Companion
 
 Transform your mobile development workflow with the most sophisticated 
 AI-powered development companion on iOS.
 
 ## Key Features:
 🎯 **Smart Project Dashboard** - Multi-project tracking with real-time metrics
-🎤 **Voice Control** - "Hey LeenVibe" wake phrase for hands-free coding
+🎤 **Voice Control** - "Hey LeanVibe" wake phrase for hands-free coding
 📋 **Interactive Kanban** - Drag-and-drop task management
 🏗️ **Architecture Visualization** - Beautiful interactive code diagrams
 🔔 **Smart Notifications** - Critical development event alerts
 📊 **Performance Monitoring** - Real-time development metrics
 
-## Why Developers Love LeenVibe:
+## Why Developers Love LeanVibe:
 - Completely privacy-focused (no data leaves your device)
 - Native iOS performance with cutting-edge AI
 - Professional-grade tools for serious developers

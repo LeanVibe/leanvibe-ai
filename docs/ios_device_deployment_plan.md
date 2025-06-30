@@ -18,7 +18,7 @@ Multiple AI agents worked on different components without proper coordination, r
 See `ai_agent_integration_analysis.md` for detailed analysis and proposed solutions.
 
 ## Overview
-This document outlines the comprehensive plan to fix all iOS app compilation errors and successfully deploy LeenVibe to a physical iOS device.
+This document outlines the comprehensive plan to fix all iOS app compilation errors and successfully deploy LeanVibe to a physical iOS device.
 
 ## Current State Analysis
 - **Build System**: Xcode project generated with xcodegen
@@ -38,9 +38,9 @@ Priority: **CRITICAL** - Must complete before any other work
 - [x] Fix duplicate `VoiceWaveformView` in VoiceSettingsView
 
 #### 1.2 Task Reference Errors ✅
-- [x] Fix `Task` references in TaskDetailView → `LeenVibeTask`
-- [x] Fix `Task` references in TaskEditView → `LeenVibeTask`
-- [x] Fix `Task` references in TaskStatisticsView → `LeenVibeTask`
+- [x] Fix `Task` references in TaskDetailView → `LeanVibeTask`
+- [x] Fix `Task` references in TaskEditView → `LeanVibeTask`
+- [x] Fix `Task` references in TaskStatisticsView → `LeanVibeTask`
 
 #### 1.3 Swift 6 Concurrency Issues ✅
 - [x] Fix PremiumDesignSystem static transitions
@@ -60,7 +60,7 @@ Priority: **CRITICAL** - Must complete before any other work
 Priority: **HIGH** - Required for device deployment
 
 #### 2.1 Project Configuration ✅
-- [x] Update bundle identifier in project.yml (com.bogdan.leenvibe.LeenVibe)
+- [x] Update bundle identifier in project.yml (com.bogdan.leanvibe.LeanVibe)
 - [x] Set development team (automatic signing working)
 - [x] Configure device capabilities
 - [x] Set up provisioning profiles (automatic)
@@ -106,7 +106,7 @@ Priority: **MEDIUM** - Polish and optimization
 
 ### Immediate Actions
 1. **Rename all conflicting types** to avoid compilation errors
-2. **Update all Task references** to LeenVibeTask
+2. **Update all Task references** to LeanVibeTask
 3. **Fix Swift 6 concurrency** warnings with proper annotations
 4. **Configure code signing** for device deployment
 
@@ -118,8 +118,8 @@ struct ProjectStatusBadge: View { } // was StatusBadge
 struct ProjectActionButton: View { } // was ActionButton
 
 // 2. Task references
-@State private var selectedTask: LeenVibeTask? // was Task?
-let task: LeenVibeTask // was Task
+@State private var selectedTask: LeanVibeTask? // was Task?
+let task: LeanVibeTask // was Task
 
 // 3. Concurrency fixes
 @MainActor

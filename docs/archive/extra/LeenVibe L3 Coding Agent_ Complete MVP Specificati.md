@@ -1,24 +1,24 @@
 <img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" class="logo" width="120"/>
 
-# LeenVibe L3 Coding Agent: Complete MVP Specification
+# LeanVibe L3 Coding Agent: Complete MVP Specification
 
 ## Executive Summary
 
-LeenVibe delivers a groundbreaking L3 autonomous coding agent designed specifically for senior engineers working on side projects using Apple Silicon hardware [^1]. The system empowers developers to finalize their dream projects by providing intelligent coding assistance that runs entirely on local hardware without cloud dependencies.
+LeanVibe delivers a groundbreaking L3 autonomous coding agent designed specifically for senior engineers working on side projects using Apple Silicon hardware [^1]. The system empowers developers to finalize their dream projects by providing intelligent coding assistance that runs entirely on local hardware without cloud dependencies.
 
-This specification document outlines the complete architecture, features, implementation roadmap, and deployment strategy for the LeenVibe MVP [^2].
+This specification document outlines the complete architecture, features, implementation roadmap, and deployment strategy for the LeanVibe MVP [^2].
 
-![LeenVibe System Architecture](https://pplx-res.cloudinary.com/image/upload/v1750501549/pplx_code_interpreter/6f7b4e9e_burh09.jpg)
+![LeanVibe System Architecture](https://pplx-res.cloudinary.com/image/upload/v1750501549/pplx_code_interpreter/6f7b4e9e_burh09.jpg)
 
-LeenVibe System Architecture
+LeanVibe System Architecture
 
 ## Product Vision \& Target Users
 
-The core vision of LeenVibe is to create a semi-autonomous coding agent that operates locally on developers' machines while providing mobile monitoring and control capabilities [^3]. Target users are senior engineers with Apple Silicon Macs (M3 Max or better with 48GB+ RAM) and iOS devices (iPhone 14 Pro or better) who value privacy, efficiency, and seamless workflow integration [^4]. The product differentiates itself through deep integration with development workflows like vim+tmux, architecture visualization, and human-in-the-loop confidence gates [^5].
+The core vision of LeanVibe is to create a semi-autonomous coding agent that operates locally on developers' machines while providing mobile monitoring and control capabilities [^3]. Target users are senior engineers with Apple Silicon Macs (M3 Max or better with 48GB+ RAM) and iOS devices (iPhone 14 Pro or better) who value privacy, efficiency, and seamless workflow integration [^4]. The product differentiates itself through deep integration with development workflows like vim+tmux, architecture visualization, and human-in-the-loop confidence gates [^5].
 
 ## System Architecture
 
-The LeenVibe system consists of two primary components that work together to deliver the L3 agent experience: the Mac backend and the iOS mobile client [^6]. The Mac backend handles the heavy computational tasks including LLM inference, code analysis, and state management, while the iOS client provides monitoring, visualization, and voice control capabilities [^7].
+The LeanVibe system consists of two primary components that work together to deliver the L3 agent experience: the Mac backend and the iOS mobile client [^6]. The Mac backend handles the heavy computational tasks including LLM inference, code analysis, and state management, while the iOS client provides monitoring, visualization, and voice control capabilities [^7].
 
 ### Mac Backend Components
 
@@ -30,9 +30,9 @@ The backend leverages several key technologies optimized for Apple Silicon [^8]:
 4. **Pydantic.ai Agent Framework**: Implements the L3 agent capabilities with type-safe tools, state management, confidence scoring, and decision logging [^12].
 5. **FastAPI WebSocket Server**: Enables real-time bidirectional communication between the Mac backend and iOS client [^13].
 
-![LeenVibe L3 Agent Architecture](https://pplx-res.cloudinary.com/image/upload/v1750501813/pplx_code_interpreter/49213ba4_j8y7rj.jpg)
+![LeanVibe L3 Agent Architecture](https://pplx-res.cloudinary.com/image/upload/v1750501813/pplx_code_interpreter/49213ba4_j8y7rj.jpg)
 
-LeenVibe L3 Agent Architecture
+LeanVibe L3 Agent Architecture
 
 ### iOS Client Components
 
@@ -43,9 +43,9 @@ The iOS application provides a rich interface for monitoring and controlling the
 3. **Voice Interface**: Implements natural language voice control with wake phrase detection and command recognition [^17].
 4. **Metrics Dashboard**: Displays agent performance statistics including confidence scores, decision logs, and progress metrics [^18].
 
-![LeenVibe iOS App Interface Mockup](https://pplx-res.cloudinary.com/image/upload/v1750501678/gpt4o_images/wpsg9z2g3zexmquwlqaw.png)
+![LeanVibe iOS App Interface Mockup](https://pplx-res.cloudinary.com/image/upload/v1750501678/gpt4o_images/wpsg9z2g3zexmquwlqaw.png)
 
-LeenVibe iOS App Interface Mockup
+LeanVibe iOS App Interface Mockup
 
 ## Core Features \& User Stories
 
@@ -59,13 +59,13 @@ This feature automatically analyzes and visualizes code architecture in real-tim
 
 The impact analysis feature identifies and alerts on the impact of code changes to other components, preventing unintended side effects [^22]. When developers modify code, the system detects changes, traverses the dependency graph to identify affected components, and generates risk assessments with mitigation suggestions [^23].
 
-![LeenVibe Code Dependency Mapping Process](https://pplx-res.cloudinary.com/image/upload/v1750501629/pplx_code_interpreter/177edd57_rimxta.jpg)
+![LeanVibe Code Dependency Mapping Process](https://pplx-res.cloudinary.com/image/upload/v1750501629/pplx_code_interpreter/177edd57_rimxta.jpg)
 
-LeenVibe Code Dependency Mapping Process
+LeanVibe Code Dependency Mapping Process
 
 ### 3. CLI and iOS Integration
 
-LeenVibe provides seamless workflow between command-line and mobile interfaces, enabling developers to work with familiar tools while monitoring progress remotely [^24]. CLI commands mirror Claude Code CLI patterns, with state changes reflected in real-time on the iOS app, and voice commands from iOS can control CLI workflows [^25].
+LeanVibe provides seamless workflow between command-line and mobile interfaces, enabling developers to work with familiar tools while monitoring progress remotely [^24]. CLI commands mirror Claude Code CLI patterns, with state changes reflected in real-time on the iOS app, and voice commands from iOS can control CLI workflows [^25].
 
 ## Implementation Roadmap
 
@@ -81,11 +81,11 @@ The development plan spans 14 weeks divided into five phases [^26]:
 
 The system requires specific hardware and software to operate effectively [^32]. The Mac backend needs an Apple Silicon Mac (M3 Max or better) with 48GB+ RAM, macOS 14.0+, and dependencies including MLX Framework, Neo4j, and FastAPI [^33]. The iOS client requires an iPhone 14 Pro or newer with iOS 17.0+ [^34].
 
-Security is a core consideration for the LeenVibe system, with all data remaining on the user's devices and no cloud transmission [^35]. WebSocket communication uses end-to-end encryption, and the system implements device-based authentication for iOS-Mac pairing [^36]. Generated code runs in a sandboxed environment with static analysis before execution [^37].
+Security is a core consideration for the LeanVibe system, with all data remaining on the user's devices and no cloud transmission [^35]. WebSocket communication uses end-to-end encryption, and the system implements device-based authentication for iOS-Mac pairing [^36]. Generated code runs in a sandboxed environment with static analysis before execution [^37].
 
 ## Conclusion
 
-The LeenVibe L3 Coding Agent MVP specification provides a comprehensive blueprint for developing an innovative tool that empowers senior engineers to complete their side projects efficiently [^38]. By leveraging the power of Apple Silicon and state-of-the-art LLM technology, LeenVibe offers a unique combination of coding intelligence, architectural visualization, and mobile control that addresses the key pain points experienced by its target users [^39]. The phased implementation approach ensures a methodical development process with clearly defined milestones and success criteria [^40].
+The LeanVibe L3 Coding Agent MVP specification provides a comprehensive blueprint for developing an innovative tool that empowers senior engineers to complete their side projects efficiently [^38]. By leveraging the power of Apple Silicon and state-of-the-art LLM technology, LeanVibe offers a unique combination of coding intelligence, architectural visualization, and mobile control that addresses the key pain points experienced by its target users [^39]. The phased implementation approach ensures a methodical development process with clearly defined milestones and success criteria [^40].
 
 <div style="text-align: center">⁂</div>
 

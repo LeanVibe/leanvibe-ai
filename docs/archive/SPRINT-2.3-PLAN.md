@@ -3,7 +3,7 @@
 
 ### Executive Summary
 
-Sprint 2.3 focuses on adding sophisticated real-time terminal notifications to the LeenVibe CLI, leveraging the existing event streaming infrastructure. This sprint transforms the CLI from a request-response tool into a live, reactive interface that provides continuous insights about codebase changes, architectural violations, and AI analysis results.
+Sprint 2.3 focuses on adding sophisticated real-time terminal notifications to the LeanVibe CLI, leveraging the existing event streaming infrastructure. This sprint transforms the CLI from a request-response tool into a live, reactive interface that provides continuous insights about codebase changes, architectural violations, and AI analysis results.
 
 ### Current Foundation
 
@@ -39,7 +39,7 @@ Create a background notification service that runs independently of CLI commands
 
 **2.3.1a: Background Event Listener Service**
 ```python
-# File: leenvibe_cli/services/notification_service.py
+# File: leanvibe_cli/services/notification_service.py
 
 class NotificationService:
     """Background service for real-time notifications"""
@@ -119,7 +119,7 @@ class NotificationService:
 
 **2.3.1b: Terminal Notification Overlay**
 ```python
-# File: leenvibe_cli/ui/notification_overlay.py
+# File: leanvibe_cli/ui/notification_overlay.py
 
 class NotificationOverlay:
     """Non-intrusive terminal notification overlay"""
@@ -212,7 +212,7 @@ Add native desktop notifications for critical events using cross-platform notifi
 
 **2.3.2a: Cross-platform Desktop Notifications**
 ```python
-# File: leenvibe_cli/services/desktop_notifications.py
+# File: leanvibe_cli/services/desktop_notifications.py
 
 import platform
 import subprocess
@@ -258,7 +258,7 @@ class DesktopNotificationService:
     async def _send_macos_notification(self, title: str, message: str, sound: bool):
         """Send macOS notification using osascript"""
         script = f'''
-        display notification "{message}" with title "LeenVibe" subtitle "{title}"
+        display notification "{message}" with title "LeanVibe" subtitle "{title}"
         '''
         if sound:
             script += ' sound name "Glass"'
@@ -281,7 +281,7 @@ class DesktopNotificationService:
         
         proc = await asyncio.create_subprocess_exec(
             "notify-send",
-            "--app-name=LeenVibe",
+            "--app-name=LeanVibe",
             f"--urgency={urgency_map.get(priority, 'normal')}",
             "--icon=terminal",
             title,
@@ -294,7 +294,7 @@ class DesktopNotificationService:
 
 **2.3.2b: Smart Notification Triggers**
 ```python
-# File: leenvibe_cli/services/notification_triggers.py
+# File: leanvibe_cli/services/notification_triggers.py
 
 class NotificationTriggers:
     """Intelligent notification trigger system"""
@@ -363,7 +363,7 @@ class NotificationTriggers:
             title = trigger_config['title']
             icon = trigger_config['icon']
         else:
-            title = f"LeenVibe {priority.title()} Alert"
+            title = f"LeanVibe {priority.title()} Alert"
             icon = "🔔"
         
         # Extract message from event
@@ -395,7 +395,7 @@ Enhance the existing monitor command to integrate seamlessly with the new notifi
 
 **2.3.3a: Enhanced Monitor with Live Notifications**
 ```python
-# File: leenvibe_cli/commands/monitor.py (Enhanced)
+# File: leanvibe_cli/commands/monitor.py (Enhanced)
 
 @click.command()
 @click.option('--background', '-b', is_flag=True, help='Run in background with notifications')
@@ -477,7 +477,7 @@ def generate_enhanced_monitor_display(client: BackendClient,
 
 **2.3.3b: Live Metrics Dashboard**
 ```python
-# File: leenvibe_cli/ui/live_dashboard.py
+# File: leanvibe_cli/ui/live_dashboard.py
 
 class LiveMetricsDashboard:
     """Real-time metrics dashboard"""
@@ -579,7 +579,7 @@ Provide comprehensive configuration management for notification preferences, fil
 
 **2.3.4a: Configuration Extensions**
 ```python
-# File: leenvibe_cli/config.py (Enhanced)
+# File: leanvibe_cli/config.py (Enhanced)
 
 @dataclass
 class NotificationConfig:
@@ -636,11 +636,11 @@ class CLIConfig:
 
 **2.3.4b: Configuration Management Commands**
 ```python
-# File: leenvibe_cli/commands/config.py
+# File: leanvibe_cli/commands/config.py
 
 @click.group()
 def config():
-    """Manage LeenVibe CLI configuration"""
+    """Manage LeanVibe CLI configuration"""
     pass
 
 @config.command()
@@ -731,8 +731,8 @@ Comprehensive testing of the notification system and integration with existing C
 import pytest
 import asyncio
 from unittest.mock import Mock, patch
-from leenvibe_cli.services.notification_service import NotificationService
-from leenvibe_cli.services.desktop_notifications import DesktopNotificationService
+from leanvibe_cli.services.notification_service import NotificationService
+from leanvibe_cli.services.desktop_notifications import DesktopNotificationService
 
 class TestNotificationService:
     
@@ -835,7 +835,7 @@ class TestNotificationIntegration:
     
     async def test_notification_overlay_non_intrusive(self, mock_console):
         """Test notification overlay doesn't interrupt other commands"""
-        from leenvibe_cli.ui.notification_overlay import NotificationOverlay
+        from leanvibe_cli.ui.notification_overlay import NotificationOverlay
         
         overlay = NotificationOverlay(mock_console)
         
@@ -928,7 +928,7 @@ graph TB
 
 ### Extended CLI Configuration
 ```yaml
-# .leenvibe/cli-config.yaml
+# .leanvibe/cli-config.yaml
 
 backend_url: http://localhost:8000
 websocket_url: ws://localhost:8000/ws

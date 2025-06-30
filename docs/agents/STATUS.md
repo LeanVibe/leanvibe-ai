@@ -1,4 +1,4 @@
-# LeenVibe AI Agent Status Dashboard
+# LeanVibe AI Agent Status Dashboard
 
 **Last Updated**: June 28, 2025  
 **Sprint**: 1 Foundation  
@@ -40,7 +40,7 @@
 
 #### ALPHA - iOS Dashboard Foundation
 ```
-/Users/bogdan/work/leenvibe-ios-dashboard/      # Dashboard development
+/Users/bogdan/work/leanvibe-ios-dashboard/      # Dashboard development
 ├── Branch: feature/ios-dashboard-foundation
 ├── Status: ✅ Foundation complete, 🔄 Xcode project pending
 ├── Achievement: 10 Swift files, 3000+ lines, 85% MVP architecture
@@ -50,14 +50,14 @@
 
 #### BETA - iOS Push Notifications Implementation
 ```
-/Users/bogdan/work/leenvibe-ios-notifications/  # iOS notifications development
+/Users/bogdan/work/leanvibe-ios-notifications/  # iOS notifications development
 ├── Branch: feature/ios-push-notifications
 ├── Status: 🔄 Active - iOS notifications implementation
 ├── Previous: Backend APIs complete (Enhanced Metrics + Tasks + Voice + Notifications)
 ├── Current: iOS APNS integration, notification UI, settings
 └── Next: Complete push notification pipeline integration
 
-/Users/bogdan/work/leenvibe-backend-apis/       # Backend development (COMPLETE)
+/Users/bogdan/work/leanvibe-backend-apis/       # Backend development (COMPLETE)
 ├── Branch: feature/ios-support-apis
 ├── Status: ✅ COMPLETE - All APIs delivered
 ├── Achievement: Enhanced Metrics + Task Management + Voice + Notifications
@@ -66,10 +66,10 @@
 
 #### KAPPA - Voice Interface System  
 ```
-/Users/bogdan/work/leenvibe-ios-voice/          # Voice development (COMPLETE)
+/Users/bogdan/work/leanvibe-ios-voice/          # Voice development (COMPLETE)
 ├── Branch: feature/ios-voice-interface
 ├── Status: ✅ COMPLETE - Voice integration delivered
-├── Achievement: "Hey LeenVibe" wake phrase + comprehensive voice system + dashboard integration
+├── Achievement: "Hey LeanVibe" wake phrase + comprehensive voice system + dashboard integration
 ├── Commits: 2 (Voice System → Wake Phrase) + Integration
 └── Result: Voice system fully integrated into main iOS app
 ```
@@ -78,7 +78,7 @@
 
 #### GAMMA - iOS Architecture Viewer
 ```
-/Users/bogdan/work/leenvibe-ios-visualization/  # Architecture viewer development
+/Users/bogdan/work/leanvibe-ios-visualization/  # Architecture viewer development
 ├── Branch: feature/ios-architecture-viewer
 ├── Status: ✅ COMPLETE - Architecture viewer delivered
 ├── Achievement: WebKit + Mermaid.js interactive visualization integrated
@@ -87,7 +87,7 @@
 
 #### DELTA - iOS-CLI Bridge & Performance Integration
 ```
-/Users/bogdan/work/leenvibe-cli-enhancement/    # CLI bridge development
+/Users/bogdan/work/leanvibe-cli-enhancement/    # CLI bridge development
 ├── Branch: feature/ios-cli-bridge
 ├── Status: 🟡 ACTIVE - DELTA specialist assigned
 ├── Assignment: iOS ↔ CLI synchronization + BETA performance integration
@@ -96,7 +96,7 @@
 
 #### KAPPA - Integration Testing (Secondary Worktree)
 ```
-/Users/bogdan/work/leenvibe-testing/            # End-to-end testing
+/Users/bogdan/work/leanvibe-testing/            # End-to-end testing
 ├── Branch: feature/ios-integration-testing
 ├── Status: 🟡 ACTIVE - KAPPA specialist assigned  
 ├── Assignment: Comprehensive testing framework
@@ -108,7 +108,7 @@
 ### GAMMA Agent - iOS Architecture Viewer Specialist
 
 **Current Assignment**: Interactive Architecture Visualization (Task 1)  
-**Worktree**: `../leenvibe-ios-visualization`  
+**Worktree**: `../leanvibe-ios-visualization`  
 **Status**: ✅ **COMPLETE** - Architecture viewer delivered
 
 #### Completed Work ✅
@@ -132,7 +132,7 @@
 ### DELTA Agent - iOS-CLI Bridge & Performance Integration Specialist
 
 **Current Assignment**: iOS-CLI Bridge & Performance Integration (Task 3)  
-**Worktree**: `../leenvibe-cli-enhancement`  
+**Worktree**: `../leanvibe-cli-enhancement`  
 **Status**: 🟡 **ACTIVE** - Recently assigned
 
 #### Completed Work ✅
@@ -163,7 +163,7 @@
 ### ALPHA Agent - iOS Dashboard Foundation Specialist
 
 **Current Assignment**: Xcode Project Creation & Build System Setup  
-**Worktree**: `../leenvibe-ios-dashboard`  
+**Worktree**: `../leanvibe-ios-dashboard`  
 **Status**: 🟡 **ACTIVE** - Working on Task 2
 
 #### Completed Work ✅
@@ -176,7 +176,7 @@
 
 #### Current Work 🔄
 - **Task 2**: Xcode Project Creation & Build System Setup
-  - Create `LeenVibe.xcodeproj` with proper build configuration
+  - Create `LeanVibe.xcodeproj` with proper build configuration
   - Add Starscream dependency for WebSocket
   - Configure iOS 18+, Swift 6.0 build settings
   - Enable camera permissions for QR scanner
@@ -192,7 +192,7 @@
 ### BETA Agent - iOS Push Notifications Implementation Specialist
 
 **Current Assignment**: iOS Push Notifications Implementation (Task 2)  
-**Worktree**: `../leenvibe-ios-notifications`  
+**Worktree**: `../leanvibe-ios-notifications`  
 **Status**: 🟡 **ACTIVE** - Working on iOS notifications
 
 #### Completed Work ✅
@@ -224,7 +224,7 @@
 ### KAPPA Agent - iOS Integration Testing Specialist
 
 **Current Assignment**: iOS Integration Testing & End-to-End Validation (Task 4)  
-**Worktree**: `../leenvibe-testing` + Main iOS project  
+**Worktree**: `../leanvibe-testing` + Main iOS project  
 **Status**: 🟡 **ACTIVE** - Integration testing and validation
 
 #### Completed Work ✅
@@ -234,7 +234,7 @@
   - Completed ahead of schedule
 
 - **Task 2**: iOS Voice Interface System (COMPLETE)
-  - "Hey LeenVibe" wake phrase detection with dual audio engines
+  - "Hey LeanVibe" wake phrase detection with dual audio engines
   - Comprehensive speech recognition using iOS Speech framework
   - 2800+ lines of voice interface code (8 Swift files)
   - Privacy-first on-device speech processing
@@ -266,7 +266,7 @@
 
 ### Completed Integrations ✅
 1. **Dashboard Foundation** → Main iOS project
-   - 10 Swift files integrated into `LeenVibe-iOS/`
+   - 10 Swift files integrated into `LeanVibe-iOS/`
    - App now launches to DashboardTabView instead of ContentView
    - 4-tab navigation (Projects, Agent, Monitor, Settings)
 
@@ -345,7 +345,7 @@
 - [ ] BETA completes iOS push notifications implementation
 - [ ] KAPPA executes comprehensive integration testing
 - [ ] GAMMA delivers interactive architecture visualization
-- [ ] End-to-end test validation: "Hey LeenVibe, analyze project" → dashboard update
+- [ ] End-to-end test validation: "Hey LeanVibe, analyze project" → dashboard update
 
 ### Next Week  
 - [x] Architecture visualization specialist assigned (GAMMA) ✅
@@ -389,7 +389,7 @@
 2. **Team Expansion**: Successfully onboarded GAMMA for architecture visualization
 3. **Ahead of Schedule**: Kanban and Voice systems delivered early
 4. **Comprehensive Backend**: All iOS support APIs beyond original scope
-5. **Voice Innovation**: "Hey LeenVibe" wake phrase detection unique in market
+5. **Voice Innovation**: "Hey LeanVibe" wake phrase detection unique in market
 6. **Production Quality**: 10,000+ lines of production-ready code across platforms
 
 ## 🔄 Resource Allocation
@@ -405,4 +405,4 @@
 
 ---
 
-*This status reflects the current state of the LeenVibe iOS enhancement project. All agents are making excellent progress toward delivering a comprehensive mobile development companion with voice control and real-time project management.*
+*This status reflects the current state of the LeanVibe iOS enhancement project. All agents are making excellent progress toward delivering a comprehensive mobile development companion with voice control and real-time project management.*

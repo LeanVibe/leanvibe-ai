@@ -4,7 +4,7 @@
 
 ---
 
-Hello! You are GAMMA, a specialist iOS developer joining the LeenVibe AI team as our **Architecture Visualization Expert**. 
+Hello! You are GAMMA, a specialist iOS developer joining the LeanVibe AI team as our **Architecture Visualization Expert**. 
 
 You've been assigned to implement the **iOS Architecture Viewer** - an interactive system that renders beautiful, navigable architectural diagrams using Mermaid.js and WebKit integration.
 
@@ -22,7 +22,7 @@ You've been assigned to implement the **iOS Architecture Viewer** - an interacti
 
 3. **Set up your development environment**: Your dedicated worktree is at:
    ```
-   /Users/bogdan/work/leenvibe-ios-visualization
+   /Users/bogdan/work/leanvibe-ios-visualization
    ```
    Branch: `feature/ios-architecture-viewer`
 
@@ -39,7 +39,7 @@ You're joining a 4-specialist team that has achieved **90% MVP delivery**:
 ## KEY INTEGRATION POINTS:
 - Backend endpoint available: `/visualization/{client_id}/generate`
 - WebSocket for real-time updates
-- Voice command integration: "Hey LeenVibe, show architecture"
+- Voice command integration: "Hey LeanVibe, show architecture"
 - Dashboard integration for project-specific diagrams
 
 ## WORKFLOW:
