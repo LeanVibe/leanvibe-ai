@@ -1,5 +1,6 @@
 import SwiftUI
-import AVFoundation
+@preconcurrency import AVFoundation
+import AudioToolbox
 
 /// Server Settings view for managing backend connections and QR code configuration
 /// Integrates with WebSocketService and provides QR scanner for easy setup
@@ -516,49 +517,107 @@ struct ServerQRScannerView: View {
     }
 }
 
-struct QRCodeScannerRepresentable: UIViewControllerRepresentable {
+struct QRCodeScannerRepresentable: UIViewRepresentable {
     let onResult: (String) -> Void
     
-    func makeUIViewController(context: Context) -> UIViewController {
-        // Placeholder for actual QR scanner implementation
-        let viewController = UIViewController()
-        viewController.view.backgroundColor = .black
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: UIScreen.main.bounds)
+        view.backgroundColor = .black
+        
+        let captureSession = AVCaptureSession()
+        
+        guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else {
+            return createErrorView(message: "Camera not available")
+        }
+        
+        let videoInput: AVCaptureDeviceInput
+        
+        do {
+            videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
+        } catch {
+            return createErrorView(message: "Camera input error")
+        }
+        
+        if (captureSession.canAddInput(videoInput)) {
+            captureSession.addInput(videoInput)
+        } else {
+            return createErrorView(message: "Cannot add camera input")
+        }
+        
+        let metadataOutput = AVCaptureMetadataOutput()
+        
+        if (captureSession.canAddOutput(metadataOutput)) {
+            captureSession.addOutput(metadataOutput)
+            
+            metadataOutput.setMetadataObjectsDelegate(context.coordinator, queue: DispatchQueue.main)
+            metadataOutput.metadataObjectTypes = [.qr]
+        } else {
+            return createErrorView(message: "Cannot add metadata output")
+        }
+        
+        let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+        previewLayer.frame = view.layer.bounds
+        previewLayer.videoGravity = .resizeAspectFill
+        view.layer.addSublayer(previewLayer)
+        
+        context.coordinator.captureSession = captureSession
+        
+        DispatchQueue.global(qos: .background).async {
+            captureSession.startRunning()
+        }
+        
+        return view
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        // Update if needed
+    }
+    
+    private func createErrorView(message: String) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .black
         
         let label = UILabel()
-        label.text = "QR Scanner Placeholder\nTap to simulate scan"
+        label.text = message
         label.textColor = .white
         label.textAlignment = .center
         label.numberOfLines = 0
         label.translatesAutoresizingMaskIntoConstraints = false
         
-        viewController.view.addSubview(label)
+        view.addSubview(label)
         NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: viewController.view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: viewController.view.centerYAnchor)
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
         
-        let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.simulateScan))
-        viewController.view.addGestureRecognizer(tapGesture)
-        
-        return viewController
+        return view
     }
-    
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
     
     func makeCoordinator() -> Coordinator {
         Coordinator(onResult: onResult)
     }
     
-    class Coordinator: NSObject {
+    class Coordinator: NSObject, AVCaptureMetadataOutputObjectsDelegate {
         let onResult: (String) -> Void
+        var captureSession: AVCaptureSession?
         
         init(onResult: @escaping (String) -> Void) {
             self.onResult = onResult
         }
         
-        @objc func simulateScan() {
-            // Simulate QR code scan result
-            onResult("leenvibe://server/localhost:8000?ssl=false")
+        nonisolated func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
+            if let metadataObject = metadataObjects.first {
+                guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
+                guard let stringValue = readableObject.stringValue else { return }
+                
+                DispatchQueue.main.async {
+                    // Vibrate to indicate scan
+                    AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
+                }
+                
+                // Call the result callback
+                onResult(stringValue)
+            }
         }
     }
 }
