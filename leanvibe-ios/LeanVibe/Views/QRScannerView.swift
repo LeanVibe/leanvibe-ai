@@ -182,6 +182,74 @@ struct CameraView: UIViewRepresentable {
 }
 #endif
 
+// MARK: - Server QR Scanner View (for server connection)
+@available(iOS 18.0, macOS 14.0, *)
+struct ServerQRScannerView: View {
+    let onResult: (String) -> Void
+    @State private var isScanning = true
+    @State private var errorMessage: String?
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                // Camera view
+                CameraView(
+                    isScanning: $isScanning,
+                    onQRCodeDetected: handleQRCode,
+                    onError: handleError
+                )
+                
+                // Overlay with scanning frame
+                ScannerOverlay()
+                
+                // Error message
+                if let errorMessage = errorMessage {
+                    VStack {
+                        Spacer()
+                        Text(errorMessage)
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(Color.red.opacity(0.8))
+                            .cornerRadius(8)
+                            .padding()
+                    }
+                }
+            }
+            .navigationTitle("Scan Server QR Code")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundColor(.white)
+                }
+            }
+            .background(Color.black)
+        }
+    }
+    
+    private func handleQRCode(_ code: String) {
+        isScanning = false
+        
+        // Call the completion handler with the QR code result
+        onResult(code)
+        
+        // Haptic feedback
+        AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
+    }
+    
+    private func handleError(_ error: String) {
+        errorMessage = error
+        // Resume scanning after 2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            errorMessage = nil
+            isScanning = true
+        }
+    }
+}
+
 @available(iOS 18.0, macOS 14.0, *)
 struct ScannerOverlay: View {
     var body: some View {

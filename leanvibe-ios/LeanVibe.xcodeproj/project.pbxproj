@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 54;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -239,7 +239,7 @@
 		D8CD0AD1CCC79197FEFA3FF5 /* TaskCreationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCreationView.swift; sourceTree = "<group>"; };
 		DCD7FCF96822CB861E686360 /* DiagramNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagramNavigationView.swift; sourceTree = "<group>"; };
 		DD59722F7AF92E7B766CA604 /* TutorialStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialStep.swift; sourceTree = "<group>"; };
-		E13B60EAA3583A3F93B24CCF /* LeanVibe.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LeanVibe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E13B60EAA3583A3F93B24CCF /* LeanVibe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeanVibe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1834E355BFB02D2FDEF804A /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
 		E3E2AB726215B69FAE82959C /* PerformanceValidationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceValidationView.swift; sourceTree = "<group>"; };
 		E56DD6BDD7417F51900D946E /* CompletionOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionOnboardingView.swift; sourceTree = "<group>"; };
@@ -249,7 +249,7 @@
 		ED304742343EC9FF78FB9308 /* DiagramNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiagramNode.swift; sourceTree = "<group>"; };
 		F1FDB3D8F8E9847C735FDCDB /* ConnectionStorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStorageManager.swift; sourceTree = "<group>"; };
 		F66181F0F32DD97A6990BD74 /* PerformanceAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceAnalytics.swift; sourceTree = "<group>"; };
-		F75512F89D9A88815A26B8BE /* LeanVibeAppIcon.svg */ = {isa = PBXFileReference; path = LeanVibeAppIcon.svg; sourceTree = "<group>"; };
+		F75512F89D9A88815A26B8BE /* LeanVibeAppIcon.svg */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = LeanVibeAppIcon.svg; sourceTree = "<group>"; };
 		F76E9D51F64F297E4BFA4248 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		FD0E521B6A2FF08068057D45 /* VoicePermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePermissionManager.swift; sourceTree = "<group>"; };
 		FE6DBEC322FDA55FCDDC02BA /* MetricsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricsViewModel.swift; sourceTree = "<group>"; };
@@ -721,7 +721,6 @@
 						DevelopmentTeam = "";
 					};
 					CA62D29968364E36FC5A41C1 = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -739,7 +738,6 @@
 			packageReferences = (
 				ACDA7C8D32B8B329A3375BF9 /* XCRemoteSwiftPackageReference "Starscream" */,
 			);
-			preferredProjectObjectVersion = 54;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -1008,6 +1006,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GLKDB2BTQG;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = LeanVibe/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -1030,6 +1029,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = GLKDB2BTQG;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = LeanVibe/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;

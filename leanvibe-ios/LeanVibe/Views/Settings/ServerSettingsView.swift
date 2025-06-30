@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ServerSettingsView: View {
-    @Environment(\.settingsManager) var settingsManager
+    @StateObject private var settingsManager = SettingsManager.shared
     
     var body: some View {
         Form {

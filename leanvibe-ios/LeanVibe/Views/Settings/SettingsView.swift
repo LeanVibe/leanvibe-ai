@@ -134,7 +134,7 @@ struct SettingsView: View {
     
     private var connectionSection: some View {
         Section("Connection & Sync") {
-            NavigationLink(destination: ServerSettingsView(webSocketService: webSocketService).environmentObject(settingsManager)) {
+            NavigationLink(destination: ServerSettingsView()) {
                 SettingsRow(
                     icon: "server.rack",
                     iconColor: .cyan,

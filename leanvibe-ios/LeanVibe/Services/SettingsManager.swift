@@ -4,8 +4,7 @@ import Observation
 
 /// Represents user-configurable settings for the application.
 @Observable
-@MainActor
-class SettingsManager: Sendable {
+class SettingsManager: ObservableObject, @unchecked Sendable {
     static let shared: SettingsManager = {
         let instance = SettingsManager()
         return instance
@@ -54,6 +53,10 @@ class SettingsManager: Sendable {
         self.kanban = KanbanSettings()
         self.accessibility = AccessibilitySettings()
         saveAll()
+    }
+    
+    func resetAllSettings() {
+        resetAll()
     }
     
     func resetSettings<T: SettingsProtocol>(_ type: T.Type) {
@@ -139,6 +142,12 @@ struct ConnectionPreferences: SettingsProtocol {
 struct VoiceSettings: SettingsProtocol {
     var wakeWord: String = "Hey Lean"
     var autoStartListening: Bool = true
+    var autoStopListening: Bool = false
+    var wakePhraseEnabled: Bool = true
+    var wakePhraseSensitivity: Double = 0.5
+    var voiceFeedbackEnabled: Bool = true
+    var backgroundListening: Bool = false
+    var recognitionLanguage: String = "en-US"
     
     init(wakeWord: String = "Hey Lean", autoStartListening: Bool = true) {
         self.wakeWord = wakeWord
@@ -153,10 +162,32 @@ struct VoiceSettings: SettingsProtocol {
 /// Stores the settings related to notifications.
 struct NotificationSettings: SettingsProtocol {
     var enableNotifications: Bool = true
+    var notificationsEnabled: Bool = true // Alias for compatibility
     var alertTone: String = "default"
+    var allowReminders: Bool = true
+    var quietHoursEnabled: Bool = false
+    var quietHoursStart: String = "22:00"
+    var quietHoursEnd: String = "07:00"
+    var enablePushNotifications: Bool = true
+    var taskDeadlineNotifications: Bool = true
+    var achievementNotifications: Bool = true
+    var weeklyDigest: Bool = true
+    
+    // Additional properties used by NotificationSettingsView
+    var taskUpdates: Bool = true
+    var voiceNotificationsEnabled: Bool = true
+    var systemNotificationsEnabled: Bool = true
+    var taskNotificationsEnabled: Bool = true
+    var bannerNotificationsEnabled: Bool = true
+    var soundEnabled: Bool = true
+    var vibrationEnabled: Bool = true
+    var taskOverdueNotifications: Bool = true
+    var voiceCommandResultNotifications: Bool = true
+    var serverConnectionNotifications: Bool = true
     
     init(enableNotifications: Bool = true, alertTone: String = "default") {
         self.enableNotifications = enableNotifications
+        self.notificationsEnabled = enableNotifications
         self.alertTone = alertTone
     }
     
@@ -169,10 +200,44 @@ struct NotificationSettings: SettingsProtocol {
 struct KanbanSettings: SettingsProtocol {
     var defaultView: String = "board" // "board" or "list"
     var showTaskIDs: Bool = false
+    var showTaskIds: Bool = false // Alias for compatibility
+    
+    // Auto-refresh settings
+    var autoRefresh: Bool = true
+    var refreshInterval: Double = 30.0
+    
+    // Display settings
+    var showStatistics: Bool = true
+    var compactMode: Bool = false
+    var enableAnimations: Bool = true
+    var showColumnTaskCounts: Bool = true
+    var enableColumnCustomization: Bool = true
+    
+    // Column settings
+    var columnOrder: [String] = ["todo", "in-progress", "done"]
+    
+    // Voice integration
+    var enableVoiceTaskCreation: Bool = false
+    
+    // Task settings
+    var defaultTaskPriority: String = "medium"
+    var autoAssignTasks: Bool = false
+    var enableTaskNotifications: Bool = true
+    var maxTasksPerColumn: Int = 50
+    
+    // Performance settings
+    var enableInfiniteScroll: Bool = false
+    var prefetchTaskDetails: Bool = true
+    
+    // Sync settings
+    var syncWithBackend: Bool = true
+    var offlineModeEnabled: Bool = false
+    var conflictResolution: String = "manual"
     
     init(defaultView: String = "board", showTaskIDs: Bool = false) {
         self.defaultView = defaultView
         self.showTaskIDs = showTaskIDs
+        self.showTaskIds = showTaskIDs
     }
     
     init() {
