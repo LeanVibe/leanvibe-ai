@@ -1,113 +1,153 @@
-# LeanVibe CLI
+# 🖥️ LeanVibe CLI
 
-Terminal-native interface for enterprise codebase analysis and real-time monitoring.
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Click](https://img.shields.io/badge/Click-CLI_Framework-green.svg)](https://click.palletsprojects.com/)
+[![Rich](https://img.shields.io/badge/Rich-Terminal_UI-orange.svg)](https://rich.readthedocs.io/)
 
-## Overview
+> **A powerful command-line interface for developers to interact with the LeanVibe AI backend, providing real-time monitoring, codebase analysis, and intelligent assistance.**
 
-LeanVibe CLI is a minimal viable command-line interface that connects to the sophisticated LeanVibe backend infrastructure. It provides real-time codebase monitoring, AST-powered analysis, and intelligent suggestions through a terminal-native experience.
+The LeanVibe CLI is a terminal-native interface that connects to the LeanVibe backend for real-time code analysis, architectural insights, and intelligent suggestions powered by local AI processing.
 
-## Features
+## ✨ Features
 
-- 🔍 **Real-time Monitoring**: Live file change notifications and architectural violation detection
-- 🧠 **AI-Powered Analysis**: Natural language queries to the L3 agent with project context
-- 📊 **Codebase Insights**: AST analysis, complexity metrics, and architecture pattern detection
-- ⚡ **Terminal-Native**: Rich terminal UI with syntax highlighting and interactive displays
-- 🔌 **Backend Integration**: Leverages existing sophisticated infrastructure (AST, Neo4j, WebSocket streaming)
+- **🔍 Real-Time Monitoring**: Live file watching and change detection
+- **🧠 AI-Powered Analysis**: Intelligent code insights and suggestions
+- **📊 Rich Dashboards**: Beautiful terminal interfaces with live updates
+- **🎯 Task Management**: Integrated task tracking and project management
+- **🗣️ Voice Integration**: Voice command support for hands-free operation
+- **⚡ High Performance**: Efficient WebSocket communication with backend
 
-## Installation
+## 🚀 Quick Start
 
+### Prerequisites
+
+- **Python 3.11+**
+- **LeanVibe Backend**: Must be running (see [Backend README](../leanvibe-backend/README.md))
+
+### Installation
+
+**Option 1: Development Install (Recommended)**
 ```bash
-# Install from source (development)
-cd leanvibe-cli
+# Clone repository
+git clone https://github.com/LeanVibe/leanvibe-ai.git
+cd leanvibe-ai/leanvibe-cli
+
+# Install in development mode
 pip install -e .
 
-# Or install directly
+# Verify installation
+leanvibe --version
+```
+
+**Option 2: Production Install**
+```bash
 pip install leanvibe-cli
 ```
 
-## Quick Start
+### First Run
 
 ```bash
-# Check backend connection and status
+# Check connection to backend
 leanvibe status
 
-# Start real-time monitoring
+# Start interactive monitoring
 leanvibe monitor
 
-# Analyze your codebase
-leanvibe analyze --all
+# Analyze current project
+leanvibe analyze
 
-# Ask the AI agent questions
-leanvibe query "What are the main components of this project?"
+# Get help
+leanvibe --help
+```
 
-# Interactive session with the L3 agent
+## 🛠️ Commands
+
+### Core Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `status` | Check backend connection and health | `leanvibe status` |
+| `analyze` | Analyze codebase or specific files | `leanvibe analyze src/` |
+| `monitor` | Start real-time monitoring dashboard | `leanvibe monitor` |
+| `query` | Ask questions about your codebase | `leanvibe query "How does auth work?"` |
+| `config` | Manage CLI configuration | `leanvibe config --backend-url ws://localhost:8000` |
+| `qr` | Generate QR code for mobile connection | `leanvibe qr` |
+
+### Command Examples
+
+**Status Check**
+```bash
+# Basic status
+leanvibe status
+
+# Verbose status with details
+leanvibe status --detailed
+```
+
+**Code Analysis**
+```bash
+# Analyze current directory
+leanvibe analyze
+
+# Analyze specific file
+leanvibe analyze src/main.py
+
+# Complex analysis with options
+leanvibe analyze --complexity --architecture --dependencies
+```
+
+**Real-Time Monitoring**
+```bash
+# Start monitoring current project
+leanvibe monitor
+
+# Monitor with filters
+leanvibe monitor -f high
+
+# Monitor for specific time
+leanvibe monitor -t 60
+```
+
+**Interactive Queries**
+```bash
+# Ask about code patterns
+leanvibe query "What are the main classes in this project?"
+
+# Interactive session with L3 agent
 leanvibe query --interactive
+
+# Execute slash commands
+leanvibe query "/status"
 ```
 
-## Commands
+## ⚙️ Configuration
 
-### `leanvibe status`
-Show backend health, connection status, and project information.
+### Configuration File
 
-```bash
-leanvibe status                  # Basic status
-leanvibe status --detailed       # Detailed information
-leanvibe status --json          # JSON output
-```
+The CLI uses YAML configuration files:
 
-### `leanvibe monitor`
-Real-time file monitoring with event notifications.
-
-```bash
-leanvibe monitor                 # Start monitoring
-leanvibe monitor -f high         # Filter high-priority events only
-leanvibe monitor -t 60           # Monitor for 60 seconds
-leanvibe monitor --json          # JSON event stream
-```
-
-### `leanvibe analyze`
-Trigger AST analysis and display codebase insights.
-
-```bash
-leanvibe analyze                 # Project overview
-leanvibe analyze --complexity    # Code complexity analysis
-leanvibe analyze --architecture  # Architecture patterns
-leanvibe analyze --dependencies  # Circular dependency detection
-leanvibe analyze --all           # All analysis types
-leanvibe analyze -s "MyClass"    # Analyze specific symbol
-```
-
-### `leanvibe query`
-Natural language interaction with the L3 agent.
-
-```bash
-leanvibe query "Find all classes that inherit from BaseClass"
-leanvibe query --interactive     # Start interactive session
-leanvibe query "/status"         # Execute slash command
-leanvibe query --workspace /path/to/project "Analyze this project"
-```
-
-## Configuration
-
-LeanVibe CLI uses YAML configuration files:
-
-- Project-specific: `.leanvibe/cli-config.yaml`
-- User-wide: `~/.leanvibe/cli-config.yaml`
-
-Example configuration:
+- **Project-specific**: `.leanvibe/cli-config.yaml`
+- **User-wide**: `~/.leanvibe/cli-config.yaml`
 
 ```yaml
+# Backend connection
 backend_url: http://localhost:8000
 websocket_url: ws://localhost:8000/ws
 timeout_seconds: 30
+
+# Display preferences
 verbose: false
-auto_detect_project: true
-show_notifications: true
-notification_level: medium
-max_lines_output: 50
 syntax_highlighting: true
 show_timestamps: true
 compact_mode: false
+max_lines_output: 50
+
+# Monitoring settings
+auto_detect_project: true
+show_notifications: true
+notification_level: medium
+
+# Project settings
 project_root: /path/to/project
 exclude_patterns:
   - "*.pyc"
@@ -116,22 +156,58 @@ exclude_patterns:
   - "node_modules"
 ```
 
-## Backend Requirements
-
-LeanVibe CLI requires a running LeanVibe backend service:
+### Command-Line Options
 
 ```bash
-# Start the backend (from leanvibe-backend directory)
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# Override backend URL
+leanvibe --backend-url http://192.168.1.100:8000 status
+
+# Use custom config file
+leanvibe --config /path/to/config.yml monitor
+
+# Enable verbose output
+leanvibe --verbose analyze
 ```
 
-The CLI will auto-detect a local backend on `localhost:8000` by default.
+### Environment Variables
 
-## Interactive Mode
+```bash
+export LEANVIBE_BACKEND_URL="http://localhost:8000"
+export LEANVIBE_CONFIG_PATH="~/.leanvibe/cli-config.yaml"
+export LEANVIBE_LOG_LEVEL="INFO"
+```
 
-Use `leanvibe query --interactive` for a persistent session with the L3 agent:
+## 🎨 Terminal UI Features
+
+### Live Dashboard
+
+The monitoring command provides a rich, live-updating dashboard:
 
 ```
+┌─ LeanVibe Monitor ─────────────────────────────────────────────┐
+│                                                                │
+│ 📊 Project: my-awesome-app                Status: ● Connected  │
+│ 📁 Files: 1,247                          Changes: 3 pending   │
+│ 🧠 AI: Ready                             Backend: Healthy     │
+│                                                                │
+├─ Recent Changes ───────────────────────────────────────────────┤
+│ • src/main.py:42        [Modified]     2s ago                 │
+│ • tests/test_api.py     [Created]      5s ago                 │
+│ • README.md             [Modified]     1m ago                 │
+│                                                                │
+├─ AI Insights ──────────────────────────────────────────────────┤
+│ 💡 Consider adding type hints to main.py                      │
+│ 🔍 New test file detected - coverage improved                 │
+│ ⚠️  Potential circular import in auth module                   │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### Interactive Session Example
+
+```bash
+❯ leanvibe query --interactive
+
 ❯ What files have high complexity?
 ✅ Response (Confidence: 85.2%)
 Based on the analysis, here are the files with high complexity:
@@ -151,101 +227,167 @@ Architecture Patterns Detected:
 Goodbye!
 ```
 
-## Real-time Monitoring
+## 🔧 Development
 
-The monitor command provides live updates of file changes, architectural violations, and system events:
+### Setup Development Environment
 
 ```bash
-leanvibe monitor
+# Clone repository
+git clone https://github.com/LeanVibe/leanvibe-ai.git
+cd leanvibe-ai/leanvibe-cli
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Install pre-commit hooks
+pre-commit install
 ```
 
-This displays:
-- Real-time event stream with filtering
-- Connection status and statistics  
-- Event priority levels and details
-- Recent activity history
+### Project Structure
 
-## Examples
-
-### Basic Project Analysis
-```bash
-# Get project overview
-leanvibe analyze
-
-# Check for issues
-leanvibe analyze --complexity --dependencies
-
-# Monitor for violations
-leanvibe monitor -f high
+```
+leanvibe-cli/
+├── leanvibe_cli/
+│   ├── __init__.py
+│   ├── main.py              # CLI entry point
+│   ├── client.py            # Backend communication
+│   ├── config/              # Configuration management
+│   │   ├── __init__.py
+│   │   ├── manager.py       # Config file handling
+│   │   ├── schema.py        # Configuration schema
+│   │   └── wizard.py        # Interactive setup
+│   ├── commands/            # CLI commands
+│   │   ├── __init__.py
+│   │   ├── analyze.py       # Code analysis commands
+│   │   ├── monitor.py       # Real-time monitoring
+│   │   ├── query.py         # AI query interface
+│   │   ├── status.py        # Status checking
+│   │   └── config.py        # Configuration commands
+│   ├── ui/                  # Terminal UI components
+│   │   ├── __init__.py
+│   │   ├── live_dashboard.py # Live dashboard
+│   │   └── notification_overlay.py # Desktop notifications
+│   ├── services/            # Core services
+│   │   ├── __init__.py
+│   │   ├── desktop_notifications.py
+│   │   └── notification_service.py
+│   └── utils/               # Utility functions
+│       ├── __init__.py
+│       └── yaml_helpers.py
+├── tests/                   # Test suite
+├── pyproject.toml          # Project configuration
+└── README.md               # This file
 ```
 
-### AI-Powered Exploration
-```bash
-# Ask about code structure
-leanvibe query "What design patterns are used in this codebase?"
-
-# Find specific code
-leanvibe query "Where is the database connection handled?"
-
-# Get refactoring suggestions
-leanvibe query "What can be improved in the authentication module?"
-```
-
-### Development Workflow
-```bash
-# Start monitoring in background
-leanvibe monitor &
-
-# Check status periodically
-leanvibe status
-
-# Ask questions as you code
-leanvibe query "Is this change following the existing patterns?"
-```
-
-## Integration
-
-### Environment Variables
-- `LEENVIBE_BACKEND_URL`: Override backend URL
-- `LEENVIBE_CONFIG_PATH`: Custom config file path
-
-### Project Detection
-LeanVibe CLI automatically detects project context by looking for:
-- `.leanvibe/` directory
-- `.git/` repository
-- `pyproject.toml`, `package.json`, etc.
-
-## Development
+### Testing
 
 ```bash
-# Clone and install in development mode
-git clone <repository>
-cd leanvibe-cli
-pip install -e .
+# Run all tests
+python run_tests.py
 
-# Run tests
+# Run with pytest
 pytest
 
-# Format code
-black leanvibe_cli/
-isort leanvibe_cli/
+# Run with coverage
+pytest --cov=leanvibe_cli tests/
+
+# Run integration tests (requires backend)
+pytest tests/test_integration.py
 ```
 
-## Troubleshooting
+### Code Quality
 
-### Connection Issues
+```bash
+# Format code
+black leanvibe_cli/ tests/
+
+# Sort imports
+isort leanvibe_cli/ tests/
+
+# Lint code
+flake8 leanvibe_cli/ tests/
+
+# Type checking
+mypy leanvibe_cli/
+```
+
+## 🔌 Backend Integration
+
+### WebSocket Communication
+
+The CLI communicates with the backend via WebSocket for real-time updates:
+
+```python
+from leanvibe_cli.client import BackendClient
+
+client = BackendClient("ws://localhost:8000")
+
+# Connect and send command
+await client.connect()
+response = await client.send_command("analyze", {"path": "src/"})
+```
+
+### Message Protocol
+
+```json
+{
+  "type": "command",
+  "id": "unique-request-id",
+  "command": "analyze",
+  "payload": {
+    "path": "src/main.py",
+    "options": ["syntax", "security"]
+  }
+}
+```
+
+## 📱 Mobile Integration
+
+### QR Code Connection
+
+Generate QR codes for easy mobile app connection:
+
+```bash
+# Generate QR code for current backend
+leanvibe qr
+
+# QR code with custom backend URL
+leanvibe qr --backend-url ws://192.168.1.100:8000
+
+# Save QR code to file
+leanvibe qr --output connection.png
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**CLI command not found?**
+```bash
+# Ensure CLI is installed
+pip list | grep leanvibe
+
+# Reinstall if needed
+pip install -e .
+```
+
+**Backend connection failed?**
 ```bash
 # Check backend status
-leanvibe status
+curl http://localhost:8000/health
 
-# Verify backend URL
-leanvibe status --detailed
+# Try different backend URL
+leanvibe --backend-url http://127.0.0.1:8000 status
 
-# Test with explicit URL
-leanvibe --backend-url http://localhost:8000 status
+# Check network connectivity
+ping localhost
 ```
 
-### Configuration Issues
+**Configuration issues?**
 ```bash
 # Check current config
 leanvibe --verbose status
@@ -255,27 +397,89 @@ rm ~/.leanvibe/cli-config.yaml
 leanvibe status  # Will recreate with defaults
 ```
 
-### Performance Issues
-```bash
-# Check backend performance
-leanvibe status --detailed
+### Debug Mode
 
-# Monitor with reduced frequency
-leanvibe monitor -f critical
+```bash
+# Enable debug logging
+export LEANVIBE_LOG_LEVEL=DEBUG
+leanvibe --verbose monitor
+
+# Save debug logs
+leanvibe monitor 2>&1 | tee debug.log
 ```
 
-## Architecture
+## 🚀 Advanced Usage
 
-LeanVibe CLI is designed as a thin client that leverages the sophisticated backend infrastructure:
+### Scripting and Automation
 
-- **HTTP Client**: REST API communication for analysis requests
-- **WebSocket Client**: Real-time event streaming and L3 agent interaction  
-- **Rich Terminal UI**: Modern terminal interface with live updates
-- **Configuration Management**: YAML-based settings with auto-detection
-- **Error Handling**: Graceful degradation and meaningful error messages
+```bash
+# Batch analysis with JSON output
+leanvibe analyze --json src/ > analysis.json
 
-The CLI focuses on user experience while the backend handles all the heavy lifting: AST parsing, graph analysis, ML inference, and real-time monitoring.
+# Monitor with custom filtering
+leanvibe monitor -f critical --json
 
-## License
+# Automated code review
+leanvibe query "Review this change" --workspace /path/to/project
+```
 
-MIT License - see LICENSE file for details.
+### Integration Examples
+
+```bash
+# Development workflow
+leanvibe monitor &          # Start monitoring
+leanvibe status            # Check status
+leanvibe query "Is this change following patterns?"
+
+# CI/CD integration
+leanvibe analyze --all --json > analysis.json
+if [ $? -ne 0 ]; then exit 1; fi
+```
+
+## 🤝 Contributing
+
+### Development Guidelines
+
+1. **Fork and clone the repository**
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+3. **Make your changes**
+4. **Add tests for new functionality**
+5. **Ensure code quality**
+   ```bash
+   black leanvibe_cli/ tests/
+   flake8 leanvibe_cli/ tests/
+   pytest
+   ```
+
+6. **Commit with conventional format**
+   ```bash
+   git commit -m "feat: add new monitoring feature"
+   ```
+
+7. **Submit a pull request**
+
+### Code Standards
+
+- Follow PEP 8 style guidelines
+- Use type hints for all functions
+- Write docstrings for public APIs
+- Add tests for new features
+- Maintain backward compatibility
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
+
+## 🔗 Related Projects
+
+- [LeanVibe Backend](../leanvibe-backend/README.md) - Core AI backend service
+- [LeanVibe iOS](../leanvibe-ios/README.md) - iOS companion app
+- [Main Project](../README.md) - Overall project documentation
+
+---
+
+**Built with ❤️ for developers who value efficiency and powerful terminal tools**
