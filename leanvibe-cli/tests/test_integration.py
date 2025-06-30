@@ -14,11 +14,10 @@ import tempfile
 import os
 from pathlib import Path
 
-from leenvibe_cli.client import BackendClient
-from leenvibe_cli.config import CLIConfig
-from leenvibe_cli.commands.monitor import enhanced_monitor_command
-from leenvibe_cli.commands.status import status_command
-from leenvibe_cli.commands.query import query_command
+from leanvibe_cli.client import BackendClient
+from leanvibe_cli.config import CLIConfig
+# Note: Import commands from main CLI module instead of individual command functions
+from leanvibe_cli.main import cli
 
 
 class TestBackendCommunication:
@@ -38,6 +37,7 @@ class TestBackendCommunication:
         """Create backend client for testing"""
         return BackendClient(mock_config)
     
+    @pytest.mark.asyncio
     async def test_backend_connection_success(self, backend_client):
         """Test successful backend connection"""
         with patch('aiohttp.ClientSession.get') as mock_get:
@@ -338,7 +338,7 @@ class TestPerformanceRequirements:
     
     async def test_notification_processing_speed(self):
         """Test notification processing meets speed requirements"""
-        from leenvibe_cli.services.notification_service import NotificationService
+        from leanvibe_cli.services.notification_service import NotificationService
         
         config = CLIConfig()
         config.notification_throttle_seconds = 0
@@ -448,7 +448,7 @@ class TestErrorHandling:
         service = NotificationService(config)
         
         # Mock failing desktop notification
-        with patch('leenvibe_cli.services.desktop_notifications.DesktopNotificationService.send_notification', 
+        with patch('leanvibe_cli.services.desktop_notifications.DesktopNotificationService.send_notification', 
                   side_effect=Exception("Desktop notification failed")):
             
             test_event = {
