@@ -5,7 +5,6 @@ Useful for quick validation during setup
 """
 
 import asyncio
-import json
 import time
 import sys
 import os

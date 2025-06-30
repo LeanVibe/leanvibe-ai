@@ -2,7 +2,6 @@
 Unit tests for AI Service functionality.
 """
 
-import asyncio
 
 import pytest
 

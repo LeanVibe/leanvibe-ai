@@ -5,7 +5,6 @@ REST endpoint that connects iOS app to Enhanced L3 Agent MLX tools.
 Provides AI-powered code suggestions, explanations, refactoring, debugging, and optimization.
 """
 
-import asyncio
 import json
 import logging
 import time

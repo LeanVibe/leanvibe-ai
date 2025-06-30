@@ -4,11 +4,9 @@ Phase 2.2: Test AST Agent Integration
 Tests for AST context provision to L3 agent.
 """
 
-import asyncio
 import os
 import sys
 import tempfile
-from pathlib import Path
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -281,7 +279,7 @@ class Calculator:
         assert "error" in minimal_context
         assert "file_path" in minimal_context
         assert "language" in minimal_context
-        assert minimal_context["minimal"] == True
+        assert minimal_context["minimal"] is True
 
     def test_language_detection(self):
         """Test language detection from file extensions"""

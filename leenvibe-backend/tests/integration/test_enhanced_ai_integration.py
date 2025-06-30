@@ -1,8 +1,5 @@
-import asyncio
-import json
 
 import pytest
-from fastapi.testclient import TestClient
 
 
 @pytest.mark.asyncio

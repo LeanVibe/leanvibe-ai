@@ -5,15 +5,12 @@ This module implements the core L3 agent using pydantic.ai for structured
 autonomous coding assistance with MLX backend integration.
 """
 
-import asyncio
 import logging
 import time
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent, RunContext, Tool
 
 from ..services.ai_service import AIService
 from ..services.real_mlx_service import real_mlx_service

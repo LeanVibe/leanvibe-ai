@@ -1,9 +1,7 @@
 import asyncio
-import json
 import logging
 import time
-from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 # Try to import MLX, gracefully handle if not available
 try:
@@ -181,7 +179,7 @@ class MLXModelService:
         try:
             # Test basic MLX functionality
             test_array = mx.array([1, 2, 3])
-            result = mx.sum(test_array)
+            mx.sum(test_array)
 
             # Check memory info with updated API
             try:
@@ -328,7 +326,7 @@ class MLXModelService:
         if "code" in prompt_lower and any(
             lang in prompt_lower for lang in ["python", "swift", "javascript"]
         ):
-            return f"""Based on your request about code, here's what I can help with:
+            return """Based on your request about code, here's what I can help with:
 
 1. **Code Analysis**: I can examine code structure, identify patterns, and suggest improvements
 2. **Best Practices**: Following language-specific conventions and optimization techniques  
@@ -340,7 +338,7 @@ For specific code analysis, use the /analyze-file command with your file path.
 *[MLX Model Service - Enhanced Development Mode]*"""
 
         elif "file" in prompt_lower or "directory" in prompt_lower:
-            return f"""For file operations, I can help you:
+            return """For file operations, I can help you:
 
 1. **Navigate**: Use /list-files to browse directories
 2. **Read**: Use /read-file <path> to view file contents  
@@ -352,7 +350,7 @@ The system is currently in development mode with MLX infrastructure ready.
 *[MLX Model Service - File Operations Mode]*"""
 
         elif any(word in prompt_lower for word in ["debug", "error", "fix", "problem"]):
-            return f"""For debugging assistance:
+            return """For debugging assistance:
 
 1. **Error Analysis**: Share error messages for detailed breakdown
 2. **Code Review**: Submit problematic code sections for analysis
@@ -364,7 +362,7 @@ I'm ready to help debug your specific issues.
 *[MLX Model Service - Debug Mode]*"""
 
         else:
-            return f"""I'm your local coding assistant powered by MLX infrastructure. I can help with:
+            return """I'm your local coding assistant powered by MLX infrastructure. I can help with:
 
 • **Code Analysis** - Deep understanding of your codebase
 • **File Operations** - Navigate and examine project files  

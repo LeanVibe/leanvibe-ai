@@ -9,8 +9,7 @@ import asyncio
 import json
 import os
 import sys
-import tempfile
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, patch
 
 import httpx
 import pytest
@@ -33,7 +32,6 @@ class TestCodeCompletionEndpoint:
     @pytest.fixture
     async def async_client(self):
         """Create async test client"""
-        import httpx
 
         from app.main import app
 
@@ -141,7 +139,7 @@ class TestCodeCompletionEndpoint:
         with patch("app.api.endpoints.code_completion.enhanced_agent") as mock_agent:
             mock_agent._mlx_suggest_code_tool.return_value = '{"status": "success"}'
 
-            response = test_client.post("/api/code-completion", json=request)
+            test_client.post("/api/code-completion", json=request)
 
             # Should call agent with cursor_position=0
             if mock_agent._mlx_suggest_code_tool.called:
@@ -272,7 +270,7 @@ class TestCodeCompletionEndpoint:
             assert data["status"] == "success"
             assert data["intent"] == "refactor"
             assert "refactoring_suggestions" in data
-            assert data["requires_review"] == True
+            assert data["requires_review"] is True
 
             mock_agent._mlx_refactor_code_tool.assert_called_once()
 

@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict
 from datetime import datetime, timedelta
 import logging
 from pathlib import Path

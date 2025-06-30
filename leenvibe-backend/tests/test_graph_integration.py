@@ -31,17 +31,16 @@ class TestGraphService:
         assert isinstance(result, bool)
 
         if result:
-            assert graph_service.initialized == True
+            assert graph_service.initialized is True
             assert graph_service.driver is not None
         else:
             # Should gracefully handle Neo4j unavailability
-            assert graph_service.initialized == False
+            assert graph_service.initialized is False
             print("⚠️ Neo4j not available - tests will run with fallback behavior")
 
     @pytest.mark.asyncio
     async def test_graph_models(self):
         """Test graph model creation and serialization"""
-        from datetime import datetime
 
         from app.models.ast_models import LanguageType
         from app.models.graph_models import (
@@ -122,13 +121,6 @@ class TestGraphService:
     @pytest.mark.asyncio
     async def test_project_graph_storage(self):
         """Test storing project structure in graph database"""
-        from app.models.ast_models import (
-            FileAnalysis,
-            LanguageType,
-            ProjectIndex,
-            Symbol,
-            SymbolType,
-        )
         from app.services.graph_service import graph_service
         from app.services.project_indexer import project_indexer
 
@@ -158,13 +150,13 @@ class Calculator:
                 result = await graph_service.store_project_graph(
                     project_index, str(project_path)
                 )
-                assert result == True
+                assert result is True
             else:
                 # Should handle gracefully when Neo4j not available
                 result = await graph_service.store_project_graph(
                     project_index, str(project_path)
                 )
-                assert result == False
+                assert result is False
 
 
 class TestGraphQueryService:

@@ -7,13 +7,12 @@ missed notification replay, and seamless client experience.
 
 import asyncio
 import logging
-import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set
 
-from ..models.event_models import ConnectionState, EventData, EventPriority, EventType
+from ..models.event_models import ConnectionState, EventData
 
 logger = logging.getLogger(__name__)
 

@@ -93,7 +93,10 @@
       "Bash(head:*)",
       "Bash(done)",
       "Bash(for file in ./Kanban/TaskStatisticsView.swift ./Kanban/TaskDetailView.swift ./Kanban/TaskEditView.swift)",
-      "Bash(for file in ./Production/ProductionReadinessView.swift ./Performance/PerformanceValidationView.swift ./Performance/AnimationPerformanceView.swift)"
+      "Bash(for file in ./Production/ProductionReadinessView.swift ./Performance/PerformanceValidationView.swift ./Performance/AnimationPerformanceView.swift)",
+      "Bash(ruff check:*)",
+      "Bash(uv venv:*)",
+      "Bash(source:*)"
     ],
     "deny": []
   }

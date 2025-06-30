@@ -6,7 +6,7 @@ Handles QR code generation and connection management.
 import logging
 from typing import Dict
 
-from .network_discovery import NetworkDiscovery, get_connection_info
+from .network_discovery import NetworkDiscovery
 from .qr_generator import create_terminal_qr_display
 
 logger = logging.getLogger(__name__)

@@ -9,7 +9,7 @@ import asyncio
 import os
 import sys
 from datetime import datetime
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,12 +19,7 @@ def test_refactoring_suggestion_engine_imports():
     """Test that refactoring suggestion engine imports correctly"""
     try:
         from app.services.refactoring_suggestion_engine import (
-            CodePattern,
-            CodeSmell,
             CodeSmellType,
-            RefactoringMetrics,
-            RefactoringReport,
-            RefactoringSuggestion,
             RefactoringSuggestionEngine,
             RefactoringType,
             SuggestionCategory,
@@ -194,7 +189,7 @@ def test_code_pattern_creation():
         assert pattern.pattern_data["threshold"] == 10
         assert pattern.threshold_values["max_complexity"] == 15.0
         assert pattern.threshold_values["min_coverage"] == 0.8
-        assert pattern.enabled == True
+        assert pattern.enabled is True
 
         print("✅ Code pattern creation test passed")
         return True
@@ -302,7 +297,7 @@ def test_refactoring_suggestion_creation():
         assert suggestion.estimated_effort_hours == 2.5
         assert len(suggestion.expected_benefits) == 2
         assert len(suggestion.implementation_steps) == 3
-        assert suggestion.automated_fix_available == True
+        assert suggestion.automated_fix_available is True
         assert suggestion.automated_fix_data["type"] == "extract_method"
         assert suggestion.code_examples["before"] == "long_method()"
         assert suggestion.confidence_score == 0.85
@@ -465,7 +460,7 @@ async def test_engine_initialization():
 
         # Test initialization
         success = await engine.initialize()
-        assert success == True
+        assert success is True
 
         print("✅ Engine initialization test passed")
         return True
@@ -594,7 +589,7 @@ async def test_code_smell_detection():
 async def test_suggestion_generation():
     """Test suggestion generation from code smells"""
     try:
-        from app.models.ast_models import FileAnalysis, LanguageType, Symbol, SymbolType
+        from app.models.ast_models import FileAnalysis, LanguageType
         from app.services.refactoring_suggestion_engine import (
             CodeSmell,
             CodeSmellType,

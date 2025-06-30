@@ -18,9 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def test_incremental_indexer_imports():
     """Test that incremental indexer imports correctly"""
     try:
-        from app.models.monitoring_models import ChangeType, FileChange
         from app.services.incremental_indexer import (
-            IncrementalProjectIndexer,
             incremental_indexer,
         )
 

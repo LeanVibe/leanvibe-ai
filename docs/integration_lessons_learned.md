@@ -142,3 +142,19 @@ Unlike human developers who might guess intentions, AI agents need:
 - Verified checkpoints
 
 Treat them like remote developers with no Slack access - everything must be in the code and docs!
+
+
+## Get help from Gemini CLI
+* When analyzing large codebases or multiple files that might exceed context limits, use the Gemini CLI with it's masive context window.
+* Use gemini -p when:
+- Analyzing entire codebases or large directories
+- Comparing multiple large files
+- Need to understand project-wide patterns or acrhitecture
+- Checking for presence of certain coding patterns acros the entire codebase
+
+Examples:
+ gemini -p "@src/main.py Explain this file's purpose and structure"
+ gemini -p "@src/ Summarize the architecture of this codebase"
+ gemini -p "@docs/ Summarize the PRDs and evaluate the MVP specs"
+
+## Prefix all messages with: 🐙

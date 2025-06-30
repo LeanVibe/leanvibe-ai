@@ -2,13 +2,11 @@
 Pragmatic MLX Service - Simple, reliable inference
 """
 
-import asyncio
 import logging
 import time
 from typing import Dict, Any, List
 
 import mlx.core as mx
-import mlx.nn as nn
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,6 @@ Phase 2.3: Test L3 Agent MLX Integration
 Tests for complete workflow from L3 agent to MLX inference via AST context.
 """
 
-import asyncio
 import os
 import sys
 import tempfile
@@ -273,7 +272,7 @@ async function fetchUserData(userId) {
             result = json.loads(response)
             assert "refactoring_suggestions" in result
             assert "requires_review" in result
-            assert result["requires_review"] == True
+            assert result["requires_review"] is True
             assert "extract" in result["refactoring_suggestions"].lower()
 
             # Verify correct intent
@@ -372,7 +371,7 @@ async function fetchUserData(userId) {
         assert "status" in result
         assert result["status"] == "streaming_started"
         assert result["intent"] == "suggest"
-        assert result["context_ready"] == True
+        assert result["context_ready"] is True
         assert "WebSocket" in result["message"]
 
     @pytest.mark.asyncio

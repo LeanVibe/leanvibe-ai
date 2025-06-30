@@ -9,7 +9,6 @@ import asyncio
 import os
 import sys
 from datetime import datetime
-from unittest.mock import AsyncMock, Mock, patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,13 +20,8 @@ def test_change_classifier_imports():
         from app.services.change_classifier import (
             BreakingChangeType,
             ChangeCategory,
-            ChangeClassification,
             ChangeClassifier,
-            ChangeMetrics,
-            ChangePattern,
             ChangeRisk,
-            ChangeSignature,
-            ClassificationRule,
             CompatibilityLevel,
             change_classifier,
         )
@@ -403,7 +397,7 @@ async def test_classifier_initialization():
 
         # Test initialization
         success = await classifier.initialize()
-        assert success == True
+        assert success is True
 
         print("✅ Classifier initialization test passed")
         return True
@@ -694,11 +688,11 @@ def test_file_type_detection():
         classifier = ChangeClassifier()
 
         # Test code file detection
-        assert classifier._is_code_file("/test/app.py") == True
-        assert classifier._is_code_file("/test/component.js") == True
-        assert classifier._is_code_file("/test/service.ts") == True
-        assert classifier._is_code_file("/test/README.md") == False
-        assert classifier._is_code_file("/test/config.json") == False
+        assert classifier._is_code_file("/test/app.py") is True
+        assert classifier._is_code_file("/test/component.js") is True
+        assert classifier._is_code_file("/test/service.ts") is True
+        assert classifier._is_code_file("/test/README.md") is False
+        assert classifier._is_code_file("/test/config.json") is False
 
         # Test category determination
         from app.models.monitoring_models import ChangeType, FileChange

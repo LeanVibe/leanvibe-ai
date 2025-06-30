@@ -13,21 +13,13 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set
 
 from ..models.ast_models import (
-    Dependency,
-    FileAnalysis,
-    LanguageType,
-    ProjectIndex,
-    Reference,
     Symbol,
     SymbolType,
 )
 from ..models.monitoring_models import ChangeType, FileChange
-from .graph_service import graph_service
-from .incremental_graph_service import incremental_graph_service
 
 logger = logging.getLogger(__name__)
 

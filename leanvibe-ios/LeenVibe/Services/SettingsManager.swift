@@ -1,5 +1,5 @@
 import Foundation
-import Combine
+import SwiftUI
 import Observation
 
 /// Represents user-configurable settings for the application.
@@ -7,23 +7,23 @@ import Observation
 class SettingsManager {
     static let shared = SettingsManager()
 
-    // MARK: - Published Properties
-    @Published var connection: ConnectionPreferences {
+    // MARK: - Observable Properties (Swift 6)
+    var connection: ConnectionPreferences {
         didSet {
             save(connection, for: .connection)
         }
     }
-    @Published var voice: VoiceSettings {
+    var voice: VoiceSettings {
         didSet {
             save(voice, for: .voice)
         }
     }
-    @Published var notifications: NotificationSettings {
+    var notifications: NotificationSettings {
         didSet {
             save(notifications, for: .notifications)
         }
     }
-    @Published var kanban: KanbanSettings {
+    var kanban: KanbanSettings {
         didSet {
             save(kanban, for: .kanban)
         }
@@ -157,5 +157,17 @@ struct KanbanSettings: SettingsProtocol {
     
     init() {
         // Default initializer
+    }
+}
+
+// MARK: - Environment Key for Swift 6 Injection
+private struct SettingsManagerKey: EnvironmentKey {
+    static let defaultValue = SettingsManager.shared
+}
+
+extension EnvironmentValues {
+    var settingsManager: SettingsManager {
+        get { self[SettingsManagerKey.self] }
+        set { self[SettingsManagerKey.self] = newValue }
     }
 } 

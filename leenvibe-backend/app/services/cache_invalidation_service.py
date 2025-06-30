@@ -5,21 +5,17 @@ Provides intelligent cache invalidation based on dependency relationships,
 ensuring cache coherency when files and their dependencies change.
 """
 
-import asyncio
 import logging
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 
 from ..models.ast_models import (
-    Dependency,
     FileAnalysis,
-    LanguageType,
     ProjectIndex,
-    Symbol,
 )
 from ..models.monitoring_models import ChangeType, FileChange
 

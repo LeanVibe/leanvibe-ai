@@ -9,7 +9,7 @@ import asyncio
 import os
 import sys
 from datetime import datetime
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,15 +19,10 @@ def test_cascading_impact_analyzer_imports():
     """Test that cascading impact analyzer imports correctly"""
     try:
         from app.services.cascading_impact_analyzer import (
-            CascadingImpact,
             CascadingImpactAnalyzer,
             ChangeCompatibility,
-            CrossProjectDependency,
             ImpactPropagation,
-            ImpactSummary,
-            ProjectBoundary,
             ProjectBoundaryType,
-            ProjectDependencyGraph,
             cascading_impact_analyzer,
         )
 
@@ -84,7 +79,7 @@ def test_project_boundary_creation():
         assert boundary.boundary_type == ProjectBoundaryType.WORKSPACE
         assert len(boundary.dependencies) == 2
         assert boundary.version_constraint == "^1.0.0"
-        assert boundary.is_published == False
+        assert boundary.is_published is False
         assert isinstance(boundary.last_updated, datetime)
 
         print("✅ Project boundary creation test passed")
@@ -124,7 +119,7 @@ def test_cross_project_dependency_creation():
         assert dep.target_project == "projectB"
         assert dep.dependency_type == DependencyType.IMPORT
         assert dep.propagation_type == ImpactPropagation.DIRECT
-        assert dep.is_breaking_change_risk == True
+        assert dep.is_breaking_change_risk is True
 
         print("✅ Cross-project dependency creation test passed")
         return True
@@ -331,7 +326,7 @@ async def test_register_project_boundary():
             version_constraint="^2.0.0",
         )
 
-        assert result == True
+        assert result is True
 
         # Verify boundary was registered
         boundary_id = "backend->frontend"
@@ -409,7 +404,6 @@ async def test_impact_summary_generation():
         from app.services.cascading_impact_analyzer import (
             CascadingImpact,
             CascadingImpactAnalyzer,
-            ChangeCompatibility,
         )
 
         analyzer = CascadingImpactAnalyzer()

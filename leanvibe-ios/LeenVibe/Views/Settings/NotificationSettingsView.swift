@@ -8,7 +8,7 @@ struct NotificationSettingsView: View {
     
     // MARK: - Properties
     
-    @StateObject private var settingsManager = SettingsManager.shared
+    @Environment(\.settingsManager) private var settingsManager
     @State private var notificationAuthStatus: UNAuthorizationStatus = .notDetermined
     @State private var isRequestingPermission = false
     @State private var showingQuietHours = false

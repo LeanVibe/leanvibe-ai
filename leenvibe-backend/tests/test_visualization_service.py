@@ -39,7 +39,7 @@ class TestVisualizationModels:
         assert config.diagram_type == DiagramType.ARCHITECTURE_OVERVIEW
         assert config.theme == DiagramTheme.LIGHT
         assert config.max_nodes == 100
-        assert config.interactive == True
+        assert config.interactive is True
         assert isinstance(config.filters, list)
 
     def test_diagram_data_creation(self):
@@ -121,7 +121,7 @@ class TestVisualizationModels:
         assert request.project_id == "test_project"
         assert request.configuration.diagram_type == DiagramType.HOTSPOT_HEATMAP
         assert request.export_format == DiagramExportFormat.MERMAID
-        assert request.cache_result == True
+        assert request.cache_result is True
 
 
 class TestVisualizationService:
@@ -434,7 +434,7 @@ class TestMermaidGeneration:
             ),
         ]
 
-        diagram_data = DiagramData(
+        DiagramData(
             id="test_diagram",
             title="Test Dependency Graph",
             configuration=config,
@@ -461,7 +461,6 @@ class TestMermaidGeneration:
 
 def test_visualization_basic_functionality():
     """Test basic visualization functionality"""
-    from app.models.visualization_models import DiagramTheme, DiagramType
     from app.services.visualization_service import visualization_service
 
     # Test service availability

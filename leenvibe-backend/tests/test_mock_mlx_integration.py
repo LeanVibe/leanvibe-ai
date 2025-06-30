@@ -4,10 +4,8 @@ Phase 2.3: Test Mock MLX Service Integration
 Tests for bridging L3 agent context to MLX inference responses.
 """
 
-import asyncio
 import os
 import sys
-from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -26,8 +24,8 @@ class TestMockMLXServiceIntegration:
         service = MockMLXService()
         success = await service.initialize()
 
-        assert success == True
-        assert service.is_initialized == True
+        assert success is True
+        assert service.is_initialized is True
         assert service.model_name == "mlx-community/Qwen2.5-Coder-32B-Instruct"
 
     @pytest.mark.asyncio
@@ -91,8 +89,8 @@ class TestMockMLXServiceIntegration:
         # Verify context usage
         context_used = response["context_used"]
         assert context_used["file_path"] == "/test/example.py"
-        assert context_used["has_symbol_context"] == True
-        assert context_used["has_surrounding_context"] == True
+        assert context_used["has_symbol_context"] is True
+        assert context_used["has_surrounding_context"] is True
         assert context_used["hints_count"] == 3
         assert context_used["language_detected"] == "python"
 
@@ -420,7 +418,7 @@ class TestMockMLXServiceIntegration:
 
         # Low confidence should flag for human review
         assert response["confidence"] < 0.7
-        assert response["requires_human_review"] == True
+        assert response["requires_human_review"] is True
 
         # High confidence context
         high_confidence_context = {
@@ -436,4 +434,4 @@ class TestMockMLXServiceIntegration:
 
         # High confidence should not require human review
         assert response["confidence"] >= 0.7
-        assert response["requires_human_review"] == False
+        assert response["requires_human_review"] is False

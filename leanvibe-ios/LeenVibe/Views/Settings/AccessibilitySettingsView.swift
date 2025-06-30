@@ -7,7 +7,7 @@ struct AccessibilitySettingsView: View {
     
     // MARK: - Properties
     
-    @StateObject private var settingsManager = SettingsManager.shared
+    @Environment(\.settingsManager) private var settingsManager
     @State private var showingAccessibilityGuide = false
     
     // MARK: - Body

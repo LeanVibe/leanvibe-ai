@@ -8,7 +8,7 @@ import asyncio
 import os
 import sys
 from datetime import datetime
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -18,11 +18,8 @@ def test_incremental_graph_service_imports():
     """Test that incremental graph service imports correctly"""
     try:
         from app.services.incremental_graph_service import (
-            GraphChange,
-            GraphUpdateBatch,
             GraphUpdateType,
             IncrementalGraphUpdateService,
-            PropagationResult,
             incremental_graph_service,
         )
 

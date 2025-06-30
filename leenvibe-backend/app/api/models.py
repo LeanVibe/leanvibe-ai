@@ -4,7 +4,7 @@ API Models for Code Completion Endpoint
 Pydantic models for request/response validation.
 """
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field, validator
 

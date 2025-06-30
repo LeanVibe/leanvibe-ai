@@ -10,11 +10,10 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set
 
 from ..models.ast_models import (
     CallGraph,
-    Dependency,
     DependencyGraph,
     FileAnalysis,
     LanguageType,
@@ -149,7 +148,7 @@ class ProjectIndexer:
 
             def should_exclude(path: Path) -> bool:
                 """Check if path should be excluded"""
-                path_str = str(path)
+                str(path)
                 relative_path = str(path.relative_to(workspace))
 
                 for pattern in all_excludes:

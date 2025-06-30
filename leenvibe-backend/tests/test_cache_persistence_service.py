@@ -5,13 +5,10 @@ Tests for cache persistence, recovery mechanisms, and fault tolerance.
 """
 
 import asyncio
-import json
 import os
-import shutil
 import sys
 import tempfile
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, Mock, patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -21,11 +18,8 @@ def test_cache_persistence_service_imports():
     """Test that cache persistence service imports correctly"""
     try:
         from app.services.cache_persistence_service import (
-            CacheCheckpoint,
             CacheFormat,
             CachePersistenceService,
-            PersistenceMetrics,
-            RecoveryResult,
             RecoveryStrategy,
             cache_persistence_service,
         )
@@ -56,11 +50,7 @@ def test_cache_models_imports():
     """Test that cache models import correctly"""
     try:
         from app.models.cache_models import (
-            CacheConfiguration,
-            CacheEntry,
-            CacheMetadata,
             CachePriority,
-            CacheStatistics,
             CacheStatus,
         )
 
@@ -276,7 +266,7 @@ def test_service_initialization():
             assert service.checkpoint_interval_minutes == 30
             assert service.max_checkpoints == 10
             assert service.compression_level == 6
-            assert service.backup_on_save == True
+            assert service.backup_on_save is True
 
             # Test empty state
             assert len(service.checkpoints) == 0
@@ -336,7 +326,7 @@ async def test_cache_save_load_basic():
             success = await service.save_cache(
                 test_data, test_metadata, CacheFormat.JSON
             )
-            assert success == True
+            assert success is True
 
             # Test load
             loaded_data, loaded_metadata = await service.load_cache(CacheFormat.JSON)
@@ -420,7 +410,7 @@ async def test_cache_recovery():
                 "recovery_key": {"data": "recovery_value", "timestamp": "2023-01-01"}
             }
             service.cached_data = test_data
-            checkpoint = await service.create_checkpoint(force=True)
+            await service.create_checkpoint(force=True)
 
             # Clear cache to simulate data loss
             service.cached_data = {}
@@ -428,7 +418,7 @@ async def test_cache_recovery():
             # Test recovery
             result = await service.recover_cache(RecoveryStrategy.FULL_RECOVERY)
 
-            assert result.success == True
+            assert result.success is True
             assert result.recovered_entries == 1
             assert result.corrupted_entries == 0
             assert len(result.errors) == 0

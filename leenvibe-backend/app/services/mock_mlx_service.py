@@ -6,10 +6,8 @@ appropriate suggestions based on AST context from L3 agent.
 """
 
 import asyncio
-import json
 import logging
 import time
-from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
 logger = logging.getLogger(__name__)

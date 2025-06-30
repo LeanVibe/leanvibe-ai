@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>LeenVibe</string>
+	<string>LeanVibe</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -25,19 +25,31 @@
 		<string>_leanvibe._tcp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>LeenVibe needs camera access to scan QR codes for backend connection</string>
+	<string>LeanVibe needs camera access to scan QR codes for backend connection</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>LeenVibe connects to your local development server</string>
+	<string>LeanVibe connects to your local development server</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>LeenVibe needs microphone access for voice commands</string>
+	<string>LeanVibe needs microphone access for voice commands</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>LeenVibe uses speech recognition for voice commands</string>
+	<string>LeanVibe uses speech recognition for voice commands</string>
 	<key>NSUserNotificationUsageDescription</key>
-	<string>LeenVibe sends notifications about task updates</string>
+	<string>LeanVibe sends notifications about task updates</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>

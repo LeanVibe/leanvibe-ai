@@ -1,7 +1,5 @@
-import asyncio
 
 import pytest
-from fastapi.testclient import TestClient
 
 
 def test_placeholder():
@@ -41,7 +39,7 @@ async def test_ai_service_initialization():
 
     ai_service = AIService()
     await ai_service.initialize()
-    assert ai_service.is_initialized == True
+    assert ai_service.is_initialized is True
 
 
 @pytest.mark.asyncio

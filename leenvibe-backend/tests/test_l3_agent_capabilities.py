@@ -5,7 +5,6 @@ Tests for understanding what the L3 agent framework can already do
 before connecting new components.
 """
 
-import asyncio
 import os
 import sys
 import tempfile
@@ -25,7 +24,6 @@ class TestL3AgentFramework:
     async def test_base_agent_initialization(self):
         """Test L3 agent can be created and configured"""
         from app.agent.l3_coding_agent import AgentDependencies, L3CodingAgent
-        from app.services.ai_service import AIService
 
         # Mock AI service to avoid MLX dependency
         with patch("app.agent.l3_coding_agent.AIService") as mock_ai_service:
@@ -39,7 +37,7 @@ class TestL3AgentFramework:
             agent = L3CodingAgent(deps)
             success = await agent.initialize()
 
-            assert success == True
+            assert success is True
             assert agent.dependencies == deps
             assert hasattr(agent, "state")
             assert hasattr(agent, "tools")
@@ -70,7 +68,7 @@ class TestL3AgentFramework:
             agent = EnhancedL3CodingAgent(deps)
             success = await agent.initialize()
 
-            assert success == True
+            assert success is True
             assert agent.dependencies == deps
             assert hasattr(agent, "project_context")
             assert hasattr(agent, "project_index")
@@ -80,7 +78,6 @@ class TestL3AgentFramework:
         """Test agent maintains conversation context"""
         from app.agent.l3_coding_agent import (
             AgentDependencies,
-            AgentState,
             L3CodingAgent,
         )
 
@@ -115,7 +112,7 @@ class TestL3AgentFramework:
         with (
             patch("app.agent.enhanced_l3_agent.ast_service") as mock_ast_service,
             patch("app.agent.enhanced_l3_agent.graph_service") as mock_graph_service,
-            patch("app.agent.enhanced_l3_agent.project_indexer") as mock_indexer,
+            patch("app.agent.enhanced_l3_agent.project_indexer"),
             patch("app.services.ai_service.AIService") as mock_ai_service,
         ):
 
@@ -155,8 +152,6 @@ class TestL3AgentFramework:
     async def test_agent_mock_responses(self):
         """Test agent generates structured responses"""
         from app.agent.l3_coding_agent import (
-            AgentDependencies,
-            L3CodingAgent,
             SimpleMLXModel,
         )
         from app.services.ai_service import AIService
@@ -248,7 +243,7 @@ class Calculator:
 
                 agent = EnhancedL3CodingAgent(deps)
                 success = await agent.initialize()
-                assert success == True
+                assert success is True
 
                 # Test project analysis tool
                 result = await agent._analyze_project_tool()
@@ -371,7 +366,7 @@ class Calculator:
             agent = L3CodingAgent(deps)
 
             # Initialization should handle errors gracefully
-            success = await agent.initialize()
+            await agent.initialize()
 
             # Even if initialization has issues, agent should be in a usable state
             assert hasattr(agent, "dependencies")

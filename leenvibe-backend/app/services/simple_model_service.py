@@ -3,16 +3,12 @@ Simple Model Service for testing real models with MLX
 This bypasses mlx-lm complexities and provides direct model loading
 """
 
-import asyncio
-import json
 import logging
 import time
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import mlx.core as mx
 import mlx.nn as nn
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +211,7 @@ class SimpleModelService:
 
             # Convert back to text
             generated_text = self._detokenize(generated_tokens)
-            full_response = prompt + generated_text
+            prompt + generated_text
 
             # Update metrics
             inference_time = time.time() - start_time

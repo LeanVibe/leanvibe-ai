@@ -2,11 +2,7 @@
 Integration tests for WebSocket functionality.
 """
 
-import asyncio
-import json
 
-import pytest
-from fastapi.testclient import TestClient
 
 
 def test_websocket_connection(test_client):

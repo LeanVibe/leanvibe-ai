@@ -6,7 +6,6 @@ Comprehensive tests for Tree-sitter AST analysis, symbol extraction, and project
 
 import asyncio
 import os
-import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -27,7 +26,7 @@ class TestTreeSitterParsers:
 
         await tree_sitter_manager.initialize()
 
-        assert tree_sitter_manager.initialized == True
+        assert tree_sitter_manager.initialized is True
         supported_languages = tree_sitter_manager.get_supported_languages()
         assert len(supported_languages) > 0
 
@@ -123,7 +122,7 @@ class TestASTService:
         from app.services.ast_service import ast_service
 
         await ast_service.initialize()
-        assert ast_service.initialized == True
+        assert ast_service.initialized is True
 
     @pytest.mark.asyncio
     async def test_python_symbol_extraction(self):
@@ -205,7 +204,7 @@ class Calculator:
                 (s for s in function_symbols if s.name == "async_function"), None
             )
             assert async_func is not None
-            assert async_func.is_async == True
+            assert async_func.is_async is True
 
         finally:
             os.unlink(temp_file)
@@ -540,7 +539,7 @@ def test_ast_models():
 
     assert symbol.name == "test_function"
     assert symbol.symbol_type == SymbolType.FUNCTION
-    assert symbol.is_async == True
+    assert symbol.is_async is True
     assert len(symbol.parameters) == 2
 
     # Test FileAnalysis model

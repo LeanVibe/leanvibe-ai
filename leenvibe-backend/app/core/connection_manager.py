@@ -1,8 +1,7 @@
 import json
 import logging
-import asyncio
 from datetime import datetime
-from typing import Dict, Optional, Set
+from typing import Dict, Optional
 
 from fastapi import WebSocket
 from app.models.event_models import (
@@ -14,7 +13,6 @@ from app.models.event_models import (
 from app.services.event_streaming_service import event_streaming_service
 from app.services.reconnection_service import (
     client_disconnected,
-    reconnection_service,
     register_client_session,
 )
 

@@ -11,18 +11,13 @@ import logging
 import re
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional
 
 from ..models.ast_models import (
-    ASTNode,
-    CallGraph,
     ComplexityMetrics,
     Dependency,
-    DependencyGraph,
     FileAnalysis,
     LanguageType,
-    ProjectIndex,
-    Reference,
     Symbol,
     SymbolType,
 )

@@ -7,33 +7,18 @@ in one project affect dependent projects and external consumers.
 
 import asyncio
 import hashlib
-import json
 import logging
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set
 
-from ..models.ast_models import (
-    Dependency,
-    FileAnalysis,
-    LanguageType,
-    ProjectIndex,
-    Reference,
-    Symbol,
-    SymbolType,
-)
-from ..models.monitoring_models import ChangeType, FileChange
-from .graph_service import graph_service
 from .project_indexer import project_indexer
 from .symbol_dependency_tracker import (
-    DependencyPath,
     DependencyType,
-    ImpactAnalysis,
-    SymbolNode,
     symbol_dependency_tracker,
 )
 

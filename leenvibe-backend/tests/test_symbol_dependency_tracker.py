@@ -8,9 +8,7 @@ and dependency path finding.
 import asyncio
 import os
 import sys
-import tempfile
 from datetime import datetime
-from unittest.mock import AsyncMock, Mock, patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,14 +18,9 @@ def test_symbol_dependency_tracker_imports():
     """Test that symbol dependency tracker imports correctly"""
     try:
         from app.services.symbol_dependency_tracker import (
-            DependencyEdge,
-            DependencyPath,
             DependencyType,
-            ImpactAnalysis,
             ImpactLevel,
-            SymbolChange,
             SymbolDependencyTracker,
-            SymbolNode,
             symbol_dependency_tracker,
         )
 
@@ -81,8 +74,8 @@ def test_symbol_node_creation():
         assert symbol_node.line_number == 10
         assert symbol_node.column_number == 5
         assert symbol_node.scope == "global"
-        assert symbol_node.is_public == True
-        assert symbol_node.is_exported == True
+        assert symbol_node.is_public is True
+        assert symbol_node.is_exported is True
         assert len(symbol_node.dependencies) == 0
         assert len(symbol_node.dependents) == 0
 
@@ -121,7 +114,7 @@ def test_dependency_edge_creation():
         assert edge.line_number == 20
         assert edge.column_number == 10
         assert edge.strength == 0.8
-        assert edge.is_direct == True
+        assert edge.is_direct is True
         assert isinstance(edge.created_at, datetime)
 
         print("✅ Dependency edge creation test passed")
@@ -227,7 +220,7 @@ def test_dependency_path_structure():
         assert path.path_types == [DependencyType.FUNCTION_CALL, DependencyType.IMPORT]
         assert path.total_strength == 0.4
         assert path.path_length == 2
-        assert path.is_cyclic == False
+        assert path.is_cyclic is False
 
         print("✅ Dependency path structure test passed")
         return True
@@ -309,7 +302,7 @@ async def test_tracker_initialization():
         assert tracker.max_analysis_depth == 10
         assert tracker.impact_threshold == 0.1
         assert tracker.batch_processing_size == 50
-        assert tracker.real_time_enabled == True
+        assert tracker.real_time_enabled is True
 
         # Test metrics initialization
         metrics = tracker.get_metrics()
@@ -348,7 +341,7 @@ async def test_add_symbol():
 
         # Add symbol
         result = await tracker.add_symbol(symbol, "/test/file.py")
-        assert result == True
+        assert result is True
 
         # Verify symbol was added
         assert tracker.metrics["total_symbols"] == 1
@@ -417,7 +410,7 @@ async def test_add_dependency():
             15,
             10,
         )
-        assert result == True
+        assert result is True
 
         # Verify dependency was added
         assert tracker.metrics["total_dependencies"] == 1
@@ -570,7 +563,7 @@ async def test_dependency_path_finding():
         # Get symbol IDs
         symbol_ids = list(tracker.symbols.keys())
         id_a = next(id for id in symbol_ids if tracker.symbols[id].symbol_name == "A")
-        id_b = next(id for id in symbol_ids if tracker.symbols[id].symbol_name == "B")
+        next(id for id in symbol_ids if tracker.symbols[id].symbol_name == "B")
         id_c = next(id for id in symbol_ids if tracker.symbols[id].symbol_name == "C")
 
         # Add dependencies: A -> B -> C
@@ -641,7 +634,7 @@ async def test_symbol_dependencies_retrieval():
         main_id = next(
             id for id, s in tracker.symbols.items() if s.symbol_name == "MainClass"
         )
-        dep_id = next(
+        next(
             id
             for id, s in tracker.symbols.items()
             if s.symbol_name == "DependencyClass"

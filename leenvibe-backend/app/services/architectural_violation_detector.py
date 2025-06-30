@@ -14,16 +14,10 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set
 
 from ..models.ast_models import (
-    Dependency,
     FileAnalysis,
-    LanguageType,
-    ProjectIndex,
-    Reference,
-    Symbol,
     SymbolType,
 )
 from ..models.monitoring_models import ChangeType, FileChange
@@ -725,7 +719,7 @@ class ArchitecturalViolationDetector:
                         severity=rule.severity,
                         file_path=file_path,
                         description=f"File has {file_lines} lines, exceeds limit of {self.max_file_size}",
-                        suggestion=f"Consider splitting this file into smaller, more focused modules",
+                        suggestion="Consider splitting this file into smaller, more focused modules",
                         confidence_score=0.9,
                     )
                 )

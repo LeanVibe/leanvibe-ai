@@ -3,7 +3,7 @@ import logging
 import time
 import traceback
 from functools import wraps
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -335,7 +335,7 @@ def performance_monitor(monitor: PerformanceMonitor, operation_name: str):
                 result = await func(*args, **kwargs)
                 success = True
                 return result
-            except Exception as e:
+            except Exception:
                 success = False
                 raise
             finally:

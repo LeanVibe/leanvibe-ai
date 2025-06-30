@@ -9,7 +9,7 @@ import asyncio
 import os
 import sys
 from datetime import datetime
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, patch
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,11 +20,7 @@ def test_architectural_violation_detector_imports():
     try:
         from app.services.architectural_violation_detector import (
             ArchitecturalLayer,
-            ArchitecturalReport,
-            ArchitecturalRule,
             ArchitecturalViolationDetector,
-            ComponentMetrics,
-            ViolationInstance,
             ViolationSeverity,
             ViolationType,
             architectural_violation_detector,
@@ -168,7 +164,7 @@ def test_architectural_rule_creation():
         assert rule.description == "A test rule for validation"
         assert rule.violation_type == ViolationType.LAYER_VIOLATION
         assert rule.severity == ViolationSeverity.ERROR
-        assert rule.enabled == True
+        assert rule.enabled is True
         assert rule.pattern == r".*\.test\..*"
         assert len(rule.conditions) == 2
         assert len(rule.exceptions) == 1
@@ -363,7 +359,7 @@ async def test_detector_initialization():
         assert detector.max_class_size == 500
         assert detector.max_complexity == 15
         assert detector.max_dependencies == 20
-        assert detector.real_time_enabled == True
+        assert detector.real_time_enabled is True
 
         # Test metrics
         assert detector.metrics["total_violations"] == 0
@@ -371,7 +367,7 @@ async def test_detector_initialization():
 
         # Test initialization
         success = await detector.initialize()
-        assert success == True
+        assert success is True
 
         # Cleanup
         await detector.shutdown()
@@ -475,7 +471,6 @@ async def test_analyze_file():
     """Test file analysis functionality"""
     try:
         from app.models.ast_models import (
-            Dependency,
             FileAnalysis,
             LanguageType,
             Symbol,
@@ -709,7 +704,6 @@ async def test_layer_violation_detection():
     try:
         from app.models.ast_models import Dependency, FileAnalysis, LanguageType
         from app.services.architectural_violation_detector import (
-            ArchitecturalLayer,
             ArchitecturalViolationDetector,
             ViolationType,
         )
@@ -935,19 +929,19 @@ def test_rule_management():
         )
 
         success = detector.add_rule(new_rule)
-        assert success == True
+        assert success is True
         assert len(detector.rules) == initial_rule_count + 1
         assert "test_custom_rule" in detector.rules
 
         # Test removing rule
         success = detector.remove_rule("test_custom_rule")
-        assert success == True
+        assert success is True
         assert len(detector.rules) == initial_rule_count
         assert "test_custom_rule" not in detector.rules
 
         # Test removing non-existent rule
         success = detector.remove_rule("non_existent_rule")
-        assert success == False
+        assert success is False
 
         print("✅ Rule management test passed")
         return True

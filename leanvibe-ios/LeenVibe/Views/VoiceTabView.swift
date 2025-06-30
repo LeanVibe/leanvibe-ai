@@ -5,7 +5,7 @@ import Speech
 struct VoiceTabView: View {
     @ObservedObject var webSocketService: WebSocketService
     @ObservedObject var projectManager: ProjectManager
-    @ObservedObject var settingsManager: SettingsManager
+    @Environment(\.settingsManager) private var settingsManager
     
     @StateObject private var speechService: SpeechRecognitionService
     @StateObject private var permissionManager = VoicePermissionManager()

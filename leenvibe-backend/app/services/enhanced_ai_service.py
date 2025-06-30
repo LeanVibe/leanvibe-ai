@@ -1,11 +1,9 @@
 import asyncio
-import json
 import logging
 import os
-import sys
 import time
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Dict, List
 
 from .ast_parser_service import TreeSitterService
 
@@ -418,13 +416,13 @@ The enhanced AI infrastructure is ready and working with your project context.
                 s for s in code_structure.symbols if s.type in ["class", "struct"]
             ]
 
-            analysis_parts.append(f"\n**Code Structure:**")
+            analysis_parts.append("\n**Code Structure:**")
             analysis_parts.append(f"- Functions: {len(functions)}")
             analysis_parts.append(f"- Classes/Structs: {len(classes)}")
             analysis_parts.append(f"- Total Symbols: {len(code_structure.symbols)}")
 
             if functions:
-                analysis_parts.append(f"\n**Functions Found:**")
+                analysis_parts.append("\n**Functions Found:**")
                 for func in functions[:5]:  # Show first 5
                     params = (
                         f"({', '.join(func.parameters)})" if func.parameters else "()"
@@ -450,7 +448,7 @@ The enhanced AI infrastructure is ready and working with your project context.
                 )
 
         # Quality insights
-        analysis_parts.append(f"\n**Quality Insights:**")
+        analysis_parts.append("\n**Quality Insights:**")
         if code_structure.complexity_score > 70:
             analysis_parts.append("⚠️ High complexity - consider refactoring")
         elif code_structure.complexity_score > 40:

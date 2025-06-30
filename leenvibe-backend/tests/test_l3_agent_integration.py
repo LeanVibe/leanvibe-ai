@@ -5,10 +5,8 @@ Comprehensive tests for the new L3 agent framework with pydantic.ai
 """
 
 import asyncio
-import json
 import os
 import sys
-import time
 from pathlib import Path
 
 import pytest
@@ -32,9 +30,9 @@ class TestL3AgentIntegration:
         agent = L3CodingAgent(deps)
         success = await agent.initialize()
 
-        assert success == True
+        assert success is True
         assert agent.model_wrapper is not None
-        assert agent.ai_service.is_initialized == True
+        assert agent.ai_service.is_initialized is True
         assert agent.model_wrapper is not None
 
     @pytest.mark.asyncio

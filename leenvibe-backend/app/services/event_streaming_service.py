@@ -12,8 +12,8 @@ import logging
 import time
 from collections import defaultdict, deque
 from dataclasses import asdict
-from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional, Set
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
 
 from ..models.event_models import (
     ClientPreferences,
@@ -22,7 +22,6 @@ from ..models.event_models import (
     EventPriority,
     EventStats,
     EventType,
-    NotificationBatch,
     NotificationChannel,
     StreamingMessage,
 )

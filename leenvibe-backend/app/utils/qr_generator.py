@@ -6,7 +6,7 @@ Generates ASCII QR codes for terminal display.
 import json
 import logging
 from io import StringIO
-from typing import Dict, Optional
+from typing import Dict
 
 import qrcode
 

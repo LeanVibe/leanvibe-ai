@@ -5,12 +5,10 @@ Provides robust cache persistence, recovery mechanisms, and fault tolerance
 for the LeenVibe backend caching system.
 """
 
-import asyncio
 import gzip
 import hashlib
 import json
 import logging
-import os
 import pickle
 import threading
 import time
@@ -18,12 +16,11 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import aiofiles
 
-from ..models.ast_models import FileAnalysis, ProjectIndex
-from ..models.cache_models import CacheEntry, CacheMetadata, CacheStatistics
+from ..models.cache_models import CacheMetadata
 
 logger = logging.getLogger(__name__)
 

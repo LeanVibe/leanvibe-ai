@@ -1,11 +1,9 @@
 import asyncio
-import json
 import logging
 import os
-import sys
 import time
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -313,7 +311,7 @@ Please provide a helpful response focused on practical software development guid
             "status": "success",
             "type": "agent_status",
             "data": status_data,
-            "message": f"Agent is ready and operational (MLX status via real_mlx_service)",
+            "message": "Agent is ready and operational (MLX status via real_mlx_service)",
             "confidence": confidence,
         }
 

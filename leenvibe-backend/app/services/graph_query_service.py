@@ -6,19 +6,11 @@ and architecture pattern detection using the Neo4j graph database.
 """
 
 import logging
-from collections import defaultdict, deque
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List
 
-import networkx as nx
 
-from ..models.graph_models import (
-    ArchitecturePattern,
-    GraphQuery,
-    GraphVisualizationData,
-    ImpactAnalysisResult,
-    RelationshipType,
-)
 from .graph_service import graph_service
 
 logger = logging.getLogger(__name__)

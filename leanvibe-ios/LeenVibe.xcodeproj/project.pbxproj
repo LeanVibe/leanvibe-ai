@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -11,6 +11,7 @@
 		122BE0EACCCE9D9594051CF3 /* BatteryOptimizedManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 743B074E3E78524AF5FDF711 /* BatteryOptimizedManager.swift */; };
 		16AAF0C83C30975FEFBDB684 /* SettingsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05D75AADA5F8BB7F073204D1 /* SettingsManager.swift */; };
 		18AD43C20B8EC36D090F1B47 /* ArchitectureDiagram.swift in Sources */ = {isa = PBXBuildFile; fileRef = 875AE0F5350907921D86349F /* ArchitectureDiagram.swift */; };
+		18F412E35B52F08E4111728D /* CommandAndControlService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9987034B6DF0DB18A92C028 /* CommandAndControlService.swift */; };
 		196648CF1936614765E0F14B /* NotificationHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0A47501A49ABEB57E5FB7B /* NotificationHistoryView.swift */; };
 		1DAA19079B4707CECDBE133B /* mermaid.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 0969685F9A8DD5A460E5ECAF /* mermaid.min.js */; };
 		1F209F63139FA535B4F85D27 /* DashboardTourOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AAE4DFA8A59BE024C4BD505 /* DashboardTourOnboardingView.swift */; };
@@ -200,7 +201,7 @@
 		839F6ECF2C9B324594E29309 /* AgentMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentMessage.swift; sourceTree = "<group>"; };
 		857FABBDA9347895A0404B30 /* MonitoringView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitoringView.swift; sourceTree = "<group>"; };
 		875AE0F5350907921D86349F /* ArchitectureDiagram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchitectureDiagram.swift; sourceTree = "<group>"; };
-		88DD26660B87C36B710A572B /* LeenVibe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeenVibe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		88DD26660B87C36B710A572B /* LeenVibe.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LeenVibe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B227A04D9935EC43D55642A /* DecisionLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DecisionLogView.swift; sourceTree = "<group>"; };
 		8E8E10FC7B5C6E33A9A44460 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8F4C092F2B390CEB30607A9D /* OnboardingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingCoordinator.swift; sourceTree = "<group>"; };
@@ -213,7 +214,8 @@
 		A3AA6FE5C1E18C42580E3EA7 /* AccessibilitySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySettingsView.swift; sourceTree = "<group>"; };
 		A7F321F77CA034E37E36C7A6 /* ProjectSetupOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectSetupOnboardingView.swift; sourceTree = "<group>"; };
 		A879D4345A6BBBF0922D4B11 /* GlobalVoiceCommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalVoiceCommandView.swift; sourceTree = "<group>"; };
-		AD8AF48FC815C6E464F88DF1 /* LeenVibeAppIcon.svg */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = LeenVibeAppIcon.svg; sourceTree = "<group>"; };
+		A9987034B6DF0DB18A92C028 /* CommandAndControlService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandAndControlService.swift; sourceTree = "<group>"; };
+		AD8AF48FC815C6E464F88DF1 /* LeenVibeAppIcon.svg */ = {isa = PBXFileReference; path = LeenVibeAppIcon.svg; sourceTree = "<group>"; };
 		AE9C220D7B004FEB654B3DA8 /* WelcomeOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeOnboardingView.swift; sourceTree = "<group>"; };
 		AEABB20C43B0A32E60F6E324 /* CompletionOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionOnboardingView.swift; sourceTree = "<group>"; };
 		B1CFEDB14F1176D75D7CB134 /* OnboardingAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAnalytics.swift; sourceTree = "<group>"; };
@@ -632,6 +634,7 @@
 				CF2AB5DAAE084E360BAA1628 /* Notifications */,
 				04DA51491D349F8445511D95 /* ArchitectureVisualizationService.swift */,
 				743B074E3E78524AF5FDF711 /* BatteryOptimizedManager.swift */,
+				A9987034B6DF0DB18A92C028 /* CommandAndControlService.swift */,
 				0B4E59CE7EBA84B5AC68E1C0 /* ConnectionStorageManager.swift */,
 				550A94BB9E76E202715DB69D /* DashboardVoiceProcessor.swift */,
 				5AD97EE4381C8D7709ECB9BF /* DiagramInteractionService.swift */,
@@ -715,6 +718,7 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					7F76A2518DE2801E6963D4B5 = {
+						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 					F4DE99490E16021EBD986AB4 = {
@@ -735,6 +739,7 @@
 			packageReferences = (
 				A8D0007FD32AD936CE1EBC7B /* XCRemoteSwiftPackageReference "Starscream" */,
 			);
+			preferredProjectObjectVersion = 54;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -780,6 +785,7 @@
 				122BE0EACCCE9D9594051CF3 /* BatteryOptimizedManager.swift in Sources */,
 				FF74F16421621C83037ECE4B /* CampaignManagementView.swift in Sources */,
 				37C1100365D39F6D49DC3471 /* ChatView.swift in Sources */,
+				18F412E35B52F08E4111728D /* CommandAndControlService.swift in Sources */,
 				8841AD79C890359E6D92989F /* CompletionOnboardingView.swift in Sources */,
 				97EA62EE59E03EFEA0E97680 /* ConfidenceChartView.swift in Sources */,
 				75EBD9DD9E1205188B11590B /* ConnectionStorageManager.swift in Sources */,
@@ -948,9 +954,9 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = LeenVibe;
+				INFOPLIST_KEY_CFBundleDisplayName = LeanVibe;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -971,7 +977,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -991,11 +997,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = GLKDB2BTQG;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = LeenVibe/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = LeanVibe;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1015,11 +1019,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = GLKDB2BTQG;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = LeenVibe/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = LeanVibe;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1037,7 +1039,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1098,9 +1100,9 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = LeenVibe;
+				INFOPLIST_KEY_CFBundleDisplayName = LeanVibe;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;

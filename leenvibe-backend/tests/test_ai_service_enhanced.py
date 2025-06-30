@@ -20,7 +20,7 @@ class TestEnhancedAIService:
         ai_service = AIService()
         await ai_service.initialize()
 
-        assert ai_service.is_initialized == True
+        assert ai_service.is_initialized is True
         assert hasattr(ai_service, "mlx_available")
         assert hasattr(ai_service, "model_health")
         assert ai_service.model_health["status"] in ["ready", "mock_mode", "error"]

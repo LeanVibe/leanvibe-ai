@@ -3,13 +3,10 @@ Phi-3-Mini Model Service for LeenVibe
 Production-ready service for loading and running Phi-3-Mini-128K-Instruct with MLX
 """
 
-import asyncio
-import json
 import logging
-import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 import mlx.core as mx
 import mlx.nn as nn

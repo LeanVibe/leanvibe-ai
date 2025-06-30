@@ -6,21 +6,18 @@ and intelligent analysis of code changes with impact assessment.
 """
 
 import asyncio
-import hashlib
 import logging
 import os
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional
 
 import aiofiles
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-from ..models.ast_models import LanguageType
 from ..models.monitoring_models import (
     ChangeNotification,
     ChangeScope,
@@ -35,12 +32,9 @@ from ..models.monitoring_models import (
     MonitoringStatus,
     RiskLevel,
 )
-from ..services.ast_service import ast_service
 from ..services.cache_invalidation_service import cache_invalidation_service
-from ..services.graph_query_service import graph_query_service
 from ..services.incremental_graph_service import incremental_graph_service
 from ..services.incremental_indexer import incremental_indexer
-from ..services.project_indexer import project_indexer
 from ..services.symbol_dependency_tracker import symbol_dependency_tracker
 
 logger = logging.getLogger(__name__)
@@ -432,7 +426,7 @@ class FileMonitorService:
                 try:
                     async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
                         # Try to read first 1024 bytes to check if text
-                        content_sample = await f.read(1024)
+                        await f.read(1024)
                         change.is_binary = False
                         change.encoding = "utf-8"
                 except UnicodeDecodeError:
@@ -611,7 +605,7 @@ class FileMonitorService:
                     session_id=session_id,
                     alert_type="high_risk_change",
                     severity="high",
-                    title=f"High-risk change detected",
+                    title="High-risk change detected",
                     description=f"File {Path(change.file_path).name} has been modified with {impact.risk_level} risk",
                     affected_files=[change.file_path],
                     risk_factors=[
@@ -678,7 +672,7 @@ class FileMonitorService:
                 )
 
                 if updated_index:
-                    logger.debug(f"Updated project index for single file change")
+                    logger.debug("Updated project index for single file change")
 
         except Exception as e:
             logger.error(f"Error triggering incremental index update: {e}")
@@ -741,7 +735,7 @@ class FileMonitorService:
                             severity=(
                                 "medium" if analysis.impact_score < 3.0 else "high"
                             ),
-                            title=f"Symbol dependency impact detected",
+                            title="Symbol dependency impact detected",
                             description=f"Symbol {analysis.symbol_id} change affects {len(analysis.directly_affected)} direct and {len(analysis.indirectly_affected)} indirect dependencies",
                             affected_files=(
                                 [

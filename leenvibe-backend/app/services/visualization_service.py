@@ -5,19 +5,16 @@ Generates interactive diagrams from code analysis data with support for multiple
 diagram types, themes, and advanced visualization features.
 """
 
-import asyncio
 import hashlib
 import json
 import logging
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
-from jinja2 import BaseLoader, Environment, Template
+from jinja2 import Template
 
-from ..models.ast_models import ProjectIndex, Symbol, SymbolType
-from ..models.graph_models import ArchitecturePattern, GraphVisualizationData
 from ..models.visualization_models import (
     DiagramCache,
     DiagramConfiguration,
@@ -25,14 +22,10 @@ from ..models.visualization_models import (
     DiagramEdge,
     DiagramGenerationRequest,
     DiagramGenerationResponse,
-    DiagramLayout,
     DiagramNode,
     DiagramTheme,
     DiagramType,
-    EdgeStyle,
-    InteractiveElement,
     MermaidDiagram,
-    NodeStyle,
     VisualizationError,
     VisualizationMetrics,
 )
@@ -835,7 +828,7 @@ graph {{ layout }}
     async def _cleanup_cache(self):
         """Clean up expired cache entries"""
         try:
-            current_time = datetime.now()
+            datetime.now()
             expired_keys = [
                 key for key, entry in self.cache.items() if entry.is_expired()
             ]

@@ -7,17 +7,15 @@ Supports multiple deployment modes:
 """
 
 import asyncio
-import json
 import logging
 import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 import httpx
 import mlx.core as mx
-import mlx.nn as nn
 
 # Try to import MLX-LM for direct integration
 try:
@@ -46,7 +44,6 @@ class ModelConfig:
     @classmethod
     def from_env(cls) -> "ModelConfig":
         """Create config from environment variables"""
-        import os
 
         return cls(
             model_name=os.getenv("LEENVIBE_MODEL_NAME", cls.model_name),
@@ -333,7 +330,7 @@ class ProductionModelService:
 
         # Enhanced mock responses based on prompt
         if "function" in prompt.lower() or "def " in prompt:
-            mock_response = f"""def hello_world():
+            mock_response = """def hello_world():
     \"\"\"A simple hello world function\"\"\"
     return "Hello, World!"
 
@@ -341,7 +338,7 @@ class ProductionModelService:
 result = hello_world()
 print(result)"""
         elif "class" in prompt.lower():
-            mock_response = f"""class Calculator:
+            mock_response = """class Calculator:
     \"\"\"A simple calculator class\"\"\"
     
     def add(self, a, b):

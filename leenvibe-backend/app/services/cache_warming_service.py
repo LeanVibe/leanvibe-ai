@@ -10,17 +10,15 @@ import hashlib
 import json
 import logging
 import time
-from collections import defaultdict, deque
+from collections import deque
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional
 
 import aiofiles
 
-from ..models.ast_models import LanguageType, ProjectIndex
-from ..models.cache_models import CacheEntry, CacheMetadata, CachePriority, CacheStatus
-from ..models.monitoring_models import ChangeType, FileChange
+from ..models.cache_models import CacheMetadata, CachePriority, CacheStatus
 from .cache_persistence_service import CacheFormat, cache_persistence_service
 
 logger = logging.getLogger(__name__)

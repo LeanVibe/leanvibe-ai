@@ -7,7 +7,7 @@ struct SettingsView: View {
     
     // MARK: - Properties
     
-    @StateObject private var settingsManager = SettingsManager.shared
+    @Environment(\.settingsManager) private var settingsManager
     @ObservedObject var webSocketService: WebSocketService
     @State private var showingAbout = false
     @State private var showingExportImport = false

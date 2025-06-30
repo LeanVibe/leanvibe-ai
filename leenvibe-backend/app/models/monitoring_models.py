@@ -7,11 +7,11 @@ Pydantic models for representing file changes, impact analysis, and real-time mo
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import List, Optional, Set
 
 from pydantic import BaseModel, Field
 
-from .ast_models import Symbol, SymbolType
+from .ast_models import SymbolType
 
 
 class ChangeType(str, Enum):

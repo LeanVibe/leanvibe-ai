@@ -5,15 +5,10 @@ Replaces mock_mlx_service.py with actual MLX inference using ProductionModelServ
 Provides the same interface as MockMLXService but with real AI-powered responses.
 """
 
-import asyncio
-import json
 import logging
 import time
-from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-import mlx.core as mx
-import mlx.nn as nn
 
 from .production_model_service import ModelConfig, ProductionModelService
 from .simple_model_service import SimpleModelService

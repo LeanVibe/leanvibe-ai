@@ -4,7 +4,6 @@ Tests for data models and validation.
 
 from datetime import datetime
 
-import pytest
 
 
 def test_websocket_message_model():

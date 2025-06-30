@@ -1,12 +1,10 @@
 import asyncio
 import json
 import logging
-import os
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
 from .agent.session_manager import SessionManager
 from .api.endpoints.code_completion import get_enhanced_agent
@@ -18,7 +16,6 @@ from .services.enhanced_ai_service import EnhancedAIService
 from .services.event_streaming_service import event_streaming_service
 from .services.reconnection_service import (
     client_heartbeat,
-    handle_client_reconnection,
     reconnection_service,
 )
 
@@ -282,7 +279,6 @@ async def emit_test_event(event_data: dict):
     from .models.event_models import (
         EventData,
         EventPriority,
-        EventType,
         NotificationChannel,
     )
 

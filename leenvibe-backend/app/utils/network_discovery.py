@@ -3,7 +3,6 @@ Network discovery utilities for LeanVibe backend.
 Auto-detects local IP addresses and generates connection information.
 """
 
-import json
 import logging
 import platform
 import socket

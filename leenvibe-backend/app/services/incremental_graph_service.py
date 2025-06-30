@@ -5,7 +5,6 @@ Provides real-time graph database updates with relationship propagation,
 maintaining graph consistency without full rebuilds.
 """
 
-import asyncio
 import logging
 import time
 from collections import defaultdict, deque
@@ -13,17 +12,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional
 
-from neo4j.exceptions import Neo4jError
 
 from ..models.ast_models import (
     Dependency,
     FileAnalysis,
-    ProjectIndex,
-    Reference,
-    Symbol,
-    SymbolType,
 )
 from ..models.monitoring_models import ChangeType, FileChange
 from .graph_service import graph_service

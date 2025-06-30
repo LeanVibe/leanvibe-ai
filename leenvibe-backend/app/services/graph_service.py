@@ -7,25 +7,20 @@ and querying code relationships and architecture patterns.
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
-import networkx as nx
-from neo4j import AsyncDriver, Driver, GraphDatabase
-from neo4j.exceptions import AuthError, ServiceUnavailable
+from neo4j import Driver, GraphDatabase
 
-from ..models.ast_models import Dependency, ProjectIndex, Symbol
+from ..models.ast_models import ProjectIndex
 from ..models.graph_models import (
     ArchitecturePattern,
     FileNode,
     GraphNode,
-    GraphQuery,
     GraphRelationship,
     GraphStatistics,
     GraphVisualizationData,
     ImpactAnalysisResult,
-    NodeLabel,
     ProjectNode,
     RelationshipType,
     SymbolNode,
@@ -270,7 +265,7 @@ class GraphService:
         """
 
         if props_str and props_str != "{}":
-            query += f" SET r = $properties"
+            query += " SET r = $properties"
             tx.run(
                 query,
                 source_id=rel.source_id,

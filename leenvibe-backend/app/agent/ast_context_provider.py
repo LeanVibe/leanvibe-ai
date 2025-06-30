@@ -4,13 +4,12 @@ AST Context Provider for L3 Agent
 Provides rich AST context to L3 agent for intelligent code suggestions.
 """
 
-import asyncio
 import logging
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from ..models.ast_models import ProjectIndex, Symbol, SymbolType
+from ..models.ast_models import Symbol, SymbolType
 from ..services.ast_service import ast_service
 from ..services.graph_service import graph_service
 from ..services.project_indexer import project_indexer

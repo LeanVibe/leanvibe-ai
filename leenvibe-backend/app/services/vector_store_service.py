@@ -1,11 +1,9 @@
-import asyncio
 import hashlib
-import json
 import logging
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 # Try to import ChromaDB, gracefully handle if not available
 try:

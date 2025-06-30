@@ -5,35 +5,25 @@ Extends the basic project indexer with incremental updates, intelligent caching,
 and performance optimization for real-time code analysis.
 """
 
-import asyncio
 import hashlib
 import json
 import logging
 import pickle
 import time
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 
 import aiofiles
 
 from ..models.ast_models import (
-    CallGraph,
-    Dependency,
-    DependencyGraph,
     FileAnalysis,
-    LanguageType,
     ProjectIndex,
-    Reference,
-    Symbol,
 )
 from ..models.monitoring_models import ChangeType, FileChange
-from .ast_service import ast_service
 from .cache_invalidation_service import cache_invalidation_service
 from .cache_warming_service import cache_warming_service
-from .graph_service import graph_service
 from .project_indexer import project_indexer
 
 logger = logging.getLogger(__name__)

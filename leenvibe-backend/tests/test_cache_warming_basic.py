@@ -144,12 +144,12 @@ def test_cache_warming_configuration():
         # Test setting valid strategies
         for strategy in ["aggressive", "balanced", "conservative"]:
             success = cache_warming_service.set_warming_strategy(strategy)
-            assert success == True
+            assert success is True
             assert cache_warming_service.current_strategy == strategy
 
         # Test setting invalid strategy
         success = cache_warming_service.set_warming_strategy("invalid")
-        assert success == False
+        assert success is False
 
         # Restore original strategy
         cache_warming_service.set_warming_strategy(original_strategy)

@@ -12,28 +12,17 @@ import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..models.ast_models import (
-    Dependency,
-    FileAnalysis,
     LanguageType,
-    ProjectIndex,
-    Reference,
     Symbol,
     SymbolType,
 )
 from ..models.monitoring_models import ChangeType, FileChange
-from .ast_service import ast_service
-from .symbol_dependency_tracker import (
-    DependencyType,
-    ImpactAnalysis,
-    SymbolNode,
-    symbol_dependency_tracker,
-)
 
 logger = logging.getLogger(__name__)
 

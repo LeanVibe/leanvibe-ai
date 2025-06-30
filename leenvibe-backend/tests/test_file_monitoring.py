@@ -8,8 +8,6 @@ import asyncio
 import os
 import sys
 import tempfile
-import time
-from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -38,7 +36,7 @@ class TestMonitoringModels:
         assert change.change_type == ChangeType.MODIFIED
         assert change.lines_added == 5
         assert change.lines_removed == 2
-        assert change.is_code_file() == True
+        assert change.is_code_file() is True
         assert "test.py" in change.get_relative_path("/path/to")
 
     def test_monitoring_configuration(self):
@@ -56,7 +54,7 @@ class TestMonitoringModels:
         assert config.workspace_path == "/test/workspace"
         assert len(config.watch_patterns) == 2
         assert config.debounce_delay_ms == 500
-        assert config.enable_content_analysis == True
+        assert config.enable_content_analysis is True
 
     def test_monitoring_session(self):
         """Test monitoring session model"""
@@ -86,7 +84,7 @@ class TestMonitoringModels:
 
         assert session.total_changes_detected == 1
         assert len(session.recent_changes) == 1
-        assert session.is_active() == True
+        assert session.is_active() is True
 
     def test_impact_assessment(self):
         """Test impact assessment model"""
@@ -178,7 +176,7 @@ class TestFileMonitorService:
                     config=config,
                 )
 
-                assert success == True
+                assert success is True
 
                 # Check session exists
                 session = file_monitor_service.get_session(session_id)
@@ -227,19 +225,19 @@ class TestFileMonitorService:
         handler = FileMonitorEventHandler(file_monitor_service, "test_session")
 
         # Should match
-        assert handler._should_monitor_file("/test/main.py", config) == True
-        assert handler._should_monitor_file("/test/src/app.js", config) == True
+        assert handler._should_monitor_file("/test/main.py", config) is True
+        assert handler._should_monitor_file("/test/src/app.js", config) is True
 
         # Should ignore
         assert (
-            handler._should_monitor_file("/test/__pycache__/file.pyc", config) == False
+            handler._should_monitor_file("/test/__pycache__/file.pyc", config) is False
         )
         assert (
-            handler._should_monitor_file("/test/node_modules/lib.js", config) == False
+            handler._should_monitor_file("/test/node_modules/lib.js", config) is False
         )
 
         # Should not match (wrong extension)
-        assert handler._should_monitor_file("/test/readme.txt", config) == False
+        assert handler._should_monitor_file("/test/readme.txt", config) is False
 
     def test_language_detection(self):
         """Test programming language detection"""
@@ -407,11 +405,6 @@ def example():
 
 def test_monitoring_basic_functionality():
     """Test basic monitoring functionality"""
-    from app.models.monitoring_models import (
-        ChangeType,
-        FileChange,
-        MonitoringConfiguration,
-    )
     from app.services.file_monitor_service import file_monitor_service
 
     # Test service availability

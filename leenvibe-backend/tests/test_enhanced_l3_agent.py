@@ -31,7 +31,7 @@ class TestEnhancedL3Agent:
         agent = EnhancedL3CodingAgent(deps)
         success = await agent.initialize()
 
-        assert success == True
+        assert success is True
         assert agent.model_wrapper is not None
         assert hasattr(agent, "project_context")
         assert hasattr(agent, "project_index")

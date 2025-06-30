@@ -5,29 +5,23 @@ Analyzes code patterns and suggests intelligent refactoring opportunities
 including code smells detection, design pattern recommendations, and automated fixes.
 """
 
-import ast
 import asyncio
 import hashlib
 import logging
-import re
 import time
-from collections import defaultdict, deque
+from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 from ..models.ast_models import (
-    Dependency,
     FileAnalysis,
     LanguageType,
     ProjectIndex,
-    Reference,
     Symbol,
     SymbolType,
 )
-from ..models.monitoring_models import ChangeType, FileChange
 from .ast_service import ast_service
 from .graph_service import graph_service
 from .project_indexer import project_indexer
@@ -506,7 +500,7 @@ class RefactoringSuggestionEngine:
                     ),
                     category=SuggestionCategory.MAINTAINABILITY,
                     title="Extract method to reduce complexity",
-                    description=f"Break down long method into smaller, focused methods",
+                    description="Break down long method into smaller, focused methods",
                     rationale=f"Method has {smell.metrics.get('lines', 0)} lines, making it hard to understand and maintain",
                     target_symbol_id=smell.symbol_id,
                     target_file_path=smell.file_path,
@@ -535,7 +529,7 @@ class RefactoringSuggestionEngine:
                     priority=SuggestionPriority.HIGH,
                     category=SuggestionCategory.DESIGN,
                     title="Extract class to improve cohesion",
-                    description=f"Split large class into smaller, focused classes",
+                    description="Split large class into smaller, focused classes",
                     rationale=f"Class has {smell.metrics.get('lines', 0)} lines, violating single responsibility principle",
                     target_symbol_id=smell.symbol_id,
                     target_file_path=smell.file_path,
@@ -564,7 +558,7 @@ class RefactoringSuggestionEngine:
                     priority=SuggestionPriority.MEDIUM,
                     category=SuggestionCategory.DESIGN,
                     title="Introduce parameter object",
-                    description=f"Group related parameters into a data class",
+                    description="Group related parameters into a data class",
                     rationale=f"Method has {smell.metrics.get('parameter_count', 0)} parameters, making it hard to use",
                     target_symbol_id=smell.symbol_id,
                     target_file_path=smell.file_path,

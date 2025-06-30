@@ -4,32 +4,21 @@ Enhanced L3 Coding Agent with AST Integration
 Extends the basic L3 agent with deep code understanding through AST analysis.
 """
 
-import asyncio
-import asyncio
 import logging
 import time
-import asyncio
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..models.ast_models import (
-    ASTContext,
-    ImpactAnalysis,
     ProjectContext,
     ProjectIndex,
-    RefactoringSuggestion,
-    Reference,
-    Symbol,
     SymbolType,
 )
-from ..models.graph_models import ArchitecturePattern, GraphNode, GraphVisualizationData
 from ..models.monitoring_models import (
-    ChangeNotification,
-    FileChange,
     MonitoringConfiguration,
-    MonitoringMetrics,
-    MonitoringSession,
+    MonitoringStatus,
+    ChangeType,
 )
 from ..models.visualization_models import (
     DiagramConfiguration,
@@ -49,7 +38,7 @@ from ..services.project_indexer import project_indexer
 from ..services.real_mlx_service import real_mlx_service
 from ..services.visualization_service import visualization_service
 from .ast_context_provider import ASTContextProvider
-from .l3_coding_agent import AgentDependencies, AgentState, L3CodingAgent
+from .l3_coding_agent import AgentDependencies, L3CodingAgent
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +164,7 @@ class EnhancedL3CodingAgent(L3CodingAgent):
 
             # Store project in graph database
             if graph_service.initialized and self.project_index:
-                project_id = f"project_{hash(workspace_path)}"
+                f"project_{hash(workspace_path)}"
                 await graph_service.store_project_graph(
                     self.project_index, workspace_path
                 )
@@ -800,7 +789,7 @@ Technology Stack: {', '.join(self.project_context.technology_stack[:10]) if self
             avg_complexity = total_complexity / max(len(complexity_data), 1)
 
             # Generate summary
-            summary = f"Code Complexity Analysis:\n\n"
+            summary = "Code Complexity Analysis:\n\n"
             summary += f"📊 Overall: {total_complexity} total complexity across {len(complexity_data)} files\n"
             summary += f"📈 Average: {avg_complexity:.1f} complexity per file\n\n"
 
@@ -814,7 +803,7 @@ Technology Stack: {', '.join(self.project_context.technology_stack[:10]) if self
             else:
                 summary += "✅ No files with high complexity detected\n"
 
-            summary += f"\n🔧 Top Complex Files:\n"
+            summary += "\n🔧 Top Complex Files:\n"
             for file_data in complexity_data[:3]:
                 file_name = Path(file_data["file"]).name
                 summary += f"  • {file_name} - {file_data['complexity']} complexity\n"
@@ -892,7 +881,7 @@ Technology Stack: {', '.join(self.project_context.technology_stack[:10]) if self
             # Combine analysis with context
             enhanced_analysis = file_analysis["analysis"]
             if context_info:
-                enhanced_analysis += f"\n\nProject Context:\n• " + "\n• ".join(
+                enhanced_analysis += "\n\nProject Context:\n• " + "\n• ".join(
                     context_info
                 )
 
@@ -1097,7 +1086,7 @@ Technology Stack: {', '.join(self.project_context.technology_stack[:10]) if self
             avg_coupling = coupling_data.get("average_coupling", 0)
             high_coupling_files = coupling_data.get("highly_coupled_files", [])
 
-            summary_parts = [f"📊 Coupling Analysis Results:\n"]
+            summary_parts = ["📊 Coupling Analysis Results:\n"]
             summary_parts.append(
                 f"Average coupling: {avg_coupling:.1f} dependencies per file"
             )
@@ -1392,7 +1381,7 @@ Use it to understand:
 • Refactoring priority identification
 • Architecture quality assessment"""
 
-            summary += f"""
+            summary += """
 
 🎨 Interactive Features:
 • Click nodes for detailed information
@@ -2032,7 +2021,7 @@ Start again with 'start monitoring' when needed."""
 
             # Update graph database
             if graph_service.initialized and self.project_index:
-                project_id = f"project_{hash(workspace_path)}"
+                f"project_{hash(workspace_path)}"
                 await graph_service.store_project_graph(
                     self.project_index, workspace_path
                 )
@@ -3145,7 +3134,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
 
             # Get rich AST context
-            context = await self.ast_context_provider.get_completion_context(
+            await self.ast_context_provider.get_completion_context(
                 file_path, cursor_position, intent=intent
             )
 

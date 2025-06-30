@@ -38,7 +38,7 @@ def test_cache_invalidation_service_basic():
 
         assert cache_invalidation_service.max_propagation_depth == 10
         assert cache_invalidation_service.cascade_threshold == 5
-        assert cache_invalidation_service.symbol_invalidation_enabled == True
+        assert cache_invalidation_service.symbol_invalidation_enabled is True
 
         # Test metrics
         metrics = cache_invalidation_service.get_metrics()

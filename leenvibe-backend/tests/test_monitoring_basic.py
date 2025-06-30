@@ -6,9 +6,6 @@ Tests for monitoring models and basic functionality without external dependencie
 
 import os
 import sys
-import tempfile
-from datetime import datetime
-from pathlib import Path
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -42,7 +39,7 @@ def test_monitoring_models():
         assert change.id == "test_change_1"
         assert change.change_type == ChangeType.MODIFIED
         assert change.lines_added == 5
-        assert change.is_code_file() == True
+        assert change.is_code_file() is True
         print("✅ FileChange model test passed")
 
         # Test MonitoringConfiguration model
@@ -70,7 +67,7 @@ def test_monitoring_models():
         session.add_change(change)
         assert session.total_changes_detected == 1
         assert len(session.recent_changes) == 1
-        assert session.is_active() == True
+        assert session.is_active() is True
         print("✅ MonitoringSession model test passed")
 
         # Test ImpactAssessment model
@@ -107,10 +104,8 @@ def test_enhanced_agent_imports():
     """Test that enhanced agent can import monitoring components"""
     try:
         from app.agent.enhanced_l3_agent import EnhancedL3CodingAgent
-        from app.models.monitoring_models import MonitoringConfiguration
 
         # Check that the class has monitoring tools
-        agent_tools = EnhancedL3CodingAgent.__dict__
 
         # Look for monitoring tool methods
         monitoring_tools = [
@@ -139,7 +134,6 @@ def test_enhanced_agent_imports():
 def test_visualization_integration():
     """Test that visualization service is properly integrated"""
     try:
-        from app.models.visualization_models import DiagramTheme, DiagramType
         from app.services.visualization_service import visualization_service
 
         # Test service availability
