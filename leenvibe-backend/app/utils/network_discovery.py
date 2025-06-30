@@ -1,5 +1,5 @@
 """
-Network discovery utilities for LeenVibe backend.
+Network discovery utilities for LeanVibe backend.
 Auto-detects local IP addresses and generates connection information.
 """
 
@@ -161,7 +161,7 @@ class NetworkDiscovery:
         all_ips = self.get_local_ips()
 
         config = {
-            "leenvibe": {
+            "leanvibe": {
                 "version": "1.0",
                 "server": {
                     "host": primary_ip,

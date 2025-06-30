@@ -46,7 +46,7 @@ class GraphService:
         self,
         uri: str = "bolt://localhost:7687",
         username: str = "neo4j",
-        password: str = "leenvibe123",
+        password: str = "leanvibe123",
         database: str = "neo4j",
     ):
         self.uri = uri

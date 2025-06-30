@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create FastAPI app
-app = FastAPI(title="LeenVibe L3 Agent", version="0.2.0")
+app = FastAPI(title="LeanVibe L3 Agent", version="0.2.0")
 
 # Configure CORS for iOS communication
 app.add_middleware(
@@ -190,7 +190,7 @@ session_manager = SessionManager()
 async def startup_event():
     """Initialize services on startup"""
     logger.info(
-        "Starting LeenVibe backend with L3 Agent, event streaming, and reconnection handling..."
+        "Starting LeanVibe backend with L3 Agent, event streaming, and reconnection handling..."
     )
     await ai_service.initialize()
     await session_manager.start()
@@ -201,7 +201,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    logger.info("Shutting down LeenVibe backend...")
+    logger.info("Shutting down LeanVibe backend...")
     await session_manager.stop()
     await event_streaming_service.stop()
     await reconnection_service.stop()
@@ -214,7 +214,7 @@ async def health_check():
     streaming_stats = event_streaming_service.get_stats()
     return {
         "status": "healthy",
-        "service": "leenvibe-backend",
+        "service": "leanvibe-backend",
         "version": "0.2.0",
         "ai_ready": ai_service.is_initialized,
         "agent_framework": "pydantic.ai",
@@ -227,7 +227,7 @@ async def health_check():
 async def root():
     """Root endpoint"""
     return {
-        "message": "LeenVibe L3 Coding Agent",
+        "message": "LeanVibe L3 Coding Agent",
         "version": "0.2.0",
         "framework": "pydantic.ai",
     }
@@ -662,7 +662,7 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "query":
         # Handle CLI query
         if len(sys.argv) < 3:
-            print("Usage: leenvibe query '<your question>'")
+            print("Usage: leanvibe query '<your question>'")
             sys.exit(1)
             
         query_text = " ".join(sys.argv[2:])

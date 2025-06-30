@@ -10,7 +10,7 @@ import time
 import sys
 import os
 
-# Add leenvibe-backend to path for module discovery
+# Add leanvibe-backend to path for module discovery
 sys.path.insert(0, os.path.dirname(__file__))
 
 async def test_ai_service():

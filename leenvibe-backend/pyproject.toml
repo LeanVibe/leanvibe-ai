@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "leenvibe-backend"
+name = "leanvibe-backend"
 version = "0.1.0"
-description = "LeenVibe L3 Coding Agent Backend"
+description = "LeanVibe L3 Coding Agent Backend"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-    { name = "LeenVibe Team" },
+    { name = "LeanVibe Team" },
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -83,12 +83,12 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/leanvibe-ai/leenvibe-backend"
-Repository = "https://github.com/leanvibe-ai/leenvibe-backend"
-Documentation = "https://github.com/leanvibe-ai/leenvibe-backend#readme"
+Homepage = "https://github.com/leanvibe-ai/leanvibe-backend"
+Repository = "https://github.com/leanvibe-ai/leanvibe-backend"
+Documentation = "https://github.com/leanvibe-ai/leanvibe-backend#readme"
 
 [project.scripts]
-leenvibe = "app.main:main"
+leanvibe = "app.main:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]

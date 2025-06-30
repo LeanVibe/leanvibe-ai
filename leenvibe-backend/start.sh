@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# LeenVibe Backend Startup Script with MLX AI Integration
+# LeanVibe Backend Startup Script with MLX AI Integration
 
-echo "🚀 Starting LeenVibe Backend with MLX AI Support..."
+echo "🚀 Starting LeanVibe Backend with MLX AI Support..."
 
 # Check if uv is installed
 if ! command -v uv &> /dev/null; then
@@ -40,7 +40,7 @@ import os
 from pathlib import Path
 
 # Create cache directories
-cache_dir = Path.home() / '.cache' / 'leenvibe'
+cache_dir = Path.home() / '.cache' / 'leanvibe'
 cache_dir.mkdir(parents=True, exist_ok=True)
 print(f'✅ Cache directory ready: {cache_dir}')
 "
@@ -107,7 +107,7 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "🌟 Starting FastAPI server with MLX AI support..."
-echo "📱 Scan the QR code above with the LeenVibe iOS app to connect"
+echo "📱 Scan the QR code above with the LeanVibe iOS app to connect"
 echo "🖥️  Or connect manually to: http://localhost:8000"
 echo ""
 echo "⚡ AI Mode: Phi-3-Mini with MLX acceleration (fallback chain available)"

@@ -1,5 +1,5 @@
 """
-QR Code generation utilities for LeenVibe backend.
+QR Code generation utilities for LeanVibe backend.
 Generates ASCII QR codes for terminal display.
 """
 
@@ -118,8 +118,8 @@ def create_terminal_qr_display(config: Dict) -> str:
     qr_code = generator.generate_connection_qr(config, compact=True)
 
     # Extract connection info
-    server_info = config["leenvibe"]["server"]
-    metadata = config["leenvibe"]["metadata"]
+    server_info = config["leanvibe"]["server"]
+    metadata = config["leanvibe"]["metadata"]
 
     primary_url = f"ws://{server_info['host']}:{server_info['port']}{server_info['websocket_path']}"
 
@@ -132,7 +132,7 @@ def create_terminal_qr_display(config: Dict) -> str:
 🏠 Server: {metadata['server_name']}
 📡 Network: {metadata['network']}
 
-💡 Open LeenVibe iOS app and tap "Scan QR" to connect automatically
+💡 Open LeanVibe iOS app and tap "Scan QR" to connect automatically
 """
 
     return display

@@ -287,4 +287,4 @@ confidence_thresholds = {
 
 ---
 
-*LeenVibe now features a complete L3 autonomous coding agent framework with confidence-driven decision making, session persistence, and structured tool integration - providing the foundation for advanced development assistance.*
+*LeanVibe now features a complete L3 autonomous coding agent framework with confidence-driven decision making, session persistence, and structured tool integration - providing the foundation for advanced development assistance.*

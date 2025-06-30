@@ -98,7 +98,7 @@ class CachePersistenceService:
     corruption detection, and automatic recovery mechanisms.
     """
 
-    def __init__(self, cache_dir: str = ".cache/leenvibe"):
+    def __init__(self, cache_dir: str = ".cache/leanvibe"):
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 

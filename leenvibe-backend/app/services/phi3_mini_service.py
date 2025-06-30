@@ -198,7 +198,7 @@ class Phi3MiniService:
         self.tokenizer = None
         self.config = None
         self.is_initialized = False
-        self.cache_dir = Path.home() / ".cache" / "leenvibe" / "models"
+        self.cache_dir = Path.home() / ".cache" / "leanvibe" / "models"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         self.health_status = {

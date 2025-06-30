@@ -56,7 +56,7 @@ class SearchResult:
 class VectorStoreService:
     """Service for managing code embeddings with ChromaDB"""
 
-    def __init__(self, db_path: str = ".leenvibe_cache/chroma_db"):
+    def __init__(self, db_path: str = ".leanvibe_cache/chroma_db"):
         self.db_path = Path(db_path)
         self.client = None
         self.collection = None

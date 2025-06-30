@@ -1,6 +1,6 @@
-# LeenVibe Backend
+# LeanVibe Backend
 
-This is the backend service for the LeenVibe L3 Coding Agent. It provides WebSocket-based communication with iOS clients and integrates with local AI models for code assistance.
+This is the backend service for the LeanVibe L3 Coding Agent. It provides WebSocket-based communication with iOS clients and integrates with local AI models for code assistance.
 
 ## Quick Start
 
@@ -110,9 +110,9 @@ uv run mypy app/
 
 Currently uses default settings. Environment variables will be added in future versions:
 
-- `LEENVIBE_HOST` - Server host (default: 0.0.0.0)
-- `LEENVIBE_PORT` - Server port (default: 8000)  
-- `LEENVIBE_LOG_LEVEL` - Logging level (default: INFO)
+- `LEANVIBE_HOST` - Server host (default: 0.0.0.0)
+- `LEANVIBE_PORT` - Server port (default: 8000)  
+- `LEANVIBE_LOG_LEVEL` - Logging level (default: INFO)
 
 ## Troubleshooting
 

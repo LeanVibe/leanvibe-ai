@@ -33,12 +33,12 @@ class ConnectionService:
         config = self.get_connection_config()
 
         print("\n" + "=" * 60)
-        print("🚀 LeenVibe Backend - Ready for iOS Connection")
+        print("🚀 LeanVibe Backend - Ready for iOS Connection")
         print("=" * 60)
 
         # Print network interfaces
         print("\n📡 Available Network Interfaces:")
-        for interface in config["leenvibe"]["metadata"]["all_interfaces"]:
+        for interface in config["leanvibe"]["metadata"]["all_interfaces"]:
             icon = self._get_interface_icon(interface["type"])
             print(f"   {icon} {interface['type'].title()}: {interface['url']}")
 

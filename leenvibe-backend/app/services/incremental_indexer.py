@@ -77,7 +77,7 @@ class IncrementalProjectIndexer:
     smart caching, and performance optimization for real-time analysis.
     """
 
-    def __init__(self, cache_dir: str = "./.leenvibe_cache"):
+    def __init__(self, cache_dir: str = "./.leanvibe_cache"):
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(exist_ok=True)
         self.executor = ThreadPoolExecutor(max_workers=6)

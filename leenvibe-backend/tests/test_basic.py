@@ -17,7 +17,7 @@ def test_health_endpoint(test_client):
     assert "status" in data
     assert data["status"] == "healthy"
     assert "service" in data
-    assert data["service"] == "leenvibe-backend"
+    assert data["service"] == "leanvibe-backend"
 
 
 def test_root_endpoint(test_client):

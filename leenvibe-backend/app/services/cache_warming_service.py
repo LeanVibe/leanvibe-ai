@@ -84,7 +84,7 @@ class SmartCacheWarmingService:
     usage patterns, access frequency, and performance optimization.
     """
 
-    def __init__(self, storage_dir: str = "./.leenvibe_cache"):
+    def __init__(self, storage_dir: str = "./.leanvibe_cache"):
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(exist_ok=True)
 

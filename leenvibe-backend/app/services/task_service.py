@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class TaskService:
     """Service for managing tasks and Kanban board operations"""
     
-    def __init__(self, data_dir: str = ".leenvibe_cache"):
+    def __init__(self, data_dir: str = ".leanvibe_cache"):
         self.data_dir = Path(data_dir)
         self.tasks_file = self.data_dir / "tasks.json"
         self._tasks: Dict[str, Task] = {}

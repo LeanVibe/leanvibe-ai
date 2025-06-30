@@ -41,7 +41,7 @@ class ModelConfig:
     server_url: str = "http://127.0.0.1:8082"
     max_tokens: int = 512
     temperature: float = 0.7
-    cache_dir: str = "~/.cache/leenvibe"
+    cache_dir: str = "~/.cache/leanvibe"
 
     @classmethod
     def from_env(cls) -> "ModelConfig":
