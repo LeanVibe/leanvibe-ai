@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct DashboardTabView: View {
     @StateObject private var webSocketService = WebSocketService()
     @StateObject private var projectManager = ProjectManager()

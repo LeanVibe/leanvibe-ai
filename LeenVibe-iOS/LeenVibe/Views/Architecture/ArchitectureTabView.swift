@@ -1,6 +1,6 @@
 import SwiftUI
 
-
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 struct ArchitectureTabView: View {
     @StateObject private var service = ArchitectureVisualizationService(webSocketService: WebSocketService())
@@ -190,6 +190,7 @@ struct ArchitectureTabView: View {
 }
 
 // Helper view for diagram export
+@available(iOS 18.0, macOS 14.0, *)
 struct DiagramExportView: View {
     let diagramCode: String
     @Environment(\.dismiss) private var dismiss
@@ -219,6 +220,7 @@ struct DiagramExportView: View {
 
 // MARK: - Supporting Views
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ErrorView: View {
     let errorMessage: String
     let onRetry: () -> Void
@@ -249,6 +251,7 @@ struct ErrorView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct EmptyArchitectureView: View {
     let onLoadDiagram: () -> Void
     
@@ -278,6 +281,7 @@ struct EmptyArchitectureView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ExportDiagramSheet: View {
     let diagramContent: String
     @Environment(\.dismiss) private var dismiss

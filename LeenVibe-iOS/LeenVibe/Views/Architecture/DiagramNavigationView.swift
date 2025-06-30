@@ -1,6 +1,7 @@
 
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct DiagramNavigationView: View {
     @Binding var zoomScale: CGFloat
     let onZoomIn: () -> Void

@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ProjectDetailView: View {
     let project: Project
     @ObservedObject var projectManager: ProjectManager

@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// Campaign Management View - Create and manage notification campaigns
+@available(iOS 18.0, macOS 14.0, *)
 struct CampaignManagementView: View {
     @ObservedObject var contentManager: NotificationContentManager
     
@@ -60,6 +61,7 @@ struct CampaignManagementView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct CampaignRow: View {
     let campaign: NotificationCampaign
     let action: () -> Void
@@ -106,6 +108,7 @@ struct CampaignRow: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct CampaignStatusBadge: View {
     let status: CampaignStatus
     
@@ -151,6 +154,7 @@ struct CampaignStatusBadge: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct EmptyStateRow: View {
     let icon: String
     let message: String
@@ -171,6 +175,7 @@ struct EmptyStateRow: View {
 
 // MARK: - Create Campaign View
 
+@available(iOS 18.0, macOS 14.0, *)
 struct CreateCampaignView: View {
     @ObservedObject var contentManager: NotificationContentManager
     @Environment(\.dismiss) private var dismiss
@@ -262,6 +267,7 @@ struct CreateCampaignView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct TemplateSelectionRow: View {
     let template: NotificationTemplate
     let isSelected: Bool
@@ -325,6 +331,7 @@ struct TemplateSelectionRow: View {
 
 // MARK: - Campaign Detail View
 
+@available(iOS 18.0, macOS 14.0, *)
 struct CampaignDetailView: View {
     let campaign: NotificationCampaign
     @ObservedObject var contentManager: NotificationContentManager
@@ -377,6 +384,7 @@ struct CampaignDetailView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct DetailRow: View {
     let title: String
     let value: String
@@ -392,6 +400,7 @@ struct DetailRow: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ScheduleItemRow: View {
     let item: CampaignScheduleItem
     let index: Int

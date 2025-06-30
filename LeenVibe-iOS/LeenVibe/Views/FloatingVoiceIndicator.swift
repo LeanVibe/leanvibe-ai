@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct FloatingVoiceIndicator: View {
     @ObservedObject var wakePhraseManager: WakePhraseManager
     @ObservedObject var speechService: SpeechRecognitionService

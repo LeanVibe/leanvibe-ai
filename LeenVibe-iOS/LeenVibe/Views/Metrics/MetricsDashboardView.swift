@@ -1,6 +1,7 @@
 
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct MetricsDashboardView: View {
     @StateObject private var viewModel = MetricsViewModel(clientId: "default_project")
 

@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct GlobalVoiceCommandView: View {
     @ObservedObject var globalVoice: GlobalVoiceManager
     @State private var animationScale: CGFloat = 0.8

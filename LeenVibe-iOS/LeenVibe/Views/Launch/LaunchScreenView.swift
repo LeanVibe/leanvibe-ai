@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct LaunchScreenView: View {
     @State private var isAnimating = false
     @State private var scale: CGFloat = 0.8

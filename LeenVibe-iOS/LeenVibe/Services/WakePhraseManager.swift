@@ -28,7 +28,7 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
         "hey lean vibe", 
         "hey leen vibe",
         "hey lee vibe",
-        "a leanvibe"
+        "a leanvibe",
         "hey leanvibe"
     ]
     

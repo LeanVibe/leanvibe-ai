@@ -1,6 +1,7 @@
 import SwiftUI
 import Speech
 
+@available(iOS 18.0, macOS 14.0, *)
 struct VoiceTabView: View {
     @ObservedObject var webSocketService: WebSocketService
     @ObservedObject var projectManager: ProjectManager

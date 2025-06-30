@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - Production Readiness Dashboard
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ProductionReadinessView: View {
     @StateObject private var validator: ProductionReadinessValidator
     @State private var showingDetailedReport = false

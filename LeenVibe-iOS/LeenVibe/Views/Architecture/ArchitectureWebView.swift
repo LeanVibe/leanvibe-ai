@@ -2,6 +2,7 @@
 import SwiftUI
 import WebKit
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ArchitectureWebView: UIViewRepresentable {
     let diagramDefinition: String
     let zoomScale: CGFloat

@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ProjectDashboardView: View {
     @ObservedObject var projectManager: ProjectManager
     @ObservedObject var webSocketService: WebSocketService

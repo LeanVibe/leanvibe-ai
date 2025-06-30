@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ContentView: View {
     @StateObject private var webSocketService = WebSocketService()
     @State private var inputText = ""
@@ -182,6 +183,7 @@ struct ContentView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct CommandSuggestion: View {
     let command: String
     let description: String
@@ -202,6 +204,7 @@ struct CommandSuggestion: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct QuickCommandButton: View {
     let title: String
     let action: () -> Void
@@ -219,6 +222,7 @@ struct QuickCommandButton: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct MessageBubble: View {
     let message: AgentMessage
     
@@ -275,6 +279,7 @@ struct MessageBubble: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ConnectionSettingsView: View {
     @ObservedObject var webSocketService: WebSocketService
     @Environment(\.dismiss) private var dismiss

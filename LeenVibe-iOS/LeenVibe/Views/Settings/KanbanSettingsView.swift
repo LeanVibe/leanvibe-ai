@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Comprehensive Kanban Settings view for configuring the Kanban board built by KAPPA
 /// Provides controls for board behavior, columns, tasks, and integration features
+@available(iOS 18.0, macOS 14.0, *)
 struct KanbanSettingsView: View {
     
     // MARK: - Properties

@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - Performance-Optimized Animation Extensions
 
+@available(iOS 18.0, macOS 14.0, *)
 extension View {
     func performanceOptimizedAnimation<V: Equatable>(
         _ value: V,

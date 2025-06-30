@@ -4,6 +4,7 @@ import AudioToolbox
 
 /// Server Settings view for managing backend connections and QR code configuration
 /// Integrates with WebSocketService and provides QR scanner for easy setup
+@available(iOS 18.0, macOS 14.0, *)
 struct ServerSettingsView: View {
     
     // MARK: - Properties

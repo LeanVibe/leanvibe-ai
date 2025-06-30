@@ -1,6 +1,7 @@
 
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct DecisionLogView: View {
     let decisions: [DecisionLog]
     @State private var searchText = ""

@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
 
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 struct TaskStatisticsView: View {
     @Environment(\.dismiss) private var dismiss

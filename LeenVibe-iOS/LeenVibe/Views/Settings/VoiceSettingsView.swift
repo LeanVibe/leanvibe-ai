@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Comprehensive Voice Settings view for configuring the voice system built by KAPPA
 /// Provides controls for wake phrase, speech recognition, voice commands, and testing
+@available(iOS 18.0, macOS 14.0, *)
 struct VoiceSettingsView: View {
     
     // MARK: - Properties

@@ -2,6 +2,7 @@ import SwiftUI
 import Speech
 import AVFoundation
 
+@available(iOS 18.0, macOS 14.0, *)
 struct VoicePermissionSetupView: View {
     @ObservedObject var permissionManager: VoicePermissionManager
     @Environment(\.dismiss) private var dismiss

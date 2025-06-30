@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - Performance Validation View
 
+@available(iOS 18.0, macOS 14.0, *)
 struct PerformanceValidationView: View {
     // Temporary mock until test suite is integrated
     @StateObject private var performanceManager = PerformanceManager()

@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 struct TaskCreationView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var taskService: TaskService
