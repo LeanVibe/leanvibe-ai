@@ -96,7 +96,7 @@ struct SettingsView: View {
         Section("Task Management") {
             NavigationLink(destination: KanbanSettingsView()) {
                 SettingsRow(
-                    icon: "kanban",
+                    icon: "rectangle.3.offgrid",
                     iconColor: .indigo,
                     title: "Kanban Preferences",
                     subtitle: "Auto-refresh enabled"
@@ -225,7 +225,7 @@ struct SettingsView: View {
             
             NavigationLink(destination: ArchitectureViewerSettingsView()) {
                 SettingsRow(
-                    icon: "flowchart.box",
+                    icon: "network",
                     iconColor: .purple,
                     title: "Architecture Viewer",
                     subtitle: "Diagram preferences & rendering"

@@ -13,6 +13,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     private let clientId = "ios-client-\(UUID().uuidString.prefix(8))"
     private let storageManager = ConnectionStorageManager()
     private var qrConnectionContinuation: CheckedContinuation<Void, Error>?
+    private var qrConnectionTimeoutTask: Task<Void, Never>?
     
     init() {
         // Try to auto-connect with stored settings on init
@@ -129,10 +130,47 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         // Update status and connect
         connectionStatus = "Connecting to \(connectionSettings.displayName)..."
         
-        // Connect using the new settings
+        // Connect using the new settings with proper timeout and cleanup
         return try await withCheckedThrowingContinuation { continuation in
+            // Clean up any existing continuation/timeout
+            self.cleanupQRConnection(resumeWith: nil)
+            
+            // Store new continuation
             self.qrConnectionContinuation = continuation
+            
+            // Set up timeout task (10 seconds)
+            self.qrConnectionTimeoutTask = Task { [weak self] in
+                try? await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
+                await MainActor.run { [weak self] in
+                    self?.cleanupQRConnection(resumeWith: .failure(NSError(
+                        domain: "WebSocketService", 
+                        code: 4, 
+                        userInfo: [NSLocalizedDescriptionKey: "Connection timeout after 10 seconds"]
+                    )))
+                }
+            }
+            
+            // Start connection attempt
             connectWithSettings(connectionSettings)
+        }
+    }
+    
+    private func cleanupQRConnection(resumeWith result: Result<Void, Error>?) {
+        // Cancel timeout task
+        qrConnectionTimeoutTask?.cancel()
+        qrConnectionTimeoutTask = nil
+        
+        // Resume continuation if needed
+        if let continuation = qrConnectionContinuation {
+            qrConnectionContinuation = nil
+            if let result = result {
+                switch result {
+                case .success:
+                    continuation.resume()
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
         }
     }
     
@@ -192,10 +230,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 self.lastError = nil
                 
                 // Handle QR code connection completion
-                if let continuation = self.qrConnectionContinuation {
-                    continuation.resume()
-                    self.qrConnectionContinuation = nil
-                }
+                self.cleanupQRConnection(resumeWith: .success(()))
                 
                 // Send initial status request
                 self.sendCommand("/status", type: "command")
@@ -208,10 +243,11 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 self.connectionStatus = "Disconnected"
                 
                 // Handle QR code connection failure
-                if let continuation = self.qrConnectionContinuation {
-                    continuation.resume(throwing: NSError(domain: "WebSocketService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(reason)"]))
-                    self.qrConnectionContinuation = nil
-                }
+                self.cleanupQRConnection(resumeWith: .failure(NSError(
+                    domain: "WebSocketService", 
+                    code: 2, 
+                    userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(reason)"]
+                )))
             }
             
         case .text(let string):
@@ -234,10 +270,9 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 self.connectionStatus = "Error: \(errorMessage)"
                 
                 // Handle QR code connection error
-                if let continuation = self.qrConnectionContinuation {
-                    continuation.resume(throwing: error ?? NSError(domain: "WebSocketService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Unknown WebSocket error"]))
-                    self.qrConnectionContinuation = nil
-                }
+                self.cleanupQRConnection(resumeWith: .failure(
+                    error ?? NSError(domain: "WebSocketService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Unknown WebSocket error"])
+                ))
             }
             
         case .cancelled, .peerClosed:

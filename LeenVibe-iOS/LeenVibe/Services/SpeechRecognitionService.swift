@@ -2,7 +2,6 @@ import Foundation
 import Speech
 import AVFoundation
 import Combine
-import _Concurrency
 
 @available(macOS 10.15, iOS 13.0, *)
 @MainActor
@@ -116,14 +115,14 @@ class SpeechRecognitionService: NSObject, ObservableObject {
         
         // Silence detection
         silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceTimeout, repeats: false) { [weak self] _ in
-            _Concurrency.Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.handleSilenceTimeout()
             }
         }
         
         // Maximum recording duration
         recordingTimer = Timer.scheduledTimer(withTimeInterval: maxRecordingDuration, repeats: false) { [weak self] _ in
-            _Concurrency.Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.handleRecordingTimeout()
             }
         }
@@ -192,10 +191,10 @@ class SpeechRecognitionService: NSObject, ObservableObject {
 #if os(iOS)
 extension SpeechRecognitionService: SFSpeechRecognizerDelegate {
     nonisolated func speechRecognizer(_ speechRecognizer: SFSpeechRecognizer, availabilityDidChange available: Bool) {
-        _Concurrency.Task { @MainActor in
+        Task { @MainActor [weak self] in
             if !available {
-                self.recognitionState = .error("Speech recognizer became unavailable")
-                self.stopListening()
+                self?.recognitionState = .error("Speech recognizer became unavailable")
+                self?.stopListening()
             }
         }
     }
