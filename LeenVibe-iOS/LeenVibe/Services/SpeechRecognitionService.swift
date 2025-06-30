@@ -199,7 +199,9 @@ class SpeechRecognitionService: NSObject, ObservableObject {
     func requestPermissions(completion: @escaping (Bool, SFSpeechRecognizerAuthorizationStatus) -> Void) {
         AVAudioSession.sharedInstance().requestRecordPermission { micGranted in
             SFSpeechRecognizer.requestAuthorization { speechStatus in
-                completion(micGranted, speechStatus)
+                Task { @MainActor in
+                    completion(micGranted, speechStatus)
+                }
             }
         }
     }
@@ -242,7 +244,7 @@ extension SpeechRecognitionService {
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else { return }
         recognitionRequest.shouldReportPartialResults = true
-        recognitionRequest.requiresOnDeviceRecognition = false
+        recognitionRequest.requiresOnDeviceRecognition = true
         recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
             Task { @MainActor [weak self] in
                 self?.handleRecognitionResult(result: result, error: error)

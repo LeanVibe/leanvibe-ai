@@ -994,6 +994,7 @@
 				DEVELOPMENT_TEAM = GLKDB2BTQG;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = LeenVibe/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = LeanVibe;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1017,6 +1018,7 @@
 				DEVELOPMENT_TEAM = GLKDB2BTQG;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = LeenVibe/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = LeanVibe;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
