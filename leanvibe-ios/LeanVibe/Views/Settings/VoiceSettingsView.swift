@@ -8,6 +8,7 @@ struct VoiceSettingsView: View {
     // MARK: - Properties
     
     @Environment(\.settingsManager) private var settingsManager
+    @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
     @State private var isTestingVoice = false
     @State private var showingVoiceTest = false
     @State private var showingAdvancedSettings = false
@@ -48,7 +49,7 @@ struct VoiceSettingsView: View {
     
     private var wakePhraseSection: some View {
         Section("Wake Phrase") {
-            Toggle("Enable 'Hey LeanVibe'", isOn: $settingsManager.voice.wakePhraseEnabled)
+            Toggle("Enable 'Hey LeanVibe'", isOn: $bindableSettingsManager.voice.wakePhraseEnabled)
                 .onChange(of: settingsManager.voice.wakePhraseEnabled) { _, enabled in
                     handleWakePhraseToggle(enabled)
                 }
@@ -58,7 +59,7 @@ struct VoiceSettingsView: View {
                     HStack {
                         Text("Phrase")
                         Spacer()
-                        Text("\"\(settingsManager.voice.wakePhrasePhrase)\"")
+                        Text("\"\(settingsManager.voice.wakeWord)\"")
                             .foregroundColor(.secondary)
                             .fontWeight(.medium)
                     }
@@ -73,7 +74,7 @@ struct VoiceSettingsView: View {
                             .foregroundColor(.secondary)
                         
                         Slider(
-                            value: $settingsManager.voice.wakePhraseSensitivity,
+                            value: $bindableSettingsManager.voice.wakePhraseSensitivity,
                             in: 0.1...1.0,
                             step: 0.1
                         )
@@ -93,7 +94,7 @@ struct VoiceSettingsView: View {
                 HStack {
                     Text("Timeout")
                     Spacer()
-                    Text("\(Int(settingsManager.voice.wakePhraseTimeout))s")
+                    Text("\(Int(settingsManager.voice.maxRecordingDuration))s")
                         .foregroundColor(.secondary)
                 }
             }
@@ -102,14 +103,14 @@ struct VoiceSettingsView: View {
     
     private var speechRecognitionSection: some View {
         Section("Speech Recognition") {
-            Toggle("Voice Feedback", isOn: $settingsManager.voice.voiceFeedbackEnabled)
+            Toggle("Voice Feedback", isOn: $bindableSettingsManager.voice.voiceFeedbackEnabled)
             
-            Toggle("Background Listening", isOn: $settingsManager.voice.backgroundListening)
+            Toggle("Background Listening", isOn: $bindableSettingsManager.voice.backgroundListening)
             
             HStack {
                 Text("Language")
                 Spacer()
-                Picker("Language", selection: $settingsManager.voice.recognitionLanguage) {
+                Picker("Language", selection: $bindableSettingsManager.voice.recognitionLanguage) {
                     Text("English (US)").tag("en-US")
                     Text("English (UK)").tag("en-GB")
                     Text("English (AU)").tag("en-AU")
@@ -127,7 +128,7 @@ struct VoiceSettingsView: View {
                 }
                 
                 Slider(
-                    value: $settingsManager.voice.confidenceThreshold,
+                    value: $bindableSettingsManager.voice.confidenceThreshold,
                     in: 0.1...1.0,
                     step: 0.05
                 )
@@ -138,7 +139,7 @@ struct VoiceSettingsView: View {
             }
             .padding(.vertical, 4)
             
-            Toggle("Auto-stop Listening", isOn: $settingsManager.voice.autoStopListening)
+            Toggle("Auto-stop Listening", isOn: $bindableSettingsManager.voice.autoStopListening)
             
             HStack {
                 Text("Max Recording Duration")
@@ -151,10 +152,10 @@ struct VoiceSettingsView: View {
     
     private var voiceCommandsSection: some View {
         Section("Voice Commands") {
-            Toggle("Enable Voice Commands", isOn: $settingsManager.voice.enableVoiceCommands)
+            Toggle("Enable Voice Commands", isOn: $bindableSettingsManager.voice.enableVoiceCommands)
             
             if settingsManager.voice.enableVoiceCommands {
-                Toggle("Command History", isOn: $settingsManager.voice.commandHistoryEnabled)
+                Toggle("Command History", isOn: $bindableSettingsManager.voice.commandHistoryEnabled)
                 
                 HStack {
                     Text("History Items")
@@ -163,7 +164,7 @@ struct VoiceSettingsView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                Toggle("Custom Commands", isOn: $settingsManager.voice.enableCustomCommands)
+                Toggle("Custom Commands", isOn: $bindableSettingsManager.voice.enableCustomCommands)
                 
                 NavigationLink("Manage Custom Commands") {
                     CustomCommandsView()
@@ -184,16 +185,16 @@ struct VoiceSettingsView: View {
                 }
                 
                 Slider(
-                    value: $settingsManager.voice.microphoneGain,
+                    value: $bindableSettingsManager.voice.microphoneGain,
                     in: 0.1...2.0,
                     step: 0.1
                 )
             }
             .padding(.vertical, 4)
             
-            Toggle("Noise Reduction", isOn: $settingsManager.voice.noiseReduction)
+            Toggle("Noise Reduction", isOn: $bindableSettingsManager.voice.noiseReduction)
             
-            Toggle("Echo Cancellation", isOn: $settingsManager.voice.echoCanselation)
+            Toggle("Echo Cancellation", isOn: $bindableSettingsManager.voice.echoCanselation)
         }
     }
     
@@ -511,6 +512,7 @@ struct VoiceHistoryView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct AdvancedVoiceSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     

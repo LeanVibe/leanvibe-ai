@@ -318,6 +318,7 @@ struct SettingsView: View {
 
 // MARK: - Helper Components
 
+@available(iOS 18.0, macOS 14.0, *)
 struct SettingsRow: View {
     let icon: String
     let iconColor: Color
@@ -345,24 +346,28 @@ struct SettingsRow: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct AboutView: View {
     var body: some View {
         Text("About LeanVibe")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct SettingsExportImportView: View {
     var body: some View {
         Text("Export/Import Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct WakePhraseSettingsView: View {
     var body: some View {
         Text("Wake Phrase Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct SpeechSettingsView: View {
     var body: some View {
         Text("Speech Settings")
@@ -371,84 +376,98 @@ struct SpeechSettingsView: View {
 
 
 
+@available(iOS 18.0, macOS 14.0, *)
 struct TaskNotificationSettingsView: View {
     var body: some View {
         Text("Task Notification Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct MetricsSettingsView: View {
     var body: some View {
         Text("Metrics Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct TaskCreationSettingsView: View {
     var body: some View {
         Text("Task Creation Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct SyncSettingsView: View {
     var body: some View {
         Text("Sync Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct OfflineSettingsView: View {
     var body: some View {
         Text("Offline Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct NetworkDiagnosticsView: View {
     var body: some View {
         Text("Network Diagnostics")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct InterfaceSettingsView: View {
     var body: some View {
         Text("Interface Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct PerformanceSettingsView: View {
     var body: some View {
         Text("Performance Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct DeveloperSettingsView: View {
     var body: some View {
         Text("Developer Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ArchitectureViewerSettingsView: View {
     var body: some View {
         Text("Architecture Viewer Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct IntegrationSettingsView: View {
     var body: some View {
         Text("Integration Settings")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct BackupRestoreView: View {
     var body: some View {
         Text("Backup & Restore")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct HelpView: View {
     var body: some View {
         Text("Help")
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct PrivacyPolicyView: View {
     var body: some View {
         Text("Privacy Policy")

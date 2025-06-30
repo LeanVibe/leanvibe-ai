@@ -8,6 +8,7 @@ struct KanbanSettingsView: View {
     // MARK: - Properties
     
     @Environment(\.settingsManager) private var settingsManager
+    @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
     @State private var showingColumnCustomization = false
     @State private var showingTaskDefaults = false
     @State private var showingPerformanceSettings = false
@@ -51,22 +52,22 @@ struct KanbanSettingsView: View {
     
     private var boardBehaviorSection: some View {
         Section("Board Behavior") {
-            Toggle("Auto-refresh from server", isOn: $settingsManager.kanbanSettings.autoRefresh)
-                .onChange(of: settingsManager.kanbanSettings.autoRefresh) { _, enabled in
+            Toggle("Auto-refresh from server", isOn: $bindableSettingsManager.kanban.autoRefresh)
+                .onChange(of: settingsManager.kanban.autoRefresh) { _, enabled in
                     handleAutoRefreshToggle(enabled)
                 }
             
-            if settingsManager.kanbanSettings.autoRefresh {
+            if settingsManager.kanban.autoRefresh {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Refresh Interval")
                         Spacer()
-                        Text("\(Int(settingsManager.kanbanSettings.refreshInterval))s")
+                        Text("\(Int(settingsManager.kanban.refreshInterval))s")
                             .foregroundColor(.secondary)
                     }
                     
                     Slider(
-                        value: $settingsManager.kanbanSettings.refreshInterval,
+                        value: $bindableSettingsManager.kanban.refreshInterval,
                         in: 10...300,
                         step: 10
                     )
@@ -78,19 +79,19 @@ struct KanbanSettingsView: View {
                 .padding(.vertical, 4)
             }
             
-            Toggle("Show task statistics", isOn: $settingsManager.kanbanSettings.showStatistics)
+            Toggle("Show task statistics", isOn: $bindableSettingsManager.kanban.showStatistics)
             
-            Toggle("Compact mode", isOn: $settingsManager.kanbanSettings.compactMode)
+            Toggle("Compact mode", isOn: $bindableSettingsManager.kanban.compactMode)
             
-            Toggle("Enable animations", isOn: $settingsManager.kanbanSettings.enableAnimations)
+            Toggle("Enable animations", isOn: $bindableSettingsManager.kanban.enableAnimations)
         }
     }
     
     private var columnsSection: some View {
         Section("Columns Configuration") {
-            Toggle("Show task counts", isOn: $settingsManager.kanbanSettings.showColumnTaskCounts)
+            Toggle("Show task counts", isOn: $bindableSettingsManager.kanban.showColumnTaskCounts)
             
-            Toggle("Allow column customization", isOn: $settingsManager.kanbanSettings.enableColumnCustomization)
+            Toggle("Allow column customization", isOn: $bindableSettingsManager.kanban.enableColumnCustomization)
             
             Button(action: { showingColumnCustomization = true }) {
                 SettingsRow(
@@ -101,7 +102,7 @@ struct KanbanSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
-            .disabled(!settingsManager.kanbanSettings.enableColumnCustomization)
+            .disabled(!settingsManager.kanban.enableColumnCustomization)
             
             VStack(alignment: .leading, spacing: 8) {
                 Text("Current Column Order")
@@ -109,7 +110,7 @@ struct KanbanSettingsView: View {
                     .fontWeight(.medium)
                 
                 HStack {
-                    ForEach(settingsManager.kanbanSettings.columnOrder, id: \.self) { column in
+                    ForEach(settingsManager.kanban.columnOrder, id: \.self) { column in
                         Text(column.capitalized)
                             .font(.caption)
                             .padding(.horizontal, 8)
@@ -128,7 +129,7 @@ struct KanbanSettingsView: View {
     
     private var taskManagementSection: some View {
         Section("Task Management") {
-            Toggle("Voice task creation", isOn: $settingsManager.kanbanSettings.enableVoiceTaskCreation)
+            Toggle("Voice task creation", isOn: $bindableSettingsManager.kanban.enableVoiceTaskCreation)
             
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -141,12 +142,12 @@ struct KanbanSettingsView: View {
             }
             .padding(.vertical, 4)
             
-            Toggle("Show task IDs", isOn: $settingsManager.kanbanSettings.showTaskIds)
+            Toggle("Show task IDs", isOn: $bindableSettingsManager.kanban.showTaskIds)
             
             HStack {
                 Text("Default Priority")
                 Spacer()
-                Picker("Priority", selection: $settingsManager.kanbanSettings.defaultTaskPriority) {
+                Picker("Priority", selection: $bindableSettingsManager.kanban.defaultTaskPriority) {
                     Text("Low").tag("low")
                     Text("Medium").tag("medium")
                     Text("High").tag("high")
@@ -155,9 +156,9 @@ struct KanbanSettingsView: View {
                 .pickerStyle(.menu)
             }
             
-            Toggle("Auto-assign tasks", isOn: $settingsManager.kanbanSettings.autoAssignTasks)
+            Toggle("Auto-assign tasks", isOn: $bindableSettingsManager.kanban.autoAssignTasks)
             
-            Toggle("Task notifications", isOn: $settingsManager.kanbanSettings.enableTaskNotifications)
+            Toggle("Task notifications", isOn: $bindableSettingsManager.kanban.enableTaskNotifications)
             
             Button(action: { showingTaskDefaults = true }) {
                 SettingsRow(
@@ -177,14 +178,16 @@ struct KanbanSettingsView: View {
                 HStack {
                     Text("Max Tasks Per Column")
                     Spacer()
-                    Text("\(settingsManager.kanbanSettings.maxTasksPerColumn)")
+                    Text("\(settingsManager.kanban.maxTasksPerColumn)")
                         .foregroundColor(.secondary)
                 }
                 
                 Slider(
                     value: Binding(
-                        get: { Double(settingsManager.kanbanSettings.maxTasksPerColumn) },
-                        set: { settingsManager.kanbanSettings.maxTasksPerColumn = Int($0) }
+                        get: { Double(bindableSettingsManager.kanban.maxTasksPerColumn) },
+                        set: { newValue in
+                            bindableSettingsManager.kanban.maxTasksPerColumn = Int(newValue)
+                        }
                     ),
                     in: 50...500,
                     step: 25
@@ -196,9 +199,9 @@ struct KanbanSettingsView: View {
             }
             .padding(.vertical, 4)
             
-            Toggle("Infinite scroll", isOn: $settingsManager.kanbanSettings.enableInfiniteScroll)
+            Toggle("Infinite scroll", isOn: $bindableSettingsManager.kanban.enableInfiniteScroll)
             
-            Toggle("Prefetch task details", isOn: $settingsManager.kanbanSettings.prefetchTaskDetails)
+            Toggle("Prefetch task details", isOn: $bindableSettingsManager.kanban.prefetchTaskDetails)
             
             Button(action: { showingPerformanceSettings = true }) {
                 SettingsRow(
@@ -214,20 +217,21 @@ struct KanbanSettingsView: View {
     
     private var integrationSection: some View {
         Section("Integration & Sync") {
-            Toggle("Sync with backend", isOn: $settingsManager.kanbanSettings.syncWithBackend)
-                .onChange(of: settingsManager.kanbanSettings.syncWithBackend) { _, enabled in
+            Toggle("Sync with backend", isOn: $bindableSettingsManager.kanban.syncWithBackend)
+                .onChange(of: settingsManager.kanban.syncWithBackend) { _, enabled in
                     handleSyncToggle(enabled)
                 }
             
-            Toggle("Offline mode", isOn: $settingsManager.kanbanSettings.offlineModeEnabled)
+            Toggle("Offline mode", isOn: $bindableSettingsManager.kanban.offlineModeEnabled)
             
             HStack {
                 Text("Conflict Resolution")
                 Spacer()
-                Picker("Resolution", selection: $settingsManager.kanbanSettings.conflictResolution) {
-                    ForEach(ConflictResolution.allCases, id: \.self) { resolution in
-                        Text(resolution.displayName).tag(resolution)
-                    }
+                Picker("Resolution", selection: $bindableSettingsManager.kanban.conflictResolution) {
+                    Text("Manual").tag("manual")
+                    Text("Auto-merge").tag("auto-merge")
+                    Text("Server wins").tag("server-wins")
+                    Text("Local wins").tag("local-wins")
                 }
                 .pickerStyle(.menu)
             }
@@ -246,7 +250,7 @@ struct KanbanSettingsView: View {
                     
                     Spacer()
                     
-                    if settingsManager.kanbanSettings.syncWithBackend {
+                    if settingsManager.kanban.syncWithBackend {
                         Button("Sync Now") {
                             forceSyncWithBackend()
                         }
@@ -305,25 +309,25 @@ struct KanbanSettingsView: View {
     // MARK: - Helper Properties
     
     private var syncStatusIcon: String {
-        if settingsManager.kanbanSettings.syncWithBackend {
-            return settingsManager.kanbanSettings.offlineModeEnabled ? "wifi.slash" : "checkmark.circle.fill"
+        if settingsManager.kanban.syncWithBackend {
+            return settingsManager.kanban.offlineModeEnabled ? "wifi.slash" : "checkmark.circle.fill"
         } else {
             return "xmark.circle.fill"
         }
     }
     
     private var syncStatusColor: Color {
-        if settingsManager.kanbanSettings.syncWithBackend {
-            return settingsManager.kanbanSettings.offlineModeEnabled ? .orange : .green
+        if settingsManager.kanban.syncWithBackend {
+            return settingsManager.kanban.offlineModeEnabled ? .orange : .green
         } else {
             return .red
         }
     }
     
     private var syncStatusText: String {
-        if !settingsManager.kanbanSettings.syncWithBackend {
+        if !settingsManager.kanban.syncWithBackend {
             return "Sync disabled"
-        } else if settingsManager.kanbanSettings.offlineModeEnabled {
+        } else if settingsManager.kanban.offlineModeEnabled {
             return "Offline mode - will sync when connected"
         } else {
             return "Connected and syncing"
@@ -354,7 +358,7 @@ struct KanbanSettingsView: View {
     
     private func startKanbanAutoRefresh() {
         // Implementation would integrate with KanbanService
-        print("Starting Kanban auto-refresh with interval: \(settingsManager.kanbanSettings.refreshInterval)s")
+        print("Starting Kanban auto-refresh with interval: \(settingsManager.kanban.refreshInterval)s")
     }
     
     private func stopKanbanAutoRefresh() {
@@ -398,6 +402,7 @@ struct KanbanSettingsView: View {
 struct ColumnCustomizationView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.settingsManager) private var settingsManager
+    @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
     @State private var columnOrder: [String] = []
     @State private var newColumnName = ""
     @State private var showingAddColumn = false
@@ -448,7 +453,7 @@ struct ColumnCustomizationView: View {
                 }
             }
             .onAppear {
-                columnOrder = settingsManager.kanbanSettings.columnOrder
+                columnOrder = settingsManager.kanban.columnOrder
             }
             .alert("Add Column", isPresented: $showingAddColumn) {
                 TextField("Column Name", text: $newColumnName)
@@ -476,7 +481,7 @@ struct ColumnCustomizationView: View {
     }
     
     private func saveColumnOrder() {
-        settingsManager.kanbanSettings.columnOrder = columnOrder
+        bindableSettingsManager.kanban.columnOrder = columnOrder
     }
 }
 
@@ -502,6 +507,7 @@ struct TaskDefaultsView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct KanbanPerformanceSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     

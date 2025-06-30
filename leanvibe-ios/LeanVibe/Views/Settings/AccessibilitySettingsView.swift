@@ -3,6 +3,7 @@ import SwiftUI
 /// Accessibility Settings view for configuring accessibility features
 /// Provides comprehensive accessibility controls for visual, motor, and cognitive needs
 @available(iOS 18.0, macOS 14.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 struct AccessibilitySettingsView: View {
     
     // MARK: - Properties

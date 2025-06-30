@@ -249,9 +249,8 @@ class NotificationContentManager: ObservableObject {
             id: "generated_\(templateId)_\(UUID().uuidString)",
             title: personalizedContent.title,
             body: personalizedContent.body,
-            subtitle: personalizedContent.subtitle,
             category: template.category,
-            trigger: .date(optimalTime)
+            trigger: .calendar(Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: optimalTime), repeats: false)
         )
         
         logger.debug("Generated personalized notification from template: \(templateId)")
@@ -292,9 +291,8 @@ class NotificationContentManager: ObservableObject {
                 id: "campaign_\(campaign.id)_\(template.id)_\(UUID().uuidString)",
                 title: personalizedContent.title,
                 body: personalizedContent.body,
-                subtitle: personalizedContent.subtitle,
                 category: template.category,
-                trigger: .date(deliveryTime)
+                trigger: .calendar(Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: deliveryTime), repeats: false)
             )
             
             // Schedule the notification

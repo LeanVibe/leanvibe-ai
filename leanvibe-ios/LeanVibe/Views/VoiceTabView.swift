@@ -15,16 +15,15 @@ struct VoiceTabView: View {
     @State private var showingPermissionSheet = false
     @State private var showingVoiceModal = false
     
-    init(webSocketService: WebSocketService, projectManager: ProjectManager, settingsManager: SettingsManager) {
+    init(webSocketService: WebSocketService, projectManager: ProjectManager) {
         self.webSocketService = webSocketService
         self.projectManager = projectManager
-        self.settingsManager = settingsManager
         self._speechService = StateObject(wrappedValue: SpeechRecognitionService())
-        self._voiceProcessor = StateObject(wrappedValue: DashboardVoiceProcessor(projectManager: projectManager, webSocketService: webSocketService, settingsManager: settingsManager))
+        self._voiceProcessor = StateObject(wrappedValue: DashboardVoiceProcessor(projectManager: projectManager, webSocketService: webSocketService, settingsManager: SettingsManager.shared))
         self._wakePhraseManager = StateObject(wrappedValue: WakePhraseManager(
             webSocketService: webSocketService,
             projectManager: projectManager,
-            voiceProcessor: DashboardVoiceProcessor(projectManager: projectManager, webSocketService: webSocketService, settingsManager: settingsManager)
+            voiceProcessor: DashboardVoiceProcessor(projectManager: projectManager, webSocketService: webSocketService, settingsManager: SettingsManager.shared)
         ))
     }
     
@@ -367,7 +366,6 @@ struct VoiceCommandHistoryRow: View {
 #Preview {
     VoiceTabView(
         webSocketService: WebSocketService(),
-        projectManager: ProjectManager(),
-        settingsManager: SettingsManager.shared
+        projectManager: ProjectManager()
     )
 }

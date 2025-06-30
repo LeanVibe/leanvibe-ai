@@ -98,7 +98,16 @@
       "Bash(uv venv:*)",
       "Bash(source:*)",
       "Bash(git rm:*)",
-      "Bash(gemini:*)"
+      "Bash(gemini:*)",
+      "Bash(rm:*)",
+      "Bash(for:*)",
+      "Bash(do)",
+      "Bash(if grep -q \"struct.*OnboardingView.*: View\" \"$file\")",
+      "Bash(! grep -q \"@available\" \"$file\")",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(if ! grep -q \"@available\" \"$file\")",
+      "Bash(if grep -q \"struct.*SettingsView.*: View\" \"$file\")"
     ],
     "deny": []
   }

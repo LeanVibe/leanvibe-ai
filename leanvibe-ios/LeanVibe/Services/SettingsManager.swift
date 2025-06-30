@@ -38,11 +38,33 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
     }
 
     init() {
-        self.connection = load(.connection, as: ConnectionPreferences.self) ?? ConnectionPreferences()
-        self.voice = load(.voice, as: VoiceSettings.self) ?? VoiceSettings()
-        self.notifications = load(.notifications, as: NotificationSettings.self) ?? NotificationSettings()
-        self.kanban = load(.kanban, as: KanbanSettings.self) ?? KanbanSettings()
-        self.accessibility = load(.accessibility, as: AccessibilitySettings.self) ?? AccessibilitySettings()
+        // Initialize with defaults first to satisfy Swift 6 initialization requirements
+        self.connection = ConnectionPreferences()
+        self.voice = VoiceSettings()
+        self.notifications = NotificationSettings()
+        self.kanban = KanbanSettings()
+        self.accessibility = AccessibilitySettings()
+        
+        // Then load saved values
+        loadStoredValues()
+    }
+    
+    private func loadStoredValues() {
+        if let loadedConnection = load(.connection, as: ConnectionPreferences.self) {
+            self.connection = loadedConnection
+        }
+        if let loadedVoice = load(.voice, as: VoiceSettings.self) {
+            self.voice = loadedVoice
+        }
+        if let loadedNotifications = load(.notifications, as: NotificationSettings.self) {
+            self.notifications = loadedNotifications
+        }
+        if let loadedKanban = load(.kanban, as: KanbanSettings.self) {
+            self.kanban = loadedKanban
+        }
+        if let loadedAccessibility = load(.accessibility, as: AccessibilitySettings.self) {
+            self.accessibility = loadedAccessibility
+        }
     }
 
     // MARK: - Public Methods
@@ -148,6 +170,17 @@ struct VoiceSettings: SettingsProtocol {
     var voiceFeedbackEnabled: Bool = true
     var backgroundListening: Bool = false
     var recognitionLanguage: String = "en-US"
+    
+    // Additional properties used by VoiceSettingsView
+    var confidenceThreshold: Double = 0.7
+    var maxRecordingDuration: Double = 30.0
+    var enableVoiceCommands: Bool = true
+    var commandHistoryEnabled: Bool = true
+    var maxHistoryItems: Int = 50
+    var enableCustomCommands: Bool = false
+    var microphoneGain: Double = 1.0
+    var noiseReduction: Bool = true
+    var echoCanselation: Bool = true
     
     init(wakeWord: String = "Hey Lean", autoStartListening: Bool = true) {
         self.wakeWord = wakeWord
