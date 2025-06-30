@@ -273,6 +273,56 @@ struct TaskDetailView: View {
     }
 }
 
+struct ConfidenceIndicatorView: View {
+    let confidence: Double
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(confidenceColor)
+                .frame(width: 8, height: 8)
+            Text("\(Int(confidence * 100))%")
+                .font(.caption)
+                .fontWeight(.medium)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill(confidenceColor.opacity(0.2))
+        )
+        .foregroundColor(confidenceColor)
+    }
+    
+    private var confidenceColor: Color {
+        switch confidence {
+        case 0.8...1.0: return .green
+        case 0.5..<0.8: return .orange
+        default: return .red
+        }
+    }
+}
+
+struct TagsView: View {
+    let tags: [String]
+    
+    var body: some View {
+        LazyVGrid(columns: [
+            GridItem(.adaptive(minimum: 80))
+        ], spacing: 8) {
+            ForEach(tags, id: \.self) { tag in
+                Text(tag)
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.blue.opacity(0.2))
+                    .foregroundColor(.blue)
+                    .cornerRadius(4)
+            }
+        }
+    }
+}
+
 struct StatusBadge: View {
     let status: TaskStatus
     

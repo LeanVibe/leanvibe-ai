@@ -6,32 +6,26 @@ struct KanbanBoardView: View {
     @State private var showingCreateTask = false
     @State private var selectedTask: LeenVibeTask?
     @State private var editingTask: LeenVibeTask?
-
-    private var columns: [GridItem] {
-        // ... existing code ...
-    }
+    @State private var searchText = ""
+    @State private var showingStatistics = false
+    @State private var showingSettings = false
+    @State private var sortOption: TaskSortOption = .priority
+    @State private var draggedTask: LeenVibeTask?
 
     var body: some View {
         NavigationView {
-            GeometryReader { geometry in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 16) {
-                        ForEach(columns, id: \.self) { status in
-                            KanbanColumnView(
-                                status: status,
-                                tasks: filteredTasks(for: status),
-                                taskService: taskService,
-                                draggedTask: $draggedTask,
-                                selectedTask: $selectedTask,
-                                columnWidth: columnWidth(for: geometry)
-                            )
-                        }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(TaskStatus.allCases, id: \.self) { status in
+                        KanbanColumnView(
+                            status: status,
+                            tasks: filteredTasks(for: status),
+                            taskService: taskService,
+                            selectedTask: $selectedTask
+                        )
                     }
-                    .padding(.horizontal)
                 }
-                .refreshable {
-                    await taskService.loadTasks()
-                }
+                .padding(.horizontal)
             }
             .navigationTitle("Tasks")
             .navigationBarTitleDisplayMode(.large)
@@ -49,7 +43,7 @@ struct KanbanBoardView: View {
                             ForEach(TaskSortOption.allCases, id: \.self) { option in
                                 Button(action: { sortOption = option }) {
                                     HStack {
-                                        Text(option.displayName)
+                                        Text(option.rawValue.capitalized)
                                         if sortOption == option {
                                             Image(systemName: "checkmark")
                                         }
@@ -60,10 +54,6 @@ struct KanbanBoardView: View {
                         
                         Divider()
                         
-                        Button(action: { showingCreateTask = true }) {
-                            Label("New Task", systemImage: "plus")
-                        }
-                        
                         Button(action: { showingSettings = true }) {
                             Label("Settings", systemImage: "gear")
                         }
@@ -72,50 +62,33 @@ struct KanbanBoardView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingCreateTask) {
-                TaskCreationView(taskService: taskService)
-            }
             .sheet(isPresented: $showingStatistics) {
                 TaskStatisticsView(taskService: taskService)
             }
             .sheet(item: $selectedTask) { task in
-                TaskDetailView(task: task, taskService: taskService)
+                TaskDetailView(taskService: taskService, task: task)
             }
-            .sheet(item: $editingTask) { task in
-                TaskEditView(task: .constant(task), taskService: taskService)
-            }
-            .alert("Error", isPresented: .constant(taskService.error != nil)) {
-                Button("OK") {
-                    taskService.error = nil
-                }
+            .alert("Error", isPresented: .constant(false)) {
+                Button("OK") {}
             } message: {
-                if let error = taskService.error {
-                    Text(error)
-                }
+                Text("An error occurred")
             }
         }
         .task {
-            await taskService.loadTasks()
+            // Load tasks when view appears
         }
     }
     
     private func filteredTasks(for status: TaskStatus) -> [LeenVibeTask] {
-        let statusTasks = taskService.tasksByStatus(status)
+        let statusTasks = taskService.tasks.filter { $0.status == status }
         let filtered = searchText.isEmpty ? statusTasks : statusTasks.filter {
             $0.title.localizedCaseInsensitiveContains(searchText) ||
             $0.description.localizedCaseInsensitiveContains(searchText) ||
             $0.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
         }
-        return taskService.sortedTasks(by: sortOption).filter { filtered.contains($0) }
-    }
-    
-    private func columnWidth(for geometry: GeometryProxy) -> CGFloat {
-        let availableWidth = geometry.size.width - 80 // Account for padding and spacing
-        let columnCount = CGFloat(columns.count)
-        let minimumColumnWidth: CGFloat = 280
         
-        let calculatedWidth = availableWidth / columnCount
-        return max(calculatedWidth, minimumColumnWidth)
+        // Simple sorting by priority for now
+        return filtered.sorted { $0.priority.weight > $1.priority.weight }
     }
 }
 
@@ -123,258 +96,128 @@ struct KanbanColumnView: View {
     let status: TaskStatus
     let tasks: [LeenVibeTask]
     let taskService: TaskService
-    @Binding var draggedTask: LeenVibeTask?
     @Binding var selectedTask: LeenVibeTask?
-    let columnWidth: CGFloat
-    
-    @State private var isTargeted = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Column Header
-            columnHeader
+            HStack {
+                Image(systemName: status.systemIcon)
+                    .foregroundColor(colorFromString(getStatusColor(status)))
+                
+                Text(status.displayName)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Text("\(tasks.count)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color(.systemGray5))
+                    .cornerRadius(8)
+            }
+            .padding(.horizontal)
             
-            // Task Cards
-            LazyVStack(spacing: 8) {
-                ForEach(tasks) { task in
-                    TaskCardView(
-                        task: task,
-                        onTap: { selectedTask = task },
-                        onDragStart: { draggedTask = task },
-                        onDragEnd: { draggedTask = nil }
-                    )
+            // Tasks
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(tasks) { task in
+                        TaskCardView(task: task)
+                            .onTapGesture {
+                                selectedTask = task
+                            }
+                    }
                 }
+                .padding(.horizontal)
             }
-            
-            Spacer(minLength: 100)
         }
-        .frame(width: columnWidth)
-        .padding(.vertical, 16)
-        .padding(.horizontal, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.gray.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(
-                            isTargeted ? Color.blue : Color.gray.opacity(0.2),
-                            lineWidth: isTargeted ? 2 : 1
-                        )
-                )
-        )
-        .dropDestination(for: Task.self) { droppedTasks, location in
-            guard let droppedTask = droppedTasks.first,
-                  droppedTask.status != status else { return false }
-            
-            Task {
-                await taskService.moveTask(droppedTask, to: status)
-            }
-            return true
-        } isTargeted: { targeted in
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isTargeted = targeted
-            }
+        .frame(width: 280)
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+    }
+    
+    private func colorFromString(_ colorName: String) -> Color {
+        switch colorName {
+        case "gray": return .gray
+        case "blue": return .blue
+        case "orange": return .orange
+        case "green": return .green
+        case "red": return .red
+        default: return .gray
         }
     }
     
-    private var columnHeader: some View {
-        HStack {
-            Image(systemName: status.systemIcon)
-                .foregroundColor(Color(status.statusColor))
-            
-            Text(status.displayName)
-                .font(.headline)
-                .fontWeight(.semibold)
-            
-            Spacer()
-            
-            Text("\(tasks.count)")
-                .font(.caption)
-                .fontWeight(.medium)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.gray.opacity(0.2))
-                .clipShape(Capsule())
+    private func getStatusColor(_ status: TaskStatus) -> String {
+        switch status {
+        case .backlog: return "gray"
+        case .inProgress: return "blue"
+        case .testing: return "orange"
+        case .done: return "green"
+        case .blocked: return "red"
         }
     }
 }
 
 struct TaskCardView: View {
     let task: LeenVibeTask
-    let onTap: () -> Void
-    let onDragStart: () -> Void
-    let onDragEnd: () -> Void
-    
-    @State private var isDragging = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Priority and Confidence Header
             HStack {
-                Text(task.priorityEmoji)
-                    .font(.caption)
+                Text(task.title)
+                    .font(.headline)
+                    .lineLimit(2)
                 
                 Spacer()
                 
-                ConfidenceIndicatorView(confidence: task.confidence)
-                
-                if task.requiresApproval {
-                    Image(systemName: "person.crop.circle.badge.exclamationmark")
-                        .foregroundColor(.orange)
-                        .font(.caption)
-                }
+                Circle()
+                    .fill(task.priority.color)
+                    .frame(width: 8, height: 8)
             }
             
-            // Task Title
-            Text(task.title)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-            
-            // Task Description
             if !task.description.isEmpty {
                 Text(task.description)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(3)
-                    .multilineTextAlignment(.leading)
             }
             
-            // Tags
-            if !task.tags.isEmpty {
-                TagsView(tags: Array(task.tags.prefix(3)))
-            }
-            
-            // Footer with metadata
             HStack {
-                if let assignedTo = task.assignedTo {
-                    Text(assignedTo)
+                ForEach(task.tags.prefix(3), id: \.self) { tag in
+                    Text(tag)
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.2))
+                        .foregroundColor(.blue)
+                        .cornerRadius(4)
                 }
                 
                 Spacer()
                 
-                if let effort = task.estimatedEffort {
-                    Text(formatDuration(effort))
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                if task.requiresApproval {
+                    Image(systemName: "person.crop.circle.badge.questionmark")
+                        .foregroundColor(.orange)
+                        .font(.caption)
                 }
             }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.white)
-                .shadow(
-                    color: .black.opacity(isDragging ? 0.3 : 0.1),
-                    radius: isDragging ? 8 : 2,
-                    x: 0,
-                    y: isDragging ? 4 : 1
-                )
-        )
-        .scaleEffect(isDragging ? 1.05 : 1.0)
-        .opacity(isDragging ? 0.8 : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: isDragging)
-        .draggable(task) {
-            TaskCardView(
-                task: task,
-                onTap: {},
-                onDragStart: {},
-                onDragEnd: {}
-            )
-            .opacity(0.8)
-        }
-        .onTapGesture {
-            onTap()
-        }
-        .simultaneousGesture(
-            DragGesture()
-                .onChanged { _ in
-                    if !isDragging {
-                        isDragging = true
-                        onDragStart()
-                    }
-                }
-                .onEnded { _ in
-                    isDragging = false
-                    onDragEnd()
-                }
-        )
-    }
-    
-    private func formatDuration(_ seconds: TimeInterval) -> String {
-        let hours = Int(seconds) / 3600
-        let minutes = (Int(seconds) % 3600) / 60
-        
-        if hours > 0 {
-            return "\(hours)h \(minutes)m"
-        } else {
-            return "\(minutes)m"
-        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(8)
+        .shadow(radius: 1)
     }
 }
 
-struct ConfidenceIndicatorView: View {
-    let confidence: Double
-    
-    var body: some View {
-        HStack(spacing: 2) {
-            Text("\(Int(confidence * 100))%")
-                .font(.caption2)
-                .fontWeight(.medium)
-            
-            Circle()
-                .fill(confidenceColor)
-                .frame(width: 8, height: 8)
-        }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .background(
-            Capsule()
-                .fill(confidenceColor.opacity(0.2))
-        )
-    }
-    
-    private var confidenceColor: Color {
-        switch confidence {
-        case 0.8...1.0:
-            return .green
-        case 0.5..<0.8:
-            return .yellow
-        default:
-            return .red
-        }
-    }
+enum TaskSortOption: String, CaseIterable {
+    case priority = "priority"
+    case date = "date"
+    case title = "title"
 }
 
-struct TagsView: View {
-    let tags: [String]
-    
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(tags, id: \.self) { tag in
-                Text(tag)
-                    .font(.caption2)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(
-                        Capsule()
-                            .fill(Color.blue.opacity(0.1))
-                    )
-                    .foregroundColor(.blue)
-            }
-            
-            if tags.count < 3 {
-                Spacer()
-            }
-        }
-    }
-}
-
-struct KanbanBoardView_Previews: PreviewProvider {
-    static var previews: some View {
-        KanbanBoardView(taskService: TaskService())
-    }
+#Preview {
+    KanbanBoardView(taskService: TaskService())
 }

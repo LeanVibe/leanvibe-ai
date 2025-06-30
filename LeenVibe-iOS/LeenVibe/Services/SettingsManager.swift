@@ -545,6 +545,8 @@ struct AccessibilitySettings: SettingsProtocol {
     
     // Touch targets
     var extendedTouchTargets = false
+    var reduceGestures = false
+    var oneHandedMode = false
     
     // Dynamic type support
     var dynamicTypeSupport: Bool = true

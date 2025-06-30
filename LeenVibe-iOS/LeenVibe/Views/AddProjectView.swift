@@ -8,6 +8,21 @@ struct AddProjectView: View {
     @State private var projectPath = ""
     @State private var selectedLanguage: ProjectLanguage = .unknown
     
+    private func colorFromString(_ colorName: String) -> Color {
+        switch colorName {
+        case "orange": return .orange
+        case "yellow": return .yellow
+        case "blue": return .blue
+        case "purple": return .purple
+        case "red": return .red
+        case "green": return .green
+        case "cyan": return .cyan
+        case "brown": return .brown
+        case "gray": return .gray
+        default: return .gray
+        }
+    }
+    
     var body: some View {
         NavigationView {
             Form {
@@ -18,9 +33,9 @@ struct AddProjectView: View {
                     Picker("Language", selection: $selectedLanguage) {
                         ForEach(ProjectLanguage.allCases, id: \.self) { language in
                             HStack {
-                                Image(systemName: language.iconName)
-                                    .foregroundColor(Color(language.color))
-                                Text(language.displayName)
+                                Image(systemName: language.icon)
+                                    .foregroundColor(colorFromString(language.color))
+                                Text(language.rawValue)
                             }
                             .tag(language)
                         }

@@ -96,7 +96,7 @@ struct MonitoringView: View {
                         
                         Spacer()
                         
-                        Text("\(project.metrics.fileCount) files")
+                        Text("\(project.metrics.filesCount) files")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
