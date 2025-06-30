@@ -1,7 +1,7 @@
 import XCTest
 import UserNotifications
 import Combine
-@testable import LeenVibe
+@testable import LeanVibe
 
 /// Comprehensive test suite for push notification system
 /// Tests core functionality, edge cases, and integration scenarios

@@ -15,10 +15,10 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Project configuration
-PROJECT_NAME="LeenVibe"
-SCHEME="LeenVibe"
+PROJECT_NAME="LeanVibe"
+SCHEME="LeanVibe"
 CONFIGURATION="Debug"
-PROJECT_PATH="LeenVibe.xcodeproj"
+PROJECT_PATH="LeanVibe.xcodeproj"
 
 echo -e "${BLUE}📱 Project: ${PROJECT_NAME}${NC}"
 

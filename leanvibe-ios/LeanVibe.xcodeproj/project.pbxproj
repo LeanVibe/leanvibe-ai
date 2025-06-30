@@ -911,7 +911,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leanvibe.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.leanvibe.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LeanVibe.app/LeanVibe";
@@ -994,7 +994,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leanvibe.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.leanvibe.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LeanVibe.app/LeanVibe";
@@ -1015,7 +1015,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leanvibe.LeanVibe;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.leanvibe.LeanVibe;
 				PRODUCT_NAME = LeanVibe;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1037,7 +1037,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leanvibe.LeanVibe;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.leanvibe.LeanVibe;
 				PRODUCT_NAME = LeanVibe;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;

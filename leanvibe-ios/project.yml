@@ -1,6 +1,6 @@
 name: LeanVibe
 options:
-  bundleIdPrefix: com.bogdan.leanvibe
+  bundleIdPrefix: ai.leanvibe
   deploymentTarget:
     iOS: "18.0"
   developmentLanguage: en
@@ -111,7 +111,7 @@ targets:
         BUNDLE_LOADER: $(TEST_HOST)
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/LeanVibe.app/LeanVibe
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: com.bogdan.leanvibe.tests
+        PRODUCT_BUNDLE_IDENTIFIER: ai.leanvibe.tests
 
 schemes:
   LeanVibe:

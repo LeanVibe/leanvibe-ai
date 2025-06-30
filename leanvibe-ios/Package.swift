@@ -2,23 +2,23 @@
 import PackageDescription
 
 let package = Package(
-  name: "LeenVibe",
+  name: "LeanVibe",
   platforms: [
-    .iOS(.v16)
+    .iOS(.v17)
   ],
   products: [
     .executable(
-      name: "LeenVibe",
-      targets: ["LeenVibe"])
+      name: "LeanVibe",
+      targets: ["LeanVibe"])
   ],
   dependencies: [
     .package(url: "https://github.com/daltoniam/Starscream.git", from: "4.0.0")
   ],
   targets: [
     .executableTarget(
-      name: "LeenVibe",
+      name: "LeanVibe",
       dependencies: ["Starscream"],
-      path: "LeenVibe",
+      path: "LeanVibe",
       resources: [
         .process("Resources")
       ]

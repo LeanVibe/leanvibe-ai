@@ -15,10 +15,10 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Project configuration
-PROJECT_NAME="LeenVibe"
-SCHEME="LeenVibe"
+PROJECT_NAME="LeanVibe"
+SCHEME="LeanVibe"
 CONFIGURATION="Debug"
-PROJECT_PATH="LeenVibe.xcodeproj"
+PROJECT_PATH="LeanVibe.xcodeproj"
 
 echo -e "${BLUE}📱 Project: ${PROJECT_NAME}${NC}"
 echo -e "${BLUE}🏗️  Scheme: ${SCHEME}${NC}"
@@ -104,7 +104,7 @@ if [ $? -eq 0 ]; then
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo -e "${YELLOW}🚀 Launching ${PROJECT_NAME}...${NC}"
         # Get bundle identifier from Info.plist
-        BUNDLE_ID=$(defaults read "${APP_PATH}/Info.plist" CFBundleIdentifier 2>/dev/null || echo "com.bogdan.leanvibe.LeanVibe")
+        BUNDLE_ID=$(defaults read "${APP_PATH}/Info.plist" CFBundleIdentifier 2>/dev/null || echo "ai.leanvibe.LeanVibe")
         xcrun devicectl device process launch --device "${DEVICE_ID}" "${BUNDLE_ID}"
         echo -e "${GREEN}✅ App launched!${NC}"
     fi
