@@ -42,36 +42,31 @@ class SpeechRecognitionService: NSObject, ObservableObject {
     
     deinit {
 #if os(iOS)
-        // Safely cleanup audio resources on deinit
-        // These operations must be performed synchronously to avoid dispatch queue violations
-        if let engine = audioEngine {
-            engine.stop()
-            if engine.inputNode.numberOfInputs > 0 {
-                engine.inputNode.removeTap(onBus: 0)
+        // CRITICAL: deinit can be called from any thread, so we must dispatch cleanup to main
+        // This ensures proper @MainActor isolation for cleanup operations
+        DispatchQueue.main.async { [audioEngine, recognitionTask, recognitionRequest, audioLevelTimer, silenceTimer, recordingTimer] in
+            if let engine = audioEngine {
+                engine.stop()
+                if engine.inputNode.numberOfInputs > 0 {
+                    engine.inputNode.removeTap(onBus: 0)
+                }
             }
+            recognitionTask?.cancel()
+            recognitionRequest?.endAudio()
+            
+            // Invalidate timers safely on main thread
+            audioLevelTimer?.invalidate()
+            silenceTimer?.invalidate() 
+            recordingTimer?.invalidate()
         }
-        recognitionTask?.cancel()
-        recognitionRequest?.endAudio()
-        
-        // Invalidate timers safely
-        audioLevelTimer?.invalidate()
-        silenceTimer?.invalidate() 
-        recordingTimer?.invalidate()
 #endif
     }
     
     private func setupSpeechRecognizer() {
 #if os(iOS)
-        // Initialize speech recognizer safely
-        if Thread.isMainThread {
-            speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-            speechRecognizer?.delegate = self
-        } else {
-            DispatchQueue.main.sync {
-                speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-                speechRecognizer?.delegate = self
-            }
-        }
+        // @MainActor ensures we're always on main thread - no need for dispatch checks
+        speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+        speechRecognizer?.delegate = self
 #else
         speechRecognizer = nil
 #endif

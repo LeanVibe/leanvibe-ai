@@ -64,6 +64,13 @@ class OptimizedVoiceManager: ObservableObject {
     }
     
     private func configureOptimalAudioSettings() async {
+        // CRITICAL: Check if another audio engine is already active
+        // This prevents conflicts with SpeechRecognitionService during voice setup
+        guard !audioEngine.isRunning else {
+            print("🎤 Voice Manager: Audio engine already running, skipping optimization")
+            return
+        }
+        
         do {
             // Use optimal buffer sizes for real-time processing
             try audioSession.setPreferredIOBufferDuration(0.005) // 5ms for low latency
@@ -72,6 +79,12 @@ class OptimizedVoiceManager: ObservableObject {
             // Configure audio engine with optimized settings
             let inputNode = audioEngine.inputNode
             let recordingFormat = inputNode.outputFormat(forBus: 0)
+            
+            // Check if input node already has a tap installed (by SpeechRecognitionService)
+            if inputNode.numberOfInputs > 0 {
+                print("🎤 Voice Manager: Input node already configured, deferring to active service")
+                return
+            }
             
             // Optimize buffer size - balance between latency and stability
             let bufferSize: AVAudioFrameCount = isLowLatencyMode ? 512 : 1024
