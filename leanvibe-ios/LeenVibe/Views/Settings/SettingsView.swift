@@ -59,7 +59,7 @@ struct SettingsView: View {
                     icon: "mic.fill",
                     iconColor: .blue,
                     title: "Voice Commands",
-                    subtitle: settingsManager.voiceSettings.autoStopListening ? "Hey LeanVibe enabled" : "Disabled"
+                    subtitle: settingsManager.voice.autoStopListening ? "Hey LeanVibe enabled" : "Disabled"
                 )
             }
             
@@ -68,7 +68,7 @@ struct SettingsView: View {
                     icon: "waveform",
                     iconColor: .green,
                     title: "Wake Phrase Configuration",
-                    subtitle: "\"\(settingsManager.voiceSettings.wakePhrasePhrase)\""
+                    subtitle: "\"\(settingsManager.voice.wakePhrasePhrase)\""
                 )
             }
             
@@ -183,6 +183,7 @@ struct SettingsView: View {
                 )
             }
             
+            /*
             NavigationLink(destination: AccessibilitySettingsView()) {
                 SettingsRow(
                     icon: "accessibility",
@@ -191,6 +192,7 @@ struct SettingsView: View {
                     subtitle: "Default"
                 )
             }
+            */
             
             NavigationLink(destination: NotificationSettingsView()) {
                 SettingsRow(

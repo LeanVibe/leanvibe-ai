@@ -14,7 +14,7 @@ class VoicePermissionManager: ObservableObject {
     
     @Published private(set) var speechAuthorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
     #if os(iOS)
-    @Published private(set) var microphoneAuthorizationStatus: AVAudioSession.RecordPermission = .notDetermined
+    @Published private(set) var microphoneAuthorizationStatus: AVAudioSession.RecordPermission = .granted
     #endif
     
     enum PermissionStatus {
@@ -104,7 +104,7 @@ class VoicePermissionManager: ObservableObject {
             
             if micStatus == .denied || speechStatus == .denied {
                 permissionStatus = .denied
-            } else if micStatus == .undetermined || speechStatus == .notDetermined {
+            } else if micStatus != .granted || speechStatus == .notDetermined {
                 permissionStatus = .notDetermined
             } else {
                 permissionStatus = .restricted
@@ -204,8 +204,6 @@ extension SFSpeechRecognizerAuthorizationStatus {
 extension AVAudioSession.RecordPermission {
     var description: String {
         switch self {
-        case .undetermined:
-            return "Undetermined"
         case .denied:
             return "Denied"
         case .granted:

@@ -4,8 +4,12 @@ import Observation
 
 /// Represents user-configurable settings for the application.
 @Observable
-class SettingsManager {
-    static let shared = SettingsManager()
+@MainActor
+class SettingsManager: Sendable {
+    static let shared: SettingsManager = {
+        let instance = SettingsManager()
+        return instance
+    }()
 
     // MARK: - Observable Properties (Swift 6)
     var connection: ConnectionPreferences {
@@ -28,12 +32,18 @@ class SettingsManager {
             save(kanban, for: .kanban)
         }
     }
+    var accessibility: AccessibilitySettings {
+        didSet {
+            save(accessibility, for: .accessibility)
+        }
+    }
 
-    private init() {
+    init() {
         self.connection = load(.connection, as: ConnectionPreferences.self) ?? ConnectionPreferences()
         self.voice = load(.voice, as: VoiceSettings.self) ?? VoiceSettings()
         self.notifications = load(.notifications, as: NotificationSettings.self) ?? NotificationSettings()
         self.kanban = load(.kanban, as: KanbanSettings.self) ?? KanbanSettings()
+        self.accessibility = load(.accessibility, as: AccessibilitySettings.self) ?? AccessibilitySettings()
     }
 
     // MARK: - Public Methods
@@ -42,7 +52,15 @@ class SettingsManager {
         self.voice = VoiceSettings()
         self.notifications = NotificationSettings()
         self.kanban = KanbanSettings()
+        self.accessibility = AccessibilitySettings()
         saveAll()
+    }
+    
+    func resetSettings<T: SettingsProtocol>(_ type: T.Type) {
+        if type == AccessibilitySettings.self {
+            self.accessibility = AccessibilitySettings()
+        }
+        // Add other types as needed
     }
     
     // Type-safe save method
@@ -70,6 +88,7 @@ class SettingsManager {
         save(voice, for: .voice)
         save(notifications, for: .notifications)
         save(kanban, for: .kanban)
+        save(accessibility, for: .accessibility)
     }
 }
 
@@ -80,6 +99,7 @@ enum SettingsKey: String {
     case voice = "LeenVibe.VoiceSettings"
     case notifications = "LeenVibe.NotificationSettings"
     case kanban = "LeenVibe.KanbanSettings"
+    case accessibility = "LeenVibe.AccessibilitySettings"
 }
 
 /// A protocol for settings structures to ensure they provide default values.
@@ -160,14 +180,34 @@ struct KanbanSettings: SettingsProtocol {
     }
 }
 
+/// Stores the settings related to accessibility features.
+struct AccessibilitySettings: SettingsProtocol {
+    var highContrastMode: Bool = false
+    var reduceMotion: Bool = false
+    var voiceOverOptimizations: Bool = false
+    var largeFontSize: Bool = false
+    var boldText: Bool = false
+    var speechRateAdjustment: Double = 1.0
+    var extendedVoiceCommands: Bool = false
+    var extendedTouchTargets: Bool = false
+    var reduceGestures: Bool = false
+    var oneHandedMode: Bool = false
+    
+    init() {
+        // Default initializer
+    }
+}
+
 // MARK: - Environment Key for Swift 6 Injection
-private struct SettingsManagerKey: EnvironmentKey {
-    static let defaultValue = SettingsManager.shared
+struct SettingsManagerEnvironmentKey: EnvironmentKey {
+    static var defaultValue: SettingsManager {
+        SettingsManager.shared
+    }
 }
 
 extension EnvironmentValues {
     var settingsManager: SettingsManager {
-        get { self[SettingsManagerKey.self] }
-        set { self[SettingsManagerKey.self] = newValue }
+        get { self[SettingsManagerEnvironmentKey.self] }
+        set { self[SettingsManagerEnvironmentKey.self] = newValue }
     }
 } 

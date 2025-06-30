@@ -15,7 +15,7 @@ class DashboardVoiceProcessor: ObservableObject {
         self.projectManager = projectManager
         self.webSocketService = webSocketService
         self.settingsManager = settingsManager
-        self.commandProcessor = VoiceCommandProcessor(settings: settingsManager.voiceSettings)
+        self.commandProcessor = VoiceCommandProcessor(settings: settingsManager.voice)
     }
     
     func processVoiceCommand(_ transcription: String) async {

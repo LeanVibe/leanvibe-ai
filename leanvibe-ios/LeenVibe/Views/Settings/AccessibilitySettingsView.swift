@@ -40,23 +40,23 @@ struct AccessibilitySettingsView: View {
     
     private var visualAccessibilitySection: some View {
         Section("Visual Accessibility") {
-            Toggle("High Contrast Mode", isOn: $settingsManager.accessibilitySettings.highContrastMode)
-                .onChange(of: settingsManager.accessibilitySettings.highContrastMode) { _, enabled in
+            Toggle("High Contrast Mode", isOn: $settingsManager.accessibility.highContrastMode)
+                .onChange(of: settingsManager.accessibility.highContrastMode) { _, enabled in
                     handleHighContrastToggle(enabled)
                 }
             
-            Toggle("Reduce Motion", isOn: $settingsManager.accessibilitySettings.reduceMotion)
-                .onChange(of: settingsManager.accessibilitySettings.reduceMotion) { _, enabled in
+            Toggle("Reduce Motion", isOn: $settingsManager.accessibility.reduceMotion)
+                .onChange(of: settingsManager.accessibility.reduceMotion) { _, enabled in
                     handleReduceMotionToggle(enabled)
                 }
             
-            Toggle("Large Font Size", isOn: $settingsManager.accessibilitySettings.largeFontSize)
-                .onChange(of: settingsManager.accessibilitySettings.largeFontSize) { _, enabled in
+            Toggle("Large Font Size", isOn: $settingsManager.accessibility.largeFontSize)
+                .onChange(of: settingsManager.accessibility.largeFontSize) { _, enabled in
                     handleLargeFontToggle(enabled)
                 }
             
-            Toggle("Bold Text", isOn: $settingsManager.accessibilitySettings.boldText)
-                .onChange(of: settingsManager.accessibilitySettings.boldText) { _, enabled in
+            Toggle("Bold Text", isOn: $settingsManager.accessibility.boldText)
+                .onChange(of: settingsManager.accessibility.boldText) { _, enabled in
                     handleBoldTextToggle(enabled)
                 }
             
@@ -67,7 +67,7 @@ struct AccessibilitySettingsView: View {
                 
                 Text("Sample text with current accessibility settings applied")
                     .font(previewFont)
-                    .fontWeight(settingsManager.accessibilitySettings.boldText ? .bold : .regular)
+                    .fontWeight(settingsManager.accessibility.boldText ? .bold : .regular)
                     .padding()
                     .background(backgroundColorForPreview)
                     .foregroundColor(textColorForPreview)
@@ -79,18 +79,18 @@ struct AccessibilitySettingsView: View {
     
     private var voiceAccessibilitySection: some View {
         Section("Voice & Audio") {
-            Toggle("VoiceOver Optimizations", isOn: $settingsManager.accessibilitySettings.voiceOverOptimizations)
+            Toggle("VoiceOver Optimizations", isOn: $settingsManager.accessibility.voiceOverOptimizations)
             
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("Speech Rate Adjustment")
                     Spacer()
-                    Text("\(Int(settingsManager.accessibilitySettings.speechRateAdjustment * 100))%")
+                    Text("\(Int(settingsManager.accessibility.speechRateAdjustment * 100))%")
                         .foregroundColor(.secondary)
                 }
                 
                 Slider(
-                    value: $settingsManager.accessibilitySettings.speechRateAdjustment,
+                    value: $settingsManager.accessibility.speechRateAdjustment,
                     in: 0.5...2.0,
                     step: 0.1
                 )
@@ -101,7 +101,7 @@ struct AccessibilitySettingsView: View {
             }
             .padding(.vertical, 4)
             
-            Toggle("Extended Voice Commands", isOn: $settingsManager.accessibilitySettings.extendedVoiceCommands)
+            Toggle("Extended Voice Commands", isOn: $settingsManager.accessibility.extendedVoiceCommands)
             
             VStack(alignment: .leading, spacing: 8) {
                 Text("Voice Command Examples")
@@ -124,18 +124,18 @@ struct AccessibilitySettingsView: View {
     
     private var motorAccessibilitySection: some View {
         Section("Motor Accessibility") {
-            Toggle("Extended Touch Targets", isOn: $settingsManager.accessibilitySettings.extendedTouchTargets)
-                .onChange(of: settingsManager.accessibilitySettings.extendedTouchTargets) { _, enabled in
+            Toggle("Extended Touch Targets", isOn: $settingsManager.accessibility.extendedTouchTargets)
+                .onChange(of: settingsManager.accessibility.extendedTouchTargets) { _, enabled in
                     handleExtendedTouchTargetsToggle(enabled)
                 }
             
-            Toggle("Reduce Gestures", isOn: $settingsManager.accessibilitySettings.reduceGestures)
-                .onChange(of: settingsManager.accessibilitySettings.reduceGestures) { _, enabled in
+            Toggle("Reduce Gestures", isOn: $settingsManager.accessibility.reduceGestures)
+                .onChange(of: settingsManager.accessibility.reduceGestures) { _, enabled in
                     handleReduceGesturesToggle(enabled)
                 }
             
-            Toggle("One-Handed Mode", isOn: $settingsManager.accessibilitySettings.oneHandedMode)
-                .onChange(of: settingsManager.accessibilitySettings.oneHandedMode) { _, enabled in
+            Toggle("One-Handed Mode", isOn: $settingsManager.accessibility.oneHandedMode)
+                .onChange(of: settingsManager.accessibility.oneHandedMode) { _, enabled in
                     handleOneHandedModeToggle(enabled)
                 }
             
@@ -147,11 +147,11 @@ struct AccessibilitySettingsView: View {
                 HStack(spacing: 16) {
                     Button("Normal") {}
                         .buttonStyle(.bordered)
-                        .controlSize(settingsManager.accessibilitySettings.extendedTouchTargets ? .large : .regular)
+                        .controlSize(settingsManager.accessibility.extendedTouchTargets ? .large : .regular)
                     
                     Button("Extended") {}
                         .buttonStyle(.bordered)
-                        .controlSize(settingsManager.accessibilitySettings.extendedTouchTargets ? .large : .regular)
+                        .controlSize(settingsManager.accessibility.extendedTouchTargets ? .large : .regular)
                 }
                 
                 Text("Touch targets are automatically enlarged when enabled")
@@ -262,7 +262,7 @@ struct AccessibilitySettingsView: View {
     // MARK: - Helper Properties
     
     private var previewFont: Font {
-        if settingsManager.accessibilitySettings.largeFontSize {
+        if settingsManager.accessibility.largeFontSize {
             return .title2
         } else {
             return .body
@@ -270,7 +270,7 @@ struct AccessibilitySettingsView: View {
     }
     
     private var backgroundColorForPreview: Color {
-        if settingsManager.accessibilitySettings.highContrastMode {
+        if settingsManager.accessibility.highContrastMode {
             return Color.black
         } else {
             return Color(.systemGray6)
@@ -278,7 +278,7 @@ struct AccessibilitySettingsView: View {
     }
     
     private var textColorForPreview: Color {
-        if settingsManager.accessibilitySettings.highContrastMode {
+        if settingsManager.accessibility.highContrastMode {
             return Color.white
         } else {
             return Color.primary

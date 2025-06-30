@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ServerSettingsView: View {
-    @EnvironmentObject var settingsManager: SettingsManager
+    @Environment(\.settingsManager) var settingsManager
     
     var body: some View {
         Form {
@@ -22,6 +22,6 @@ struct ServerSettingsView: View {
 struct ServerSettingsView_Previews: PreviewProvider {
     static var previews: some View {
         ServerSettingsView()
-            .environmentObject(SettingsManager.shared)
+            .environment(\.settingsManager, SettingsManager.shared)
     }
 }

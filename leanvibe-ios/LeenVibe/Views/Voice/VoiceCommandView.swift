@@ -276,7 +276,7 @@ struct VoiceCommandView: View {
     private func processCompletedRecognition() {
         guard !speechService.recognizedText.isEmpty else { return }
         
-        let processor = VoiceCommandProcessor(settings: settingsManager.voiceSettings)
+        let processor = VoiceCommandProcessor(settings: settingsManager.voice)
         let command = processor.processVoiceInput(speechService.recognizedText)
         
         if command.requiresConfirmation {

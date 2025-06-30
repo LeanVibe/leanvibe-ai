@@ -12,7 +12,7 @@ struct DashboardTabView: View {
     @StateObject private var navigationCoordinator = NavigationCoordinator()
     @StateObject private var performanceAnalytics = PerformanceAnalytics()
     @StateObject private var batteryManager = BatteryOptimizedManager()
-    @StateObject private var settingsManager: SettingsManager
+    @Environment(\.settingsManager) private var settingsManager
     
     @State private var showingVoiceInterface = false
     
@@ -29,7 +29,7 @@ struct DashboardTabView: View {
         self._webSocketService = StateObject(wrappedValue: webSocket)
         self._projectManager = StateObject(wrappedValue: projectMgr)
         self._speechService = StateObject(wrappedValue: SpeechRecognitionService())
-        self._settingsManager = StateObject(wrappedValue: settingsMgr)
+        // SettingsManager is injected via environment in iOS 18+
         self._wakePhraseManager = StateObject(wrappedValue: WakePhraseManager(
             webSocketService: webSocket,
             projectManager: projectMgr,
