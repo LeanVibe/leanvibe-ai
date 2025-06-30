@@ -60,7 +60,7 @@ class GlobalVoiceManager: ObservableObject {
                 case .completed:
                     let text = self.speechRecognition.recognizedText
                     self.voiceCommandText = text
-                    _Concurrency.Task { await self.processVoiceCommand(text) }
+                    Task { await self.processVoiceCommand(text) }
                 case .error(let error):
                     print("Voice recognition error: \(error)")
                     self.dismissVoiceCommand()
@@ -92,7 +92,7 @@ class GlobalVoiceManager: ObservableObject {
         wakePhraseManager.stopWakeListening()
         
         // Start listening for command
-        _Concurrency.Task {
+        Task {
             await speechRecognition.startListening()
         }
     }

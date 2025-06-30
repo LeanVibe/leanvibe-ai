@@ -2,7 +2,6 @@ import Foundation
 import Speech
 import AVFoundation
 import Combine
-import _Concurrency
 import SwiftUI
 
 @MainActor
@@ -25,10 +24,8 @@ class VoiceManager: ObservableObject {
     }
     
     deinit {
-        nonisolated(unsafe) let speechService = speechService
-        _Concurrency.Task {
-            await speechService.stopListening()
-        }
+        // Don't perform async operations in deinit - let the service clean up naturally
+        // The SpeechRecognitionService handles its own cleanup in its deinit
     }
     
     private func setupBindings() {
@@ -53,7 +50,7 @@ class VoiceManager: ObservableObject {
         speechService.$recognitionState
             .filter { $0 == .completed }
             .sink { [weak self] _ in
-                _Concurrency.Task { @MainActor in
+                Task { @MainActor [weak self] in
                     await self?.processVoiceCommand()
                 }
             }

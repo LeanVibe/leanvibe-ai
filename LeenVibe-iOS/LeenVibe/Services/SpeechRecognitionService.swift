@@ -42,19 +42,36 @@ class SpeechRecognitionService: NSObject, ObservableObject {
     
     deinit {
 #if os(iOS)
-        audioEngine?.stop()
+        // Safely cleanup audio resources on deinit
+        // These operations must be performed synchronously to avoid dispatch queue violations
+        if let engine = audioEngine {
+            engine.stop()
+            if engine.inputNode.numberOfInputs > 0 {
+                engine.inputNode.removeTap(onBus: 0)
+            }
+        }
         recognitionTask?.cancel()
         recognitionRequest?.endAudio()
+        
+        // Invalidate timers safely
         audioLevelTimer?.invalidate()
-        silenceTimer?.invalidate()
+        silenceTimer?.invalidate() 
         recordingTimer?.invalidate()
 #endif
     }
     
     private func setupSpeechRecognizer() {
 #if os(iOS)
-        speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
-        speechRecognizer?.delegate = self
+        // Initialize speech recognizer safely
+        if Thread.isMainThread {
+            speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+            speechRecognizer?.delegate = self
+        } else {
+            DispatchQueue.main.sync {
+                speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+                speechRecognizer?.delegate = self
+            }
+        }
 #else
         speechRecognizer = nil
 #endif

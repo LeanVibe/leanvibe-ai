@@ -2,7 +2,6 @@ import Foundation
 import Speech
 import AVFoundation
 import SwiftUI
-import _Concurrency
 
 @available(iOS 14.0, macOS 10.15, *)
 @MainActor
@@ -59,14 +58,14 @@ class VoicePermissionManager: ObservableObject {
             if micGranted {
                 self.requestSpeechRecognitionPermission { speechGranted in
                     let allGranted = micGranted && speechGranted
-                    _Concurrency.Task { @MainActor in
-                        self.updateOverallStatus()
+                    Task { @MainActor [weak self] in
+                        self?.updateOverallStatus()
                         completion(allGranted)
                     }
                 }
             } else {
-                _Concurrency.Task { @MainActor in
-                    self.updateOverallStatus()
+                Task { @MainActor [weak self] in
+                    self?.updateOverallStatus()
                     completion(false)
                 }
             }
