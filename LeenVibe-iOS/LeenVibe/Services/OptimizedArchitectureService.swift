@@ -6,7 +6,7 @@ import WebKit
 import UIKit
 #endif
 
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class OptimizedArchitectureService: ObservableObject {
     @Published var currentDiagram: ArchitectureDiagram?

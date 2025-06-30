@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Main Settings view providing comprehensive configuration for all LeanVibe features
 /// Built by KAPPA to configure Voice, Kanban, Architecture, and other systems
-@available(iOS 14.0, macOS 12.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 struct SettingsView: View {
     
     // MARK: - Properties

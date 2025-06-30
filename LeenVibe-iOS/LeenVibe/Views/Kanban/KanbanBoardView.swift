@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 struct KanbanBoardView: View {
     @ObservedObject var taskService: TaskService
@@ -92,6 +93,7 @@ struct KanbanBoardView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct KanbanColumnView: View {
     let status: TaskStatus
     let tasks: [LeanVibeTask]

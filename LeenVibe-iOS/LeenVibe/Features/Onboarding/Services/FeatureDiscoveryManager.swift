@@ -27,6 +27,7 @@ enum ExpertiseLevel: String, Codable {
     case expert
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 class FeatureDiscoveryManager: ObservableObject {
     @Published var availableFeatures: [DiscoverableFeature] = DiscoverableFeature.allCases
     @Published var userExpertiseLevel: ExpertiseLevel = .beginner

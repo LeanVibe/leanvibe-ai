@@ -3,7 +3,7 @@ import Combine
 
 /// Centralized settings management for all LeanVibe features
 /// Coordinates settings for Voice, Kanban, Architecture, and other systems
-@available(iOS 14.0, macOS 10.15, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class SettingsManager: ObservableObject {
     @MainActor static let shared = SettingsManager()

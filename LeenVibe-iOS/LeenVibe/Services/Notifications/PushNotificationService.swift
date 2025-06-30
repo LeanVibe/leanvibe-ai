@@ -8,7 +8,7 @@ import os.log
 
 /// Standalone Push Notification Service for LeanVibe iOS App
 /// Handles APNs registration, local notifications, and delivery management
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class PushNotificationService: NSObject, ObservableObject {
     

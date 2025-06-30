@@ -1,7 +1,7 @@
 import Foundation
 import Starscream
 
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class WebSocketService: ObservableObject, WebSocketDelegate {
     @Published var isConnected = false

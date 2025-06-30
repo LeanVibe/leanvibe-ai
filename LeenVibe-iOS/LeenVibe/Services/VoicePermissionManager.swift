@@ -3,7 +3,7 @@ import Speech
 import AVFoundation
 import SwiftUI
 
-@available(iOS 14.0, macOS 10.15, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class VoicePermissionManager: ObservableObject {
     @Published var hasMicrophonePermission = false

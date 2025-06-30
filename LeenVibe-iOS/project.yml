@@ -2,7 +2,7 @@ name: LeenVibe
 options:
   bundleIdPrefix: com.bogdan.leanvibe
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "18.0"
   developmentLanguage: en
   xcodeVersion: "16.0"
   usesTabs: false
@@ -18,7 +18,7 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     DEVELOPMENT_TEAM: ""
     SWIFT_VERSION: "6.0"
-    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     ENABLE_BITCODE: false
     SUPPORTS_MACCATALYST: false
     SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: false
@@ -36,7 +36,7 @@ targets:
   LeenVibe:
     type: application
     platform: iOS
-    deploymentTarget: "16.0"
+    deploymentTarget: "18.0"
     sources:
       - path: LeenVibe
         excludes:
@@ -101,7 +101,7 @@ targets:
   LeenVibeTests:
     type: bundle.unit-test
     platform: iOS
-    deploymentTarget: "16.0"
+    deploymentTarget: "18.0"
     sources:
       - path: LeenVibeTests
     dependencies:

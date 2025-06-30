@@ -2,7 +2,7 @@ import Foundation
 import Speech
 import SwiftUI
 
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class CommandAndControlService: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
     

@@ -1,6 +1,7 @@
 
 import Foundation
 
+@available(iOS 18.0, macOS 14.0, *)
 class OnboardingAnalytics: ObservableObject {
     @Published var completionRate: Double = 0.0
     @Published var featureAdoptionRates: [DiscoverableFeature: Double] = [:]

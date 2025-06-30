@@ -3,7 +3,7 @@ import UserNotifications
 
 /// Notification Settings view for configuring push notifications and in-app alerts
 /// Manages all notification preferences for the LeanVibe app
-@available(iOS 14.0, macOS 11.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 struct NotificationSettingsView: View {
     
     // MARK: - Properties

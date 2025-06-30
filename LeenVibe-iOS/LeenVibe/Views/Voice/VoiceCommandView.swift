@@ -1,8 +1,7 @@
 import SwiftUI
 import Speech
 
-@available(macOS 10.15, iOS 13.0, *)
-@available(macOS 11.0, iOS 14.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 struct VoiceCommandView: View {
     @StateObject private var speechService: SpeechRecognitionService
     @StateObject private var permissionManager = VoicePermissionManager()

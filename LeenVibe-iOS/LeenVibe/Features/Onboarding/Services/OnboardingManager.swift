@@ -2,6 +2,7 @@
 import Foundation
 import Combine
 
+@available(iOS 18.0, macOS 14.0, *)
 class OnboardingManager: ObservableObject {
     @Published var progress = OnboardingProgress() {
         didSet {

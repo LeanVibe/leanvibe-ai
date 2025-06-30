@@ -3,14 +3,14 @@ import Combine
 
 // MARK: - Integrated Performance Management System
 
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 18.0, macOS 14.0, *)
 struct IntegratedPerformanceMetrics {
     let frameRate: Double
     let memoryUsage: Double
     let voiceResponseTime: Double
 }
 
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class IntegratedPerformanceManager: ObservableObject {
     @Published var performanceState: PerformanceState = .optimal
@@ -580,7 +580,7 @@ struct IntegratedOptimizationSettings {
     let enableNetworkBatching: Bool
 }
 
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 18.0, macOS 14.0, *)
 struct SystemAlert: Identifiable {
     let id = UUID()
     let severity: AlertSeverity

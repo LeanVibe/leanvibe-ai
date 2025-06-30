@@ -7,7 +7,7 @@ import UIKit
 #endif
 
 #if canImport(UIKit)
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 18.0, macOS 14.0, *)
 struct LeanVibeQRScannerView: View {
     @Binding var isPresented: Bool
     @ObservedObject var webSocketService: WebSocketService
@@ -77,7 +77,7 @@ struct LeanVibeQRScannerView: View {
     }
 }
 
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 18.0, macOS 14.0, *)
 struct CameraView: UIViewRepresentable {
     @Binding var isScanning: Bool
     let onQRCodeDetected: (String) -> Void
@@ -182,7 +182,7 @@ struct CameraView: UIViewRepresentable {
 }
 #endif
 
-@available(iOS 13.0, macOS 10.15, *)
+@available(iOS 18.0, macOS 14.0, *)
 struct ScannerOverlay: View {
     var body: some View {
         ZStack {
