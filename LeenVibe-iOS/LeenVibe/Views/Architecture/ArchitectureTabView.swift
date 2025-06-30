@@ -1,5 +1,5 @@
 import SwiftUI
-import _Concurrency
+
 
 @MainActor
 struct ArchitectureTabView: View {
@@ -90,7 +90,7 @@ struct ArchitectureTabView: View {
             
             // Floating action button for refresh
             Button(action: {
-                _Concurrency.Task {
+                Task {
                     await service.fetchInitialDiagram(for: selectedProject)
                 }
             }) {
@@ -146,7 +146,7 @@ struct ArchitectureTabView: View {
             
             // Auto-refresh toggle
             Button(action: {
-                _Concurrency.Task {
+                Task {
                     await service.fetchInitialDiagram(for: selectedProject)
                 }
             }) {
@@ -170,7 +170,7 @@ struct ArchitectureTabView: View {
     }
     
     private func loadDiagramForProject() {
-        _Concurrency.Task {
+        Task {
             await service.fetchInitialDiagram(for: selectedProject)
         }
     }
@@ -183,7 +183,7 @@ struct ArchitectureTabView: View {
     }
     
     private func handleNodeTap(_ nodeId: String) {
-        _Concurrency.Task {
+        Task {
             await service.requestDiagramUpdate(for: nodeId, in: selectedProject)
         }
     }

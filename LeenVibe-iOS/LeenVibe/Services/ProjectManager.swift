@@ -1,6 +1,6 @@
 import Foundation
 import SwiftUI
-import _Concurrency
+
 
 @available(macOS 10.15, iOS 13.0, *)
 @MainActor
@@ -28,7 +28,7 @@ class ProjectManager: ObservableObject {
         
         // In production, this would fetch from backend
         // For now, simulate network delay
-        try? await _Concurrency.Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
         
         // Simulate refreshed data
         loadSampleProjects()

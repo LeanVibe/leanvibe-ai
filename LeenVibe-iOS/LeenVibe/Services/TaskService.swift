@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 import SwiftUI
-import _Concurrency
 
 // MARK: - Task Service for Backend Integration
 
@@ -248,7 +247,7 @@ class TaskService: ObservableObject {
         Timer.publish(every: 60, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                _Concurrency.Task {
+                Task {
                     await self?.loadTaskStatistics()
                     await self?.loadKanbanStatistics()
                     await self?.checkSystemHealth()

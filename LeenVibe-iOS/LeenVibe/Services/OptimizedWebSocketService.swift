@@ -310,7 +310,7 @@ class OptimizedWebSocketService: ObservableObject {
     private func attemptReconnection() async {
         let delay = reconnectionStrategy.getNextDelay()
         
-        try? await _Concurrency.Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         
         let success = await connect()
         if !success {

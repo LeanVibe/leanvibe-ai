@@ -1,7 +1,6 @@
 import SwiftUI
 import Foundation
 import Combine
-import _Concurrency
 
 @MainActor
 class AppCoordinator: ObservableObject {
@@ -37,7 +36,7 @@ class AppCoordinator: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     
     func initializeApp() {
-        _Concurrency.Task {
+        Task {
             await lifecycleManager.initialize()
         }
     }
