@@ -8,7 +8,7 @@ import UIKit
 
 #if canImport(UIKit)
 @available(iOS 13.0, macOS 10.15, *)
-struct LeenVibeQRScannerView: View {
+struct LeanVibeQRScannerView: View {
     @Binding var isPresented: Bool
     @ObservedObject var webSocketService: WebSocketService
     @State private var isScanning = true

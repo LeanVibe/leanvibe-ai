@@ -63,8 +63,8 @@ struct ConnectionSettings: Codable, Equatable {
 @MainActor
 class ConnectionStorageManager: ObservableObject {
     private let userDefaults = UserDefaults.standard
-    private let storageKey = "leenvibe_connections"
-    private let currentConnectionKey = "leenvibe_current_connection"
+    private let storageKey = "leanvibe_connections"
+    private let currentConnectionKey = "leanvibe_current_connection"
     
     @Published var savedConnections: [ConnectionSettings] = []
     @Published var currentConnection: ConnectionSettings?

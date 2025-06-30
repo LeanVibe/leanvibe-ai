@@ -76,7 +76,7 @@ struct ErrorRecoveryView: View {
                 Spacer()
                 
                 // Help Text
-                Text("Make sure your LeenVibe server is running and the QR code is valid.")
+                Text("Make sure your LeanVibe server is running and the QR code is valid.")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

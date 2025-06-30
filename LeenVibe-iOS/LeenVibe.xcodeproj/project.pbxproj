@@ -977,7 +977,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leenvibe.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leanvibe.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LeenVibe.app/LeenVibe";
@@ -1000,7 +1000,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leenvibe.LeenVibe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leanvibe.LeenVibe;
 				PRODUCT_NAME = LeenVibe;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1024,7 +1024,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leenvibe.LeenVibe;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leanvibe.LeenVibe;
 				PRODUCT_NAME = LeenVibe;
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -1043,7 +1043,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leenvibe.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bogdan.leanvibe.tests;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LeenVibe.app/LeenVibe";

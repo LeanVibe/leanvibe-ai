@@ -105,7 +105,7 @@ struct VoicePermissionSetupView: View {
                 .font(.system(size: 80))
                 .foregroundColor(.blue)
             
-            Text("Control LeenVibe with Your Voice")
+            Text("Control LeanVibe with Your Voice")
                 .font(.title2)
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.center)
@@ -188,7 +188,7 @@ struct VoicePermissionSetupView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
             
-            Text("LeenVibe needs microphone access to hear your voice commands.")
+            Text("LeanVibe needs microphone access to hear your voice commands.")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -262,13 +262,13 @@ struct VoicePermissionSetupView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
             
-            Text("You can now use voice commands to control LeenVibe. Try saying:")
+            Text("You can now use voice commands to control LeanVibe. Try saying:")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
             
             VStack(alignment: .leading, spacing: 12) {
-                ExampleCommand(command: "Hey LeenVibe, show status")
+                ExampleCommand(command: "Hey LeanVibe, show status")
                 ExampleCommand(command: "List files")
                 ExampleCommand(command: "Show help")
             }

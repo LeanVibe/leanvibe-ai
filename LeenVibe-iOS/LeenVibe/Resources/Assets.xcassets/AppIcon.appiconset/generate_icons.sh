@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# LeenVibe App Icon Generator Script
+# LeanVibe App Icon Generator Script
 # This script generates all required iOS app icon sizes from a source image
 
-echo "🎨 LeenVibe App Icon Generator"
+echo "🎨 LeanVibe App Icon Generator"
 echo "=============================="
 
 # Check if source image exists
@@ -51,7 +51,7 @@ echo "📋 Generated files:"
 ls -la icon_*.png
 echo ""
 echo "🚀 Next steps:"
-echo "1. Build the app: xcodebuild -project ../../../LeenVibe.xcodeproj -scheme LeenVibe build"
+echo "1. Build the app: xcodebuild -project ../../../LeanVibe.xcodeproj -scheme LeanVibe build"
 echo "2. Deploy to device to see your new icon!"
 echo ""
-echo "🎯 Your new LB logo is now ready for LeenVibe!"
+echo "🎯 Your new LB logo is now ready for LeanVibe!"

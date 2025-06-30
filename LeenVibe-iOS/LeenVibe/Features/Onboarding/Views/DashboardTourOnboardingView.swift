@@ -11,7 +11,7 @@ struct DashboardTourOnboardingView: View {
                 .fontWeight(.bold)
                 .padding()
             
-            Text("The LeenVibe dashboard provides a real-time overview of your projects, metrics, and tasks. Let's take a quick tour.")
+            Text("The LeanVibe dashboard provides a real-time overview of your projects, metrics, and tasks. Let's take a quick tour.")
                 .font(.title2)
                 .padding()
             

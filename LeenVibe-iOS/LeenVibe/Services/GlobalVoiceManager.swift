@@ -147,7 +147,7 @@ class GlobalVoiceManager: ObservableObject {
             case .inactive:
                 return "Voice Inactive"
             case .listening:
-                return "Listening for 'Hey LeenVibe'"
+                return "Listening for 'Hey LeanVibe'"
             case .activeCommand:
                 return "Voice Command Active"
             }

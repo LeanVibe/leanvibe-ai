@@ -22,13 +22,13 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
     private let voiceProcessor: DashboardVoiceProcessor
     
     // Wake phrase configuration
-    private let wakePhrase = "hey leenvibe"
+    private let wakePhrase = "hey leanvibe"
     private let wakePhraseAlternatives = [
         "hey lynn vibe",
         "hey lean vibe", 
         "hey leen vibe",
         "hey lee vibe",
-        "a leenvibe",
+        "a leanvibe"
         "hey leanvibe"
     ]
     

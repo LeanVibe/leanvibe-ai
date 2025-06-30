@@ -6,7 +6,7 @@ import UIKit
 import CoreLocation
 import os.log
 
-/// Standalone Push Notification Service for LeenVibe iOS App
+/// Standalone Push Notification Service for LeanVibe iOS App
 /// Handles APNs registration, local notifications, and delivery management
 @available(iOS 14.0, macOS 11.0, *)
 @MainActor
@@ -25,7 +25,7 @@ class PushNotificationService: NSObject, ObservableObject {
     
     // MARK: - Configuration
     
-    private let logger = Logger(subsystem: "com.leenvibe.notifications", category: "PushService")
+    private let logger = Logger(subsystem: "com.leanvibe.notifications", category: "PushService")
     
     // MARK: - Notification Categories
     
@@ -332,7 +332,7 @@ class PushNotificationService: NSObject, ObservableObject {
     func sendWelcomeNotification() async {
         let notification = LocalNotificationRequest(
             id: "welcome_\(UUID().uuidString)",
-            title: "Welcome to LeenVibe! 🎉",
+            title: "Welcome to LeanVibe! 🎉",
             body: "Start your journey with personalized meditation and wellness content.",
             category: NotificationCategory.general,
             trigger: .immediate
@@ -345,7 +345,7 @@ class PushNotificationService: NSObject, ObservableObject {
         let notification = LocalNotificationRequest(
             id: "daily_reminder_\(UUID().uuidString)",
             title: "Daily Reminder 🔔",
-            body: "Don't forget to check your LeenVibe progress today!",
+            body: "Don't forget to check your LeanVibe progress today!",
             category: NotificationCategory.reminder,
             trigger: .date(date)
         )

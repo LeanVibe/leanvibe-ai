@@ -165,10 +165,10 @@ class VoicePermissionManager: ObservableObject {
     
     var permissionRationale: String {
         """
-        LeenVibe needs these permissions to enable voice commands:
+        LeanVibe needs these permissions to enable voice commands:
         
         🎤 Microphone Access
-        To hear your voice commands like "Hey LeenVibe, show status"
+        To hear your voice commands like "Hey LeanVibe, show status"
         
         🗣️ Speech Recognition
         To convert your speech to text for command processing

@@ -187,7 +187,7 @@ struct VoiceCommandView: View {
             
             LazyVStack(alignment: .leading, spacing: 8) {
                 QuickVoiceCommand(
-                    phrase: "Hey LeenVibe, show status",
+                    phrase: "Hey LeanVibe, show status",
                     description: "Check agent status",
                     icon: "checkmark.circle"
                 )

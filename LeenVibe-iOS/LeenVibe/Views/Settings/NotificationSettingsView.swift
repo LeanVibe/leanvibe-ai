@@ -2,7 +2,7 @@ import SwiftUI
 import UserNotifications
 
 /// Notification Settings view for configuring push notifications and in-app alerts
-/// Manages all notification preferences for the LeenVibe app
+/// Manages all notification preferences for the LeanVibe app
 @available(iOS 14.0, macOS 11.0, *)
 struct NotificationSettingsView: View {
     
@@ -93,7 +93,7 @@ struct NotificationSettingsView: View {
                         .fontWeight(.medium)
                         .foregroundColor(.orange)
                     
-                    Text("To receive push notifications, please enable notifications for LeenVibe in iOS Settings.")
+                    Text("To receive push notifications, please enable notifications for LeanVibe in iOS Settings.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -142,7 +142,7 @@ struct NotificationSettingsView: View {
                         if settingsManager.notificationSettings.systemNotificationsEnabled {
                             NotificationPreview(
                                 title: "Connection Lost",
-                                message: "Reconnecting to LeenVibe server...",
+                                message: "Reconnecting to LeanVibe server...",
                                 type: .system
                             )
                         }
@@ -462,7 +462,7 @@ struct NotificationSettingsView: View {
     private func sendTestNotification() {
         let content = UNMutableNotificationContent()
         content.title = "Test Notification"
-        content.body = "This is a test notification from LeenVibe"
+        content.body = "This is a test notification from LeanVibe"
         content.sound = settingsManager.notificationSettings.soundEnabled ? .default : nil
         
         let request = UNNotificationRequest(

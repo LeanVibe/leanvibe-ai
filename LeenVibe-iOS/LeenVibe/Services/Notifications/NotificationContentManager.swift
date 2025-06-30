@@ -18,7 +18,7 @@ class NotificationContentManager: ObservableObject {
     // MARK: - Dependencies
     
     private let pushService: PushNotificationService
-    private let logger = Logger(subsystem: "com.leenvibe.notifications", category: "ContentManager")
+    private let logger = Logger(subsystem: "com.leanvibe.notifications", category: "ContentManager")
     
     // MARK: - Content Generation
     
@@ -55,7 +55,7 @@ class NotificationContentManager: ObservableObject {
             NotificationTemplate(
                 id: "welcome_day1",
                 type: .welcome,
-                title: "Welcome to LeenVibe! 🌟",
+                title: "Welcome to LeanVibe! 🌟",
                 body: "Start your wellness journey with personalized meditation and mindfulness practices.",
                 category: "GENERAL",
                 priority: .high,

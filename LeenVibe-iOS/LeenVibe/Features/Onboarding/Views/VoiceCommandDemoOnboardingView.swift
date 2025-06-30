@@ -11,7 +11,7 @@ struct VoiceCommandDemoOnboardingView: View {
                 .fontWeight(.bold)
                 .padding()
             
-            Text("Experience the power of voice control. Try saying 'Hey LeenVibe, show project status'.")
+            Text("Experience the power of voice control. Try saying 'Hey LeanVibe, show project status'.")
                 .font(.title2)
                 .padding()
             

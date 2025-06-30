@@ -34,7 +34,7 @@ class NotificationAnalyticsService: ObservableObject {
     
     // MARK: - Logging
     
-    private let logger = Logger(subsystem: "com.leenvibe.notifications", category: "Analytics")
+    private let logger = Logger(subsystem: "com.leanvibe.notifications", category: "Analytics")
     
     // MARK: - Timer
     

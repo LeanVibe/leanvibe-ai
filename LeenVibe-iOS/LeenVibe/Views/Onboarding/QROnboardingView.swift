@@ -24,7 +24,7 @@ struct QROnboardingView: View {
                         .font(.system(size: 80))
                         .foregroundColor(.white)
                     
-                    Text("LeenVibe")
+                    Text("LeanVibe")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
@@ -38,12 +38,12 @@ struct QROnboardingView: View {
                 
                 // Welcome Text
                 VStack(spacing: 12) {
-                    Text("Welcome to LeenVibe")
+                    Text("Welcome to LeanVibe")
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
                     
-                    Text("Connect to your LeenVibe server by scanning the QR code displayed on your server dashboard.")
+                    Text("Connect to your LeanVibe server by scanning the QR code displayed on your server dashboard.")
                         .font(.body)
                         .foregroundColor(.white.opacity(0.9))
                         .multilineTextAlignment(.center)

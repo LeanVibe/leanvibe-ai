@@ -126,7 +126,7 @@ class NavigationCoordinator: ObservableObject {
     // MARK: - URL Handling
     
     func handleURL(_ url: URL) {
-        guard url.scheme == "leenvibe" else { return }
+        guard url.scheme == "leanvibe" else { return }
         
         let path = url.path
         let components = path.components(separatedBy: "/").filter { !$0.isEmpty }

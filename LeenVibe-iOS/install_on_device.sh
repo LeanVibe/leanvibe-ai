@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Simplified LeenVibe iOS Install Script
+# Simplified LeanVibe iOS Install Script
 # This script builds and installs the app on your connected iOS device
 
 set -e  # Exit on any error
 
-echo "🚀 Building and Installing LeenVibe on your iOS device..."
+echo "🚀 Building and Installing LeanVibe on your iOS device..."
 
 # Colors for output
 RED='\033[0;31m'

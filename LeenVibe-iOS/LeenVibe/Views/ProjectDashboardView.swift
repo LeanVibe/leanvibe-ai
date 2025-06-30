@@ -177,7 +177,7 @@ struct ProjectDashboardView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
             
-            Text("Connect to your LeenVibe agent and start analyzing your codebase")
+            Text("Connect to your LeanVibe agent and start analyzing your codebase")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

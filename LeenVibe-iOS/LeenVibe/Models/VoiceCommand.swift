@@ -156,8 +156,8 @@ class VoiceCommandProcessor {
         return text
             .lowercased()
             .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "hey leenvibe", with: "")
-            .replacingOccurrences(of: "leenvibe", with: "")
+            .replacingOccurrences(of: "hey leanvibe", with: "")
+            .replacingOccurrences(of: "leanvibe", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
     

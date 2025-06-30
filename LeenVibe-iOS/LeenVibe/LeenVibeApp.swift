@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct LeenVibeApp: App {
+struct LeanVibeApp: App {
     @StateObject private var coordinator = AppCoordinator()
     
     var body: some Scene {

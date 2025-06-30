@@ -91,7 +91,7 @@ class ProjectManager: ObservableObject {
         projects = [
             Project(
                 id: "sample-1",
-                name: "LeenVibe Backend",
+                name: "LeanVibe Backend",
                 path: "/Users/bogdan/work/leanvibe-backend",
                 language: .python,
                 status: .active,

@@ -11,7 +11,7 @@ struct ProjectSetupOnboardingView: View {
                 .fontWeight(.bold)
                 .padding()
             
-            Text("Connect to your local project to get started. You can do this by scanning a QR code from the LeenVibe CLI.")
+            Text("Connect to your local project to get started. You can do this by scanning a QR code from the LeanVibe CLI.")
                 .font(.title2)
                 .padding()
             

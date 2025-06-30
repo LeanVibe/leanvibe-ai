@@ -121,7 +121,7 @@ struct ServerSettingsView: View {
                     icon: "qrcode.viewfinder",
                     iconColor: .blue,
                     title: "Scan QR Code",
-                    subtitle: "Quick setup from LeenVibe server"
+                    subtitle: "Quick setup from LeanVibe server"
                 )
             }
             .buttonStyle(.plain)
@@ -378,9 +378,9 @@ struct ServerSettingsView: View {
     
     private func parseQRCode(_ qrContent: String) -> (host: String, port: Int, useHTTPS: Bool)? {
         // Parse QR code content for server configuration
-        // Expected format: "leenvibe://server/host:port?ssl=true"
+        // Expected format: "leanvibe://server/host:port?ssl=true"
         guard let url = URL(string: qrContent),
-              url.scheme == "leenvibe",
+              url.scheme == "leanvibe",
               url.host == "server" else {
             return nil
         }

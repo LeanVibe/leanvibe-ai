@@ -4,7 +4,7 @@ struct TaskDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var taskService: TaskService
     
-    @State var task: LeenVibeTask
+    @State var task: LeanVibeTask
     @State private var isEditing = false
     @State private var showingApprovalSheet = false
     @State private var approvalFeedback = ""
@@ -442,7 +442,7 @@ struct TimelineItem: View {
 }
 
 struct StatusChangeMenu: View {
-    let task: LeenVibeTask
+    let task: LeanVibeTask
     let taskService: TaskService
     
     var body: some View {
@@ -501,7 +501,7 @@ struct TaskDetailView_Previews: PreviewProvider {
     static var previews: some View {
         TaskDetailView(
             taskService: TaskService(),
-            task: LeenVibeTask(
+            task: LeanVibeTask(
                 id: UUID(),
                 title: "Sample Task",
                 description: "This is a sample task for preview",

@@ -17,7 +17,7 @@ struct ContentView: View {
                 // Input Area
                 inputSection
             }
-            .navigationTitle("LeenVibe Agent")
+            .navigationTitle("LeanVibe Agent")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -90,7 +90,7 @@ struct ContentView: View {
                 .font(.system(size: 48))
                 .foregroundColor(.secondary)
             
-            Text("Welcome to LeenVibe")
+            Text("Welcome to LeanVibe")
                 .font(.title2)
                 .fontWeight(.semibold)
             

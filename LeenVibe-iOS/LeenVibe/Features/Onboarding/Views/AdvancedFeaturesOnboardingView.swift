@@ -11,7 +11,7 @@ struct AdvancedFeaturesOnboardingView: View {
                 .fontWeight(.bold)
                 .padding()
             
-            Text("LeenVibe offers powerful features like real-time notifications, intelligent code analysis, and more. Explore them as you become a power user.")
+            Text("LeanVibe offers powerful features like real-time notifications, intelligent code analysis, and more. Explore them as you become a power user.")
                 .font(.title2)
                 .padding()
             

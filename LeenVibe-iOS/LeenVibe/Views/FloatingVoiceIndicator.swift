@@ -177,7 +177,7 @@ struct FloatingVoiceIndicator: View {
         } else if speechService.isListening {
             return "Currently listening for voice commands. Tap to stop."
         } else if wakePhraseManager.isWakeListening {
-            return "Wake phrase listening active. Say 'Hey LeenVibe' to start."
+            return "Wake phrase listening active. Say 'Hey LeanVibe' to start."
         } else {
             return "Tap to start voice commands."
         }

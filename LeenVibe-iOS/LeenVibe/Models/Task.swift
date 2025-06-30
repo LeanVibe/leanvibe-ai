@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Task Management Models
 
-struct LeenVibeTask: Identifiable, Codable, Sendable {
+struct LeanVibeTask: Identifiable, Codable, Sendable {
     let id: UUID
     var title: String
     var description: String
@@ -360,11 +360,11 @@ enum AttachmentType: String, Codable, Sendable {
 
 struct TaskUpdateMessage: Codable, Sendable {
     let type: String = "task_update"
-    let task: LeenVibeTask
+    let task: LeanVibeTask
     let clientId: String
     let timestamp: String
     
-    init(task: LeenVibeTask, clientId: String) {
+    init(task: LeanVibeTask, clientId: String) {
         self.task = task
         self.clientId = clientId
         self.timestamp = ISO8601DateFormatter().string(from: Date())
@@ -417,8 +417,8 @@ struct AgentDecisionMessage: Codable, Sendable {
 struct TaskResponse: Codable, Sendable {
     let status: String
     let message: String
-    let task: LeenVibeTask?
-    let tasks: [LeenVibeTask]?
+    let task: LeanVibeTask?
+    let tasks: [LeanVibeTask]?
     let error: String?
     
     var isSuccess: Bool {
@@ -429,7 +429,7 @@ struct TaskResponse: Codable, Sendable {
 struct TaskListResponse: Codable, Sendable {
     let status: String
     let message: String
-    let tasks: [LeenVibeTask]
+    let tasks: [LeanVibeTask]
     let totalCount: Int
     let hasMore: Bool
     

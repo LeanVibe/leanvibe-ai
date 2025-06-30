@@ -186,15 +186,15 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             let data = qrData.data(using: .utf8) ?? Data()
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
             
-            guard let leenvibe = json?["leenvibe"] as? [String: Any],
-                  let server = leenvibe["server"] as? [String: Any],
+            guard let leanvibe = json?["leanvibe"] as? [String: Any],
+                  let server = leanvibe["server"] as? [String: Any],
                   let host = server["host"] as? String,
                   let port = server["port"] as? Int,
                   let websocketPath = server["websocket_path"] as? String else {
                 return nil
             }
             
-            let metadata = leenvibe["metadata"] as? [String: Any]
+            let metadata = leanvibe["metadata"] as? [String: Any]
             let serverName = metadata?["server_name"] as? String
             let network = metadata?["network"] as? String
             

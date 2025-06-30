@@ -11,7 +11,7 @@ struct VoicePermissionOnboardingView: View {
                 .fontWeight(.bold)
                 .padding()
             
-            Text("LeenVibe uses voice commands to help you code faster. Please grant microphone permissions to enable this feature.")
+            Text("LeanVibe uses voice commands to help you code faster. Please grant microphone permissions to enable this feature.")
                 .font(.title2)
                 .padding()
             

@@ -61,7 +61,7 @@ struct StatCard: View {
 }
 
 struct AttentionTaskRow: View {
-    let task: LeenVibeTask
+    let task: LeanVibeTask
     
     var body: some View {
         HStack(spacing: 12) {

@@ -6,7 +6,7 @@ struct WelcomeOnboardingView: View {
 
     var body: some View {
         VStack {
-            Text("Welcome to LeenVibe")
+            Text("Welcome to LeanVibe")
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .padding()

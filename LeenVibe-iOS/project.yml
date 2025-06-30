@@ -1,6 +1,6 @@
 name: LeenVibe
 options:
-  bundleIdPrefix: com.bogdan.leenvibe
+  bundleIdPrefix: com.bogdan.leanvibe
   deploymentTarget:
     iOS: "16.0"
   developmentLanguage: en
@@ -23,7 +23,7 @@ settings:
     SUPPORTS_MACCATALYST: false
     SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: false
     SWIFT_EMIT_LOC_STRINGS: true
-    INFOPLIST_KEY_CFBundleDisplayName: "LeenVibe"
+    INFOPLIST_KEY_CFBundleDisplayName: "LeanVibe"
     INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.developer-tools"
 
 
@@ -54,7 +54,7 @@ targets:
     info:
       path: LeenVibe/Info.plist
       properties:
-        CFBundleDisplayName: LeenVibe
+        CFBundleDisplayName: LeanVibe
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
         UILaunchStoryboardName: LaunchScreen
@@ -76,13 +76,13 @@ targets:
             UIWindowSceneSessionRoleApplication:
               - UISceneConfigurationName: "Default Configuration"
                 UISceneDelegateClassName: "$(PRODUCT_MODULE_NAME).SceneDelegate"
-        NSCameraUsageDescription: "LeenVibe needs camera access to scan QR codes for backend connection"
-        NSMicrophoneUsageDescription: "LeenVibe needs microphone access for voice commands"
-        NSSpeechRecognitionUsageDescription: "LeenVibe uses speech recognition for voice commands"
-        NSUserNotificationUsageDescription: "LeenVibe sends notifications about task updates"
-        NSLocalNetworkUsageDescription: "LeenVibe connects to your local development server"
+        NSCameraUsageDescription: "LeanVibe needs camera access to scan QR codes for backend connection"
+        NSMicrophoneUsageDescription: "LeanVibe needs microphone access for voice commands"
+        NSSpeechRecognitionUsageDescription: "LeanVibe uses speech recognition for voice commands"
+        NSUserNotificationUsageDescription: "LeanVibe sends notifications about task updates"
+        NSLocalNetworkUsageDescription: "LeanVibe connects to your local development server"
         NSBonjourServices:
-          - "_leenvibe._tcp"
+          - "_leanvibe._tcp"
         UIBackgroundModes:
           - audio
           - remote-notification
@@ -111,7 +111,7 @@ targets:
         BUNDLE_LOADER: $(TEST_HOST)
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/LeenVibe.app/LeenVibe
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: com.bogdan.leenvibe.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.bogdan.leanvibe.tests
 
 schemes:
   LeenVibe:

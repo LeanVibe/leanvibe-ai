@@ -1,10 +1,10 @@
 #!/bin/bash
 # ==============================================================================
-# LeenVibe Production Deployment Script
+# LeanVibe Production Deployment Script
 # ==============================================================================
-# Single command to deploy and run LeenVibe on Mac with Qwen3-30B
+# Single command to deploy and run LeanVibe on Mac with Qwen3-30B
 # 
-# Usage: ./deploy-leenvibe.sh [options]
+# Usage: ./deploy-leanvibe.sh [options]
 # Options:
 #   --model MODEL_NAME    Specify model (default: Qwen/Qwen3-30B-A3B-MLX-4bit)
 #   --port PORT          Specify port (default: 8000)
@@ -21,9 +21,9 @@ set -e  # Exit on any error
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 BACKEND_DIR="$PROJECT_ROOT/leenvibe-backend"
-CACHE_DIR="$HOME/.cache/leenvibe"
-LOG_DIR="$HOME/.leenvibe/logs"
-CONFIG_FILE="$HOME/.leenvibe/config.yaml"
+CACHE_DIR="$HOME/.cache/leanvibe"
+LOG_DIR="$HOME/.leanvibe/logs"
+CONFIG_FILE="$HOME/.leanvibe/config.yaml"
 
 # Default configuration
 MODEL_NAME="Qwen/Qwen3-30B-A3B-MLX-4bit"
@@ -64,10 +64,10 @@ log_header() {
 # Help function
 show_help() {
     cat << EOF
-LeenVibe Production Deployment Script
+LeanVibe Production Deployment Script
 
 USAGE:
-    ./deploy-leenvibe.sh [OPTIONS]
+    ./deploy-leanvibe.sh [OPTIONS]
 
 OPTIONS:
     --model MODEL_NAME      Specify model (default: Qwen/Qwen3-30B-A3B-MLX-4bit)
@@ -79,10 +79,10 @@ OPTIONS:
     --help                 Show this help
 
 EXAMPLES:
-    ./deploy-leenvibe.sh                    # Deploy with defaults
-    ./deploy-leenvibe.sh --setup-only       # Setup only, no start
-    ./deploy-leenvibe.sh --model Qwen/Qwen3-7B-A3B-MLX-4bit  # Use smaller model
-    ./deploy-leenvibe.sh --mode direct      # Force direct MLX integration
+    ./deploy-leanvibe.sh                    # Deploy with defaults
+    ./deploy-leanvibe.sh --setup-only       # Setup only, no start
+    ./deploy-leanvibe.sh --model Qwen/Qwen3-7B-A3B-MLX-4bit  # Use smaller model
+    ./deploy-leanvibe.sh --mode direct      # Force direct MLX integration
 
 DEPLOYMENT MODES:
     auto     - Auto-detect best deployment mode
@@ -368,7 +368,7 @@ generate_qr_code() {
     LOCAL_IPS=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}')
     
     echo ""
-    echo "📱 iOS Connection QR Code will be displayed by LeenVibe server"
+    echo "📱 iOS Connection QR Code will be displayed by LeanVibe server"
     echo "🔗 Connection URLs:"
     
     for ip in $LOCAL_IPS; do
@@ -376,7 +376,7 @@ generate_qr_code() {
     done
     
     echo ""
-    echo "💡 Open LeenVibe iOS app and scan the QR code displayed by the server"
+    echo "💡 Open LeanVibe iOS app and scan the QR code displayed by the server"
 }
 
 # Create process management scripts
@@ -384,66 +384,66 @@ create_management_scripts() {
     log_header "Process Management Setup"
     
     # Create start script
-    cat > "$HOME/.leenvibe/start.sh" << 'EOF'
+    cat > "$HOME/.leanvibe/start.sh" << 'EOF'
 #!/bin/bash
-# Auto-generated LeenVibe start script
-source ~/.leenvibe/config.yaml 2>/dev/null || true
-exec "$PROJECT_ROOT/deploy-leenvibe.sh" "$@"
+# Auto-generated LeanVibe start script
+source ~/.leanvibe/config.yaml 2>/dev/null || true
+exec "$PROJECT_ROOT/deploy-leanvibe.sh" "$@"
 EOF
-    chmod +x "$HOME/.leenvibe/start.sh"
+    chmod +x "$HOME/.leanvibe/start.sh"
     
     # Create stop script
-    cat > "$HOME/.leenvibe/stop.sh" << EOF
+    cat > "$HOME/.leanvibe/stop.sh" << EOF
 #!/bin/bash
-# Auto-generated LeenVibe stop script
+# Auto-generated LeanVibe stop script
 
-echo "Stopping LeenVibe services..."
+echo "Stopping LeanVibe services..."
 
-# Stop LeenVibe service
-if [[ -f "$HOME/.leenvibe/leenvibe.pid" ]]; then
-    PID=\$(cat "$HOME/.leenvibe/leenvibe.pid")
+# Stop LeanVibe service
+if [[ -f "$HOME/.leanvibe/leanvibe.pid" ]]; then
+    PID=\$(cat "$HOME/.leanvibe/leanvibe.pid")
     if kill "\$PID" 2>/dev/null; then
-        echo "✅ LeenVibe service stopped"
+        echo "✅ LeanVibe service stopped"
     fi
-    rm -f "$HOME/.leenvibe/leenvibe.pid"
+    rm -f "$HOME/.leanvibe/leanvibe.pid"
 fi
 
 # Stop MLX-LM server
-if [[ -f "$HOME/.leenvibe/mlx-server.pid" ]]; then
-    PID=\$(cat "$HOME/.leenvibe/mlx-server.pid")
+if [[ -f "$HOME/.leanvibe/mlx-server.pid" ]]; then
+    PID=\$(cat "$HOME/.leanvibe/mlx-server.pid")
     if kill "\$PID" 2>/dev/null; then
         echo "✅ MLX-LM server stopped"
     fi
-    rm -f "$HOME/.leenvibe/mlx-server.pid"
+    rm -f "$HOME/.leanvibe/mlx-server.pid"
 fi
 
 echo "✅ All services stopped"
 EOF
-    chmod +x "$HOME/.leenvibe/stop.sh"
+    chmod +x "$HOME/.leanvibe/stop.sh"
     
     # Create status script
-    cat > "$HOME/.leenvibe/status.sh" << EOF
+    cat > "$HOME/.leanvibe/status.sh" << EOF
 #!/bin/bash
-# Auto-generated LeenVibe status script
+# Auto-generated LeanVibe status script
 
-echo "=== LeenVibe Service Status ==="
+echo "=== LeanVibe Service Status ==="
 
-# Check LeenVibe service
-if [[ -f "$HOME/.leenvibe/leenvibe.pid" ]]; then
-    PID=\$(cat "$HOME/.leenvibe/leenvibe.pid")
+# Check LeanVibe service
+if [[ -f "$HOME/.leanvibe/leanvibe.pid" ]]; then
+    PID=\$(cat "$HOME/.leanvibe/leanvibe.pid")
     if kill -0 "\$PID" 2>/dev/null; then
-        echo "✅ LeenVibe service: Running (PID: \$PID)"
+        echo "✅ LeanVibe service: Running (PID: \$PID)"
         curl -s "http://localhost:$LEENVIBE_PORT/health" || echo "❌ Health check failed"
     else
-        echo "❌ LeenVibe service: Not running"
+        echo "❌ LeanVibe service: Not running"
     fi
 else
-    echo "❌ LeenVibe service: Not started"
+    echo "❌ LeanVibe service: Not started"
 fi
 
 # Check MLX-LM server
-if [[ -f "$HOME/.leenvibe/mlx-server.pid" ]]; then
-    PID=\$(cat "$HOME/.leenvibe/mlx-server.pid")
+if [[ -f "$HOME/.leanvibe/mlx-server.pid" ]]; then
+    PID=\$(cat "$HOME/.leanvibe/mlx-server.pid")
     if kill -0 "\$PID" 2>/dev/null; then
         echo "✅ MLX-LM server: Running (PID: \$PID)"
         curl -s "http://localhost:$MLX_PORT/health" || echo "❌ Health check failed"
@@ -458,9 +458,9 @@ echo ""
 echo "Logs available at: $LOG_DIR"
 echo "Configuration: $CONFIG_FILE"
 EOF
-    chmod +x "$HOME/.leenvibe/status.sh"
+    chmod +x "$HOME/.leanvibe/status.sh"
     
-    log_success "Management scripts created in ~/.leenvibe/"
+    log_success "Management scripts created in ~/.leanvibe/"
 }
 
 # Show final status and instructions
@@ -468,10 +468,10 @@ show_completion_status() {
     log_header "Deployment Complete"
     
     echo ""
-    echo "🎉 LeenVibe has been deployed successfully!"
+    echo "🎉 LeanVibe has been deployed successfully!"
     echo ""
     echo "📊 Service Status:"
-    echo "   🖥️  LeenVibe Backend: http://localhost:$LEENVIBE_PORT"
+    echo "   🖥️  LeanVibe Backend: http://localhost:$LEENVIBE_PORT"
     
     if curl -s "http://localhost:$MLX_PORT/health" > /dev/null 2>&1; then
         echo "   🧠 MLX-LM Server: http://localhost:$MLX_PORT"
@@ -479,24 +479,24 @@ show_completion_status() {
     
     echo ""
     echo "📱 iOS App Connection:"
-    echo "   Open LeenVibe iOS app and scan the QR code displayed by the server"
+    echo "   Open LeanVibe iOS app and scan the QR code displayed by the server"
     echo ""
     echo "🔧 Management Commands:"
-    echo "   Status:  ~/.leenvibe/status.sh"
-    echo "   Stop:    ~/.leenvibe/stop.sh"
+    echo "   Status:  ~/.leanvibe/status.sh"
+    echo "   Stop:    ~/.leanvibe/stop.sh"
     echo "   Restart: $0"
     echo ""
     echo "📝 Logs & Config:"
     echo "   Logs:    $LOG_DIR"
     echo "   Config:  $CONFIG_FILE"
     echo ""
-    echo "🚀 LeenVibe is ready for use!"
+    echo "🚀 LeanVibe is ready for use!"
 }
 
 # Main deployment flow
 main() {
     echo ""
-    echo "🚀 LeenVibe Production Deployment"
+    echo "🚀 LeanVibe Production Deployment"
     echo "=================================="
     echo "Model: $MODEL_NAME"
     echo "Mode:  $DEPLOYMENT_MODE"
@@ -504,9 +504,9 @@ main() {
     echo ""
     
     # Stop any existing services
-    if [[ -f "$HOME/.leenvibe/stop.sh" ]]; then
+    if [[ -f "$HOME/.leanvibe/stop.sh" ]]; then
         log_info "Stopping existing services..."
-        "$HOME/.leenvibe/stop.sh" || true
+        "$HOME/.leanvibe/stop.sh" || true
     fi
     
     # Core setup
@@ -531,16 +531,16 @@ main() {
     show_completion_status
     
     echo ""
-    echo "Press Ctrl+C to stop services, or run ~/.leenvibe/stop.sh"
+    echo "Press Ctrl+C to stop services, or run ~/.leanvibe/stop.sh"
     
     # Keep script running to monitor services
-    trap 'echo ""; log_info "Stopping services..."; ~/.leenvibe/stop.sh; exit 0' INT
+    trap 'echo ""; log_info "Stopping services..."; ~/.leanvibe/stop.sh; exit 0' INT
     
     while true; do
         sleep 10
         # Basic health monitoring
         if ! curl -s "http://localhost:$LEENVIBE_PORT/health" > /dev/null 2>&1; then
-            log_error "LeenVibe service health check failed"
+            log_error "LeanVibe service health check failed"
             break
         fi
     done

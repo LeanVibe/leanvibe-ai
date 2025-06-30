@@ -28,7 +28,7 @@ struct LaunchScreenView: View {
                     .opacity(opacity)
                 
                 // App Name
-                Text("LeenVibe")
+                Text("LeanVibe")
                     .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .opacity(opacity)

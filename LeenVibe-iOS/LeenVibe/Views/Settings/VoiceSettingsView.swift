@@ -47,7 +47,7 @@ struct VoiceSettingsView: View {
     
     private var wakePhraseSection: some View {
         Section("Wake Phrase") {
-            Toggle("Enable 'Hey LeenVibe'", isOn: $settingsManager.voiceSettings.wakePhraseEnabled)
+            Toggle("Enable 'Hey LeanVibe'", isOn: $settingsManager.voiceSettings.wakePhraseEnabled)
                 .onChange(of: settingsManager.voiceSettings.wakePhraseEnabled) { _, enabled in
                     handleWakePhraseToggle(enabled)
                 }
@@ -319,7 +319,7 @@ struct VoiceTestView: View {
         var instructions: String {
             switch self {
             case .wakePhrase:
-                return "Say 'Hey LeenVibe' to test wake phrase detection"
+                return "Say 'Hey LeanVibe' to test wake phrase detection"
             case .speechRecognition:
                 return "Speak clearly to test speech recognition accuracy"
             case .noiseTest:
@@ -361,7 +361,7 @@ struct VoiceTestView: View {
                     .buttonStyle(.plain)
                     
                     if isListening {
-                        LeenVibeVoiceWaveformView()
+                        LeanVibeVoiceWaveformView()
                             .frame(height: 60)
                     }
                 }
@@ -447,7 +447,7 @@ struct VoiceTestView: View {
     }
     
     private func simulateVoiceRecognition() {
-        let testPhrases = ["Hey LeenVibe", "Create task", "Show dashboard", "Test recognition"]
+        let testPhrases = ["Hey LeanVibe", "Create task", "Show dashboard", "Test recognition"]
         let randomPhrase = testPhrases.randomElement() ?? "Test phrase"
         let confidence = Double.random(in: 60...95)
         
@@ -473,7 +473,7 @@ struct VoiceTestResult: Identifiable {
     let testType: VoiceTestView.VoiceTestType
 }
 
-struct LeenVibeVoiceWaveformView: View {
+struct LeanVibeVoiceWaveformView: View {
     @State private var animationOffset: CGFloat = 0
     
     var body: some View {

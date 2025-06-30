@@ -2,7 +2,7 @@ import SwiftUI
 
 struct TaskEditView: View {
     @Environment(\.dismiss) private var dismiss
-    @Binding var task: LeenVibeTask
+    @Binding var task: LeanVibeTask
     @ObservedObject var taskService: TaskService
     
     @State private var title: String
@@ -13,7 +13,7 @@ struct TaskEditView: View {
     @State private var newTag = ""
     @State private var isUpdating = false
     
-    init(task: Binding<LeenVibeTask>, taskService: TaskService) {
+    init(task: Binding<LeanVibeTask>, taskService: TaskService) {
         self._task = task
         self.taskService = taskService
         
@@ -162,7 +162,7 @@ struct TaskEditView: View {
 struct TaskEditView_Previews: PreviewProvider {
     static var previews: some View {
         TaskEditView(
-            task: .constant(LeenVibeTask(
+            task: .constant(LeanVibeTask(
                 id: UUID(),
                 title: "Sample Task",
                 description: "This is a sample task for preview",

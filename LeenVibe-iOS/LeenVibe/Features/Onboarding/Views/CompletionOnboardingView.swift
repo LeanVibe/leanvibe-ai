@@ -11,7 +11,7 @@ struct CompletionOnboardingView: View {
                 .fontWeight(.bold)
                 .padding()
             
-            Text("You've successfully completed the LeenVibe onboarding. Start exploring your projects and unleash your productivity!")
+            Text("You've successfully completed the LeanVibe onboarding. Start exploring your projects and unleash your productivity!")
                 .font(.title2)
                 .padding()
             

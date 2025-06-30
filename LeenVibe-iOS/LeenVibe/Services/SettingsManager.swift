@@ -1,7 +1,7 @@
 import SwiftUI
 import Combine
 
-/// Centralized settings management for all LeenVibe features
+/// Centralized settings management for all LeanVibe features
 /// Coordinates settings for Voice, Kanban, Architecture, and other systems
 @available(iOS 14.0, macOS 10.15, *)
 @MainActor
@@ -21,7 +21,7 @@ class SettingsManager: ObservableObject {
     @Published var isVoiceEnabled: Bool = true
     @Published var voiceSensitivity: Double = 0.5
     @Published var wakePhraseEnabled: Bool = true
-    @Published var selectedWakePhrase: String = "Hey LeenVibe"
+    @Published var selectedWakePhrase: String = "Hey LeanVibe"
     @Published var voiceLanguage: String = "en-US"
     @Published var continuousListening: Bool = false
     @Published var backgroundListening: Bool = false
@@ -228,14 +228,14 @@ class SettingsManager: ObservableObject {
         
         do {
             let data = try encoder.encode(settingsData)
-            UserDefaults.standard.set(data, forKey: "LeenVibeSettings")
+            UserDefaults.standard.set(data, forKey: "LeanVibeSettings")
         } catch {
             print("Failed to save settings: \(error)")
         }
     }
     
     private func loadSettings() {
-        guard let data = UserDefaults.standard.data(forKey: "LeenVibeSettings"),
+        guard let data = UserDefaults.standard.data(forKey: "LeanVibeSettings"),
               let settingsData = try? JSONDecoder().decode(SettingsData.self, from: data) else {
             return
         }
@@ -334,7 +334,7 @@ struct VoiceSettings: SettingsProtocol {
     
     // Wake phrase configuration
     var wakePhraseEnabled = true
-    var wakePhrasePhrase = "Hey LeenVibe"
+    var wakePhrasePhrase = "Hey LeanVibe"
     var wakePhraseSensitivity: Double = 0.7
     var wakePhraseTimeout: TimeInterval = 5.0
     

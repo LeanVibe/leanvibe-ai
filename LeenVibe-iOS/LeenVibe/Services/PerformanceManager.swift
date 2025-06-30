@@ -392,7 +392,7 @@ class PerformanceManager: ObservableObject {
         formatter.timeStyle = .medium
         
         return """
-        LeenVibe Performance Report
+        LeanVibe Performance Report
         Generated: \(formatter.string(from: Date()))
         
         Current Metrics:

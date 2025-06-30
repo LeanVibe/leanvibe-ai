@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# LeenVibe iOS Build and Install Script
+# LeanVibe iOS Build and Install Script
 # This script builds the app and installs it on connected iOS devices
 
 set -e  # Exit on any error
 
-echo "🚀 Starting LeenVibe iOS Build and Install Process..."
+echo "🚀 Starting LeanVibe iOS Build and Install Process..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -104,7 +104,7 @@ if [ $? -eq 0 ]; then
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo -e "${YELLOW}🚀 Launching ${PROJECT_NAME}...${NC}"
         # Get bundle identifier from Info.plist
-        BUNDLE_ID=$(defaults read "${APP_PATH}/Info.plist" CFBundleIdentifier 2>/dev/null || echo "com.bogdan.leenvibe.LeenVibe")
+        BUNDLE_ID=$(defaults read "${APP_PATH}/Info.plist" CFBundleIdentifier 2>/dev/null || echo "com.bogdan.leanvibe.LeanVibe")
         xcrun devicectl device process launch --device "${DEVICE_ID}" "${BUNDLE_ID}"
         echo -e "${GREEN}✅ App launched!${NC}"
     fi

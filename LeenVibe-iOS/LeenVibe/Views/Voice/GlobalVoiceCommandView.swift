@@ -17,7 +17,7 @@ struct GlobalVoiceCommandView: View {
             VStack(spacing: 24) {
                 // Voice status header
                 VStack(spacing: 8) {
-                    Text("Hey LeenVibe")
+                    Text("Hey LeanVibe")
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)

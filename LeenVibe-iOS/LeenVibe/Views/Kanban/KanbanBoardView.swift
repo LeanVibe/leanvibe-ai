@@ -4,13 +4,13 @@ import SwiftUI
 struct KanbanBoardView: View {
     @ObservedObject var taskService: TaskService
     @State private var showingCreateTask = false
-    @State private var selectedTask: LeenVibeTask?
-    @State private var editingTask: LeenVibeTask?
+    @State private var selectedTask: LeanVibeTask?
+    @State private var editingTask: LeanVibeTask?
     @State private var searchText = ""
     @State private var showingStatistics = false
     @State private var showingSettings = false
     @State private var sortOption: TaskSortOption = .priority
-    @State private var draggedTask: LeenVibeTask?
+    @State private var draggedTask: LeanVibeTask?
 
     var body: some View {
         NavigationView {
@@ -79,7 +79,7 @@ struct KanbanBoardView: View {
         }
     }
     
-    private func filteredTasks(for status: TaskStatus) -> [LeenVibeTask] {
+    private func filteredTasks(for status: TaskStatus) -> [LeanVibeTask] {
         let statusTasks = taskService.tasks.filter { $0.status == status }
         let filtered = searchText.isEmpty ? statusTasks : statusTasks.filter {
             $0.title.localizedCaseInsensitiveContains(searchText) ||
@@ -94,9 +94,9 @@ struct KanbanBoardView: View {
 
 struct KanbanColumnView: View {
     let status: TaskStatus
-    let tasks: [LeenVibeTask]
+    let tasks: [LeanVibeTask]
     let taskService: TaskService
-    @Binding var selectedTask: LeenVibeTask?
+    @Binding var selectedTask: LeanVibeTask?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -162,7 +162,7 @@ struct KanbanColumnView: View {
 }
 
 struct TaskCardView: View {
-    let task: LeenVibeTask
+    let task: LeanVibeTask
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {

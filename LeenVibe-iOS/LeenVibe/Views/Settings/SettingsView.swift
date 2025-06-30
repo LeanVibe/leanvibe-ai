@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Main Settings view providing comprehensive configuration for all LeenVibe features
+/// Main Settings view providing comprehensive configuration for all LeanVibe features
 /// Built by KAPPA to configure Voice, Kanban, Architecture, and other systems
 @available(iOS 14.0, macOS 12.0, *)
 struct SettingsView: View {
@@ -59,7 +59,7 @@ struct SettingsView: View {
                     icon: "mic.fill",
                     iconColor: .blue,
                     title: "Voice Commands",
-                    subtitle: settingsManager.voiceSettings.autoStopListening ? "Hey LeenVibe enabled" : "Disabled"
+                    subtitle: settingsManager.voiceSettings.autoStopListening ? "Hey LeanVibe enabled" : "Disabled"
                 )
             }
             
@@ -269,7 +269,7 @@ struct SettingsView: View {
                 SettingsRow(
                     icon: "info.circle.fill",
                     iconColor: .blue,
-                    title: "About LeenVibe",
+                    title: "About LeanVibe",
                     subtitle: "Version \(Bundle.main.appVersion)"
                 )
             }
@@ -345,7 +345,7 @@ struct SettingsRow: View {
 
 struct AboutView: View {
     var body: some View {
-        Text("About LeenVibe")
+        Text("About LeanVibe")
     }
 }
 

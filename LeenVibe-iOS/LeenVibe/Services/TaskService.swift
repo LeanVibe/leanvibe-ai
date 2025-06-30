@@ -7,7 +7,7 @@ import SwiftUI
 @available(macOS 10.15, iOS 13.0, *)
 @MainActor
 class TaskService: ObservableObject {
-    @Published var tasks: [LeenVibeTask] = []
+    @Published var tasks: [LeanVibeTask] = []
     @Published var taskMetrics: TaskMetrics?
     @Published var kanbanStatistics: KanbanStatistics?
     @Published var performanceMetrics: PerformanceMetrics?

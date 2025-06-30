@@ -117,9 +117,9 @@ class AppCoordinator: ObservableObject {
     }
     
     private func parseQRCode(_ code: String) -> (host: String, port: Int, apiKey: String)? {
-        // Parse QR code format: leenvibe://connect?host=localhost&port=8000&key=abc123
+        // Parse QR code format: leanvibe://connect?host=localhost&port=8000&key=abc123
         guard let url = URL(string: code),
-              url.scheme == "leenvibe",
+              url.scheme == "leanvibe",
               url.host == "connect" else {
             return nil
         }

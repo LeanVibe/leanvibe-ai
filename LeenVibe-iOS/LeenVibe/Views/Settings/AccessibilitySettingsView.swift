@@ -380,11 +380,11 @@ struct AccessibilityGuideView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     // Introduction
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Accessibility in LeenVibe")
+                        Text("Accessibility in LeanVibe")
                             .font(.title2)
                             .fontWeight(.bold)
                         
-                        Text("LeenVibe is designed to be accessible to everyone. Here's how to use our accessibility features:")
+                        Text("LeanVibe is designed to be accessible to everyone. Here's how to use our accessibility features:")
                             .foregroundColor(.secondary)
                     }
                     
@@ -435,7 +435,7 @@ struct AccessibilityGuideView: View {
                                 .fontWeight(.medium)
                             
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("• \"Hey LeenVibe, show settings\"")
+                                Text("• \"Hey LeanVibe, show settings\"")
                                 Text("• \"Navigate to dashboard\"")
                                 Text("• \"Create new task\"")
                                 Text("• \"Read current screen\"")

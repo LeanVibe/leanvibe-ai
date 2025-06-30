@@ -11,7 +11,7 @@ struct KanbanIntroductionOnboardingView: View {
                 .fontWeight(.bold)
                 .padding()
             
-            Text("LeenVibe's integrated Kanban board helps you visualize and manage your development tasks with ease. Drag and drop to update status.")
+            Text("LeanVibe's integrated Kanban board helps you visualize and manage your development tasks with ease. Drag and drop to update status.")
                 .font(.title2)
                 .padding()
             

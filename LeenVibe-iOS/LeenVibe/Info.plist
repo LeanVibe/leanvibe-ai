@@ -22,7 +22,7 @@
 	<string>1</string>
 	<key>NSBonjourServices</key>
 	<array>
-		<string>_leenvibe._tcp</string>
+		<string>_leanvibe._tcp</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>LeenVibe needs camera access to scan QR codes for backend connection</string>
