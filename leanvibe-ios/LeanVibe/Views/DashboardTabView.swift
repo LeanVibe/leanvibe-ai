@@ -111,8 +111,7 @@ struct DashboardTabView: View {
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     VoiceTabView(
                         webSocketService: webSocketService,
-                        projectManager: projectManager,
-                        settingsManager: settingsManager
+                        projectManager: projectManager
                     )
                 }
                 .tabItem {
