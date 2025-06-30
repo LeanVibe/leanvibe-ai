@@ -197,8 +197,12 @@ class ProductionModelService:
                 if response.status_code == 200:
                     logger.info("Detected running MLX-LM server")
                     return "server"
-        except:
-            pass
+        except (httpx.ConnectError, httpx.TimeoutException) as e:
+            logger.debug(f"MLX server at {self.config.server_url} not reachable: {e}")
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"MLX server returned error status {e.response.status_code}")
+        except Exception as e:
+            logger.error(f"Unexpected error checking MLX server: {e}")
 
         # Check if MLX-LM is available for direct integration
         if MLX_LM_AVAILABLE:
@@ -309,8 +313,10 @@ class ProductionModelService:
             current_memory_mb = 0.0
             try:
                 current_memory_mb = mx.get_active_memory() / 1024 / 1024
-            except:
-                pass
+            except AttributeError as e:
+                logger.debug(f"MLX memory API not available: {e}")
+            except Exception as e:
+                logger.warning(f"Failed to get MLX memory usage: {e}")
 
             # Create token usage metrics
             token_usage = TokenUsage(

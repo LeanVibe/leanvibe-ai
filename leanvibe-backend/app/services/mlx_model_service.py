@@ -247,8 +247,10 @@ class MLXModelService:
                         self.health_status["memory_usage_mb"] = (
                             mx.get_active_memory() / 1024 / 1024
                         )
-                    except:
-                        pass
+                    except AttributeError as e:
+                        logger.debug(f"MLX memory API not available: {e}")
+                    except Exception as e:
+                        logger.warning(f"Failed to get MLX memory usage: {e}")
 
                 logger.info(
                     f"Production model generation completed in {generation_time:.2f}s"
@@ -270,8 +272,10 @@ class MLXModelService:
                         self.health_status["memory_usage_mb"] = (
                             mx.get_active_memory() / 1024 / 1024
                         )
-                    except:
-                        pass
+                    except AttributeError as e:
+                        logger.debug(f"MLX memory API not available: {e}")
+                    except Exception as e:
+                        logger.warning(f"Failed to get MLX memory usage: {e}")
 
                 logger.info(
                     f"Phi-3-Mini generation completed in {generation_time:.2f}s"
@@ -293,8 +297,10 @@ class MLXModelService:
                         self.health_status["memory_usage_mb"] = (
                             mx.get_active_memory() / 1024 / 1024
                         )
-                    except:
-                        pass
+                    except AttributeError as e:
+                        logger.debug(f"MLX memory API not available: {e}")
+                    except Exception as e:
+                        logger.warning(f"Failed to get MLX memory usage: {e}")
 
                 logger.info(
                     f"Simple model generation completed in {generation_time:.2f}s"
@@ -385,8 +391,10 @@ Try using specific commands like /help, /status, or ask about code-related topic
             if self.mlx_available and mx:
                 current_memory = mx.get_active_memory()
                 status["memory_usage_mb"] = current_memory / 1024 / 1024
-        except:
-            pass
+        except AttributeError as e:
+            logger.debug(f"MLX memory API not available: {e}")
+        except Exception as e:
+            logger.warning(f"Failed to get MLX memory status: {e}")
 
         status["is_initialized"] = self.is_initialized
         status["model_name"] = self.model_name

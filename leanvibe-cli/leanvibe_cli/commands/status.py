@@ -357,7 +357,11 @@ def display_llm_metrics(llm_metrics: Dict[str, Any]):
             else:
                 time_str = f"{time_ago.total_seconds()/3600:.1f}h ago"
             perf_table.add_row("Last Request", time_str, "Most recent generation")
-        except:
+        except (ValueError, TypeError) as e:
+            logger.debug(f"Error parsing time data: {e}")
+            perf_table.add_row("Last Request", "Recently", "Most recent generation")
+        except Exception as e:
+            logger.warning(f"Unexpected error formatting time: {e}")
             perf_table.add_row("Last Request", "Recently", "Most recent generation")
     
     console.print(perf_table)

@@ -330,8 +330,15 @@ class ASTContextProvider:
                 "supported_languages": [],
                 "key_components": [],
             }
-        except:
-            return {}
+        except FileNotFoundError as e:
+            logger.error(f"File not found for project context: {file_path}")
+            return {"error": "file_not_found", "file_path": file_path}
+        except PermissionError as e:
+            logger.error(f"Permission denied accessing {file_path}: {e}")
+            return {"error": "permission_denied", "file_path": file_path}
+        except Exception as e:
+            logger.error(f"Unexpected error getting project context for {file_path}: {e}")
+            return {"error": "analysis_failed", "file_path": file_path}
 
     async def _get_symbol_at_position(
         self, file_path: str, cursor_position: int
@@ -341,7 +348,11 @@ class ASTContextProvider:
             # This would analyze the file to find symbol at cursor
             # For now, return None - implement with real cursor analysis
             return None
-        except:
+        except FileNotFoundError as e:
+            logger.error(f"File not found for symbol analysis: {file_path}")
+            return None
+        except Exception as e:
+            logger.error(f"Error analyzing symbol at position {cursor_position} in {file_path}: {e}")
             return None
 
     async def _get_related_context(
@@ -380,8 +391,18 @@ class ASTContextProvider:
                 "surrounding_lines": lines[start_line:end_line],
                 "context_size": end_line - start_line,
             }
-        except:
-            return {"error": "Could not read surrounding context"}
+        except FileNotFoundError as e:
+            logger.error(f"File not found for surrounding context: {file_path}")
+            return {"error": "file_not_found", "file_path": file_path}
+        except PermissionError as e:
+            logger.error(f"Permission denied reading {file_path}: {e}")
+            return {"error": "permission_denied", "file_path": file_path}
+        except UnicodeDecodeError as e:
+            logger.error(f"Encoding error reading {file_path}: {e}")
+            return {"error": "encoding_error", "file_path": file_path}
+        except Exception as e:
+            logger.error(f"Error reading surrounding context from {file_path}: {e}")
+            return {"error": "read_failed", "file_path": file_path}
 
     async def _get_architecture_context(self, file_path: str) -> Dict[str, Any]:
         """Get architecture insights for the file"""

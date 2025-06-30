@@ -727,8 +727,8 @@ async def handle_cli_query(query: str) -> str:
         # Cleanup
         try:
             await session_manager.stop()
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Error during session manager cleanup: {e}")
 
 
 if __name__ == "__main__":
