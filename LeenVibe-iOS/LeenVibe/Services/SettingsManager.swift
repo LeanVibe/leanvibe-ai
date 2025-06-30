@@ -374,6 +374,22 @@ struct VoiceSettings: SettingsProtocol {
 
 // MARK: - Kanban Settings
 
+enum ConflictResolution: String, CaseIterable, Codable {
+    case clientWins = "client_wins"
+    case serverWins = "server_wins"
+    case manual = "manual"
+    case timestamp = "timestamp"
+    
+    var displayName: String {
+        switch self {
+        case .clientWins: return "Client Wins"
+        case .serverWins: return "Server Wins"
+        case .manual: return "Manual Resolution"
+        case .timestamp: return "Latest Timestamp"
+        }
+    }
+}
+
 struct KanbanSettings: SettingsProtocol {
     static let storageKey = "KanbanSettings"
     
@@ -383,12 +399,30 @@ struct KanbanSettings: SettingsProtocol {
     var showStatistics = true
     var compactMode = false
     var enableAnimations = true
+    var showColumnTaskCounts = true
+    var maxTasksPerColumn = 20
+    var enableColumnCustomization = true
+    var enableInfiniteScroll = false
+    var columnOrder: [String] = ["todo", "inProgress", "review", "done"]
     
     // Task display
     var showAssignee = true
     var showDueDate = true
     var showPriority = true
     var taskCardSize: TaskCardSize = .medium
+    var showTaskIds = false
+    var defaultTaskPriority: TaskPriority = .medium
+    var prefetchTaskDetails = true
+    
+    // Voice features
+    var enableVoiceTaskCreation = false
+    var autoAssignTasks = false
+    var enableTaskNotifications = true
+    
+    // Sync settings
+    var syncWithBackend = false
+    var offlineModeEnabled = true
+    var conflictResolution: ConflictResolution = .timestamp
     
     static func load() -> KanbanSettings {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
@@ -492,18 +526,23 @@ struct AccessibilitySettings: SettingsProtocol {
     var dynamicTypeEnabled = true
     var largerTextEnabled = false
     var highContrastEnabled = false
+    var boldText = false
     
     // Motion and animation
     var reduceMotion = false
     
     // VoiceOver
     var voiceOverEnabled = false
+    var voiceOverOptimizations = false
     
     // High contrast mode
     var highContrastMode: Bool = false
     
     // Large font size
     var largeFontSize: Bool = false
+    
+    // Touch targets
+    var extendedTouchTargets = false
     
     // Dynamic type support
     var dynamicTypeSupport: Bool = true
