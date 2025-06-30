@@ -11,13 +11,15 @@ import logging
 import os
 import time
 import uuid
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import httpx
 import mlx.core as mx
+
+# Import unified configuration
+from ..config import UnifiedConfig, ModelConfig, DeploymentMode as ConfigDeploymentMode, get_config
 
 # Import LLM metrics models
 from ..models.llm_metrics_models import (
@@ -43,36 +45,20 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ModelConfig:
-    """Configuration for model deployment"""
-
-    model_name: str = "Qwen/Qwen3-30B-A3B-MLX-4bit"
-    deployment_mode: str = "auto"  # auto, direct, server, mock
-    server_url: str = "http://127.0.0.1:8082"
-    max_tokens: int = 512
-    temperature: float = 0.7
-    cache_dir: str = "~/.cache/leanvibe"
-
-    @classmethod
-    def from_env(cls) -> "ModelConfig":
-        """Create config from environment variables"""
-
-        return cls(
-            model_name=os.getenv("LEANVIBE_MODEL_NAME", cls.model_name),
-            deployment_mode=os.getenv("LEANVIBE_DEPLOYMENT_MODE", cls.deployment_mode),
-            server_url=os.getenv("LEANVIBE_MLX_SERVER_URL", cls.server_url),
-            max_tokens=int(os.getenv("LEANVIBE_MAX_TOKENS", str(cls.max_tokens))),
-            temperature=float(os.getenv("LEANVIBE_TEMPERATURE", str(cls.temperature))),
-            cache_dir=os.getenv("LEANVIBE_CACHE_DIR", cls.cache_dir),
-        )
+# ModelConfig now imported from unified configuration system
 
 
 class ProductionModelService:
     """Production-ready model service with multiple deployment modes"""
 
     def __init__(self, config: Optional[ModelConfig] = None):
-        self.config = config or ModelConfig()
+        if config is None:
+            # Use unified configuration system
+            unified_config = get_config()
+            self.config = unified_config.model
+        else:
+            self.config = config
+            
         self.model = None
         self.tokenizer = None
         self.is_initialized = False
@@ -80,8 +66,9 @@ class ProductionModelService:
         self.http_client = None
         self.start_time = datetime.now()
 
-        # Expand cache directory
-        self.cache_dir = Path(self.config.cache_dir).expanduser()
+        # Get cache directory from unified config
+        unified_config = get_config()
+        self.cache_dir = unified_config.directories.cache_dir
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Initialize LLM metrics
