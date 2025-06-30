@@ -35,7 +35,7 @@ from ..services.graph_query_service import graph_query_service
 from ..services.graph_service import graph_service
 from ..services.incremental_indexer import incremental_indexer
 from ..services.project_indexer import project_indexer
-from ..services.real_mlx_service import real_mlx_service
+from ..services.unified_mlx_service import unified_mlx_service
 from ..services.visualization_service import visualization_service
 from .ast_context_provider import ASTContextProvider
 from .l3_coding_agent import AgentDependencies, L3CodingAgent
@@ -1545,8 +1545,8 @@ Use it to understand:
                     "metrics_tracking",
                 ],
                 "indexer_metrics": incremental_indexer.get_metrics(),
-                "mlx_available": real_mlx_service.is_initialized,
-                "model_health": real_mlx_service.get_model_health(),
+                "mlx_available": unified_mlx_service.is_initialized,
+                "model_health": unified_mlx_service.get_model_health(),
             }
         )
 
@@ -2847,7 +2847,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
 
             # Generate MLX response
-            response = await real_mlx_service.generate_code_completion(
+            response = await unified_mlx_service.generate_code_completion(
                 context, "suggest"
             )
 
@@ -2906,7 +2906,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
 
             # Generate MLX response
-            response = await real_mlx_service.generate_code_completion(
+            response = await unified_mlx_service.generate_code_completion(
                 context, "explain"
             )
 
@@ -2963,7 +2963,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
 
             # Generate MLX response
-            response = await real_mlx_service.generate_code_completion(
+            response = await unified_mlx_service.generate_code_completion(
                 context, "refactor"
             )
 
@@ -3023,7 +3023,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
 
             # Generate MLX response
-            response = await real_mlx_service.generate_code_completion(context, "debug")
+            response = await unified_mlx_service.generate_code_completion(context, "debug")
 
             if response["status"] != "success":
                 return f"Error generating debug analysis: {response.get('error', 'Unknown error')}"
@@ -3079,7 +3079,7 @@ Generated {suggestion_count} contextual suggestions based on:
             )
 
             # Generate MLX response
-            response = await real_mlx_service.generate_code_completion(
+            response = await unified_mlx_service.generate_code_completion(
                 context, "optimize"
             )
 

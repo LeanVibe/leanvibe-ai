@@ -125,16 +125,16 @@ class AIService:
             # Create prompt for coding assistant
             prompt = self._create_coding_prompt(message)
 
-            # Generate response using real_mlx_service
-            from .real_mlx_service import real_mlx_service
+            # Generate response using unified_mlx_service
+            from .unified_mlx_service import unified_mlx_service
 
-            if real_mlx_service.is_initialized:
-                response_obj = await real_mlx_service.generate_code_completion(
+            if unified_mlx_service.is_initialized:
+                response_obj = await unified_mlx_service.generate_code_completion(
                     context={"prompt": prompt}, intent="suggest"
                 )
                 if response_obj and response_obj.get("status") == "success":
                     response = response_obj.get("response", "")
-                    model_info = real_mlx_service.model_name
+                    model_info = "Unified MLX Service"
                 else:
                     response = await self._generate_mock_response(message)
                     model_info = "CodeLlama-7B (Mock)"
@@ -297,7 +297,7 @@ Please provide a helpful response focused on practical software development guid
 
     async def _get_status(self, args: str, client_id: str) -> Dict[str, Any]:
         """Get agent status with health information"""
-        model_name = "N/A (MLX handled by real_mlx_service)"
+        model_name = "N/A (MLX handled by unified_mlx_service)"
 
         # Calculate confidence score for status command
         confidence = self._calculate_confidence_score(
@@ -310,12 +310,12 @@ Please provide a helpful response focused on practical software development guid
             "version": "0.2.0",
             "supported_commands": list(self.supported_commands.keys()),
             "session_active": client_id in self.session_data,
-            "mlx_available": False,  # MLX availability now checked via real_mlx_service
+            "mlx_available": False,  # MLX availability now checked via unified_mlx_service
             "health": {
                 "status": "N/A",
                 "last_check": None,
                 "memory_usage": 0,
-            },  # MLX health now via real_mlx_service
+            },  # MLX health now via unified_mlx_service
             "confidence_scoring": True,
         }
 
@@ -323,7 +323,7 @@ Please provide a helpful response focused on practical software development guid
             "status": "success",
             "type": "agent_status",
             "data": status_data,
-            "message": "Agent is ready and operational (MLX status via real_mlx_service)",
+            "message": "Agent is ready and operational (MLX status via unified_mlx_service)",
             "confidence": confidence,
         }
 
@@ -364,11 +364,11 @@ Please provide a helpful response focused on practical software development guid
             # Create analysis prompt
             analysis_prompt = self._create_analysis_prompt(str(file_path), content)
 
-            # Generate analysis using real_mlx_service or fallback
-            from .real_mlx_service import real_mlx_service
+            # Generate analysis using unified_mlx_service or fallback
+            from .unified_mlx_service import unified_mlx_service
 
-            if real_mlx_service.is_initialized:
-                response_obj = await real_mlx_service.generate_code_completion(
+            if unified_mlx_service.is_initialized:
+                response_obj = await unified_mlx_service.generate_code_completion(
                     context={
                         "prompt": analysis_prompt,
                         "file_path": str(file_path),
@@ -378,7 +378,7 @@ Please provide a helpful response focused on practical software development guid
                 )
                 if response_obj and response_obj.get("status") == "success":
                     analysis = response_obj.get("response", "")
-                    model_info = real_mlx_service.model_name
+                    model_info = "Unified MLX Service"
                 else:
                     analysis = await self._generate_mock_analysis(
                         str(file_path), content

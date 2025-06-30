@@ -9,7 +9,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, AsyncIterator
 
-from .real_mlx_service import real_mlx_service
+from .unified_mlx_service import unified_mlx_service
 from ..agent.ast_context_provider import ASTContextProvider
 
 logger = logging.getLogger(__name__)
@@ -31,8 +31,8 @@ class MLXAIService:
         """Initialize the MLX AI service"""
         try:
             # Initialize MLX service if needed
-            if not real_mlx_service.is_initialized:
-                await real_mlx_service.initialize()
+            if not unified_mlx_service.is_initialized:
+                await unified_mlx_service.initialize()
             
             # Initialize AST context provider
             if project_context:
@@ -65,8 +65,8 @@ class MLXAIService:
         return {
             "service": "mlx_ai",
             "initialized": self._initialized,
-            "mlx_available": real_mlx_service.is_initialized,
-            "model_health": real_mlx_service.get_model_health() if hasattr(real_mlx_service, 'get_model_health') else "unknown",
+            "mlx_available": unified_mlx_service.is_initialized,
+            "model_health": unified_mlx_service.get_model_health(),
             "ast_context_ready": self.ast_context_provider is not None
         }
     
@@ -106,7 +106,7 @@ class MLXAIService:
                 context["hint"] = context_hint
 
             # Generate MLX response
-            response = await real_mlx_service.generate_code_completion(
+            response = await unified_mlx_service.generate_code_completion(
                 context, "suggest"
             )
 
@@ -182,7 +182,7 @@ class MLXAIService:
                 }
 
             # Generate MLX response
-            response = await real_mlx_service.generate_code_completion(
+            response = await unified_mlx_service.generate_code_completion(
                 context, "explain"
             )
 
@@ -256,7 +256,7 @@ class MLXAIService:
                 context["refactor_goal"] = refactor_goal
 
             # Generate MLX response
-            response = await real_mlx_service.generate_code_completion(
+            response = await unified_mlx_service.generate_code_completion(
                 context, "refactor"
             )
 
@@ -334,7 +334,7 @@ class MLXAIService:
                 context["error_context"] = error_context
 
             # Generate MLX response
-            response = await real_mlx_service.generate_code_completion(context, "debug")
+            response = await unified_mlx_service.generate_code_completion(context, "debug")
 
             if response["status"] != "success":
                 return {
@@ -408,7 +408,7 @@ class MLXAIService:
                 context["optimization_target"] = optimization_target
 
             # Generate MLX response
-            response = await real_mlx_service.generate_code_completion(
+            response = await unified_mlx_service.generate_code_completion(
                 context, "optimize"
             )
 
