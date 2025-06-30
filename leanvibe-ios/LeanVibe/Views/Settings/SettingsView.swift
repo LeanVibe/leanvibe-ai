@@ -68,7 +68,7 @@ struct SettingsView: View {
                     icon: "waveform",
                     iconColor: .green,
                     title: "Wake Phrase Configuration",
-                    subtitle: "\"\(settingsManager.voice.wakePhrasePhrase)\""
+                    subtitle: "\"\(settingsManager.voice.wakeWord)\""
                 )
             }
             

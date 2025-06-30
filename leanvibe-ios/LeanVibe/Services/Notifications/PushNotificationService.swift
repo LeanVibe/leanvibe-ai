@@ -55,6 +55,7 @@ class PushNotificationService: NSObject, ObservableObject {
                 id: notification.id,
                 title: notification.title,
                 body: notification.body,
+                category: notification.category,
                 scheduledDate: Date()
             )
             pendingNotifications.append(pendingNotification)
@@ -93,6 +94,7 @@ class PushNotificationService: NSObject, ObservableObject {
                 id: notification.request.identifier,
                 title: notification.request.content.title,
                 body: notification.request.content.body,
+                category: notification.request.content.categoryIdentifier,
                 deliveredDate: notification.date
             )
         }
@@ -105,6 +107,7 @@ class PushNotificationService: NSObject, ObservableObject {
                 id: request.identifier,
                 title: request.content.title,
                 body: request.content.body,
+                category: request.content.categoryIdentifier,
                 scheduledDate: Date() // This would ideally be the trigger date
             )
         }
@@ -151,17 +154,19 @@ class PushNotificationService: NSObject, ObservableObject {
 }
 
 // MARK: - Models
-struct DeliveredNotification {
+struct DeliveredNotification: Identifiable {
     let id: String
     let title: String
     let body: String
+    let category: String
     let deliveredDate: Date
 }
 
-struct PendingNotification {
+struct PendingNotification: Identifiable {
     let id: String
     let title: String
     let body: String
+    let category: String
     let scheduledDate: Date
 }
 
