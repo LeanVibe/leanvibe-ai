@@ -219,8 +219,9 @@ class ProductionModelService:
             logger.info("Loading model directly with MLX-LM...")
 
             # Load model in thread to avoid blocking
+            # Note: model_cache_path parameter removed - MLX-LM handles caching automatically
             self.model, self.tokenizer = await asyncio.to_thread(
-                load, self.config.model_name, model_cache_path=str(self.cache_dir)
+                load, self.config.model_name
             )
 
             self.health_status["status"] = "ready_direct"

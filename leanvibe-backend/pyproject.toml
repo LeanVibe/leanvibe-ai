@@ -146,6 +146,9 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
     "asyncio: marks tests as asyncio tests",
+    "mlx_real_inference: marks tests that require real MLX model inference (slow)",
+    "websocket: marks tests that require WebSocket functionality",
+    "performance: marks performance benchmark tests",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
@@ -173,4 +176,10 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
+]
+
+[dependency-groups]
+dev = [
+    "torch>=2.7.1",
+    "torchvision>=0.22.1",
 ]
