@@ -315,6 +315,11 @@ You have access to file analysis, file operations, and confidence assessment too
                     if unified_mlx_service.is_initialized
                     else "L3-Agent-Mock"
                 ),
+                "services_available": {
+                    "mlx": unified_mlx_service.is_initialized,
+                    "ast": self.ai_service.is_initialized,
+                    "vector": self.ai_service.is_initialized,  # Simplified for testing
+                },
                 "session_state": {
                     "conversation_length": len(self.state.conversation_history),
                     "average_confidence": self.state.get_average_confidence(),

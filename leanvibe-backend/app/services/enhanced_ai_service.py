@@ -192,8 +192,8 @@ class EnhancedAIService:
                 "context_used": len(relevant_context) > 0,
                 "services_available": {
                     "mlx": self.initialization_status["mlx"],
-                    "vector_search": self.initialization_status["vector"],
-                    "code_analysis": self.initialization_status["ast"],
+                    "ast": self.initialization_status["ast"],
+                    "vector": self.initialization_status["vector"],
                 },
             }
 

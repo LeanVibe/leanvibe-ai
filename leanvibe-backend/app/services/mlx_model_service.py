@@ -96,8 +96,10 @@ class MLXModelService:
             if PRODUCTION_MODEL_AVAILABLE:
                 logger.info("Initializing Production Model Service...")
 
-                # Configure from environment or defaults
-                config = ModelConfig.from_env()
+                # Configure from unified config system
+                from ..config.unified_config import get_config
+                unified_config = get_config()
+                config = unified_config.model
 
                 # Override with class settings if specified
                 config.model_name = self.model_name
