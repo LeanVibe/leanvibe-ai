@@ -534,6 +534,7 @@ struct AccessibilitySettings: SettingsProtocol {
     // VoiceOver
     var voiceOverEnabled = false
     var voiceOverOptimizations = false
+    var speechRateAdjustment: Double = 1.0
     
     // High contrast mode
     var highContrastMode: Bool = false
