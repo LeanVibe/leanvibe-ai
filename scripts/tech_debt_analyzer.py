@@ -289,16 +289,16 @@ class TechnicalDebtAnalyzer:
     
     def _detect_naming_issues(self, file_path: Path, content: str):
         """Detect naming inconsistencies"""
-        # Check for LeenVibe vs LeanVibe
-        if "LeenVibe" in content:
-            lines_with_issue = [i for i, line in enumerate(content.splitlines(), 1) if "LeenVibe" in line]
+        # Check for LeanVibe vs LeanVibe
+        if "LeanVibe" in content:
+            lines_with_issue = [i for i, line in enumerate(content.splitlines(), 1) if "LeanVibe" in line]
             for line_num in lines_with_issue:
                 self.issues.append(TechnicalDebtIssue(
                     file_path=str(file_path.relative_to(self.project_root)),
                     line_number=line_num,
                     issue_type="naming_inconsistency",
                     severity="high",
-                    description="Uses 'LeenVibe' instead of standardized 'LeanVibe'",
+                    description="Uses 'LeanVibe' instead of standardized 'LeanVibe'",
                     suggested_fix="Replace with 'LeanVibe'",
                     estimated_effort="0.1"
                 ))

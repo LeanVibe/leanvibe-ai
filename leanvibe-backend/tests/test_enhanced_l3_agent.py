@@ -354,7 +354,7 @@ def test_function():
             prompt = await agent._create_contextual_prompt("How do I optimize my code?")
 
             assert isinstance(prompt, str)
-            assert "LeenVibe L3 coding agent" in prompt
+            assert "LeanVibe L3 coding agent" in prompt
             assert "Project Context:" in prompt
             assert "Workspace:" in prompt
             assert str(project_path) in prompt

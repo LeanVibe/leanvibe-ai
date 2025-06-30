@@ -1,5 +1,5 @@
 """
-Phi-3-Mini Model Service for LeenVibe
+Phi-3-Mini Model Service for LeanVibe
 Production-ready service for loading and running Phi-3-Mini-128K-Instruct with MLX
 """
 

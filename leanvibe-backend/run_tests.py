@@ -196,7 +196,7 @@ def print_environment_info():
 
 async def main():
     """Run all tests"""
-    print("🧪 LeenVibe Backend Test Suite")
+    print("🧪 LeanVibe Backend Test Suite")
     print("=" * 40)
     
     print_environment_info()

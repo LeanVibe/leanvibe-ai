@@ -1,5 +1,5 @@
 """
-Profile management for LeenVibe CLI configuration
+Profile management for LeanVibe CLI configuration
 
 Handles creation, switching, and management of configuration profiles.
 """
@@ -106,7 +106,7 @@ class ProfileManager:
             raise ValueError(f"Profile '{name}' does not exist")
         
         if not path:
-            path = Path(f"leenvibe_profile_{name}.yml")
+            path = Path(f"leanvibe_profile_{name}.yml")
         
         # Export just the profile
         profile_data = {

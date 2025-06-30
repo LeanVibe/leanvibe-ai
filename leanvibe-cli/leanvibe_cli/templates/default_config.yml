@@ -1,4 +1,4 @@
-# LeenVibe CLI Default Configuration
+# LeanVibe CLI Default Configuration
 # This file contains all available configuration options with their default values
 
 version: "1.0"
@@ -91,7 +91,7 @@ profiles:
       
   # Production profile - optimized for production use
   production:
-    backend_url: "https://api.leenvibe.com"
+    backend_url: "https://api.leanvibe.com"
     api_timeout: 60
     notifications:
       minimum_priority: "high"

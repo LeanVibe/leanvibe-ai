@@ -293,7 +293,7 @@ def wizard(ctx):
 
 #### 5.3 Configuration precedence
 1. Command-line arguments (highest priority)
-2. Environment variables (LEENVIBE_*)
+2. Environment variables (LEANVIBE_*)
 3. Profile-specific configuration
 4. Default profile configuration
 5. Built-in defaults (lowest priority)

@@ -101,14 +101,14 @@ def run_syntax_validation():
     print("\n🔍 Running syntax validation...")
     
     python_files = [
-        "leenvibe_cli/services/notification_service.py",
-        "leenvibe_cli/services/desktop_notifications.py", 
-        "leenvibe_cli/ui/notification_overlay.py",
-        "leenvibe_cli/ui/live_dashboard.py",
-        "leenvibe_cli/commands/monitor.py",
-        "leenvibe_cli/commands/config.py",
-        "leenvibe_cli/config/manager.py",
-        "leenvibe_cli/config/schema.py"
+        "leanvibe_cli/services/notification_service.py",
+        "leanvibe_cli/services/desktop_notifications.py", 
+        "leanvibe_cli/ui/notification_overlay.py",
+        "leanvibe_cli/ui/live_dashboard.py",
+        "leanvibe_cli/commands/monitor.py",
+        "leanvibe_cli/commands/config.py",
+        "leanvibe_cli/config/manager.py",
+        "leanvibe_cli/config/schema.py"
     ]
     
     success = True
@@ -131,13 +131,13 @@ def run_import_validation():
     print("\n📦 Running import validation...")
     
     import_tests = [
-        ("leenvibe_cli.config", "CLIConfig"),
-        ("leenvibe_cli.services.notification_service", "NotificationService"),
-        ("leenvibe_cli.services.desktop_notifications", "DesktopNotificationService"),
-        ("leenvibe_cli.ui.notification_overlay", "NotificationOverlay"),
-        ("leenvibe_cli.ui.live_dashboard", "LiveMetricsDashboard"),
-        ("leenvibe_cli.commands.monitor", "enhanced_monitor_command"),
-        ("leenvibe_cli.commands.config", "config")
+        ("leanvibe_cli.config", "CLIConfig"),
+        ("leanvibe_cli.services.notification_service", "NotificationService"),
+        ("leanvibe_cli.services.desktop_notifications", "DesktopNotificationService"),
+        ("leanvibe_cli.ui.notification_overlay", "NotificationOverlay"),
+        ("leanvibe_cli.ui.live_dashboard", "LiveMetricsDashboard"),
+        ("leanvibe_cli.commands.monitor", "enhanced_monitor_command"),
+        ("leanvibe_cli.commands.config", "config")
     ]
     
     success = True

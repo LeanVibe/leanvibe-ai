@@ -82,21 +82,21 @@ class MLXServiceStrategy:
 **Impact**: HIGH - Brand confusion, developer onboarding friction
 
 **Affected Areas**:
-- Documentation files (50+ files with "LeenVibe")
-- Cache directories (`.leenvibe_cache`)
+- Documentation files (50+ files with "LeanVibe")
+- Cache directories (`.leanvibe_cache`)
 - Configuration references
 - GitHub repository URLs (typo in CLI pyproject.toml)
 
 **Automated Fix Strategy**:
 ```bash
 # Phase 1: Global find and replace
-find . -type f -name "*.py" -exec sed -i 's/LeenVibe/LeanVibe/g' {} +
-find . -type f -name "*.md" -exec sed -i 's/LeenVibe/LeanVibe/g' {} +
-find . -type f -name "*.toml" -exec sed -i 's/leenvibe/leanvibe/g' {} +
+find . -type f -name "*.py" -exec sed -i 's/LeanVibe/LeanVibe/g' {} +
+find . -type f -name "*.md" -exec sed -i 's/LeanVibe/LeanVibe/g' {} +
+find . -type f -name "*.toml" -exec sed -i 's/leanvibe/leanvibe/g' {} +
 
 # Phase 2: Directory restructuring
-mv .leenvibe_cache .leanvibe_cache
-mv .cache/leenvibe .cache/leanvibe
+mv .leanvibe_cache .leanvibe_cache
+mv .cache/leanvibe .cache/leanvibe
 ```
 
 ### 4. **Configuration System Duplication**
@@ -189,7 +189,7 @@ isort --profile black --line-length 88 .
 
 ```bash
 # Week 1: Setup and Naming Fix
-1. Global naming standardization (LeenVibe → LeanVibe)
+1. Global naming standardization (LeanVibe → LeanVibe)
 2. Setup automated quality tools (isort, black, mypy)
 3. Create technical debt tracking dashboard
 

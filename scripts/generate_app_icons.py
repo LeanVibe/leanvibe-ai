@@ -6,7 +6,7 @@ Requirements:
 
 Usage:
   python scripts/generate_app_icons.py path/to/source.svg \
-         LeenVibe-iOS/LeenVibe/Resources/Assets.xcassets/AppIcon.appiconset
+         LeanVibe-iOS/LeanVibe/Resources/Assets.xcassets/AppIcon.appiconset
 
 If the source file is PNG (ideally 1024×1024), the script will resize with Pillow.
 If the source is SVG, it will be rasterised with CairoSVG first then resized.

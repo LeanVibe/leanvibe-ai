@@ -2,7 +2,7 @@
 Cache Data Models
 
 Data models for cache entries, metadata, and statistics used throughout
-the LeenVibe caching system.
+the LeanVibe caching system.
 """
 
 from dataclasses import dataclass, field

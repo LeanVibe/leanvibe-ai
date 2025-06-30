@@ -1,5 +1,5 @@
 """
-UI package for LeenVibe CLI
+UI package for LeanVibe CLI
 
 Contains user interface components for notifications, overlays, and live displays.
 """

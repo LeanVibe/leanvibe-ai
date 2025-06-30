@@ -1,5 +1,5 @@
 """
-Live Metrics Dashboard for LeenVibe CLI
+Live Metrics Dashboard for LeanVibe CLI
 
 Provides real-time metrics dashboard with sparkline charts, health indicators,
 and system status monitoring.

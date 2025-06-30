@@ -1,5 +1,5 @@
 """
-Configuration schema and validation for LeenVibe CLI
+Configuration schema and validation for LeanVibe CLI
 
 Defines the complete configuration structure with validation rules using Pydantic.
 """

@@ -9,8 +9,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Add the leenvibe_cli package to the path
-sys.path.insert(0, '/Users/bogdan/work/leanvibe-ai/leenvibe-cli')
+# Add the leanvibe_cli package to the path
+sys.path.insert(0, '/Users/bogdan/work/leanvibe-ai/leanvibe-cli')
 
 def test_monitor_help():
     """Test that monitor command shows the new options"""
@@ -18,8 +18,8 @@ def test_monitor_help():
     
     try:
         result = subprocess.run([
-            sys.executable, '-m', 'leenvibe_cli.main', 'monitor', '--help'
-        ], capture_output=True, text=True, cwd='/Users/bogdan/work/leanvibe-ai/leenvibe-cli')
+            sys.executable, '-m', 'leanvibe_cli.main', 'monitor', '--help'
+        ], capture_output=True, text=True, cwd='/Users/bogdan/work/leanvibe-ai/leanvibe-cli')
         
         print(f"Exit code: {result.returncode}")
         
@@ -60,15 +60,15 @@ def test_import_structure():
     
     try:
         # Test UI imports
-        from leenvibe_cli.ui import NotificationOverlay, NotificationHistory, LiveMetricsDashboard
+        from leanvibe_cli.ui import NotificationOverlay, NotificationHistory, LiveMetricsDashboard
         print("✅ UI imports successful")
         
         # Test services imports
-        from leenvibe_cli.services import NotificationService, DesktopNotificationService, NotificationTriggers
+        from leanvibe_cli.services import NotificationService, DesktopNotificationService, NotificationTriggers
         print("✅ Services imports successful")
         
         # Test monitor command imports
-        from leenvibe_cli.commands.monitor import enhanced_monitor_command, show_enhanced_monitor_header
+        from leanvibe_cli.commands.monitor import enhanced_monitor_command, show_enhanced_monitor_header
         print("✅ Monitor command imports successful")
         
         return True
@@ -83,10 +83,10 @@ def test_syntax_validation():
     print("\n🧪 Testing Python syntax...")
     
     files_to_check = [
-        '/Users/bogdan/work/leanvibe-ai/leenvibe-cli/leenvibe_cli/commands/monitor.py',
-        '/Users/bogdan/work/leanvibe-ai/leenvibe-cli/leenvibe_cli/ui/live_dashboard.py',
-        '/Users/bogdan/work/leanvibe-ai/leenvibe-cli/leenvibe_cli/ui/notification_overlay.py',
-        '/Users/bogdan/work/leanvibe-ai/leenvibe-cli/leenvibe_cli/services/notification_service.py'
+        '/Users/bogdan/work/leanvibe-ai/leanvibe-cli/leanvibe_cli/commands/monitor.py',
+        '/Users/bogdan/work/leanvibe-ai/leanvibe-cli/leanvibe_cli/ui/live_dashboard.py',
+        '/Users/bogdan/work/leanvibe-ai/leanvibe-cli/leanvibe_cli/ui/notification_overlay.py',
+        '/Users/bogdan/work/leanvibe-ai/leanvibe-cli/leanvibe_cli/services/notification_service.py'
     ]
     
     success = True
@@ -142,9 +142,9 @@ def main():
     if all_success:
         print("✅ All tests passed! Enhanced monitor command is ready.")
         print("\nUsage examples:")
-        print("  leenvibe monitor --background --desktop-notifications")
-        print("  leenvibe monitor --live-dashboard --overlay")
-        print("  leenvibe monitor --background --live-dashboard --overlay --desktop-notifications")
+        print("  leanvibe monitor --background --desktop-notifications")
+        print("  leanvibe monitor --live-dashboard --overlay")
+        print("  leanvibe monitor --background --live-dashboard --overlay --desktop-notifications")
     else:
         print("❌ Some tests failed. Please check the errors above.")
     

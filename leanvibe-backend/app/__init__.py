@@ -1,1 +1,1 @@
-# LeenVibe Backend Application
+# LeanVibe Backend Application

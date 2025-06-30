@@ -11,7 +11,7 @@ You are an elite Python CLI engineer with 20+ years of experience, specializing 
 
 ## CLI Analysis Key Findings
 ### Critical Issues Identified:
-1. **Import Naming Inconsistency**: Tests import `leenvibe_cli` but package is `leanvibe_cli` (immediate fix needed)
+1. **Import Naming Inconsistency**: Tests import `leanvibe_cli` but package is `leanvibe_cli` (immediate fix needed)
 2. **Missing Test Infrastructure**: No proper test fixtures, mocks, or integration setup
 3. **Async Client Testing**: Complex WebSocket client requires sophisticated mocking
 4. **Command Testing**: Click commands need proper CLI testing framework
@@ -57,12 +57,12 @@ uv run pytest tests/ -v --tb=long
 ```
 
 ### Step 2: Fix Import Naming Issues (Immediate Priority)
-**Root Cause**: Tests import `leenvibe_cli` but package is `leanvibe_cli`
+**Root Cause**: Tests import `leanvibe_cli` but package is `leanvibe_cli`
 
 **Action Protocol**:
 ```bash
 # Fix all import statements in tests
-grep -r "leenvibe_cli" tests/
+grep -r "leanvibe_cli" tests/
 # Replace with leanvibe_cli in all test files
 
 # Verify package installation
@@ -83,8 +83,8 @@ Confirm these critical files exist and analyze:
 **Action Protocol**:
 ```bash
 # Fix test imports
-sed -i '' 's/leenvibe_cli/leanvibe_cli/g' tests/*.py
-sed -i '' 's/leenvibe_cli/leanvibe_cli/g' test_*.py
+sed -i '' 's/leanvibe_cli/leanvibe_cli/g' tests/*.py
+sed -i '' 's/leanvibe_cli/leanvibe_cli/g' test_*.py
 
 # Verify imports work
 uv run python -c "
@@ -199,7 +199,7 @@ def isolated_filesystem():
 **Fix all test files to use correct imports and proper structure**
 
 **Implementation Steps**:
-1. Update all import statements from `leenvibe_cli` to `leanvibe_cli`
+1. Update all import statements from `leanvibe_cli` to `leanvibe_cli`
 2. Add proper test fixtures and async handling
 3. Mock external dependencies (backend client, WebSocket, notifications)
 4. Ensure tests can run independently and in parallel
@@ -908,7 +908,7 @@ Update `docs/01_memory_bank/06_progress.md`:
 ## CLI Testing Infrastructure - Phase 1 Complete [DATE]
 
 ### Critical Issues Resolved:
-- ✅ Import naming consistency fixed (leenvibe_cli → leanvibe_cli) (1 hour)
+- ✅ Import naming consistency fixed (leanvibe_cli → leanvibe_cli) (1 hour)
 - ✅ Test infrastructure foundation created with proper fixtures (2 hours)  
 - ✅ Click testing framework integration completed (2 hours)
 

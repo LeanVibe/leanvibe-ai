@@ -1,5 +1,5 @@
 """
-Analyze command for LeenVibe CLI
+Analyze command for LeanVibe CLI
 
 Triggers AST analysis and displays codebase insights using the sophisticated
 backend analysis capabilities.

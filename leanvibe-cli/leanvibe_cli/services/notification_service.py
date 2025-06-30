@@ -1,5 +1,5 @@
 """
-Background Notification Service for LeenVibe CLI
+Background Notification Service for LeanVibe CLI
 
 Provides real-time notification handling with smart filtering, throttling,
 and non-intrusive background operation.

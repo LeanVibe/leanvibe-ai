@@ -1,8 +1,8 @@
 """
-Backend client for LeenVibe CLI
+Backend client for LeanVibe CLI
 
 Handles HTTP and WebSocket communication with the sophisticated
-LeenVibe backend services.
+LeanVibe backend services.
 """
 
 import asyncio
@@ -21,7 +21,7 @@ console = Console()
 
 
 class BackendClient:
-    """Client for communicating with LeenVibe backend services"""
+    """Client for communicating with LeanVibe backend services"""
     
     def __init__(self, config: CLIConfig):
         self.config = config

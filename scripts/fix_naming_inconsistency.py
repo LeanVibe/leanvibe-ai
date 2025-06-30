@@ -2,7 +2,7 @@
 """
 LeanVibe Naming Inconsistency Fixer
 
-Automated script to fix the LeenVibe vs LeanVibe naming inconsistency
+Automated script to fix the LeanVibe vs LeanVibe naming inconsistency
 across the entire codebase. This addresses one of the critical technical
 debt issues identified in the analysis.
 """
@@ -27,15 +27,15 @@ class NamingInconsistencyFixer:
         
         # Define the replacements to make
         self.text_replacements = {
-            'LeenVibe': 'LeanVibe',
-            'leenvibe': 'leanvibe',
-            'LEENVIBE': 'LEANVIBE'
+            'LeanVibe': 'LeanVibe',
+            'leanvibe': 'leanvibe',
+            'LEANVIBE': 'LEANVIBE'
         }
         
         # File and directory renames
         self.path_replacements = {
-            'leenvibe': 'leanvibe',
-            'LeenVibe': 'LeanVibe'
+            'leanvibe': 'leanvibe',
+            'LeanVibe': 'LeanVibe'
         }
         
         # File extensions to process
@@ -191,12 +191,12 @@ class NamingInconsistencyFixer:
         
         special_cases = [
             # Cache directories
-            ('.leenvibe_cache', '.leanvibe_cache'),
-            ('.cache/leenvibe', '.cache/leanvibe'),
+            ('.leanvibe_cache', '.leanvibe_cache'),
+            ('.cache/leanvibe', '.cache/leanvibe'),
             
             # Common config directories
-            ('config/leenvibe', 'config/leanvibe'),
-            ('configs/leenvibe', 'configs/leanvibe'),
+            ('config/leanvibe', 'config/leanvibe'),
+            ('configs/leanvibe', 'configs/leanvibe'),
         ]
         
         fixed_count = 0
@@ -223,8 +223,8 @@ class NamingInconsistencyFixer:
                 
                 # Fix GitHub URLs
                 url_fixes = {
-                    'github.com/leanvibe-ai/leenvibe-': 'github.com/leanvibe-ai/leanvibe-',
-                    'github.com/leenvibe-ai/': 'github.com/leanvibe-ai/',
+                    'github.com/leanvibe-ai/leanvibe-': 'github.com/leanvibe-ai/leanvibe-',
+                    'github.com/leanvibe-ai/': 'github.com/leanvibe-ai/',
                 }
                 
                 modified = content
@@ -276,7 +276,7 @@ class NamingInconsistencyFixer:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Fix LeenVibe vs LeanVibe naming inconsistencies")
+    parser = argparse.ArgumentParser(description="Fix LeanVibe vs LeanVibe naming inconsistencies")
     parser.add_argument("--project-root", default=".", help="Project root directory")
     parser.add_argument("--dry-run", action="store_true", default=True, 
                        help="Show what would be changed without making changes")

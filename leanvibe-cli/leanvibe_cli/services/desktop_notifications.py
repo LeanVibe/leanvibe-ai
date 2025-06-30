@@ -1,5 +1,5 @@
 """
-Cross-platform Desktop Notification Service for LeenVibe CLI
+Cross-platform Desktop Notification Service for LeanVibe CLI
 
 Provides native desktop notifications on macOS, Linux, and Windows with
 smart triggering and configuration options.
@@ -86,7 +86,7 @@ class DesktopNotificationService:
             
             script_parts = [
                 f'display notification "{safe_message}"',
-                f'with title "LeenVibe"',
+                f'with title "LeanVibe"',
                 f'subtitle "{safe_title}"'
             ]
             
@@ -131,7 +131,7 @@ class DesktopNotificationService:
             
             proc = await asyncio.create_subprocess_exec(
                 "notify-send",
-                "--app-name=LeenVibe",
+                "--app-name=LeanVibe",
                 f"--urgency={urgency}",
                 f"--expire-time={timeout_ms}",
                 "--icon=terminal",
@@ -165,7 +165,7 @@ class DesktopNotificationService:
                 # Run in thread to avoid blocking
                 def show_toast():
                     toaster.show_toast(
-                        title=f"LeenVibe - {title}",
+                        title=f"LeanVibe - {title}",
                         msg=message,
                         duration=timeout,
                         threaded=True
@@ -192,10 +192,10 @@ class DesktopNotificationService:
             
             def show_notification():
                 notification.notify(
-                    title=f"LeenVibe - {title}",
+                    title=f"LeanVibe - {title}",
                     message=message,
                     timeout=timeout,
-                    app_name="LeenVibe"
+                    app_name="LeanVibe"
                 )
             
             loop = asyncio.get_event_loop()
@@ -321,7 +321,7 @@ class NotificationTriggers:
             sound = trigger_config['sound']
             notification_priority = trigger_config['priority']
         else:
-            title = f"LeenVibe {priority.title()} Alert"
+            title = f"LeanVibe {priority.title()} Alert"
             icon = "🔔"
             sound = priority == 'critical'
             notification_priority = priority

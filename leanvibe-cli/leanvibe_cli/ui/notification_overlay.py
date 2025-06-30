@@ -1,5 +1,5 @@
 """
-Notification Overlay System for LeenVibe CLI
+Notification Overlay System for LeanVibe CLI
 
 Provides non-intrusive terminal notification overlays that don't interrupt
 current CLI command execution.

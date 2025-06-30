@@ -1,5 +1,5 @@
 """
-QR code command for LeenVibe CLI
+QR code command for LeanVibe CLI
 Display connection QR code for iOS app
 """
 
@@ -102,7 +102,7 @@ def create_connection_config(backend_url: str) -> Dict:
         host = get_local_ip()
     
     return {
-        "leenvibe": {
+        "leanvibe": {
             "server": {
                 "host": host,
                 "port": port,
@@ -111,7 +111,7 @@ def create_connection_config(backend_url: str) -> Dict:
             "metadata": {
                 "server_name": socket.gethostname(),
                 "network": "Local Network",
-                "generated_by": "leenvibe-cli"
+                "generated_by": "leanvibe-cli"
             }
         }
     }
@@ -149,8 +149,8 @@ async def qr_command(config: CLIConfig, client: BackendClient, compact: bool = F
     qr_ascii = generate_ascii_qr(json_data)
     
     # Extract connection info
-    server_info = connection_config["leenvibe"]["server"]
-    metadata = connection_config["leenvibe"]["metadata"]
+    server_info = connection_config["leanvibe"]["server"]
+    metadata = connection_config["leanvibe"]["metadata"]
     
     primary_url = f"ws://{server_info['host']}:{server_info['port']}{server_info['websocket_path']}"
     
@@ -185,7 +185,7 @@ async def qr_command(config: CLIConfig, client: BackendClient, compact: bool = F
     # Display everything
     console.print(qr_panel)
     console.print(info_panel)
-    console.print("\n[dim]💡 Open LeenVibe iOS app → Settings → Server Settings → Scan QR Code[/dim]")
+    console.print("\n[dim]💡 Open LeanVibe iOS app → Settings → Server Settings → Scan QR Code[/dim]")
 
 
 @click.command()

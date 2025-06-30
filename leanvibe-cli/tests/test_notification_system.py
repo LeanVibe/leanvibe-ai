@@ -12,10 +12,10 @@ from datetime import datetime, timedelta
 from collections import deque
 import platform
 
-from leenvibe_cli.config import CLIConfig
-from leenvibe_cli.services.notification_service import NotificationService
-from leenvibe_cli.services.desktop_notifications import DesktopNotificationService
-from leenvibe_cli.ui.notification_overlay import NotificationOverlay
+from leanvibe_cli.config import CLIConfig
+from leanvibe_cli.services.notification_service import NotificationService
+from leanvibe_cli.services.desktop_notifications import DesktopNotificationService
+from leanvibe_cli.ui.notification_overlay import NotificationOverlay
 
 
 # Global fixtures for all test classes
@@ -269,7 +269,7 @@ class TestDesktopNotifications:
             # Verify the correct notify-send command was called
             call_args = mock_subprocess.call_args[0]
             assert call_args[0] == 'notify-send'
-            assert '--app-name=LeenVibe' in call_args
+            assert '--app-name=LeanVibe' in call_args
     
     async def test_notification_failure_handling(self, desktop_service):
         """Test graceful handling of notification failures"""
@@ -440,7 +440,7 @@ class TestIntegrationWorkflows:
     
     async def test_end_to_end_notification_flow(self, mock_config, mock_backend_client):
         """Test complete notification flow from event to display"""
-        with patch('leenvibe_cli.services.notification_service.BackendClient', return_value=mock_backend_client):
+        with patch('leanvibe_cli.services.notification_service.BackendClient', return_value=mock_backend_client):
             # Initialize components
             notification_service = NotificationService(mock_config)
             notification_service.client = mock_backend_client
@@ -541,9 +541,9 @@ class NotificationService:
 
 
 # Monkey patch for testing
-import leenvibe_cli.services.notification_service
-leenvibe_cli.services.notification_service.NotificationService._notification_processor_single_run = NotificationService._notification_processor_single_run
-leenvibe_cli.services.notification_service.NotificationService.stop = NotificationService.stop
+import leanvibe_cli.services.notification_service
+leanvibe_cli.services.notification_service.NotificationService._notification_processor_single_run = NotificationService._notification_processor_single_run
+leanvibe_cli.services.notification_service.NotificationService.stop = NotificationService.stop
 
 
 if __name__ == "__main__":

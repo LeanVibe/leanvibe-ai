@@ -1,5 +1,5 @@
 """
-Query command for LeenVibe CLI
+Query command for LeanVibe CLI
 
 Provides natural language interaction with the L3 agent for intelligent
 codebase questions and assistance.
@@ -39,7 +39,7 @@ def query(ctx: click.Context, question: Optional[str], workspace: str, interacti
         asyncio.run(single_query(config, client, question, workspace, command, output_json))
     else:
         console.print("[yellow]Please provide a question or use --interactive mode[/yellow]")
-        console.print("[dim]Example: leenvibe query \"What are the main components of this project?\"[/dim]")
+        console.print("[dim]Example: leanvibe query \"What are the main components of this project?\"[/dim]")
 
 
 async def single_query(config: CLIConfig, client: BackendClient, question: str, workspace: str, is_command: bool, output_json: bool):
@@ -188,7 +188,7 @@ def show_interactive_header(config: CLIConfig):
     
     panel = Panel(
         header_text,
-        title="[bold]LeenVibe Interactive Query[/bold]",
+        title="[bold]LeanVibe Interactive Query[/bold]",
         border_style="cyan",
         padding=(1, 2)
     )

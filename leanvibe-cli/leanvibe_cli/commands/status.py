@@ -1,5 +1,5 @@
 """
-Status command for LeenVibe CLI
+Status command for LeanVibe CLI
 
 Shows backend health, connection status, and project information.
 """
@@ -57,7 +57,7 @@ async def status_command(config: CLIConfig, client: BackendClient, detailed: boo
         else:
             console.print(f"[red]Error: {e}[/red]")
             console.print(f"[yellow]Backend URL: {config.backend_url}[/yellow]")
-            console.print("[dim]Check that the LeenVibe backend is running[/dim]")
+            console.print("[dim]Check that the LeanVibe backend is running[/dim]")
 
 
 def display_status_info(health_data: Dict[str, Any], config: CLIConfig, detailed: bool = False):
@@ -91,7 +91,7 @@ def display_status_info(health_data: Dict[str, Any], config: CLIConfig, detailed
     
     panel = Panel(
         status_text,
-        title="[bold]LeenVibe Backend Status[/bold]",
+        title="[bold]LeanVibe Backend Status[/bold]",
         border_style="green" if health_data.get("status") == "healthy" else "red",
         padding=(1, 2)
     )

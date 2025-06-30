@@ -93,7 +93,7 @@ class VectorStoreService:
                 # Collection doesn't exist, create it
                 self.collection = self.client.create_collection(
                     name=self.collection_name,
-                    metadata={"description": "Code embeddings for LeenVibe L3 agent"},
+                    metadata={"description": "Code embeddings for LeanVibe L3 agent"},
                 )
                 logger.info(f"Created new collection: {self.collection_name}")
 
@@ -454,7 +454,7 @@ class VectorStoreService:
             self.client.delete_collection(self.collection_name)
             self.collection = self.client.create_collection(
                 name=self.collection_name,
-                metadata={"description": "Code embeddings for LeenVibe L3 agent"},
+                metadata={"description": "Code embeddings for LeanVibe L3 agent"},
             )
 
             logger.info("Cleared all embeddings from vector store")

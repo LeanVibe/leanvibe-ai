@@ -1,10 +1,10 @@
 """
-LeenVibe CLI - Terminal interface for enterprise codebase analysis
+LeanVibe CLI - Terminal interface for enterprise codebase analysis
 
-A minimal viable CLI that leverages the sophisticated LeenVibe backend
+A minimal viable CLI that leverages the sophisticated LeanVibe backend
 infrastructure for real-time code analysis, monitoring, and intelligent
 suggestions.
 """
 
 __version__ = "0.1.0"
-__author__ = "LeenVibe Team"
+__author__ = "LeanVibe Team"

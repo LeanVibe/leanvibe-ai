@@ -1,5 +1,5 @@
 """
-Configuration manager for LeenVibe CLI
+Configuration manager for LeanVibe CLI
 
 Handles loading, saving, and managing configuration with validation and profiles.
 """
@@ -15,10 +15,10 @@ from .schema import ConfigSchema, ProfileConfig
 
 
 class ConfigurationManager:
-    """Manages LeenVibe CLI configuration with profiles and validation"""
+    """Manages LeanVibe CLI configuration with profiles and validation"""
     
     def __init__(self, config_dir: Optional[Path] = None):
-        self.config_dir = config_dir or Path.home() / ".leenvibe"
+        self.config_dir = config_dir or Path.home() / ".leanvibe"
         self.config_file = self.config_dir / "config.yml"
         self.backup_dir = self.config_dir / "backups"
         self.template_file = Path(__file__).parent.parent / "templates" / "default_config.yml"
@@ -217,7 +217,7 @@ class ConfigurationManager:
         """Export configuration to file"""
         if not path:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            path = Path(f"leenvibe_config_{timestamp}.yml")
+            path = Path(f"leanvibe_config_{timestamp}.yml")
         
         # Save current config to specified path
         data = self._config.to_dict()

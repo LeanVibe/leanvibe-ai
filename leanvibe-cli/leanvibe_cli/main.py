@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-LeenVibe CLI Main Entry Point
+LeanVibe CLI Main Entry Point
 
-Minimal viable CLI that connects to the sophisticated LeenVibe backend
+Minimal viable CLI that connects to the sophisticated LeanVibe backend
 for enterprise codebase analysis and real-time monitoring.
 """
 
@@ -30,9 +30,9 @@ console = Console()
 @click.pass_context
 def cli(ctx: click.Context, config: Optional[str], backend_url: Optional[str], verbose: bool):
     """
-    LeenVibe CLI - Enterprise codebase analysis and monitoring
+    LeanVibe CLI - Enterprise codebase analysis and monitoring
     
-    A terminal-native interface that connects to the LeenVibe backend
+    A terminal-native interface that connects to the LeanVibe backend
     for real-time code analysis, architectural insights, and intelligent
     suggestions powered by AST analysis and graph databases.
     """
@@ -57,13 +57,13 @@ def cli(ctx: click.Context, config: Optional[str], backend_url: Optional[str], v
             asyncio.run(status.status_command(cli_config, ctx.obj['client']))
         except Exception as e:
             console.print(f"[red]Error connecting to backend: {e}[/red]")
-            console.print("\n[yellow]Run 'leenvibe status' to check connection[/yellow]")
+            console.print("\n[yellow]Run 'leanvibe status' to check connection[/yellow]")
 
 
 def show_welcome():
     """Display welcome message and basic information"""
     welcome_text = Text()
-    welcome_text.append("LeenVibe CLI", style="bold cyan")
+    welcome_text.append("LeanVibe CLI", style="bold cyan")
     welcome_text.append(" - Enterprise Codebase Analysis\n\n")
     welcome_text.append("🔍 Real-time code monitoring\n", style="green")
     welcome_text.append("🧠 AI-powered analysis\n", style="blue")  
@@ -72,13 +72,13 @@ def show_welcome():
     
     panel = Panel(
         welcome_text,
-        title="[bold]Welcome to LeenVibe[/bold]",
+        title="[bold]Welcome to LeanVibe[/bold]",
         border_style="cyan",
         padding=(1, 2)
     )
     
     console.print(panel)
-    console.print("\n[dim]Use 'leenvibe --help' for available commands[/dim]\n")
+    console.print("\n[dim]Use 'leanvibe --help' for available commands[/dim]\n")
 
 
 # Register commands

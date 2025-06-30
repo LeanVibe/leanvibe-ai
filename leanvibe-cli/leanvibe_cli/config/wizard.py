@@ -1,5 +1,5 @@
 """
-Interactive configuration wizard for LeenVibe CLI
+Interactive configuration wizard for LeanVibe CLI
 
 Provides a guided setup experience for configuring the CLI.
 """
@@ -75,8 +75,8 @@ class ConfigurationWizard:
     def _show_welcome(self):
         """Show welcome message"""
         welcome_text = Text()
-        welcome_text.append("Welcome to LeenVibe CLI Configuration Wizard\n", style="bold cyan")
-        welcome_text.append("This wizard will help you configure your LeenVibe CLI settings.\n")
+        welcome_text.append("Welcome to LeanVibe CLI Configuration Wizard\n", style="bold cyan")
+        welcome_text.append("This wizard will help you configure your LeanVibe CLI settings.\n")
         welcome_text.append("You can press Ctrl+C at any time to cancel.")
         
         panel = Panel(
@@ -106,7 +106,7 @@ class ConfigurationWizard:
     def _configure_backend(self) -> bool:
         """Configure backend connection"""
         console.print("\n[bold cyan]Backend Configuration[/bold cyan]")
-        console.print("Configure the connection to your LeenVibe backend.")
+        console.print("Configure the connection to your LeanVibe backend.")
         
         # Backend URL
         current_url = self.config.get('backend_url', 'http://localhost:8000')

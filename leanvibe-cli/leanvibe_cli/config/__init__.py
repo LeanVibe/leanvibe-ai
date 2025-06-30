@@ -1,5 +1,5 @@
 """
-Configuration management package for LeenVibe CLI
+Configuration management package for LeanVibe CLI
 
 Provides comprehensive configuration management with profiles, validation,
 and interactive configuration wizard.

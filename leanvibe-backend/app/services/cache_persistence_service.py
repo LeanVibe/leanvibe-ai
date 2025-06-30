@@ -2,7 +2,7 @@
 Cache Persistence and Recovery Service
 
 Provides robust cache persistence, recovery mechanisms, and fault tolerance
-for the LeenVibe backend caching system.
+for the LeanVibe backend caching system.
 """
 
 import gzip

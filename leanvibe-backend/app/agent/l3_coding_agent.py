@@ -1,5 +1,5 @@
 """
-LeenVibe L3 Coding Agent - Pydantic.ai Framework Integration
+LeanVibe L3 Coding Agent - Pydantic.ai Framework Integration
 
 This module implements the core L3 agent using pydantic.ai for structured 
 autonomous coding assistance with MLX backend integration.
@@ -142,7 +142,7 @@ class L3CodingAgent:
 
     def _get_system_prompt(self) -> str:
         """Get the system prompt for the L3 coding agent"""
-        return """You are LeenVibe, an L3 autonomous coding agent designed to help senior engineers with their side projects.
+        return """You are LeanVibe, an L3 autonomous coding agent designed to help senior engineers with their side projects.
 
 Your capabilities:
 - Analyze code files and provide detailed insights
@@ -384,7 +384,7 @@ You have access to file analysis, file operations, and confidence assessment too
             # For general questions, use the MLX model
             else:
                 enhanced_prompt = f"""
-As LeenVibe L3 coding agent, I need to respond to: "{user_input}"
+As LeanVibe L3 coding agent, I need to respond to: "{user_input}"
 
 Context:
 - Workspace: {self.state.workspace_path}

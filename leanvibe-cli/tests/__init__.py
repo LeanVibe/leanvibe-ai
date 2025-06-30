@@ -1,1 +1,1 @@
-# Test package for LeenVibe CLI
+# Test package for LeanVibe CLI

@@ -1,5 +1,5 @@
 """
-Services package for LeenVibe CLI
+Services package for LeanVibe CLI
 
 Contains background services for notifications, monitoring, and real-time features.
 """

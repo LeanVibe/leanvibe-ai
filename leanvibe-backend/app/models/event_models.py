@@ -2,7 +2,7 @@
 Event Models for Real-time Notification System
 
 Defines event types, notification models, and streaming message formats
-for the LeenVibe real-time communication system.
+for the LeanVibe real-time communication system.
 """
 
 import time

@@ -20,14 +20,14 @@ set -e  # Exit on any error
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
-BACKEND_DIR="$PROJECT_ROOT/leenvibe-backend"
+BACKEND_DIR="$PROJECT_ROOT/leanvibe-backend"
 CACHE_DIR="$HOME/.cache/leanvibe"
 LOG_DIR="$HOME/.leanvibe/logs"
 CONFIG_FILE="$HOME/.leanvibe/config.yaml"
 
 # Default configuration
 MODEL_NAME="Qwen/Qwen3-30B-A3B-MLX-4bit"
-LEENVIBE_PORT=8000
+LEANVIBE_PORT=8000
 MLX_PORT=8082
 DEPLOYMENT_MODE="auto"
 SETUP_ONLY=false
@@ -71,7 +71,7 @@ USAGE:
 
 OPTIONS:
     --model MODEL_NAME      Specify model (default: Qwen/Qwen3-30B-A3B-MLX-4bit)
-    --port PORT            Specify LeenVibe port (default: 8000)
+    --port PORT            Specify LeanVibe port (default: 8000)
     --mlx-port PORT        Specify MLX-LM port (default: 8082)
     --mode MODE            Deployment mode: auto|direct|server|mock (default: auto)
     --setup-only           Only setup, don't start services
@@ -102,7 +102,7 @@ parse_args() {
                 shift 2
                 ;;
             --port)
-                LEENVIBE_PORT="$2"
+                LEANVIBE_PORT="$2"
                 shift 2
                 ;;
             --mlx-port)
@@ -225,7 +225,7 @@ generate_config() {
     log_header "Configuration Generation"
     
     cat > "$CONFIG_FILE" << EOF
-# LeenVibe Production Configuration
+# LeanVibe Production Configuration
 # Generated: $(date)
 
 model:
@@ -236,7 +236,7 @@ model:
   temperature: 0.7
 
 server:
-  leenvibe_port: $LEENVIBE_PORT
+  leanvibe_port: $LEANVIBE_PORT
   mlx_port: $MLX_PORT
   host: "0.0.0.0"
 
@@ -310,7 +310,7 @@ start_mlx_server() {
             --host "127.0.0.1" \
             > "$LOG_DIR/mlx-server.log" 2>&1 &
         
-        echo $! > "$HOME/.leenvibe/mlx-server.pid"
+        echo $! > "$HOME/.leanvibe/mlx-server.pid"
         
         # Wait for server to be ready
         if check_service_health "$MLX_PORT" "MLX-LM server"; then
@@ -326,36 +326,36 @@ start_mlx_server() {
     fi
 }
 
-# Start LeenVibe service
-start_leenvibe_service() {
-    log_header "LeenVibe Service"
+# Start LeanVibe service
+start_leanvibe_service() {
+    log_header "LeanVibe Service"
     
     cd "$BACKEND_DIR"
     
-    log_info "Starting LeenVibe backend on port $LEENVIBE_PORT..."
+    log_info "Starting LeanVibe backend on port $LEANVIBE_PORT..."
     
     # Set environment variables
-    export LEENVIBE_MODEL_NAME="$MODEL_NAME"
-    export LEENVIBE_DEPLOYMENT_MODE="$DEPLOYMENT_MODE"
-    export LEENVIBE_MLX_SERVER_URL="http://127.0.0.1:$MLX_PORT"
-    export LEENVIBE_PORT="$LEENVIBE_PORT"
-    export LEENVIBE_CACHE_DIR="$CACHE_DIR"
+    export LEANVIBE_MODEL_NAME="$MODEL_NAME"
+    export LEANVIBE_DEPLOYMENT_MODE="$DEPLOYMENT_MODE"
+    export LEANVIBE_MLX_SERVER_URL="http://127.0.0.1:$MLX_PORT"
+    export LEANVIBE_PORT="$LEANVIBE_PORT"
+    export LEANVIBE_CACHE_DIR="$CACHE_DIR"
     
-    # Start LeenVibe service
+    # Start LeanVibe service
     nohup uv run python -m uvicorn app.main:app \
         --host 0.0.0.0 \
-        --port "$LEENVIBE_PORT" \
+        --port "$LEANVIBE_PORT" \
         --reload \
-        > "$LOG_DIR/leenvibe.log" 2>&1 &
+        > "$LOG_DIR/leanvibe.log" 2>&1 &
     
-    echo $! > "$HOME/.leenvibe/leenvibe.pid"
+    echo $! > "$HOME/.leanvibe/leanvibe.pid"
     
     # Wait for service to be ready
-    if check_service_health "$LEENVIBE_PORT" "LeenVibe service"; then
-        log_success "LeenVibe service started successfully"
+    if check_service_health "$LEANVIBE_PORT" "LeanVibe service"; then
+        log_success "LeanVibe service started successfully"
         return 0
     else
-        log_error "LeenVibe service failed to start"
+        log_error "LeanVibe service failed to start"
         return 1
     fi
 }
@@ -372,7 +372,7 @@ generate_qr_code() {
     echo "🔗 Connection URLs:"
     
     for ip in $LOCAL_IPS; do
-        echo "   ws://$ip:$LEENVIBE_PORT/ws"
+        echo "   ws://$ip:$LEANVIBE_PORT/ws"
     done
     
     echo ""
@@ -433,7 +433,7 @@ if [[ -f "$HOME/.leanvibe/leanvibe.pid" ]]; then
     PID=\$(cat "$HOME/.leanvibe/leanvibe.pid")
     if kill -0 "\$PID" 2>/dev/null; then
         echo "✅ LeanVibe service: Running (PID: \$PID)"
-        curl -s "http://localhost:$LEENVIBE_PORT/health" || echo "❌ Health check failed"
+        curl -s "http://localhost:$LEANVIBE_PORT/health" || echo "❌ Health check failed"
     else
         echo "❌ LeanVibe service: Not running"
     fi
@@ -471,7 +471,7 @@ show_completion_status() {
     echo "🎉 LeanVibe has been deployed successfully!"
     echo ""
     echo "📊 Service Status:"
-    echo "   🖥️  LeanVibe Backend: http://localhost:$LEENVIBE_PORT"
+    echo "   🖥️  LeanVibe Backend: http://localhost:$LEANVIBE_PORT"
     
     if curl -s "http://localhost:$MLX_PORT/health" > /dev/null 2>&1; then
         echo "   🧠 MLX-LM Server: http://localhost:$MLX_PORT"
@@ -500,7 +500,7 @@ main() {
     echo "=================================="
     echo "Model: $MODEL_NAME"
     echo "Mode:  $DEPLOYMENT_MODE"
-    echo "Port:  $LEENVIBE_PORT"
+    echo "Port:  $LEANVIBE_PORT"
     echo ""
     
     # Stop any existing services
@@ -526,7 +526,7 @@ main() {
         start_mlx_server || log_warning "MLX-LM server not available, will use direct/mock mode"
     fi
     
-    start_leenvibe_service
+    start_leanvibe_service
     generate_qr_code
     show_completion_status
     
@@ -539,7 +539,7 @@ main() {
     while true; do
         sleep 10
         # Basic health monitoring
-        if ! curl -s "http://localhost:$LEENVIBE_PORT/health" > /dev/null 2>&1; then
+        if ! curl -s "http://localhost:$LEANVIBE_PORT/health" > /dev/null 2>&1; then
             log_error "LeanVibe service health check failed"
             break
         fi

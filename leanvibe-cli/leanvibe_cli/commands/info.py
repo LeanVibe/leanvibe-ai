@@ -1,5 +1,5 @@
 """
-Info command for LeenVibe CLI
+Info command for LeanVibe CLI
 
 Shows available backend capabilities and API endpoints.
 """
@@ -73,7 +73,7 @@ async def info_command(config: CLIConfig, client: BackendClient, show_endpoints:
 def display_backend_info(health_data: Dict[str, Any], config: CLIConfig):
     """Display basic backend information"""
     info_text = Text()
-    info_text.append("🏗️ LeenVibe Backend Information\n", style="bold cyan")
+    info_text.append("🏗️ LeanVibe Backend Information\n", style="bold cyan")
     
     # Basic info
     info_text.append(f"URL: {config.backend_url}\n")

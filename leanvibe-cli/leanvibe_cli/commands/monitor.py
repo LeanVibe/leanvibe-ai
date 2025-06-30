@@ -1,5 +1,5 @@
 """
-Monitor command for LeenVibe CLI
+Monitor command for LeanVibe CLI
 
 Provides real-time file monitoring and event notifications using the
 sophisticated backend event streaming system.
@@ -184,7 +184,7 @@ def show_monitor_header(config: CLIConfig, duration: Optional[int]):
     
     panel = Panel(
         header_text,
-        title="[bold]LeenVibe Monitor[/bold]",
+        title="[bold]LeanVibe Monitor[/bold]",
         border_style="cyan",
         padding=(1, 2)
     )
@@ -217,7 +217,7 @@ def show_enhanced_monitor_header(config: CLIConfig, duration: Optional[int], bac
     
     panel = Panel(
         header_text,
-        title="[bold]LeenVibe Enhanced Monitor[/bold]",
+        title="[bold]LeanVibe Enhanced Monitor[/bold]",
         border_style="cyan",
         padding=(1, 2)
     )

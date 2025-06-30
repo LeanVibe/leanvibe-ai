@@ -47,7 +47,7 @@ class PreCommitQualityGate:
             (r'except\s*:', "Use specific exception types instead of bare except"),
             (r'print\s*\(', "Use logging instead of print statements"),
             (r'TODO|FIXME|XXX', "Resolve TODO/FIXME comments before committing"),
-            (r'LeenVibe', "Use 'LeanVibe' instead of 'LeenVibe'"),
+            (r'LeanVibe', "Use 'LeanVibe' instead of 'LeanVibe'"),
             (r'import\s+\*', "Avoid wildcard imports"),
             (r'#\s*type:\s*ignore', "Avoid type ignore comments, fix type issues"),
         ]

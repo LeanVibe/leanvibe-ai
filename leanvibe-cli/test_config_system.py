@@ -9,8 +9,8 @@ import sys
 import subprocess
 from pathlib import Path
 
-# Add the leenvibe_cli package to the path
-sys.path.insert(0, '/Users/bogdan/work/leanvibe-ai/leenvibe-cli')
+# Add the leanvibe_cli package to the path
+sys.path.insert(0, '/Users/bogdan/work/leanvibe-ai/leanvibe-cli')
 
 
 def test_syntax_validation():
@@ -18,14 +18,14 @@ def test_syntax_validation():
     print("🧪 Testing Python syntax for configuration system...")
     
     files_to_check = [
-        'leenvibe_cli/config/__init__.py',
-        'leenvibe_cli/config/manager.py',
-        'leenvibe_cli/config/schema.py',
-        'leenvibe_cli/config/profiles.py',
-        'leenvibe_cli/config/wizard.py',
-        'leenvibe_cli/commands/config.py',
-        'leenvibe_cli/utils/__init__.py',
-        'leenvibe_cli/utils/yaml_helpers.py'
+        'leanvibe_cli/config/__init__.py',
+        'leanvibe_cli/config/manager.py',
+        'leanvibe_cli/config/schema.py',
+        'leanvibe_cli/config/profiles.py',
+        'leanvibe_cli/config/wizard.py',
+        'leanvibe_cli/commands/config.py',
+        'leanvibe_cli/utils/__init__.py',
+        'leanvibe_cli/utils/yaml_helpers.py'
     ]
     
     success = True
@@ -55,23 +55,23 @@ def test_imports():
     
     try:
         # Test config package imports
-        from leenvibe_cli.config import ConfigurationManager, ConfigSchema, ProfileManager
+        from leanvibe_cli.config import ConfigurationManager, ConfigSchema, ProfileManager
         print("✅ Config package imports successful")
         
         # Test schema imports
-        from leenvibe_cli.config.schema import NotificationSettings, DesktopSettings, TerminalSettings
+        from leanvibe_cli.config.schema import NotificationSettings, DesktopSettings, TerminalSettings
         print("✅ Schema imports successful")
         
         # Test wizard import
-        from leenvibe_cli.config.wizard import ConfigurationWizard
+        from leanvibe_cli.config.wizard import ConfigurationWizard
         print("✅ Wizard import successful")
         
         # Test utils imports
-        from leenvibe_cli.utils import safe_yaml_load, safe_yaml_dump, merge_dicts
+        from leanvibe_cli.utils import safe_yaml_load, safe_yaml_dump, merge_dicts
         print("✅ Utils imports successful")
         
         # Test command import
-        from leenvibe_cli.commands.config import config
+        from leanvibe_cli.commands.config import config
         print("✅ Config command import successful")
         
         return True
@@ -89,8 +89,8 @@ def test_config_help():
     
     try:
         result = subprocess.run([
-            sys.executable, '-m', 'leenvibe_cli.main', 'config', '--help'
-        ], capture_output=True, text=True, cwd='/Users/bogdan/work/leanvibe-ai/leenvibe-cli')
+            sys.executable, '-m', 'leanvibe_cli.main', 'config', '--help'
+        ], capture_output=True, text=True, cwd='/Users/bogdan/work/leanvibe-ai/leanvibe-cli')
         
         print(f"Exit code: {result.returncode}")
         
@@ -126,7 +126,7 @@ def test_schema_validation():
     print("\n🧪 Testing configuration schema...")
     
     try:
-        from leenvibe_cli.config.schema import ConfigSchema, ProfileConfig
+        from leanvibe_cli.config.schema import ConfigSchema, ProfileConfig
         
         # Test creating default config
         config = ConfigSchema()
@@ -172,7 +172,7 @@ def test_yaml_helpers():
     print("\n🧪 Testing YAML helpers...")
     
     try:
-        from leenvibe_cli.utils.yaml_helpers import merge_dicts
+        from leanvibe_cli.utils.yaml_helpers import merge_dicts
         
         # Test dict merging
         base = {"a": 1, "b": {"c": 2}}
@@ -235,11 +235,11 @@ def main():
     if all_success:
         print("✅ All tests passed! Configuration management system is ready.")
         print("\nUsage examples:")
-        print("  leenvibe config show")
-        print("  leenvibe config set notifications.enabled true")
-        print("  leenvibe config wizard")
-        print("  leenvibe config profile list")
-        print("  leenvibe config profile create production")
+        print("  leanvibe config show")
+        print("  leanvibe config set notifications.enabled true")
+        print("  leanvibe config wizard")
+        print("  leanvibe config profile list")
+        print("  leanvibe config profile create production")
     else:
         print("❌ Some tests failed. Please check the errors above.")
     

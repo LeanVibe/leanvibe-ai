@@ -51,8 +51,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/leanvibe-ai/leenvibe-cli"
-Repository = "https://github.com/leanvibe-ai/leenvibe-cli"
+Homepage = "https://github.com/leanvibe-ai/leanvibe-cli"
+Repository = "https://github.com/leanvibe-ai/leanvibe-cli"
 
 [project.scripts]
 leanvibe = "leanvibe_cli.main:main"

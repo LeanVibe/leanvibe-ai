@@ -1,5 +1,5 @@
 """
-Production Model Service for LeenVibe
+Production Model Service for LeanVibe
 Supports multiple deployment modes:
 1. Direct MLX integration (when mlx-lm available)
 2. HTTP client to existing MLX-LM server
@@ -59,12 +59,12 @@ class ModelConfig:
         """Create config from environment variables"""
 
         return cls(
-            model_name=os.getenv("LEENVIBE_MODEL_NAME", cls.model_name),
-            deployment_mode=os.getenv("LEENVIBE_DEPLOYMENT_MODE", cls.deployment_mode),
-            server_url=os.getenv("LEENVIBE_MLX_SERVER_URL", cls.server_url),
-            max_tokens=int(os.getenv("LEENVIBE_MAX_TOKENS", str(cls.max_tokens))),
-            temperature=float(os.getenv("LEENVIBE_TEMPERATURE", str(cls.temperature))),
-            cache_dir=os.getenv("LEENVIBE_CACHE_DIR", cls.cache_dir),
+            model_name=os.getenv("LEANVIBE_MODEL_NAME", cls.model_name),
+            deployment_mode=os.getenv("LEANVIBE_DEPLOYMENT_MODE", cls.deployment_mode),
+            server_url=os.getenv("LEANVIBE_MLX_SERVER_URL", cls.server_url),
+            max_tokens=int(os.getenv("LEANVIBE_MAX_TOKENS", str(cls.max_tokens))),
+            temperature=float(os.getenv("LEANVIBE_TEMPERATURE", str(cls.temperature))),
+            cache_dir=os.getenv("LEANVIBE_CACHE_DIR", cls.cache_dir),
         )
 
 

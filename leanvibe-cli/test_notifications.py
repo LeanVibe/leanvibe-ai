@@ -9,12 +9,12 @@ import asyncio
 import sys
 from datetime import datetime
 
-# Add the leenvibe_cli package to the path
-sys.path.insert(0, '/Users/bogdan/work/leanvibe-ai/leenvibe-cli')
+# Add the leanvibe_cli package to the path
+sys.path.insert(0, '/Users/bogdan/work/leanvibe-ai/leanvibe-cli')
 
-from leenvibe_cli.config import CLIConfig
-from leenvibe_cli.services import NotificationService, DesktopNotificationService, NotificationTriggers
-from leenvibe_cli.ui import NotificationOverlay, NotificationHistory
+from leanvibe_cli.config import CLIConfig
+from leanvibe_cli.services import NotificationService, DesktopNotificationService, NotificationTriggers
+from leanvibe_cli.ui import NotificationOverlay, NotificationHistory
 
 
 async def test_desktop_notifications():
@@ -29,7 +29,7 @@ async def test_desktop_notifications():
         # Test critical notification
         success = await service.send_notification(
             title="Test Critical Alert",
-            message="This is a test critical notification from LeenVibe CLI",
+            message="This is a test critical notification from LeanVibe CLI",
             priority="critical",
             sound=False,
             timeout=3
@@ -123,7 +123,7 @@ def test_config():
 
 async def main():
     """Run all tests"""
-    print("🧪 LeenVibe CLI Notification System Tests")
+    print("🧪 LeanVibe CLI Notification System Tests")
     print("=" * 50)
     
     test_config()

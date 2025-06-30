@@ -1,1 +1,1 @@
-# Utils module for LeenVibe backend
+# Utils module for LeanVibe backend

@@ -1,5 +1,5 @@
 """
-Configuration management commands for LeenVibe CLI
+Configuration management commands for LeanVibe CLI
 
 Provides comprehensive configuration management through CLI commands.
 """
@@ -24,7 +24,7 @@ console = Console()
 @click.group()
 @click.pass_context
 def config(ctx):
-    """Manage LeenVibe CLI configuration"""
+    """Manage LeanVibe CLI configuration"""
     ctx.ensure_object(dict)
     config_manager = ConfigurationManager()
     ctx.obj['config_manager'] = config_manager
@@ -50,7 +50,7 @@ def show(ctx, profile: Optional[str], format: str):
     header_text.append("Active Profile: ", style="bold")
     header_text.append(info['active_profile'], style="green")
     
-    console.print(Panel(header_text, title="[bold]LeenVibe Configuration[/bold]", 
+    console.print(Panel(header_text, title="[bold]LeanVibe Configuration[/bold]", 
                        border_style="cyan"))
     
     # Get profile to display
@@ -135,10 +135,10 @@ def set(ctx, key: str, value: str, profile: Optional[str]):
     """Set a configuration value
     
     Examples:
-        leenvibe config set backend_url http://localhost:8000
-        leenvibe config set notifications.enabled true
-        leenvibe config set notifications.minimum_priority high
-        leenvibe config set display.theme dark
+        leanvibe config set backend_url http://localhost:8000
+        leanvibe config set notifications.enabled true
+        leanvibe config set notifications.minimum_priority high
+        leanvibe config set display.theme dark
     """
     config_manager = ctx.obj['config_manager']
     

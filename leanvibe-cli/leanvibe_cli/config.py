@@ -1,5 +1,5 @@
 """
-Configuration management for LeenVibe CLI
+Configuration management for LeanVibe CLI
 
 Handles YAML configuration files, environment detection, and user preferences.
 """
@@ -18,7 +18,7 @@ console = Console()
 
 @dataclass
 class CLIConfig:
-    """Configuration settings for LeenVibe CLI"""
+    """Configuration settings for LeanVibe CLI"""
     
     # Backend connection
     backend_url: str = "http://localhost:8000"
@@ -93,12 +93,12 @@ def get_config_path(config_path: Optional[str] = None) -> Path:
         return Path(config_path)
     
     # Try project-specific config first
-    project_config = Path.cwd() / ".leenvibe" / "cli-config.yaml"
+    project_config = Path.cwd() / ".leanvibe" / "cli-config.yaml"
     if project_config.exists():
         return project_config
     
     # Fall back to user config
-    home_config = Path.home() / ".leenvibe" / "cli-config.yaml"
+    home_config = Path.home() / ".leanvibe" / "cli-config.yaml"
     return home_config
 
 
@@ -166,7 +166,7 @@ def detect_backend_url() -> str:
     """Auto-detect backend URL based on environment"""
     
     # Check environment variable
-    env_url = os.getenv('LEENVIBE_BACKEND_URL')
+    env_url = os.getenv('LEANVIBE_BACKEND_URL')
     if env_url:
         return env_url
     
@@ -175,9 +175,9 @@ def detect_backend_url() -> str:
     
     # Look for backend directory indicators
     backend_indicators = [
-        "leenvibe-backend",
+        "leanvibe-backend",
         "app/main.py",
-        "pyproject.toml"  # If it mentions leenvibe-backend
+        "pyproject.toml"  # If it mentions leanvibe-backend
     ]
     
     # Search up the directory tree
@@ -197,7 +197,7 @@ def detect_project_root() -> Optional[str]:
     
     # Project indicators in order of preference
     indicators = [
-        ".leenvibe",      # LeenVibe project
+        ".leanvibe",      # LeanVibe project
         ".git",           # Git repository
         "pyproject.toml", # Python project
         "package.json",   # Node.js project
@@ -225,7 +225,7 @@ def init_config(force: bool = False) -> bool:
         console.print("[yellow]Use --force to overwrite[/yellow]")
         return False
     
-    console.print("[bold cyan]LeenVibe CLI Configuration Setup[/bold cyan]\n")
+    console.print("[bold cyan]LeanVibe CLI Configuration Setup[/bold cyan]\n")
     
     # Get backend URL
     default_url = detect_backend_url()

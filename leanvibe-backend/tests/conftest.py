@@ -1,5 +1,5 @@
 """
-Pytest configuration and shared fixtures for LeenVibe backend tests.
+Pytest configuration and shared fixtures for LeanVibe backend tests.
 """
 
 import asyncio
