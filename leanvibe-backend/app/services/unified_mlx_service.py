@@ -582,8 +582,8 @@ class UnifiedMLXService:
         ]
 
 
-# Global instance for backward compatibility
-unified_mlx_service = UnifiedMLXService()
+# Global instance for backward compatibility with mock strategy for MVP
+unified_mlx_service = UnifiedMLXService(preferred_strategy=MLXInferenceStrategy.MOCK)
 
 # Aliases for backward compatibility
 real_mlx_service = unified_mlx_service

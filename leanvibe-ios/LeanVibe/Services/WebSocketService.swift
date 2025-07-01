@@ -302,8 +302,26 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     }
     
     private func handleReceivedMessage(_ text: String) {
+        guard let data = text.data(using: .utf8) else {
+            handleFallbackMessage(text)
+            return
+        }
+        
+        // Check if this might be a code completion response by looking for key fields
+        if text.contains("\"intent\"") && text.contains("\"confidence\"") && text.contains("\"suggestions\"") {
+            // This looks like a code completion response, forward it to interested parties
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: Notification.Name("codeCompletionResponse"), 
+                    object: text
+                )
+            }
+            return
+        }
+        
+        // Try AgentResponse (existing behavior)
         do {
-            let response = try JSONDecoder().decode(AgentResponse.self, from: text.data(using: .utf8) ?? Data())
+            let response = try JSONDecoder().decode(AgentResponse.self, from: data)
             
             let messageType: AgentMessage.MessageType = {
                 switch response.status {
@@ -325,14 +343,18 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             messages.append(agentMessage)
             
         } catch {
-            // Fallback for non-JSON responses
-            let agentMessage = AgentMessage(
-                content: text,
-                isFromUser: false,
-                type: .response
-            )
-            messages.append(agentMessage)
+            handleFallbackMessage(text)
         }
+    }
+    
+    private func handleFallbackMessage(_ text: String) {
+        // Fallback for non-JSON responses
+        let agentMessage = AgentMessage(
+            content: text,
+            isFromUser: false,
+            type: .response
+        )
+        messages.append(agentMessage)
     }
     
     private func formatResponseMessage(_ response: AgentResponse) -> String {

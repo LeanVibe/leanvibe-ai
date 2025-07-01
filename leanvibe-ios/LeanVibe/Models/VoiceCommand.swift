@@ -39,6 +39,12 @@ enum CommandIntent: String, CaseIterable, Codable, Sendable {
     case general = "general"
     case task = "task"
     case project = "project"
+    case codeCompletion = "code_completion"
+    case suggest = "suggest"
+    case explain = "explain"
+    case refactor = "refactor"
+    case debug = "debug"
+    case optimize = "optimize"
     
     var displayName: String {
         switch self {
@@ -58,6 +64,18 @@ enum CommandIntent: String, CaseIterable, Codable, Sendable {
             return "Task Management"
         case .project:
             return "Project Control"
+        case .codeCompletion:
+            return "Code Completion"
+        case .suggest:
+            return "Code Suggestions"
+        case .explain:
+            return "Code Explanation"
+        case .refactor:
+            return "Code Refactoring"
+        case .debug:
+            return "Debug Assistance"
+        case .optimize:
+            return "Code Optimization"
         }
     }
     
@@ -79,6 +97,18 @@ enum CommandIntent: String, CaseIterable, Codable, Sendable {
             return "checklist"
         case .project:
             return "folder"
+        case .codeCompletion:
+            return "chevron.left.forwardslash.chevron.right"
+        case .suggest:
+            return "lightbulb"
+        case .explain:
+            return "text.bubble"
+        case .refactor:
+            return "arrow.triangle.2.circlepath"
+        case .debug:
+            return "ant"
+        case .optimize:
+            return "speedometer"
         }
     }
 }
@@ -170,7 +200,25 @@ class VoiceCommandProcessor {
         let taskKeywords = ["task", "tasks", "todo", "work", "progress"]
         let projectKeywords = ["project", "workspace", "repository", "repo"]
         
-        if statusKeywords.contains(where: text.contains) {
+        // Code completion keywords - check these first for higher priority
+        let suggestKeywords = ["suggest", "suggestion", "improve", "better", "recommendation"]
+        let explainKeywords = ["explain", "what does", "how does", "meaning", "purpose"]
+        let refactorKeywords = ["refactor", "refactoring", "restructure", "reorganize", "clean up"]
+        let debugKeywords = ["debug", "fix", "error", "bug", "issue", "problem"]
+        let optimizeKeywords = ["optimize", "performance", "faster", "improve performance", "speed up"]
+        
+        // Check code completion intents first
+        if suggestKeywords.contains(where: text.contains) {
+            return .suggest
+        } else if explainKeywords.contains(where: text.contains) {
+            return .explain
+        } else if refactorKeywords.contains(where: text.contains) {
+            return .refactor
+        } else if debugKeywords.contains(where: text.contains) {
+            return .debug
+        } else if optimizeKeywords.contains(where: text.contains) {
+            return .optimize
+        } else if statusKeywords.contains(where: text.contains) {
             return .status
         } else if fileKeywords.contains(where: text.contains) {
             return .fileOperation
@@ -221,6 +269,18 @@ class VoiceCommandProcessor {
                 return "switch project"
             }
             return "show project info"
+        case .suggest:
+            return "/code-completion/suggest"
+        case .explain:
+            return "/code-completion/explain"
+        case .refactor:
+            return "/code-completion/refactor"
+        case .debug:
+            return "/code-completion/debug"
+        case .optimize:
+            return "/code-completion/optimize"
+        case .codeCompletion:
+            return "/code-completion/suggest"  // Default to suggest
         case .navigation, .general:
             return text
         }
@@ -292,6 +352,18 @@ class VoiceCommandProcessor {
             return ["task", "tasks", "todo", "work"]
         case .project:
             return ["project", "workspace", "repository"]
+        case .suggest:
+            return ["suggest", "suggestion", "improve", "better"]
+        case .explain:
+            return ["explain", "what does", "how does", "meaning"]
+        case .refactor:
+            return ["refactor", "refactoring", "restructure", "reorganize"]
+        case .debug:
+            return ["debug", "fix", "error", "bug", "issue"]
+        case .optimize:
+            return ["optimize", "performance", "faster", "speed up"]
+        case .codeCompletion:
+            return ["code", "completion", "suggest", "help"]
         case .general:
             return []
         }
