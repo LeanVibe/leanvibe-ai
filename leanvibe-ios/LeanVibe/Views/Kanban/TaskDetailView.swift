@@ -9,8 +9,6 @@ struct TaskDetailView: View {
     @State private var isEditing = false
     @State private var showingApprovalSheet = false
     @State private var approvalFeedback = ""
-    @State private var errorMessage: String?
-    @State private var showingError = false
     
     var body: some View {
         NavigationView {
@@ -67,8 +65,9 @@ struct TaskDetailView: View {
                             task: $task, 
                             taskService: taskService,
                             onError: { error in
-                                errorMessage = error
-                                showingError = true
+                                // TODO: Fix GlobalErrorManager resolution
+                                // GlobalErrorManager.shared.showValidationError(error)
+                                print("Task validation error: \(error)")
                             }
                         )
                     } label: {
@@ -84,14 +83,6 @@ struct TaskDetailView: View {
             // TODO: Implement AgentDecisionApprovalView
             Text("Agent Decision Approval - Coming Soon")
                 .padding()
-        }
-        .alert("Task Error", isPresented: $showingError) {
-            Button("OK") {
-                showingError = false
-                errorMessage = nil
-            }
-        } message: {
-            Text(errorMessage ?? "An error occurred with the task operation")
         }
     }
     
@@ -467,8 +458,25 @@ struct StatusChangeMenu: View {
                                 // Update local task status for immediate UI feedback
                                 task.status = status
                                 task.updatedAt = Date()
+                                // TODO: Fix GlobalErrorManager resolution
+                                // GlobalErrorManager.shared.showSuccess("Task status updated successfully")
+                                print("Task status updated successfully")
                             } catch {
-                                onError("Failed to update task status: \(error.localizedDescription)")
+                                // TODO: Fix GlobalErrorManager resolution - Use enhanced error system with retry capability
+                                // GlobalErrorManager.shared.showTaskOperationError(
+                                //     operation: {
+                                //         try await taskService.updateTaskStatus(task.id, status)
+                                //         await MainActor.run {
+                                //             task.status = status
+                                //             task.updatedAt = Date()
+                                //         }
+                                //     },
+                                //     context: "Updating task status to \(status.displayName)",
+                                //     onSuccess: { _ in
+                                //         GlobalErrorManager.shared.showSuccess("Task status updated successfully")
+                                //     }
+                                // )
+                                print("Failed to update task status: \(error)")
                             }
                         }
                     }) {

@@ -23,7 +23,7 @@ enum ProjectManagerError: LocalizedError {
 }
 
 
-@available(macOS 10.15, iOS 13.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class ProjectManager: ObservableObject {
     @Published var projects: [Project] = []
@@ -53,37 +53,43 @@ class ProjectManager: ObservableObject {
     }
     
     func refreshProjects() async throws {
+        // TODO: Fix RetryManager resolution issue
+        // try await RetryManager.shared.executeWithRetry(
+        //     operation: { [weak self] in
+        //         try await self?.refreshProjectsInternal()
+        //     },
+        //     maxAttempts: 3,
+        //     backoffStrategy: BackoffStrategy.exponential(base: 2.0, multiplier: 1.5),
+        //     retryCondition: { error in
+        //         // Only retry network errors, not validation errors
+        //         if error is ProjectManagerError {
+        //             return false
+        //         }
+        //         return RetryManager.shouldRetry(error)
+        //     },
+        //     context: "Refreshing projects from backend"
+        // )
+        try await refreshProjectsInternal()
+    }
+    
+    private func refreshProjectsInternal() async throws {
         isLoading = true
         lastError = nil
         defer { isLoading = false }
         
-        do {
-            // Try to fetch from backend API
-            if let backendProjects = try await fetchProjectsFromBackend() {
-                projects = backendProjects
-                try await saveProjects() // Persist fetched data
-            } else {
-                // Fallback to persistent storage if backend unavailable
-                loadPersistedProjects()
-                
-                // If no projects exist locally, load sample data
-                if projects.isEmpty {
-                    loadSampleProjects()
-                    try await saveProjects()
-                }
-            }
-        } catch {
-            lastError = "Failed to refresh projects: \(error.localizedDescription)"
-            
-            // On error, still try to load from persistence as fallback
+        // Try to fetch from backend API
+        if let backendProjects = try await fetchProjectsFromBackend() {
+            projects = backendProjects
+            try await saveProjects() // Persist fetched data
+        } else {
+            // Fallback to persistent storage if backend unavailable
             loadPersistedProjects()
             
-            // If completely empty, show sample data so UI isn't broken
+            // If no projects exist locally, load sample data
             if projects.isEmpty {
                 loadSampleProjects()
+                try await saveProjects()
             }
-            
-            throw error
         }
     }
     
@@ -142,9 +148,25 @@ class ProjectManager: ObservableObject {
         }
     }
     
+    // Legacy method for backwards compatibility  
+    func removeProject(_ projectId: UUID) async throws {
+        try await deleteProject(projectId)
+    }
+    
     // Legacy method for backwards compatibility
     func removeProject(_ project: Project) async throws {
         try await deleteProject(project.id)
+    }
+    
+    func clearAllProjects() async throws {
+        lastError = nil
+        do {
+            projects.removeAll()
+            try await saveProjects()
+        } catch {
+            lastError = "Failed to clear projects: \(error.localizedDescription)"
+            throw error
+        }
     }
     
     func updateProject(_ project: Project) async throws {
@@ -195,7 +217,7 @@ class ProjectManager: ObservableObject {
         }
     }
     
-    private func loadSampleProjects() {
+    func loadSampleProjects() {
         projects = [
             Project(
                 displayName: "LeanVibe Backend",
@@ -308,6 +330,10 @@ class ProjectManager: ObservableObject {
     
     var projectCount: Int {
         return projects.count
+    }
+    
+    var activeProjects: [Project] {
+        return projects.filter { $0.status == .active }
     }
     
     var projectsByStatus: [ProjectStatus: [Project]] {

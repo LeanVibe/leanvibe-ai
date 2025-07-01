@@ -149,6 +149,7 @@ struct DashboardTabView: View {
                     .zIndex(999)
             }
         }
+        // .withGlobalErrorHandling() // TODO: Fix View extension availability issue
         .environmentObject(navigationCoordinator)
         .onAppear {
             // Initialize project manager with WebSocket service

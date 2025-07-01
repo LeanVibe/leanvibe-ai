@@ -216,6 +216,26 @@ struct SettingsView: View {
     
     private var advancedFeaturesSection: some View {
         Section("Advanced Features") {
+            // TODO: Fix ErrorHistoryView and GlobalErrorManager resolution
+            // NavigationLink(destination: ErrorHistoryView(errorManager: GlobalErrorManager.shared)) {
+            //     SettingsRow(
+            //         icon: "exclamationmark.triangle.fill",
+            //         iconColor: .orange,
+            //         title: "Error History",
+            //         subtitle: "\(GlobalErrorManager.shared.errorHistory.count) errors logged"
+            //     )
+            // }
+            
+            // TODO: Fix RetryMonitorView and RetryManager resolution
+            // NavigationLink(destination: RetryMonitorView(retryManager: RetryManager.shared)) {
+            //     SettingsRow(
+            //         icon: "arrow.clockwise.circle.fill",
+            //         iconColor: .blue,
+            //         title: "Retry Monitor",
+            //         subtitle: "\(RetryManager.shared.activeRetries.count) active retries"
+            //     )
+            // }
+            
             NavigationLink(destination: DeveloperSettingsView()) {
                 SettingsRow(
                     icon: "hammer.fill",

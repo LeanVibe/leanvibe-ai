@@ -96,6 +96,7 @@ enum ProjectLanguage: String, CaseIterable, Codable {
 enum ProjectStatus: String, CaseIterable, Codable {
     case planning = "planning"
     case active = "active"
+    case inactive = "inactive"
     case completed = "completed"
     case archived = "archived"
     
@@ -103,6 +104,7 @@ enum ProjectStatus: String, CaseIterable, Codable {
         switch self {
         case .planning: return "blue"
         case .active: return "green"
+        case .inactive: return "orange"
         case .completed: return "purple"
         case .archived: return "gray"
         }
@@ -112,6 +114,7 @@ enum ProjectStatus: String, CaseIterable, Codable {
         switch self {
         case .planning: return "calendar"
         case .active: return "checkmark.circle.fill"
+        case .inactive: return "pause.circle.fill"
         case .completed: return "checkmark.seal.fill"
         case .archived: return "archivebox.fill"
         }
@@ -121,6 +124,7 @@ enum ProjectStatus: String, CaseIterable, Codable {
         switch self {
         case .planning: return "Planning"
         case .active: return "Active"
+        case .inactive: return "Inactive"
         case .completed: return "Completed"
         case .archived: return "Archived"
         }

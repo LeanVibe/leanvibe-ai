@@ -13,8 +13,6 @@ struct KanbanBoardView: View {
     @State private var showingSettings = false
     @State private var sortOption: TaskSortOption = .priority
     @State private var draggedTask: LeanVibeTask?
-    @State private var errorMessage: String?
-    @State private var showingError = false
 
     var body: some View {
         NavigationView {
@@ -28,8 +26,9 @@ struct KanbanBoardView: View {
                             selectedTask: $selectedTask,
                             draggedTask: $draggedTask,
                             onDragError: { error in
-                                errorMessage = error
-                                showingError = true
+                                // TODO: Fix GlobalErrorManager resolution
+                                // GlobalErrorManager.shared.showValidationError(error)
+                                print("Drag error: \(error)")
                             }
                         )
                     }
@@ -77,24 +76,14 @@ struct KanbanBoardView: View {
             .sheet(item: $selectedTask) { task in
                 TaskDetailView(taskService: taskService, task: task)
             }
-            .alert("Drag & Drop Error", isPresented: $showingError) {
-                Button("OK") { 
-                    showingError = false
-                    errorMessage = nil
-                }
-            } message: {
-                Text(errorMessage ?? "An error occurred while moving the task")
-            }
         }
         .task {
             // Load tasks for the current project when view appears
             do {
                 try await taskService.loadTasks(for: projectId)
             } catch {
-                await MainActor.run {
-                    errorMessage = "Failed to load tasks: \(error.localizedDescription)"
-                    showingError = true
-                }
+                // Global error manager handles the error display
+                // TaskService already shows the error via GlobalErrorManager
             }
         }
         .refreshable {
@@ -102,8 +91,8 @@ struct KanbanBoardView: View {
             do {
                 try await taskService.loadTasks(for: projectId)
             } catch {
-                errorMessage = "Failed to refresh tasks: \(error.localizedDescription)"
-                showingError = true
+                // Global error manager handles the error display
+                // TaskService already shows the error via GlobalErrorManager
             }
         }
     }

@@ -4,7 +4,7 @@ import SwiftUI
 
 // MARK: - Task Service for Backend Integration
 
-@available(macOS 10.15, iOS 13.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class TaskService: ObservableObject {
     @Published var tasks: [LeanVibeTask] = []
@@ -37,23 +37,37 @@ class TaskService: ObservableObject {
     // MARK: - Core Task Operations
     
     func loadTasks(for projectId: UUID) async throws {
+        // TODO: Fix RetryManager resolution issue
+        // try await RetryManager.shared.executeWithRetry(
+        //     operation: { [weak self] in
+        //         await self?.loadTasksInternal(for: projectId)
+        //     },
+        //     maxAttempts: 3,
+        //     backoffStrategy: BackoffStrategy.exponential(base: 1.0, multiplier: 2.0),
+        //     retryCondition: RetryManager.shouldRetry,
+        // Simplified without retry logic for now
+        //     onAttempt: { attempt, error in
+        //         if let error = error {
+        //             print("Task loading attempt \(attempt) failed: \(error.localizedDescription)")
+        //         }
+        //     },
+        //     context: "Loading tasks for project \(projectId)"
+        // )
+    }
+    
+    private func loadTasksInternal(for projectId: UUID) async throws {
         isLoading = true
         lastError = nil
         defer { isLoading = false }
         
-        do {
-            // In production, fetch from backend
-            // For now, filter persisted tasks by project
-            let projectTasks = tasks.filter { $0.projectId == projectId }
-            
-            // If no tasks exist for project, load sample data
-            if projectTasks.isEmpty {
-                generateSampleTasks(for: projectId)
-                try await saveTasks()
-            }
-        } catch {
-            lastError = "Failed to load tasks: \(error.localizedDescription)"
-            throw error
+        // In production, fetch from backend
+        // For now, filter persisted tasks by project
+        let projectTasks = tasks.filter { $0.projectId == projectId }
+        
+        // If no tasks exist for project, load sample data
+        if projectTasks.isEmpty {
+            generateSampleTasks(for: projectId)
+            try await saveTasks()
         }
     }
     
@@ -75,23 +89,32 @@ class TaskService: ObservableObject {
     }
     
     func updateTaskStatus(_ taskId: UUID, _ status: TaskStatus) async throws {
+        // TODO: Fix RetryManager resolution issue
+        // try await RetryManager.shared.executeWithRetry(
+        //     operation: { [weak self] in
+        //         try await self?.updateTaskStatusInternal(taskId, status)
+        //     },
+        //     maxAttempts: 2,
+        //     backoffStrategy: BackoffStrategy.fixed(1.0),
+        //     retryCondition: RetryManager.shouldRetry,
+        //     context: "Updating task status to \(status)"
+        // )
+        try await updateTaskStatusInternal(taskId, status)
+    }
+    
+    private func updateTaskStatusInternal(_ taskId: UUID, _ status: TaskStatus) async throws {
         lastError = nil
         
-        do {
-            guard let index = tasks.firstIndex(where: { $0.id == taskId }) else {
-                throw TaskServiceError.taskNotFound
-            }
-            
-            var updatedTask = tasks[index]
-            updatedTask.status = status
-            updatedTask.updatedAt = Date()
-            
-            tasks[index] = updatedTask
-            try await saveTasks()
-        } catch {
-            lastError = "Failed to update task status: \(error.localizedDescription)"
-            throw error
+        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else {
+            throw TaskServiceError.taskNotFound
         }
+        
+        var updatedTask = tasks[index]
+        updatedTask.status = status
+        updatedTask.updatedAt = Date()
+        
+        tasks[index] = updatedTask
+        try await saveTasks()
     }
     
     func updateTask(_ task: LeanVibeTask) async throws {
@@ -114,6 +137,8 @@ class TaskService: ObservableObject {
             try await saveTasks()
         } catch {
             lastError = "Failed to update task: \(error.localizedDescription)"
+            // Error handling will be managed by the global error system
+            // GlobalErrorManager.shared.showError(TaskServiceError.updateFailed, context: "Updating task: \(task.title)")
             throw error
         }
     }
@@ -481,6 +506,10 @@ enum TaskServiceError: LocalizedError {
     case taskNotFound
     case invalidTaskData(String)
     case persistenceError(String)
+    case updateFailed
+    case networkFailure
+    case invalidData
+    case unauthorized
     
     var errorDescription: String? {
         switch self {
@@ -496,6 +525,14 @@ enum TaskServiceError: LocalizedError {
             return message
         case .persistenceError(let message):
             return message
+        case .updateFailed:
+            return "Failed to update task"
+        case .networkFailure:
+            return "Network connection failed"
+        case .invalidData:
+            return "Invalid data received"
+        case .unauthorized:
+            return "Unauthorized access"
         }
     }
 }

@@ -3,6 +3,7 @@ import Combine
 
 // MARK: - Performance Analytics Integration
 
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class PerformanceAnalytics: ObservableObject {
     @Published var metrics = AnalyticsPerformanceMetrics()

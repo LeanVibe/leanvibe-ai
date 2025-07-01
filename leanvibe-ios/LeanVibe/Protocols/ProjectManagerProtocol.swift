@@ -12,6 +12,7 @@ import Combine
 /// Protocol defining the exact interface for project management services
 /// This contract MUST be implemented exactly to prevent integration failures
 /// Based on project-schema.yaml definitions
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 protocol ProjectManagerProtocol: ObservableObject {
     

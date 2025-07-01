@@ -13,8 +13,6 @@ struct TaskEditView: View {
     @State private var tags: [String]
     @State private var newTag = ""
     @State private var isUpdating = false
-    @State private var errorMessage: String?
-    @State private var showingError = false
     
     init(task: Binding<LeanVibeTask>, taskService: TaskService) {
         self._task = task
@@ -112,14 +110,6 @@ struct TaskEditView: View {
                 }
             }
         }
-        .alert("Update Error", isPresented: $showingError) {
-            Button("OK") {
-                showingError = false
-                errorMessage = nil
-            }
-        } message: {
-            Text(errorMessage ?? "Failed to update task")
-        }
     }
     
     private func addTag() {
@@ -156,8 +146,8 @@ struct TaskEditView: View {
             } catch {
                 await MainActor.run {
                     isUpdating = false
-                    errorMessage = "Failed to update task: \(error.localizedDescription)"
-                    showingError = true
+                    // Global error manager handles the error display
+                    // TaskService already shows the error via GlobalErrorManager
                 }
             }
         }

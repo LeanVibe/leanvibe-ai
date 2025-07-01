@@ -3,6 +3,7 @@ import Combine
 
 // MARK: - Battery-Aware Performance Management
 
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class BatteryOptimizedManager: ObservableObject {
     @Published var batteryLevel: Float = 1.0

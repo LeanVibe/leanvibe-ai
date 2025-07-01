@@ -3,6 +3,7 @@ import SwiftUI
 import Observation
 
 /// Represents user-configurable settings for the application.
+@available(iOS 18.0, macOS 14.0, *)
 @Observable
 class SettingsManager: ObservableObject, @unchecked Sendable {
     static let shared: SettingsManager = {
@@ -296,16 +297,4 @@ struct AccessibilitySettings: SettingsProtocol {
     }
 }
 
-// MARK: - Environment Key for Swift 6 Injection
-struct SettingsManagerEnvironmentKey: EnvironmentKey {
-    static var defaultValue: SettingsManager {
-        SettingsManager.shared
-    }
-}
-
-extension EnvironmentValues {
-    var settingsManager: SettingsManager {
-        get { self[SettingsManagerEnvironmentKey.self] }
-        set { self[SettingsManagerEnvironmentKey.self] = newValue }
-    }
-} 
+ 
