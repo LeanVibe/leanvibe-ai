@@ -24,12 +24,41 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     
     private func autoConnectIfAvailable() {
         guard let storedConnection = storageManager.currentConnection else {
-            connectionStatus = "No saved connection - Scan QR to connect"
+            // Try default configuration for development
+            if let defaultConnection = createDefaultConnection() {
+                connectionStatus = "Connecting to \(defaultConnection.displayName)..."
+                connectWithSettings(defaultConnection)
+            } else {
+                connectionStatus = "No saved connection - Scan QR to connect"
+            }
             return
         }
         
         connectionStatus = "Connecting to \(storedConnection.displayName)..."
         connectWithSettings(storedConnection)
+    }
+    
+    private func createDefaultConnection() -> ConnectionSettings? {
+        let config = AppConfiguration.shared
+        
+        // Only auto-connect in debug builds or when explicitly configured
+        guard config.isLoggingEnabled else { return nil }
+        
+        do {
+            try config.validateConfiguration()
+            
+            return ConnectionSettings(
+                id: UUID(),
+                displayName: "Local Development",
+                websocketURL: config.webSocketURL.replacingOccurrences(of: "/ws", with: ""),
+                apiKey: "development",
+                isActive: true,
+                lastConnected: Date()
+            )
+        } catch {
+            print("⚠️ Cannot create default connection: \(error)")
+            return nil
+        }
     }
     
     private func connectWithSettings(_ settings: ConnectionSettings) {
