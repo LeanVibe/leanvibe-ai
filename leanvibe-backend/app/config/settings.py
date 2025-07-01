@@ -144,7 +144,7 @@ class LeanVibeSettings(BaseSettings):
             raise ValueError(f"Production configuration errors: {', '.join(errors)}")
     
     class Config:
-        env_file = ".env"
+        env_file = "../.env"  # Look for .env in parent directory
         case_sensitive = False
 
 
