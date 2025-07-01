@@ -21,14 +21,15 @@ class SpeechRecognitionService: NSObject, ObservableObject {
         case error(String)
     }
     
-    nonisolated(unsafe) private var audioEngine: AVAudioEngine?
-    nonisolated(unsafe) private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    nonisolated(unsafe) private var recognitionTask: SFSpeechRecognitionTask?
-    nonisolated(unsafe) private var speechRecognizer: SFSpeechRecognizer?
-    nonisolated(unsafe) private var audioLevelTimer: Timer?
-    nonisolated(unsafe) private var silenceTimer: Timer?
-    nonisolated(unsafe) private var recordingTimer: Timer?
+    private var audioEngine: AVAudioEngine?
+    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var recognitionTask: SFSpeechRecognitionTask?
+    private var speechRecognizer: SFSpeechRecognizer?
+    private var silenceTask: Task<Void, Never>?
+    private var recordingTimeoutTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
+    private let audioCoordinator = AudioSessionCoordinator.shared
+    private let clientId = "SpeechRecognitionService-\(UUID().uuidString)"
     
     // Configuration
     private let maxRecordingDuration: TimeInterval = 30.0
@@ -41,25 +42,12 @@ class SpeechRecognitionService: NSObject, ObservableObject {
     }
     
     deinit {
-#if os(iOS)
-        // CRITICAL: deinit can be called from any thread, so we must dispatch cleanup to main
-        // This ensures proper @MainActor isolation for cleanup operations
-        DispatchQueue.main.async { [audioEngine, recognitionTask, recognitionRequest, audioLevelTimer, silenceTimer, recordingTimer] in
-            if let engine = audioEngine {
-                engine.stop()
-                if engine.inputNode.numberOfInputs > 0 {
-                    engine.inputNode.removeTap(onBus: 0)
-                }
-            }
-            recognitionTask?.cancel()
-            recognitionRequest?.endAudio()
-            
-            // Invalidate timers safely on main thread
-            audioLevelTimer?.invalidate()
-            silenceTimer?.invalidate() 
-            recordingTimer?.invalidate()
-        }
-#endif
+        // Cancel tasks immediately - they are designed to be cancelled safely
+        silenceTask?.cancel()
+        recordingTimeoutTask?.cancel()
+        
+        // Audio engine cleanup will happen naturally when the instance is deallocated
+        // This is safer than attempting async cleanup in deinit
     }
     
     private func setupSpeechRecognizer() {
@@ -89,14 +77,18 @@ class SpeechRecognitionService: NSObject, ObservableObject {
                 self.recognitionState = .error("Speech recognition permission denied")
                 return
             }
-            do {
-                try self.startAudioEngine()
-                self.setupRecognitionRequest()
-                self.isListening = true
-                self.startTimers()
-            } catch {
-                self.recognitionState = .error(error.localizedDescription)
-                self.lastError = error.localizedDescription
+            Task {
+                let result = await self.audioCoordinator.registerSpeechClient(self.clientId)
+                switch result {
+                case .success:
+                    await self.setupRecognitionRequest()
+                    self.isListening = true
+                    self.startTimers()
+                    self.setupAudioBufferSubscription()
+                case .failure(let error):
+                    self.recognitionState = .error(error.localizedDescription)
+                    self.lastError = error.localizedDescription
+                }
             }
         }
     }
@@ -108,8 +100,11 @@ class SpeechRecognitionService: NSObject, ObservableObject {
         isListening = false
         recognitionState = .processing
         
-        audioEngine?.stop()
-        audioEngine?.inputNode.removeTap(onBus: 0)
+        // Unregister from audio coordinator
+        Task {
+            await audioCoordinator.unregisterClient(clientId)
+        }
+        
         recognitionRequest?.endAudio()
         stopTimers()
         
@@ -121,34 +116,31 @@ class SpeechRecognitionService: NSObject, ObservableObject {
     }
     
     private func startTimers() {
-        // Audio level monitoring
-        audioLevelTimer = Timer.scheduledTimer(withTimeInterval: audioLevelUpdateInterval, repeats: true) { _ in
-            // Timer handled by audio tap
-        }
-        
-        // Silence detection
-        silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceTimeout, repeats: false) { [weak self] _ in
-            Task { @MainActor [weak self] in
+        // Silence detection using modern async Task.sleep
+        silenceTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(self?.silenceTimeout ?? 3.0))
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
                 self?.handleSilenceTimeout()
             }
         }
         
-        // Maximum recording duration
-        recordingTimer = Timer.scheduledTimer(withTimeInterval: maxRecordingDuration, repeats: false) { [weak self] _ in
-            Task { @MainActor [weak self] in
+        // Maximum recording duration using modern async Task.sleep
+        recordingTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(self?.maxRecordingDuration ?? 30.0))
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
                 self?.handleRecordingTimeout()
             }
         }
     }
     
     private func stopTimers() {
-        audioLevelTimer?.invalidate()
-        silenceTimer?.invalidate()
-        recordingTimer?.invalidate()
+        silenceTask?.cancel()
+        recordingTimeoutTask?.cancel()
         
-        audioLevelTimer = nil
-        silenceTimer = nil
-        recordingTimer = nil
+        silenceTask = nil
+        recordingTimeoutTask = nil
     }
     
     private func handleSilenceTimeout() {
@@ -215,27 +207,28 @@ extension SpeechRecognitionService: SFSpeechRecognizerDelegate {
     }
 }
 
-// Restore iOS-only methods
+// MARK: - Audio Integration with Coordinator
 extension SpeechRecognitionService {
-    func startAudioEngine() throws {
-        audioEngine = AVAudioEngine()
-        guard let audioEngine = audioEngine else {
-            throw RecognitionError.audioEngineFailure
-        }
-        let inputNode = audioEngine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            self?.recognitionRequest?.append(buffer)
-            let level = self?.calculateAudioLevel(from: buffer) ?? 0.0
-            Task { @MainActor [weak self] in
-                self?.audioLevel = level
+    private func setupAudioBufferSubscription() {
+        // Subscribe to audio buffers from the coordinator
+        audioCoordinator.audioBufferPublisher
+            .sink { [weak self] buffer in
+                Task { @MainActor [weak self] in
+                    self?.processAudioBuffer(buffer)
+                }
             }
-        }
-        audioEngine.prepare()
-        try audioEngine.start()
+            .store(in: &cancellables)
     }
     
-    func setupRecognitionRequest() {
+    private func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {
+        // Send buffer to speech recognition
+        recognitionRequest?.append(buffer)
+        
+        // Update audio level
+        audioLevel = calculateAudioLevel(from: buffer)
+    }
+    
+    private func setupRecognitionRequest() async {
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         guard let recognitionRequest = recognitionRequest else { return }
         recognitionRequest.shouldReportPartialResults = true

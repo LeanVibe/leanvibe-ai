@@ -144,7 +144,8 @@
 		FC4B40718F5FEB81956DE7A6 /* RetryMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6484232922FF80F9985ED8A /* RetryMonitorView.swift */; };
 		FD958643605CF788FEFA485F /* VoicePermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0E521B6A2FF08068057D45 /* VoicePermissionManager.swift */; };
 		FF5C81B467E73492C71D01ED /* ProjectDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80249E4395597555436DD5AF /* ProjectDashboardView.swift */; };
-/* End PBXBuildFile section */
+		39336564336230352D363131 /* AudioSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66303139313539382D666438 /* AudioSessionCoordinator.swift */; };
+		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		0379F6DED70C5324C83FC336 /* PBXContainerItemProxy */ = {
@@ -296,7 +297,8 @@
 		FD0E521B6A2FF08068057D45 /* VoicePermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePermissionManager.swift; sourceTree = "<group>"; };
 		FE6DBEC322FDA55FCDDC02BA /* MetricsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricsViewModel.swift; sourceTree = "<group>"; };
 		FF0101E6D11B79F4E27AEC26 /* AccessibilitySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySettingsView.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+		66303139313539382D666438 /* AudioSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AudioSessionCoordinator.swift; path = LeanVibe/Services/AudioSessionCoordinator.swift; sourceTree = SOURCE_ROOT; };
+		/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		6E3D7BCCE3937038F6BC20D7 /* Frameworks */ = {
@@ -381,7 +383,8 @@
 				FD0E521B6A2FF08068057D45 /* VoicePermissionManager.swift */,
 				469DA90FBFE05330D089785D /* WakePhraseManager.swift */,
 				117E9228C6CCF60F33A14BFC /* WebSocketService.swift */,
-			);
+		
+				66303139313539382D666438 /* AudioSessionCoordinator.swift */,	);
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -952,7 +955,8 @@
 				94F7439A860B76C4D5151150 /* NotificationCenter+CodeCompletion.swift in Sources */,
 				10664C02B42B5104762BBC7D /* ErrorDisplayView.swift in Sources */,
 				4CD743C99517320A05D75EB7 /* KanbanColumnView.swift in Sources */,
-			);
+		
+				39336564336230352D363131 /* AudioSessionCoordinator.swift in Sources */,	);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		704BF8338157E8B787C7531D /* Sources */ = {
