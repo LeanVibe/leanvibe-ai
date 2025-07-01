@@ -2,6 +2,7 @@ import SwiftUI
 import Foundation
 import Combine
 
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class AppLifecycleManager: ObservableObject {
     @Published var appState: AppState = .launching
