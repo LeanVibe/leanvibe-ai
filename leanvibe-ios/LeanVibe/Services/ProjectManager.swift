@@ -1,6 +1,27 @@
 import Foundation
 import SwiftUI
 
+// MARK: - ProjectManager Errors
+enum ProjectManagerError: LocalizedError {
+    case invalidProjectName
+    case duplicateProject
+    case projectNotFound
+    case persistenceError(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidProjectName:
+            return "Project name cannot be empty"
+        case .duplicateProject:
+            return "A project with this path already exists"
+        case .projectNotFound:
+            return "Project not found"
+        case .persistenceError(let message):
+            return message
+        }
+    }
+}
+
 
 @available(macOS 10.15, iOS 13.0, *)
 @MainActor
@@ -11,9 +32,18 @@ class ProjectManager: ObservableObject {
     @Published var lastError: String?
     
     private var webSocketService: WebSocketService?
+    private let userDefaultsKey = "leanvibe_projects"
+    private let jsonEncoder = JSONEncoder()
+    private let jsonDecoder = JSONDecoder()
     
     init() {
-        loadSampleProjects()
+        setupDateFormatting()
+        loadPersistedProjects()
+    }
+    
+    private func setupDateFormatting() {
+        jsonEncoder.dateEncodingStrategy = .iso8601
+        jsonDecoder.dateDecodingStrategy = .iso8601
     }
     
     func configure(with webSocketService: WebSocketService) {
@@ -22,19 +52,54 @@ class ProjectManager: ObservableObject {
         // message handling should be done via the @Published messages property
     }
     
-    func refreshProjects() async {
+    func refreshProjects() async throws {
         isLoading = true
+        lastError = nil
         defer { isLoading = false }
         
-        // In production, this would fetch from backend
-        // For now, simulate network delay
-        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-        
-        // Simulate refreshed data
-        loadSampleProjects()
+        do {
+            // In production, this would fetch from backend
+            // For now, simulate network delay and load from persistence
+            try await Task.sleep(nanoseconds: 500_000_000) // 0.5 second
+            
+            // Load from persistent storage
+            loadPersistedProjects()
+            
+            // If no projects exist, load sample data
+            if projects.isEmpty {
+                loadSampleProjects()
+                try await saveProjects()
+            }
+        } catch {
+            lastError = "Failed to refresh projects: \(error.localizedDescription)"
+            throw error
+        }
     }
     
-    func addProject(name: String, path: String, language: ProjectLanguage) {
+    func addProject(_ project: Project) async throws {
+        lastError = nil
+        
+        do {
+            // Validate project data
+            guard !project.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw ProjectManagerError.invalidProjectName
+            }
+            
+            // Check for duplicate projects by path
+            if projects.contains(where: { $0.path == project.path }) {
+                throw ProjectManagerError.duplicateProject
+            }
+            
+            projects.append(project)
+            try await saveProjects()
+        } catch {
+            lastError = "Failed to add project: \(error.localizedDescription)"
+            throw error
+        }
+    }
+    
+    // Legacy method for backwards compatibility
+    func addProject(name: String, path: String, language: ProjectLanguage) async throws {
         let newProject = Project(
             displayName: name,
             status: .active,
@@ -47,19 +112,51 @@ class ProjectManager: ObservableObject {
                 issuesCount: Int.random(in: 0...5)
             )
         )
-        projects.append(newProject)
-        saveProjects()
+        try await addProject(newProject)
     }
     
-    func removeProject(_ project: Project) {
-        projects.removeAll { $0.id == project.id }
-        saveProjects()
+    func deleteProject(_ projectId: UUID) async throws {
+        lastError = nil
+        
+        do {
+            guard let index = projects.firstIndex(where: { $0.id == projectId }) else {
+                throw ProjectManagerError.projectNotFound
+            }
+            
+            projects.remove(at: index)
+            try await saveProjects()
+        } catch {
+            lastError = "Failed to delete project: \(error.localizedDescription)"
+            throw error
+        }
     }
     
-    func updateProject(_ project: Project) {
-        if let index = projects.firstIndex(where: { $0.id == project.id }) {
-            projects[index] = project
-            saveProjects()
+    // Legacy method for backwards compatibility
+    func removeProject(_ project: Project) async throws {
+        try await deleteProject(project.id)
+    }
+    
+    func updateProject(_ project: Project) async throws {
+        lastError = nil
+        
+        do {
+            guard let index = projects.firstIndex(where: { $0.id == project.id }) else {
+                throw ProjectManagerError.projectNotFound
+            }
+            
+            // Validate updated project data
+            guard !project.displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw ProjectManagerError.invalidProjectName
+            }
+            
+            var updatedProject = project
+            updatedProject.updatedAt = Date()
+            
+            projects[index] = updatedProject
+            try await saveProjects()
+        } catch {
+            lastError = "Failed to update project: \(error.localizedDescription)"
+            throw error
         }
     }
     
@@ -113,9 +210,41 @@ class ProjectManager: ObservableObject {
         // This would parse the backend response and update projects
     }
     
-    private func saveProjects() {
-        // In a real app, this would save to Core Data or UserDefaults
-        // For now, we'll keep them in memory
+    private func saveProjects() async throws {
+        do {
+            let data = try jsonEncoder.encode(projects)
+            UserDefaults.standard.set(data, forKey: userDefaultsKey)
+            UserDefaults.standard.synchronize()
+        } catch {
+            throw ProjectManagerError.persistenceError("Failed to save projects: \(error.localizedDescription)")
+        }
+    }
+    
+    private func loadPersistedProjects() {
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
+            // No persisted projects found, load samples
+            loadSampleProjects()
+            return
+        }
+        
+        do {
+            projects = try jsonDecoder.decode([Project].self, from: data)
+        } catch {
+            // If decoding fails, log error but don't crash
+            lastError = "Failed to load saved projects: \(error.localizedDescription)"
+            // Fall back to sample projects
+            loadSampleProjects()
+        }
+    }
+    
+    // MARK: - Computed Properties
+    
+    var projectCount: Int {
+        return projects.count
+    }
+    
+    var projectsByStatus: [ProjectStatus: [Project]] {
+        return Dictionary(grouping: projects) { $0.status }
     }
 }
 

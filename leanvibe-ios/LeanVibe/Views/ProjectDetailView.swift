@@ -156,8 +156,16 @@ struct ProjectDetailView: View {
                     color: .red,
                     isEnabled: true
                 ) {
-                    projectManager.removeProject(project)
-                    dismiss()
+                    Task {
+                        do {
+                            try await projectManager.removeProject(project)
+                            await MainActor.run {
+                                dismiss()
+                            }
+                        } catch {
+                            print("Failed to remove project: \(error)")
+                        }
+                    }
                 }
             }
         }

@@ -55,5 +55,14 @@ struct OnboardingCoordinator: View {
                 })
             }
         }
+        .onAppear {
+            // Restore onboarding state on app launch
+            if let nextStep = onboardingManager.getNextIncompleteStep() {
+                currentStep = nextStep
+            } else if onboardingManager.isOnboardingComplete {
+                // Handle completion - could dismiss onboarding or show completion
+                currentStep = .completion
+            }
+        }
     }
 }

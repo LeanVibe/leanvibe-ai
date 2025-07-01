@@ -45,7 +45,11 @@ struct ProjectDashboardView: View {
             }
             .refreshable {
                 PremiumHaptics.pullToRefresh()
-                await projectManager.refreshProjects()
+                do {
+                    try await projectManager.refreshProjects()
+                } catch {
+                    // Error is handled by projectManager.lastError
+                }
             }
             .sheet(isPresented: $showingAddProject) {
                 AddProjectView(projectManager: projectManager)
@@ -212,7 +216,11 @@ struct ProjectDashboardView: View {
                     color: .blue
                 ) {
                     Task {
-                        await projectManager.refreshProjects()
+                        do {
+                            try await projectManager.refreshProjects()
+                        } catch {
+                            // Error is handled by projectManager.lastError
+                        }
                     }
                 }
                 

@@ -77,12 +77,21 @@ struct AddProjectView: View {
     }
     
     private func addProject() {
-        projectManager.addProject(
-            name: projectName,
-            path: projectPath,
-            language: selectedLanguage
-        )
-        dismiss()
+        Task {
+            do {
+                try await projectManager.addProject(
+                    name: projectName,
+                    path: projectPath,
+                    language: selectedLanguage
+                )
+                await MainActor.run {
+                    dismiss()
+                }
+            } catch {
+                // Error handling is already managed by ProjectManager through lastError
+                print("Failed to add project: \(error)")
+            }
+        }
     }
 }
 

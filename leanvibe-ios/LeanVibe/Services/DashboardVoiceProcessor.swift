@@ -110,9 +110,12 @@ class DashboardVoiceProcessor: ObservableObject {
     private func refreshDashboard() async {
         sendFeedbackMessage("🔄 Refreshing dashboard...")
         
-        await projectManager.refreshProjects()
-        
-        sendFeedbackMessage("✅ Dashboard refreshed")
+        do {
+            try await projectManager.refreshProjects()
+            sendFeedbackMessage("✅ Dashboard refreshed")
+        } catch {
+            sendFeedbackMessage("❌ Failed to refresh dashboard: \(error.localizedDescription)")
+        }
     }
     
     private func showProjectStatus() {
