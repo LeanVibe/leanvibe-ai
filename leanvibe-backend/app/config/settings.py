@@ -5,7 +5,12 @@ Supports development, staging, and production environments.
 import os
 from enum import Enum
 from typing import List, Optional
-from pydantic import BaseSettings, Field
+from pydantic import Field
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    # Fallback for older pydantic versions
+    from pydantic import BaseSettings
 
 
 class Environment(str, Enum):
