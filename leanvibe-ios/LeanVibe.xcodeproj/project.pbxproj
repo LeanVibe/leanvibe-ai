@@ -17,6 +17,7 @@
 		0FA2B4111F6A32CF7B747AF7 /* MonitoringView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D42FABBB1E737B052C2967CC /* MonitoringView.swift */; };
 		0FA3ADAC8E98263D775C8557 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFA0C7D5C4ACFA38AE4DEE8B /* ChatView.swift */; };
 		0FB62A5F9BDAECBE0C8B29D3 /* QROnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 513252166FECDC574852A34D /* QROnboardingView.swift */; };
+		10664C02B42B5104762BBC7D /* ErrorDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38BE456885FAA14E886667E3 /* ErrorDisplayView.swift */; };
 		127C3E2D0EFE384C8EAB310D /* TaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1834E355BFB02D2FDEF804A /* TaskDetailView.swift */; };
 		1664858445F1238A29DED8C5 /* ArchitectureVisualizationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 895A01693961B897E97318F0 /* ArchitectureVisualizationService.swift */; };
 		16E35A162C92952374D3EA8F /* ProductionReadinessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5DF8E48266BE8B752B6D25C /* ProductionReadinessView.swift */; };
@@ -43,6 +44,7 @@
 		3CD415F981738D9497992790 /* MermaidRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA669DD7B0626E0904FDCE2 /* MermaidRenderer.swift */; };
 		448CE30524D79E0370680D3F /* DashboardVoiceProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9368E24B23A55FAF8CFE265 /* DashboardVoiceProcessor.swift */; };
 		4BB2CAA6DEB531585BE6230A /* AdvancedFeaturesOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1748B640D72A7FD9497DB1A2 /* AdvancedFeaturesOnboardingView.swift */; };
+		4CD743C99517320A05D75EB7 /* KanbanColumnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB4444988EE18A0D5F56529A /* KanbanColumnView.swift */; };
 		4E2CD4F612EB62A4EC9B7185 /* BatteryOptimizedManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CBA1BE23BD31AE95894D455 /* BatteryOptimizedManager.swift */; };
 		52EB4942588E2B6092999034 /* ProductionReadinessValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38C4DC9C778B81452EFC43D4 /* ProductionReadinessValidator.swift */; };
 		59D6B043C4D931AF485658A2 /* ArchitectureWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8611C04FA358869386E78A6 /* ArchitectureWebView.swift */; };
@@ -187,6 +189,7 @@
 		34D15059F8A04F9DC51E8D44 /* VoiceCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceCommand.swift; sourceTree = "<group>"; };
 		36F815B0364874F529D8238A /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
 		37E56704C2E9E49E7484E77C /* AnimationPerformanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationPerformanceView.swift; sourceTree = "<group>"; };
+		38BE456885FAA14E886667E3 /* ErrorDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ErrorDisplayView.swift; path = LeanVibe/Views/Error/ErrorDisplayView.swift; sourceTree = SOURCE_ROOT; };
 		38C4DC9C778B81452EFC43D4 /* ProductionReadinessValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductionReadinessValidator.swift; sourceTree = "<group>"; };
 		38EFD52D7680448549F65F6A /* LaunchScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchScreenView.swift; sourceTree = "<group>"; };
 		3E11CF17D82245D06408E2E9 /* FloatingVoiceIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingVoiceIndicator.swift; sourceTree = "<group>"; };
@@ -289,6 +292,7 @@
 		F66181F0F32DD97A6990BD74 /* PerformanceAnalytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceAnalytics.swift; sourceTree = "<group>"; };
 		F75512F89D9A88815A26B8BE /* LeanVibeAppIcon.svg */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = LeanVibeAppIcon.svg; sourceTree = "<group>"; };
 		F76E9D51F64F297E4BFA4248 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		FB4444988EE18A0D5F56529A /* KanbanColumnView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = KanbanColumnView.swift; path = LeanVibe/Views/Kanban/KanbanColumnView.swift; sourceTree = SOURCE_ROOT; };
 		FD0E521B6A2FF08068057D45 /* VoicePermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoicePermissionManager.swift; sourceTree = "<group>"; };
 		FE6DBEC322FDA55FCDDC02BA /* MetricsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricsViewModel.swift; sourceTree = "<group>"; };
 		FF0101E6D11B79F4E27AEC26 /* AccessibilitySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilitySettingsView.swift; sourceTree = "<group>"; };
@@ -331,6 +335,8 @@
 				CFF1488995F691C8F7CD88D4 /* CodeCompletionServiceTests.swift */,
 				B2074C36BFBD34891EBA87F8 /* CodeCompletionIntegrationTests.swift */,
 				87E444AA856568D736048837 /* CodeCompletionUITests.swift */,
+				38BE456885FAA14E886667E3 /* ErrorDisplayView.swift */,
+				FB4444988EE18A0D5F56529A /* KanbanColumnView.swift */,
 			);
 			indentWidth = 4;
 			sourceTree = "<group>";
@@ -944,6 +950,8 @@
 				FC4B40718F5FEB81956DE7A6 /* RetryMonitorView.swift in Sources */,
 				6EF34211B534A8C26B03955D /* CodeCompletionModels.swift in Sources */,
 				94F7439A860B76C4D5151150 /* NotificationCenter+CodeCompletion.swift in Sources */,
+				10664C02B42B5104762BBC7D /* ErrorDisplayView.swift in Sources */,
+				4CD743C99517320A05D75EB7 /* KanbanColumnView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

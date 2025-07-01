@@ -128,10 +128,12 @@ struct TaskCardView: View {
     
     private var priorityColor: Color {
         switch task.priority {
-        case .high:
+        case .urgent:
             return .red
-        case .medium:
+        case .high:
             return .orange
+        case .medium:
+            return .yellow
         case .low:
             return .green
         }

@@ -1,8 +1,9 @@
 import Foundation
+import UniformTypeIdentifiers
 
 // MARK: - Task Management Models
 
-struct LeanVibeTask: Identifiable, Codable, Sendable {
+struct LeanVibeTask: Identifiable, Codable, Sendable, Transferable {
     let id: UUID
     var title: String
     var description: String? // Optional per schema
@@ -103,6 +104,16 @@ struct LeanVibeTask: Identifiable, Codable, Sendable {
             return "🔴"
         }
     }
+    
+    // MARK: - Transferable Implementation
+    
+    static var transferRepresentation: some TransferRepresentation {
+        CodableRepresentation(contentType: .kanbanTask)
+    }
+}
+
+extension UTType {
+    static let kanbanTask = UTType(exportedAs: "ai.leanvibe.task")
 }
 
 enum TaskStatus: String, CaseIterable, Codable, Sendable {
