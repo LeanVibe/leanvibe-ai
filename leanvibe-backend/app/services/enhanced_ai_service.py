@@ -99,35 +99,85 @@ class EnhancedAIService:
             return False
 
     async def process_command(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Process command from client with enhanced AI capabilities"""
+        """Process command from client with enhanced AI capabilities and detailed logging"""
         if not self.is_initialized:
-            return {"status": "error", "message": "Enhanced AI service not initialized"}
+            error_msg = "Enhanced AI service not initialized"
+            logger.error(f"Command rejected: {error_msg}")
+            return {"status": "error", "message": error_msg}
 
         command = data.get("content", "")
         command_type = data.get("type", "message")
         client_id = data.get("client_id", "unknown")
+        
+        # Generate command correlation ID
+        cmd_id = f"cmd_{int(time.time())}_{hash(str(data)) % 10000:04d}"
+        
+        logger.info(
+            f"[{cmd_id}] Command processing started | "
+            f"client_id={client_id} | "
+            f"type={command_type} | "
+            f"content_length={len(command)} | "
+            f"is_slash_command={command.startswith('/')}"
+        )
+        
+        logger.debug(f"[{cmd_id}] Command preview: {command[:100]}...")
 
         try:
             start_time = time.time()
-
+            
+            # Enhanced command routing with logging
             if command_type == "command" and command.startswith("/"):
+                logger.debug(f"[{cmd_id}] Routing to slash command processor")
                 result = await self._process_slash_command(command, client_id)
             else:
+                logger.debug(f"[{cmd_id}] Routing to AI message processor")
                 result = await self._process_message(command, client_id)
 
-            # Add processing time and service status
+            # Enhanced result processing with metrics
             processing_time = time.time() - start_time
+            
+            # Add comprehensive processing metadata
             result["processing_time"] = round(processing_time, 3)
             result["service_status"] = self.initialization_status.copy()
+            result["command_id"] = cmd_id
+            
+            # Add performance insights
+            if processing_time > 5.0:
+                result["performance_warning"] = "Slow processing detected"
+                logger.warning(
+                    f"[{cmd_id}] Slow processing detected | "
+                    f"time={processing_time:.3f}s | "
+                    f"threshold=5.0s"
+                )
+            
+            logger.info(
+                f"[{cmd_id}] Command processing completed | "
+                f"status={result.get('status', 'unknown')} | "
+                f"time={processing_time:.3f}s | "
+                f"confidence={result.get('confidence', 'n/a')}"
+            )
 
             return result
 
         except Exception as e:
-            logger.error(f"Error processing command: {e}")
+            processing_time = time.time() - start_time
+            error_type = type(e).__name__
+            
+            logger.error(
+                f"[{cmd_id}] Command processing FAILED | "
+                f"time={processing_time:.3f}s | "
+                f"error_type={error_type} | "
+                f"client_id={client_id} | "
+                f"error: {e}"
+            )
+            
             return {
                 "status": "error",
                 "message": str(e),
                 "service_status": self.initialization_status,
+                "command_id": cmd_id,
+                "error_type": error_type,
+                "processing_time": round(processing_time, 3)
             }
 
     async def _process_slash_command(
@@ -147,40 +197,116 @@ class EnhancedAIService:
             }
 
     async def _process_message(self, message: str, client_id: str) -> Dict[str, Any]:
-        """Process general messages with enhanced AI"""
+        """Process general messages with enhanced AI and detailed logging"""
         if not message.strip():
             return {"status": "error", "message": "Empty message"}
 
+        # Generate request correlation ID
+        request_id = f"ai_msg_{int(time.time())}_{hash(message) % 10000:04d}"
+        start_time = time.time()
+        
+        logger.info(
+            f"[{request_id}] AI message processing started | "
+            f"client_id={client_id} | "
+            f"message_length={len(message)} | "
+            f"services_ready={self.is_initialized}"
+        )
+        
+        logger.debug(f"[{request_id}] Message preview: {message[:100]}...")
+
         try:
-            # Use vector search to find relevant code context
+            # Enhanced vector search with detailed context analysis
             relevant_context = []
+            context_search_time = 0.0
+            
             if self.initialization_status["vector"]:
+                logger.debug(f"[{request_id}] Starting vector search for context...")
+                search_start = time.time()
+                
                 search_results = await self.vector_service.search_similar_code(
                     message, n_results=3
                 )
-                relevant_context = [
-                    f"Relevant code: {result.content} (from {result.file_path})"
-                    for result in search_results
-                    if result.similarity_score > 0.3
-                ]
+                context_search_time = time.time() - search_start
+                
+                # Enhanced context filtering with similarity threshold logging
+                similarity_threshold = 0.3
+                for result in search_results:
+                    if result.similarity_score > similarity_threshold:
+                        relevant_context.append(
+                            f"Relevant code: {result.content} (from {result.file_path})"
+                        )
+                        logger.debug(
+                            f"[{request_id}] Context included | "
+                            f"file={result.file_path} | "
+                            f"similarity={result.similarity_score:.3f} | "
+                            f"symbol={getattr(result, 'symbol_name', 'unknown')}"
+                        )
+                    else:
+                        logger.debug(
+                            f"[{request_id}] Context excluded | "
+                            f"file={result.file_path} | "
+                            f"similarity={result.similarity_score:.3f} | "
+                            f"threshold={similarity_threshold}"
+                        )
+                
+                logger.info(
+                    f"[{request_id}] Vector search completed | "
+                    f"time={context_search_time:.3f}s | "
+                    f"results_found={len(search_results)} | "
+                    f"context_included={len(relevant_context)}"
+                )
+            else:
+                logger.debug(f"[{request_id}] Vector search skipped - service not available")
 
-            # Generate response using MLX service
+            # Enhanced AI response generation with detailed logging
+            response_generation_time = 0.0
+            generation_start = time.time()
+            
             if self.initialization_status["mlx"]:
+                logger.debug(f"[{request_id}] Using MLX service for response generation")
                 # Create enhanced prompt with context
                 prompt = self._create_enhanced_prompt(message, relevant_context)
+                logger.debug(
+                    f"[{request_id}] Prompt created | "
+                    f"total_length={len(prompt)} | "
+                    f"context_sections={len(relevant_context)}"
+                )
+                
                 response = await self.mlx_service.generate_text(prompt)
                 model_info = "MLX Enhanced Model"
+                
+                logger.debug(f"[{request_id}] MLX generation completed | response_length={len(response)}")
             else:
+                logger.debug(f"[{request_id}] Using enhanced mock response - MLX not available")
                 # Fallback to enhanced mock response
                 response = await self._generate_enhanced_mock_response(
                     message, relevant_context
                 )
                 model_info = "Enhanced Mock (Development Mode)"
-
-            # Calculate confidence score
-            confidence = self._calculate_confidence_score(
-                response, "ai_response", relevant_context
+                
+            response_generation_time = time.time() - generation_start
+            
+            logger.info(
+                f"[{request_id}] Response generated | "
+                f"time={response_generation_time:.3f}s | "
+                f"model={model_info} | "
+                f"response_length={len(response)}"
             )
+
+            # Enhanced confidence calculation with detailed logging
+            confidence = self._calculate_confidence_score(
+                response, "ai_response", relevant_context, request_id
+            )
+            
+            # Calculate processing efficiency metrics
+            total_time = time.time() - start_time
+            efficiency_metrics = {
+                "total_time": round(total_time, 3),
+                "context_search_time": round(context_search_time, 3),
+                "response_generation_time": round(response_generation_time, 3),
+                "context_utilization": len(relevant_context) > 0,
+                "service_efficiency": round((response_generation_time / total_time) * 100, 1) if total_time > 0 else 0
+            }
 
             result = {
                 "status": "success",
@@ -190,6 +316,9 @@ class EnhancedAIService:
                 "model": model_info,
                 "confidence": confidence,
                 "context_used": len(relevant_context) > 0,
+                "context_count": len(relevant_context),
+                "request_id": request_id,
+                "efficiency_metrics": efficiency_metrics,
                 "services_available": {
                     "mlx": self.initialization_status["mlx"],
                     "ast": self.initialization_status["ast"],
@@ -197,18 +326,52 @@ class EnhancedAIService:
                 },
             }
 
-            # Add warnings for low confidence
+            # Enhanced quality assessment and warnings
             if confidence < 0.6:
                 result["warning"] = "Lower confidence response - consider manual review"
+                logger.warning(
+                    f"[{request_id}] Low confidence result | "
+                    f"confidence={confidence:.3f} | "
+                    f"recommendation=manual_review"
+                )
+            
+            if confidence > 0.8:
+                logger.info(
+                    f"[{request_id}] High confidence result | "
+                    f"confidence={confidence:.3f} | "
+                    f"quality=high"
+                )
+            
+            # Log successful completion with summary
+            logger.info(
+                f"[{request_id}] Message processing completed | "
+                f"total_time={total_time:.3f}s | "
+                f"confidence={confidence:.3f} | "
+                f"context_used={len(relevant_context) > 0} | "
+                f"model_used={'mlx' if self.initialization_status['mlx'] else 'mock'}"
+            )
 
             return result
 
         except Exception as e:
-            logger.error(f"Error processing message: {e}")
+            total_time = time.time() - start_time
+            error_type = type(e).__name__
+            
+            logger.error(
+                f"[{request_id}] Message processing FAILED | "
+                f"time={total_time:.3f}s | "
+                f"error_type={error_type} | "
+                f"client_id={client_id} | "
+                f"error: {e}"
+            )
+            
             return {
                 "status": "error",
                 "message": f"Error processing message: {str(e)}",
                 "confidence": 0.0,
+                "request_id": request_id,
+                "error_type": error_type,
+                "processing_time": round(total_time, 3)
             }
 
     def _create_enhanced_prompt(self, message: str, context: List[str]) -> str:
@@ -314,38 +477,117 @@ The enhanced AI infrastructure is ready and working with your project context.
 *Enhanced AI Service - Development Mode*"""
 
     def _calculate_confidence_score(
-        self, response: str, command_type: str, context: List[str]
+        self, response: str, command_type: str, context: List[str], request_id: str = "conf_calc"
     ) -> float:
-        """Enhanced confidence scoring with context awareness"""
+        """Enhanced confidence scoring with detailed decision factor logging"""
+        logger.debug(f"[{request_id}] Confidence calculation started | command_type={command_type}")
+        
         base_confidence = 0.7
-
-        # Boost confidence if we have relevant context
+        confidence_factors = {}
+        
+        # Context relevance factor
         if context:
-            base_confidence += 0.15
+            context_boost = 0.15
+            base_confidence += context_boost
+            confidence_factors["context_available"] = {
+                "boost": context_boost,
+                "context_count": len(context),
+                "reason": "relevant_context_found"
+            }
+            logger.debug(f"[{request_id}] Context boost applied | count={len(context)} | boost={context_boost}")
+        else:
+            confidence_factors["context_available"] = {
+                "boost": 0.0,
+                "reason": "no_context_available"
+            }
 
-        # Adjust based on service availability
-        services_available = sum(
-            [
-                self.initialization_status["mlx"],
-                self.initialization_status["ast"],
-                self.initialization_status["vector"],
-            ]
+        # Service availability factor
+        services_available = sum([
+            self.initialization_status["mlx"],
+            self.initialization_status["ast"],
+            self.initialization_status["vector"],
+        ])
+        service_boost = (services_available / 3) * 0.1
+        base_confidence += service_boost
+        confidence_factors["service_availability"] = {
+            "boost": service_boost,
+            "services_available": services_available,
+            "total_services": 3,
+            "available_services": {
+                "mlx": self.initialization_status["mlx"],
+                "ast": self.initialization_status["ast"],
+                "vector": self.initialization_status["vector"]
+            }
+        }
+        logger.debug(f"[{request_id}] Service availability boost | available={services_available}/3 | boost={service_boost}")
+
+        # Response quality factors
+        response_length = len(response)
+        if response_length < 20:
+            length_penalty = -0.2
+            base_confidence += length_penalty
+            confidence_factors["response_length"] = {
+                "penalty": length_penalty,
+                "length": response_length,
+                "reason": "too_short"
+            }
+            logger.debug(f"[{request_id}] Length penalty applied | length={response_length} | penalty={length_penalty}")
+        elif response_length > 200:
+            length_bonus = 0.1
+            base_confidence += length_bonus
+            confidence_factors["response_length"] = {
+                "boost": length_bonus,
+                "length": response_length,
+                "reason": "comprehensive_response"
+            }
+            logger.debug(f"[{request_id}] Length bonus applied | length={response_length} | bonus={length_bonus}")
+        else:
+            confidence_factors["response_length"] = {
+                "adjustment": 0.0,
+                "length": response_length,
+                "reason": "appropriate_length"
+            }
+
+        # Content quality analysis
+        response_lower = response.lower()
+        if "error" in response_lower or "failed" in response_lower:
+            error_penalty = -0.3
+            base_confidence += error_penalty
+            confidence_factors["content_quality"] = {
+                "penalty": error_penalty,
+                "reason": "contains_error_indicators"
+            }
+            logger.debug(f"[{request_id}] Error content penalty | penalty={error_penalty}")
+        elif "enhanced" in response_lower or "context" in response_lower:
+            quality_bonus = 0.1
+            base_confidence += quality_bonus
+            confidence_factors["content_quality"] = {
+                "boost": quality_bonus,
+                "reason": "enhanced_context_aware_content"
+            }
+            logger.debug(f"[{request_id}] Quality content bonus | bonus={quality_bonus}")
+        else:
+            confidence_factors["content_quality"] = {
+                "adjustment": 0.0,
+                "reason": "standard_content"
+            }
+
+        # Calculate final confidence
+        final_confidence = max(0.0, min(1.0, base_confidence))
+        
+        # Enhanced logging of final decision
+        logger.info(
+            f"[{request_id}] Confidence calculated | "
+            f"final={final_confidence:.3f} | "
+            f"base={0.7} | "
+            f"context_boost={confidence_factors.get('context_available', {}).get('boost', 0)} | "
+            f"service_boost={service_boost:.3f} | "
+            f"quality_adjustment={confidence_factors.get('content_quality', {}).get('boost', confidence_factors.get('content_quality', {}).get('penalty', 0))}"
         )
-        base_confidence += (services_available / 3) * 0.1
-
-        # Standard adjustments
-        if len(response) < 20:
-            base_confidence -= 0.2
-        elif len(response) > 200:
-            base_confidence += 0.1
-
-        if "error" in response.lower() or "failed" in response.lower():
-            base_confidence -= 0.3
-
-        if "enhanced" in response.lower() or "context" in response.lower():
-            base_confidence += 0.1
-
-        return max(0.0, min(1.0, base_confidence))
+        
+        logger.debug(f"[{request_id}] Confidence decision factors: {confidence_factors}")
+        
+        return final_confidence
 
     # Enhanced command implementations
     async def _analyze_file(self, args: str, client_id: str) -> Dict[str, Any]:

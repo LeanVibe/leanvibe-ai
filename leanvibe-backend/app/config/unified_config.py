@@ -57,10 +57,18 @@ class DefaultValues:
     DEFAULT_THROTTLE_SECONDS = 30
     DEFAULT_CACHE_TTL = 300
     
-    # Model defaults
-    DEFAULT_MODEL_NAME = "microsoft/Phi-3-mini-128k-instruct"
-    DEFAULT_MAX_TOKENS = 512
+    # Model defaults - Updated for Qwen2.5-Coder-32B production use
+    DEFAULT_MODEL_NAME = "Qwen/Qwen2.5-Coder-32B-Instruct"
+    DEFAULT_FALLBACK_MODEL = "microsoft/Phi-3-mini-128k-instruct"
+    DEFAULT_MAX_TOKENS = 1024
     DEFAULT_TEMPERATURE = 0.7
+    DEFAULT_CONTEXT_LENGTH = 32768
+    
+    # MLX-specific defaults for real model inference
+    DEFAULT_MODEL_CACHE_SIZE_GB = 25.0  # For 32B model
+    DEFAULT_QUANTIZATION = "4bit"  # Memory optimization
+    DEFAULT_USE_PRETRAINED_WEIGHTS = True
+    DEFAULT_ENABLE_MODEL_CACHING = True
     
     # File and directory defaults
     DEFAULT_CACHE_DIR = "~/.cache/leanvibe"
@@ -107,6 +115,14 @@ class EnvironmentVariables:
     TEMPERATURE = "LEANVIBE_TEMPERATURE"
     MLX_STRATEGY = "LEANVIBE_MLX_STRATEGY"
     
+    # Real model inference configuration
+    USE_PRETRAINED_WEIGHTS = "LEANVIBE_USE_PRETRAINED_WEIGHTS"
+    MODEL_CACHE_SIZE_GB = "LEANVIBE_MODEL_CACHE_SIZE_GB"
+    QUANTIZATION = "LEANVIBE_QUANTIZATION"
+    ENABLE_MODEL_CACHING = "LEANVIBE_ENABLE_MODEL_CACHING"
+    FALLBACK_MODEL = "LEANVIBE_FALLBACK_MODEL"
+    CONTEXT_LENGTH = "LEANVIBE_CONTEXT_LENGTH"
+    
     # Directory configuration
     CACHE_DIR = "LEANVIBE_CACHE_DIR"
     CONFIG_DIR = "LEANVIBE_CONFIG_DIR"
@@ -148,13 +164,55 @@ class NetworkConfig(BaseModel):
 
 
 class ModelConfig(BaseModel):
-    """Unified model configuration for all MLX services"""
+    """Enhanced model configuration for real Qwen2.5-Coder-32B inference"""
     model_name: str = Field(default=DefaultValues.DEFAULT_MODEL_NAME)
+    fallback_model: str = Field(default=DefaultValues.DEFAULT_FALLBACK_MODEL)
     deployment_mode: DeploymentMode = Field(default=DeploymentMode.AUTO)
     mlx_strategy: MLXInferenceStrategy = Field(default=MLXInferenceStrategy.AUTO)
     server_url: str = Field(default=DefaultValues.DEFAULT_MLX_SERVER_URL)
     max_tokens: int = Field(default=DefaultValues.DEFAULT_MAX_TOKENS, ge=1, le=4096)
     temperature: float = Field(default=DefaultValues.DEFAULT_TEMPERATURE, ge=0.0, le=2.0)
+    context_length: int = Field(default=DefaultValues.DEFAULT_CONTEXT_LENGTH, ge=512, le=131072)
+    
+    # Real model inference settings
+    use_pretrained_weights: bool = Field(default=DefaultValues.DEFAULT_USE_PRETRAINED_WEIGHTS)
+    model_cache_size_gb: float = Field(default=DefaultValues.DEFAULT_MODEL_CACHE_SIZE_GB, ge=1.0, le=100.0)
+    quantization: str = Field(default=DefaultValues.DEFAULT_QUANTIZATION)
+    enable_model_caching: bool = Field(default=DefaultValues.DEFAULT_ENABLE_MODEL_CACHING)
+    
+    # Performance optimization settings
+    memory_limit_gb: Optional[float] = Field(default=None, ge=4.0, le=128.0)
+    prefill_cache: bool = Field(default=True)
+    batch_size: int = Field(default=1, ge=1, le=8)
+    
+    @field_validator('quantization')
+    @classmethod
+    def validate_quantization(cls, v: str) -> str:
+        allowed_values = ['none', '4bit', '8bit', 'fp16', 'int8']
+        if v not in allowed_values:
+            raise ValueError(f'Quantization must be one of {allowed_values}')
+        return v
+    
+    @field_validator('model_name')
+    @classmethod
+    def validate_model_name(cls, v: str) -> str:
+        # List of supported models
+        supported_models = [
+            'Qwen/Qwen2.5-Coder-32B-Instruct',
+            'Qwen/Qwen2.5-Coder-14B-Instruct', 
+            'Qwen/Qwen2.5-Coder-7B-Instruct',
+            'microsoft/Phi-3-mini-128k-instruct',
+            'microsoft/Phi-3-small-128k-instruct',
+            'microsoft/Phi-3-medium-128k-instruct'
+        ]
+        
+        # Allow any model that starts with known prefixes for flexibility
+        allowed_prefixes = ['Qwen/', 'microsoft/', 'huggingface.co/', 'local/']
+        
+        if not any(v.startswith(prefix) for prefix in allowed_prefixes) and v not in supported_models:
+            print(f"Warning: Model '{v}' is not in the list of tested models. Supported: {supported_models}")
+        
+        return v
     
     @field_validator('server_url')
     @classmethod
@@ -256,14 +314,20 @@ class UnifiedConfig(BaseModel):
             timeout_seconds=int(os.getenv(env.TIMEOUT_SECONDS, str(DefaultValues.DEFAULT_TIMEOUT_SECONDS)))
         )
         
-        # Model configuration from env
+        # Enhanced model configuration from env with real inference support
         model_config = ModelConfig(
             model_name=os.getenv(env.MODEL_NAME, DefaultValues.DEFAULT_MODEL_NAME),
+            fallback_model=os.getenv(env.FALLBACK_MODEL, DefaultValues.DEFAULT_FALLBACK_MODEL),
             deployment_mode=DeploymentMode(os.getenv(env.DEPLOYMENT_MODE, DeploymentMode.AUTO.value)),
             mlx_strategy=MLXInferenceStrategy(os.getenv(env.MLX_STRATEGY, MLXInferenceStrategy.AUTO.value)),
             server_url=os.getenv(env.MLX_SERVER_URL, DefaultValues.DEFAULT_MLX_SERVER_URL),
             max_tokens=int(os.getenv(env.MAX_TOKENS, str(DefaultValues.DEFAULT_MAX_TOKENS))),
-            temperature=float(os.getenv(env.TEMPERATURE, str(DefaultValues.DEFAULT_TEMPERATURE)))
+            temperature=float(os.getenv(env.TEMPERATURE, str(DefaultValues.DEFAULT_TEMPERATURE))),
+            context_length=int(os.getenv(env.CONTEXT_LENGTH, str(DefaultValues.DEFAULT_CONTEXT_LENGTH))),
+            use_pretrained_weights=os.getenv(env.USE_PRETRAINED_WEIGHTS, "true").lower() == "true",
+            model_cache_size_gb=float(os.getenv(env.MODEL_CACHE_SIZE_GB, str(DefaultValues.DEFAULT_MODEL_CACHE_SIZE_GB))),
+            quantization=os.getenv(env.QUANTIZATION, DefaultValues.DEFAULT_QUANTIZATION),
+            enable_model_caching=os.getenv(env.ENABLE_MODEL_CACHING, "true").lower() == "true"
         )
         
         # Directory configuration from env
@@ -310,6 +374,49 @@ class UnifiedConfig(BaseModel):
         """Get model configuration (legacy compatibility)"""
         return self.model.model_dump()
     
+    def get_real_inference_config(self) -> Dict[str, Any]:
+        """Get configuration optimized for real model inference"""
+        return {
+            'model_name': self.model.model_name,
+            'fallback_model': self.model.fallback_model,
+            'use_pretrained_weights': self.model.use_pretrained_weights,
+            'quantization': self.model.quantization,
+            'model_cache_size_gb': self.model.model_cache_size_gb,
+            'enable_caching': self.model.enable_model_caching,
+            'context_length': self.model.context_length,
+            'memory_limit_gb': self.model.memory_limit_gb,
+            'prefill_cache': self.model.prefill_cache,
+            'batch_size': self.model.batch_size,
+            'deployment_mode': self.model.deployment_mode,
+            'mlx_strategy': self.model.mlx_strategy
+        }
+    
+    def is_real_inference_enabled(self) -> bool:
+        """Check if real model inference is enabled (not mock mode)"""
+        return (
+            self.model.use_pretrained_weights and 
+            self.model.deployment_mode != DeploymentMode.MOCK and
+            self.model.mlx_strategy != MLXInferenceStrategy.MOCK
+        )
+    
+    def get_memory_requirements(self) -> Dict[str, float]:
+        """Calculate memory requirements for current model configuration"""
+        base_memory = self.model.model_cache_size_gb
+        
+        # Add overhead for inference
+        inference_overhead = base_memory * 0.3  # 30% overhead
+        
+        # Add context buffer
+        context_memory = (self.model.context_length * 4) / (1024 ** 3)  # Rough estimate
+        
+        return {
+            'model_memory_gb': base_memory,
+            'inference_overhead_gb': inference_overhead,
+            'context_memory_gb': context_memory,
+            'total_estimated_gb': base_memory + inference_overhead + context_memory,
+            'recommended_system_memory_gb': (base_memory + inference_overhead + context_memory) * 1.5
+        }
+    
     def is_development_mode(self) -> bool:
         """Check if in development mode"""
         return self.debug.development_mode or self.debug.debug_mode
@@ -345,13 +452,15 @@ class ConfigurationService:
         return self.load_config(use_env=self._env_override)
     
     def validate_config(self) -> Dict[str, Any]:
-        """Validate current configuration"""
+        """Validate current configuration with real inference checks"""
         config = self.get_config()
         
         validation_results = {
             "valid": True,
             "errors": [],
-            "warnings": []
+            "warnings": [],
+            "model_requirements": config.get_memory_requirements() if config.model.use_pretrained_weights else None,
+            "real_inference_enabled": config.is_real_inference_enabled()
         }
         
         # Validate network connectivity
@@ -369,6 +478,28 @@ class ConfigurationService:
         ]:
             if not dir_path.parent.exists():
                 validation_results["warnings"].append(f"{dir_name} directory parent does not exist: {dir_path.parent}")
+        
+        # Validate model configuration for real inference
+        if config.model.use_pretrained_weights:
+            memory_reqs = config.get_memory_requirements()
+            total_required = memory_reqs['total_estimated_gb']
+            
+            if total_required > 32.0:
+                validation_results["warnings"].append(
+                    f"Model requires {total_required:.1f}GB memory, which may exceed system capacity"
+                )
+            
+            if config.model.model_name.startswith("Qwen/Qwen2.5-Coder-32B") and total_required < 20.0:
+                validation_results["warnings"].append(
+                    "Memory allocation may be insufficient for Qwen2.5-Coder-32B model"
+                )
+        
+        # Validate quantization settings
+        if config.model.quantization not in ['none', '4bit', '8bit', 'fp16', 'int8']:
+            validation_results["errors"].append(
+                f"Invalid quantization setting: {config.model.quantization}"
+            )
+            validation_results["valid"] = False
         
         return validation_results
 
@@ -388,6 +519,83 @@ def get_backend_url() -> str:
 def get_model_config() -> Dict[str, Any]:
     """Get model configuration (legacy compatibility)"""
     return config_service.get_config().model.model_dump()
+
+def get_real_inference_config() -> Dict[str, Any]:
+    """Get configuration for real model inference testing"""
+    return config_service.get_config().get_real_inference_config()
+
+def create_qwen_production_config() -> UnifiedConfig:
+    """Create optimized configuration for Qwen2.5-Coder-32B production testing"""
+    # Enhanced model configuration for real inference
+    model_config = ModelConfig(
+        model_name="Qwen/Qwen2.5-Coder-32B-Instruct",
+        fallback_model="microsoft/Phi-3-mini-128k-instruct",
+        deployment_mode=DeploymentMode.DIRECT,  # Force direct MLX for real weights
+        mlx_strategy=MLXInferenceStrategy.PRODUCTION,  # Use production strategy
+        max_tokens=1024,
+        temperature=0.7,
+        context_length=32768,
+        use_pretrained_weights=True,
+        model_cache_size_gb=25.0,
+        quantization="4bit",  # Memory optimization for 32B model
+        enable_model_caching=True,
+        memory_limit_gb=32.0,  # Recommended for 32B model
+        prefill_cache=True,
+        batch_size=1
+    )
+    
+    # Performance configuration optimized for real inference
+    performance_config = PerformanceConfig(
+        cache_ttl=3600,  # Longer cache for model weights
+        max_memory_usage=34359738368,  # 32GB in bytes
+        enable_caching=True,
+        enable_profiling=True,  # Enable for testing
+        thread_pool_size=8
+    )
+    
+    # Debug configuration for testing
+    debug_config = DebugConfig(
+        debug_mode=False,  # Disable for performance
+        development_mode=False,
+        log_level="INFO",
+        enable_tracing=True,  # Enable for inference debugging
+        save_request_logs=True  # Save for analysis
+    )
+    
+    return UnifiedConfig(
+        model=model_config,
+        performance=performance_config,
+        debug=debug_config
+    )
+
+def create_development_config() -> UnifiedConfig:
+    """Create configuration for development with fallback models"""
+    model_config = ModelConfig(
+        model_name="microsoft/Phi-3-mini-128k-instruct",
+        fallback_model="microsoft/Phi-3-mini-128k-instruct",
+        deployment_mode=DeploymentMode.AUTO,
+        mlx_strategy=MLXInferenceStrategy.AUTO,
+        max_tokens=512,
+        temperature=0.7,
+        context_length=8192,
+        use_pretrained_weights=True,
+        model_cache_size_gb=8.0,
+        quantization="4bit",
+        enable_model_caching=True
+    )
+    
+    debug_config = DebugConfig(
+        debug_mode=True,
+        development_mode=True,
+        log_level="DEBUG",
+        enable_tracing=True,
+        save_request_logs=True
+    )
+    
+    return UnifiedConfig(
+        model=model_config,
+        debug=debug_config
+    )
 
 def is_development_mode() -> bool:
     """Check if in development mode (legacy compatibility)"""

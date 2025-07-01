@@ -123,10 +123,15 @@ class ProductionModelService:
         }
 
     async def initialize(self) -> bool:
-        """Initialize the model service with best available mode"""
+        """Initialize the model service with best available mode and enhanced logging"""
+        init_start_time = time.time()
+        
         try:
             logger.info(
-                f"Initializing Production Model Service: {self.config.model_name}"
+                f"Production Model Service initialization started | "
+                f"model={self.config.model_name} | "
+                f"config_mode={self.config.deployment_mode} | "
+                f"mlx_lm_available={MLX_LM_AVAILABLE}"
             )
 
             # Update model status to initializing
@@ -200,32 +205,100 @@ class ProductionModelService:
             return False
 
     async def _determine_deployment_mode(self) -> str:
-        """Determine the best deployment mode based on availability"""
+        """Determine the best deployment mode based on availability with enhanced logging"""
+        logger.info("Starting deployment mode determination...")
 
         if self.config.deployment_mode != "auto":
+            logger.info(
+                f"Using configured deployment mode: {self.config.deployment_mode} "
+                f"(auto-detection disabled)"
+            )
             return self.config.deployment_mode
+        
+        logger.debug("Auto-detection enabled, checking available options...")
 
-        # Check if MLX-LM server is running
+        # Enhanced server availability checking with detailed logging
+        logger.debug(f"Checking MLX-LM server availability at {self.config.server_url}...")
+        server_check_start = time.time()
+        
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
                 response = await client.get(f"{self.config.server_url}/health")
+                server_check_time = time.time() - server_check_start
+                
                 if response.status_code == 200:
-                    logger.info("Detected running MLX-LM server")
+                    logger.info(
+                        f"MLX-LM server detected and healthy | "
+                        f"url={self.config.server_url} | "
+                        f"response_time={server_check_time:.3f}s | "
+                        f"status={response.status_code}"
+                    )
                     return "server"
+                else:
+                    logger.warning(
+                        f"MLX-LM server responded with non-200 status | "
+                        f"status={response.status_code} | "
+                        f"response_time={server_check_time:.3f}s"
+                    )
         except (httpx.ConnectError, httpx.TimeoutException) as e:
-            logger.debug(f"MLX server at {self.config.server_url} not reachable: {e}")
+            server_check_time = time.time() - server_check_start
+            logger.debug(
+                f"MLX server connection failed | "
+                f"url={self.config.server_url} | "
+                f"timeout_after={server_check_time:.3f}s | "
+                f"error: {e}"
+            )
         except httpx.HTTPStatusError as e:
-            logger.warning(f"MLX server returned error status {e.response.status_code}")
+            server_check_time = time.time() - server_check_start
+            logger.warning(
+                f"MLX server HTTP error | "
+                f"status={e.response.status_code} | "
+                f"response_time={server_check_time:.3f}s"
+            )
         except Exception as e:
-            logger.error(f"Unexpected error checking MLX server: {e}")
+            server_check_time = time.time() - server_check_start
+            logger.error(
+                f"Unexpected server check error | "
+                f"time={server_check_time:.3f}s | "
+                f"error: {e}"
+            )
 
-        # Check if MLX-LM is available for direct integration
+        # Enhanced direct MLX availability checking
+        logger.debug("Checking direct MLX-LM integration availability...")
         if MLX_LM_AVAILABLE:
-            logger.info("MLX-LM available for direct integration")
-            return "direct"
+            try:
+                # Test MLX core functionality
+                test_memory = mx.array([1.0, 2.0, 3.0])
+                memory_test_success = True
+                logger.debug("MLX core memory test passed")
+            except Exception as e:
+                memory_test_success = False
+                logger.warning(f"MLX core test failed: {e}")
+            
+            if memory_test_success:
+                logger.info(
+                    f"Direct MLX-LM integration available | "
+                    f"mlx_lm_version=available | "
+                    f"mlx_core_functional=True"
+                )
+                return "direct"
+            else:
+                logger.warning(
+                    "MLX-LM available but MLX core test failed, considering fallback"
+                )
+        else:
+            logger.debug(
+                "MLX-LM not available for direct integration | "
+                f"import_available={MLX_LM_AVAILABLE}"
+            )
 
-        # Fallback to mock mode
-        logger.warning("No MLX-LM available, using mock mode")
+        # Enhanced fallback decision with reasoning
+        logger.warning(
+            "Falling back to mock mode | "
+            f"server_available=False | "
+            f"direct_mlx_available={MLX_LM_AVAILABLE} | "
+            f"reason=no_viable_inference_backend"
+        )
         return "mock"
 
     async def _initialize_direct_mode(self) -> bool:
@@ -290,7 +363,7 @@ class ProductionModelService:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
     ) -> str:
-        """Generate text using the configured deployment mode"""
+        """Generate text using the configured deployment mode with enhanced logging"""
         if not self.is_initialized:
             raise RuntimeError("Model service not initialized")
 
@@ -299,40 +372,85 @@ class ProductionModelService:
         if temperature is None:
             temperature = self.config.temperature
 
-        # Create a unique request ID
-        request_id = str(uuid.uuid4())
+        # Create a unique request ID for correlation tracking
+        request_id = f"req_{int(time.time())}_{uuid.uuid4().hex[:8]}"
         start_time = time.time()
 
-        try:
-            # Estimate input tokens (rough approximation: ~4 chars per token)
-            estimated_input_tokens = max(1, len(prompt) // 4)
-            
-            if self.deployment_mode == "direct":
-                response = await self._generate_direct(prompt, max_tokens, temperature)
-            elif self.deployment_mode == "server":
-                response = await self._generate_server(prompt, max_tokens, temperature)
-            elif self.deployment_mode == "mock":
-                response = await self._generate_mock(prompt, max_tokens, temperature)
-            else:
-                raise RuntimeError(f"Unknown deployment mode: {self.deployment_mode}")
+        # Enhanced logging: Request initiation
+        logger.info(
+            f"[{request_id}] LLM request initiated | "
+            f"mode={self.deployment_mode} | "
+            f"prompt_length={len(prompt)} | "
+            f"max_tokens={max_tokens} | "
+            f"temperature={temperature}"
+        )
+        logger.debug(f"[{request_id}] Prompt preview: {prompt[:100]}...")
 
-            # Calculate generation time and performance metrics
+        try:
+            # Estimate input tokens with enhanced logging
+            estimated_input_tokens = max(1, len(prompt) // 4)
+            logger.debug(
+                f"[{request_id}] Token estimation | "
+                f"input_chars={len(prompt)} | "
+                f"estimated_input_tokens={estimated_input_tokens}"
+            )
+            
+            # Enhanced logging: Strategy selection pathway
+            logger.debug(
+                f"[{request_id}] Strategy execution | "
+                f"selected_mode={self.deployment_mode} | "
+                f"model={self.config.model_name}"
+            )
+            
+            # Execute generation with strategy-specific logging
+            if self.deployment_mode == "direct":
+                logger.debug(f"[{request_id}] Executing direct MLX-LM inference")
+                response = await self._generate_direct(prompt, max_tokens, temperature, request_id)
+            elif self.deployment_mode == "server":
+                logger.debug(f"[{request_id}] Executing server-based inference to {self.config.server_url}")
+                response = await self._generate_server(prompt, max_tokens, temperature, request_id)
+            elif self.deployment_mode == "mock":
+                logger.debug(f"[{request_id}] Executing mock inference for development")
+                response = await self._generate_mock(prompt, max_tokens, temperature, request_id)
+            else:
+                error_msg = f"Unknown deployment mode: {self.deployment_mode}"
+                logger.error(f"[{request_id}] Strategy selection failed: {error_msg}")
+                raise RuntimeError(error_msg)
+
+            # Enhanced performance metrics calculation and logging
             generation_time = time.time() - start_time
-            
-            # Estimate output tokens (rough approximation: ~4 chars per token)
             estimated_output_tokens = max(1, len(response) // 4)
-            
-            # Calculate tokens per second
             tokens_per_second = estimated_output_tokens / generation_time if generation_time > 0 else 0
             
-            # Get current memory usage
+            # Enhanced memory usage tracking with detailed logging
             current_memory_mb = 0.0
+            memory_delta = 0.0
             try:
                 current_memory_mb = mx.get_active_memory() / 1024 / 1024
+                # Calculate memory impact if we have previous measurements
+                if hasattr(self, '_last_memory_mb'):
+                    memory_delta = current_memory_mb - self._last_memory_mb
+                self._last_memory_mb = current_memory_mb
+                
+                logger.debug(
+                    f"[{request_id}] Memory analysis | "
+                    f"current={current_memory_mb:.1f}MB | "
+                    f"delta={memory_delta:+.1f}MB"
+                )
             except AttributeError as e:
-                logger.debug(f"MLX memory API not available: {e}")
+                logger.debug(f"[{request_id}] MLX memory API not available: {e}")
             except Exception as e:
-                logger.warning(f"Failed to get MLX memory usage: {e}")
+                logger.warning(f"[{request_id}] Memory tracking failed: {e}")
+            
+            # Enhanced performance logging
+            logger.info(
+                f"[{request_id}] Generation completed | "
+                f"time={generation_time:.3f}s | "
+                f"speed={tokens_per_second:.1f} tok/s | "
+                f"tokens={estimated_input_tokens}→{estimated_output_tokens} | "
+                f"memory={current_memory_mb:.1f}MB | "
+                f"response_length={len(response)}"
+            )
 
             # Create token usage metrics
             token_usage = TokenUsage(
@@ -368,17 +486,51 @@ class ProductionModelService:
             self.health_status["total_inferences"] += 1
             self.health_status["memory_usage_mb"] = current_memory_mb
 
+            # Enhanced completion logging with quality metrics
+            context_utilization = min(100, (estimated_input_tokens / self.config.max_tokens) * 100)
+            efficiency_score = min(100, (tokens_per_second / 50) * 100)  # Assume 50 tok/s as baseline
+            
             logger.info(
-                f"Generation completed: {generation_time:.2f}s, "
-                f"{tokens_per_second:.1f} tokens/sec, "
-                f"{estimated_input_tokens}→{estimated_output_tokens} tokens, "
-                f"{self.deployment_mode} mode"
+                f"[{request_id}] Request SUCCESS | "
+                f"mode={self.deployment_mode} | "
+                f"context_utilization={context_utilization:.1f}% | "
+                f"efficiency_score={efficiency_score:.1f}%"
             )
+            
+            logger.debug(
+                f"[{request_id}] Response preview: {response[:150]}..."
+            )
+            
             return response
 
         except Exception as e:
-            # Track failed generation
+            # Enhanced error tracking and recovery guidance
             generation_time = time.time() - start_time
+            error_type = type(e).__name__
+            error_context = {
+                "deployment_mode": self.deployment_mode,
+                "model_name": self.config.model_name,
+                "prompt_length": len(prompt),
+                "generation_time": generation_time,
+                "estimated_input_tokens": estimated_input_tokens,
+            }
+            
+            # Categorize error and provide recovery guidance
+            recovery_suggestions = self._categorize_error_and_suggest_recovery(e, error_context)
+            
+            logger.error(
+                f"[{request_id}] Request FAILED | "
+                f"error_type={error_type} | "
+                f"time={generation_time:.3f}s | "
+                f"mode={self.deployment_mode} | "
+                f"error: {str(e)}"
+            )
+            
+            logger.warning(
+                f"[{request_id}] Recovery suggestions: {'; '.join(recovery_suggestions)}"
+            )
+            
+            # Track failed generation with enhanced metrics
             failed_metrics = GenerationMetrics(
                 request_id=request_id,
                 generation_time_seconds=generation_time,
@@ -391,14 +543,61 @@ class ProductionModelService:
             self.current_session.update_from_generation(failed_metrics, success=False)
             self.llm_health_status.current_session = self.current_session
             
-            logger.error(f"Generation failed after {generation_time:.2f}s: {e}")
             raise
 
+    def _categorize_error_and_suggest_recovery(
+        self, error: Exception, context: Dict[str, Any]
+    ) -> List[str]:
+        """Categorize errors and provide specific recovery suggestions"""
+        suggestions = []
+        error_type = type(error).__name__
+        error_msg = str(error).lower()
+        
+        if "memory" in error_msg or "out of memory" in error_msg:
+            suggestions.extend([
+                "Reduce max_tokens parameter",
+                "Clear MLX memory cache",
+                "Switch to server mode if available",
+                "Consider model quantization"
+            ])
+        elif "timeout" in error_msg or "connection" in error_msg:
+            suggestions.extend([
+                "Check server connectivity",
+                "Increase request timeout",
+                "Fallback to direct mode",
+                "Verify model server status"
+            ])
+        elif "model" in error_msg or "load" in error_msg:
+            suggestions.extend([
+                "Verify model path and availability",
+                "Check disk space for model cache",
+                "Try re-downloading model",
+                "Fallback to mock mode for testing"
+            ])
+        elif "token" in error_msg or "length" in error_msg:
+            suggestions.extend([
+                "Reduce prompt length",
+                "Implement prompt truncation",
+                "Use sliding window approach",
+                "Consider context compression"
+            ])
+        else:
+            suggestions.extend([
+                "Check logs for detailed error info",
+                "Verify configuration settings",
+                "Try different deployment mode",
+                "Contact support with request ID"
+            ])
+        
+        return suggestions
+
     async def _generate_direct(
-        self, prompt: str, max_tokens: int, temperature: float
+        self, prompt: str, max_tokens: int, temperature: float, request_id: str
     ) -> str:
-        """Generate using direct MLX-LM integration"""
+        """Generate using direct MLX-LM integration with enhanced logging"""
         try:
+            logger.debug(f"[{request_id}] Direct MLX setup | model_loaded={self.model is not None}")
+            
             # Format as chat message
             messages = [
                 {
@@ -407,8 +606,15 @@ class ProductionModelService:
                 },
                 {"role": "user", "content": prompt},
             ]
+            
+            logger.debug(
+                f"[{request_id}] Direct inference | "
+                f"chat_messages={len(messages)} | "
+                f"system_prompt_length={len(messages[0]['content'])}"
+            )
 
             # Generate response in thread to avoid blocking
+            inference_start = time.time()
             response = await asyncio.to_thread(
                 generate,
                 self.model,
@@ -416,6 +622,13 @@ class ProductionModelService:
                 prompt=messages,
                 max_tokens=max_tokens,
                 temp=temperature,
+            )
+            inference_time = time.time() - inference_start
+            
+            logger.debug(
+                f"[{request_id}] Direct inference completed | "
+                f"pure_inference_time={inference_time:.3f}s | "
+                f"response_length={len(response)}"
             )
 
             return f"""**Qwen3-30B Response** (Direct MLX-LM)
@@ -432,13 +645,18 @@ class ProductionModelService:
 """
 
         except Exception as e:
-            logger.error(f"Direct generation failed: {e}")
+            logger.error(
+                f"[{request_id}] Direct generation FAILED | "
+                f"model_state={self.model is not None} | "
+                f"tokenizer_state={self.tokenizer is not None} | "
+                f"error: {e}"
+            )
             raise
 
     async def _generate_server(
-        self, prompt: str, max_tokens: int, temperature: float
+        self, prompt: str, max_tokens: int, temperature: float, request_id: str
     ) -> str:
-        """Generate using HTTP client to MLX-LM server"""
+        """Generate using HTTP client to MLX-LM server with enhanced logging"""
         try:
             payload = {
                 "model": self.config.model_name,
@@ -453,11 +671,27 @@ class ProductionModelService:
                 "temperature": temperature,
                 "stream": False,
             }
+            
+            logger.debug(
+                f"[{request_id}] Server request | "
+                f"url={self.config.server_url} | "
+                f"payload_size={len(str(payload))} bytes"
+            )
 
+            request_start = time.time()
             response = await self.http_client.post(
                 f"{self.config.server_url}/v1/chat/completions", json=payload
             )
+            request_time = time.time() - request_start
+            
             response.raise_for_status()
+            
+            logger.debug(
+                f"[{request_id}] Server response | "
+                f"status={response.status_code} | "
+                f"request_time={request_time:.3f}s | "
+                f"response_size={len(response.text)} bytes"
+            )
 
             result = response.json()
             content = result["choices"][0]["message"]["content"]
@@ -475,14 +709,26 @@ class ProductionModelService:
 """
 
         except Exception as e:
-            logger.error(f"Server generation failed: {e}")
+            logger.error(
+                f"[{request_id}] Server generation FAILED | "
+                f"server_url={self.config.server_url} | "
+                f"client_state={self.http_client is not None} | "
+                f"error: {e}"
+            )
             raise
 
     async def _generate_mock(
-        self, prompt: str, max_tokens: int, temperature: float
+        self, prompt: str, max_tokens: int, temperature: float, request_id: str
     ) -> str:
-        """Generate mock response for development"""
+        """Generate mock response for development with enhanced logging"""
+        logger.debug(f"[{request_id}] Mock generation | simulating processing...")
         await asyncio.sleep(0.5)  # Simulate processing time
+        
+        logger.debug(
+            f"[{request_id}] Mock analysis | "
+            f"prompt_keywords={self._extract_mock_keywords(prompt)} | "
+            f"response_strategy=enhanced_contextual"
+        )
 
         # Enhanced mock responses based on prompt
         if "function" in prompt.lower() or "def " in prompt:
@@ -511,6 +757,8 @@ In production, this would be handled by Qwen3-30B model.
 Current mode: {self.deployment_mode}
 Mock generation successful!"""
 
+        logger.debug(f"[{request_id}] Mock response generated | length={len(mock_response)}")
+        
         return f"""**Mock Response** (Development Mode)
 
 **Prompt:** {prompt}
@@ -520,8 +768,25 @@ Mock generation successful!"""
 ---
 *Model: Mock (Development)*
 *Mode: {self.deployment_mode}*
+*Request ID: {request_id}*
 *Note: This is a mock response. Enable MLX-LM for real model inference.*
 """
+    
+    def _extract_mock_keywords(self, prompt: str) -> List[str]:
+        """Extract keywords from prompt for mock response categorization"""
+        keywords = []
+        prompt_lower = prompt.lower()
+        
+        if "function" in prompt_lower or "def " in prompt:
+            keywords.append("function")
+        if "class" in prompt_lower:
+            keywords.append("class")
+        if "error" in prompt_lower or "debug" in prompt_lower:
+            keywords.append("debug")
+        if "explain" in prompt_lower:
+            keywords.append("explanation")
+            
+        return keywords
 
     def get_health_status(self) -> Dict[str, Any]:
         """Get current health status with comprehensive LLM metrics"""
