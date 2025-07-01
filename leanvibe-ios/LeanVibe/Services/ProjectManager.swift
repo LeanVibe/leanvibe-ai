@@ -36,10 +36,10 @@ class ProjectManager: ObservableObject {
     
     func addProject(name: String, path: String, language: ProjectLanguage) {
         let newProject = Project(
-            name: name,
+            displayName: name,
+            status: .active,
             path: path,
             language: language,
-            status: .active,
             metrics: ProjectMetrics(
                 filesCount: Int.random(in: 10...100),
                 linesOfCode: Int.random(in: 1000...50000),
@@ -74,7 +74,7 @@ class ProjectManager: ObservableObject {
         
         do {
             let analysisRequest = AnalysisRequest(
-                projectId: project.id,
+                projectId: project.id.uuidString,
                 analysisType: "comprehensive"
             )
             
@@ -90,24 +90,20 @@ class ProjectManager: ObservableObject {
     private func loadSampleProjects() {
         projects = [
             Project(
-                id: "sample-1",
-                name: "LeanVibe Backend",
+                displayName: "LeanVibe Backend",
+                status: .active,
                 path: "/Users/bogdan/work/leanvibe-backend",
                 language: .python,
-                status: .active,
                 lastActivity: Date(),
-                metrics: ProjectMetrics(filesCount: 42, linesOfCode: 12345, healthScore: 0.9, issuesCount: 1),
-                clientId: nil
+                metrics: ProjectMetrics(filesCount: 42, linesOfCode: 12345, healthScore: 0.9, issuesCount: 1)
             ),
             Project(
-                id: "sample-2",
-                name: "iOS Client",
+                displayName: "iOS Client",
+                status: .active,
                 path: "/Users/bogdan/work/leanvibe-ios",
                 language: .swift,
-                status: .active,
                 lastActivity: Date(),
-                metrics: ProjectMetrics(filesCount: 30, linesOfCode: 6789, healthScore: 0.85, issuesCount: 0),
-                clientId: nil
+                metrics: ProjectMetrics(filesCount: 30, linesOfCode: 6789, healthScore: 0.85, issuesCount: 0)
             )
         ]
     }

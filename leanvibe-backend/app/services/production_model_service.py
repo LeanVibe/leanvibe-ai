@@ -19,18 +19,33 @@ import httpx
 import mlx.core as mx
 
 # Import unified configuration
-from ..config import UnifiedConfig, ModelConfig, DeploymentMode as ConfigDeploymentMode, get_config
+try:
+    from ..config import UnifiedConfig, ModelConfig, DeploymentMode as ConfigDeploymentMode, get_config
+except ImportError:
+    # Fallback for direct execution
+    from app.config import UnifiedConfig, ModelConfig, DeploymentMode as ConfigDeploymentMode, get_config
 
 # Import LLM metrics models
-from ..models.llm_metrics_models import (
-    DeploymentMode,
-    GenerationMetrics,
-    LLMHealthStatus,
-    ModelInformation,
-    ModelStatus,
-    SessionMetrics,
-    TokenUsage,
-)
+try:
+    from ..models.llm_metrics_models import (
+        DeploymentMode,
+        GenerationMetrics,
+        LLMHealthStatus,
+        ModelInformation,
+        ModelStatus,
+        SessionMetrics,
+        TokenUsage,
+    )
+except ImportError:
+    from app.models.llm_metrics_models import (
+        DeploymentMode,
+        GenerationMetrics,
+        LLMHealthStatus,
+        ModelInformation,
+        ModelStatus,
+        SessionMetrics,
+        TokenUsage,
+    )
 
 # Try to import MLX-LM for direct integration
 try:

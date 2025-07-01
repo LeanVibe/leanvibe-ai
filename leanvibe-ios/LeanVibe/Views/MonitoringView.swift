@@ -82,13 +82,13 @@ struct MonitoringView: View {
                     .background(Color(.systemGray6))
                     .cornerRadius(12)
             } else {
-                ForEach(Array(projectManager.projects.filter({ $0.status == .active })), id: \.id) { project in
+                ForEach(projectManager.projects.filter({ $0.status == .active }), id: \.id) { project in
                     HStack {
                         Image(systemName: project.language.icon)
                             .foregroundColor(colorFromString(project.language.color))
                         
                         VStack(alignment: .leading) {
-                            Text(project.name)
+                            Text(project.displayName)
                                 .font(.headline)
                             Text(project.language.rawValue)
                                 .font(.caption)

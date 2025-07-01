@@ -1,296 +1,651 @@
-# Complete iOS Testing Implementation Prompt for Agentic AI Developer
+# iOS Testing Implementation - Autonomous Execution Prompt
 
-## Role & Context
-You are a pragmatic senior iOS engineer with 15+ years of experience specializing in Swift/SwiftUI and test-driven development. You have been tasked with implementing a strategic testing roadmap for the LeanVibe iOS app to maximize stability and prevent regressions.
+## Objective
+You are an elite iOS engineer implementing a comprehensive testing strategy for the LeanVibe iOS app based on Gemini CLI analysis results. Focus on preventing MVP launch blockers and ensuring production stability through pragmatic testing implementation.
 
-## Methodology
-You follow these non-negotiable principles:
-- **Pareto Principle**: Focus on the 20% of tests that prevent 80% of issues
-- **Test-Driven Development**: Write failing test → Implement minimal code → Refactor
-- **YAGNI**: Don't build what isn't immediately required
-- **Vertical Slices**: Complete entire test suites before moving to next component
-- **Autonomous Execution**: Continue to next priority without waiting for user confirmation
+## Prerequisites
+- Gemini analysis completed with `gemini_ios_comprehensive_testing_analysis.md`
+- iOS development environment ready (Xcode, iOS Simulator)
+- Understanding of SwiftUI, XCTest, and iOS testing frameworks
 
-## PHASE 0: Initial Assessment & Setup
+## Phase 0: Memory Bank Analysis & iOS Assessment
 
-### Step 1: Memory Bank Analysis
-**MANDATORY FIRST STEP**: Read ALL memory bank files to understand current project state:
-- `docs/01_memory_bank/01_project_brief.md`
-- `docs/01_memory_bank/02_product_context.md` 
-- `docs/01_memory_bank/03_tech_context.md`
-- `docs/01_memory_bank/04_system_patterns.md`
-- `docs/01_memory_bank/05_active_context.md`
-- `docs/01_memory_bank/06_progress.md`
-
-### Step 2: Current Test Infrastructure Assessment
-Execute these commands to understand current testing setup:
+### Step 0.1: Read Memory Bank Files
 ```bash
-# Navigate to iOS project
+# Read all memory bank files to understand current project state
+find docs/01_memory_bank/ -name "*.md" -exec cat {} \;
+```
+
+### Step 0.2: iOS Codebase Health Check
+```bash
 cd leanvibe-ios
 
-# Check existing test structure
-find . -name "*Tests.swift" -type f
-
-# Verify Xcode project builds
+# Check current build status
 xcodebuild -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' build
 
-# Run existing tests
-xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15'
-```
-
-### Step 3: Validate Critical Files Exist
-Confirm these files exist before proceeding:
-- `LeanVibe/ViewModels/MetricsViewModel.swift`
-- `LeanVibe/Services/ConnectionStorageManager.swift` 
-- `LeanVibe/Services/WebSocketService.swift`
-
-## PHASE 1: High-Impact Foundation Tests (Week 1)
-
-### Priority 1: MetricsViewModel Tests (8 hours, 30% impact)
-
-**TDD Implementation Sequence:**
-
-1. **Create Test File**: `LeanVibeTests/MetricsViewModelTests.swift`
-
-2. **Write Failing Tests First**:
-```swift
-// Template structure - write these tests to FAIL initially
-func testFetchMetrics_Success() {
-    // Test that successful metrics fetch populates metricHistory correctly
-    // and sets isLoadingMetrics to false
-}
-
-func testFetchMetrics_Failure() {
-    // Test that failed metrics fetch sets errorMessage 
-    // and isLoadingMetrics to false
-}
-
-func testFetchDecisions_Success() {
-    // Test successful decision log fetching
-}
-
-func testFetchDecisions_Failure() {
-    // Test failed decision log fetching with proper error handling
-}
-
-func testAverageConfidence() {
-    // Test computed property with: empty history, single item, multiple items
-}
-```
-
-3. **Run Tests to Confirm Failures**:
-```bash
-xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:LeanVibeTests/MetricsViewModelTests
-```
-
-4. **Implement Minimal Code to Pass Tests**
-5. **Refactor While Keeping Tests Green**
-6. **Validate All Tests Pass Before Moving On**
-
-### Priority 2: ConnectionStorageManager Tests (12 hours, 25% impact)
-
-**TDD Implementation Sequence:**
-
-1. **Create Test File**: `LeanVibeTests/ConnectionStorageManagerTests.swift`
-
-2. **Write Failing Tests First**:
-```swift
-func testSaveConnection() {
-    // Test connection saving and array trimming to 5 items max
-}
-
-func testSetCurrentConnection() {
-    // Test currentConnection property updates
-}
-
-func testRemoveConnection() {
-    // Test connection removal and currentConnection clearing
-}
-
-func testClearAllConnections() {
-    // Test complete connection clearing
-}
-
-func testPersistence() {
-    // Test UserDefaults persistence with mocking
-}
-```
-
-3. **Follow same TDD cycle as above**
-
-### Priority 3: WebSocketService Tests (20 hours, 35% impact)
-
-**TDD Implementation Sequence:**
-
-1. **Create Test File**: `LeanVibeTests/WebSocketServiceTests.swift`
-
-2. **Write Failing Tests First**:
-```swift
-func testConnectWithQRCode_Success() {
-    // Test successful QR connection and continuation resumption
-}
-
-func testConnectWithQRCode_Timeout() {
-    // Test connection timeout handling
-}
-
-func testConnectWithQRCode_InvalidQR() {
-    // Test invalid QR code error handling
-}
-
-func testSendMessage() {
-    // Test message sending through connected socket
-}
-
-func testDidReceiveMessage() {
-    // Test incoming message parsing and array updates
-}
-
-func testErrorHandling() {
-    // Test lastError and connectionStatus updates
-}
-```
-
-3. **Follow same TDD cycle**
-
-## PHASE 1 COMPLETION CRITERIA
-
-After completing each test suite:
-1. **Validate Tests Pass**: All new tests must pass consistently
-2. **Run Full Test Suite**: Ensure no regressions in existing tests
-3. **Code Coverage Check**: Aim for >80% coverage on tested components
-4. **Performance Validation**: Tests should run in <30 seconds total
-
-**Phase 1 Completion Command**:
-```bash
-# Run complete test suite
+# Run existing tests to establish baseline
 xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15'
 
-# If all tests pass, proceed to Phase 1 Documentation Update
+# Check for compile warnings and errors
+xcodebuild -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' build 2>&1 | grep -E "(warning|error):"
 ```
 
-## MEMORY BANK UPDATE - Phase 1 Complete
-
-**When Phase 1 is 100% complete**, update these memory bank files:
-
-### Update `docs/01_memory_bank/06_progress.md`:
-Add section:
-```markdown
-## iOS Testing Foundation - Phase 1 Complete [DATE]
-
-### Implemented Test Suites:
-- ✅ MetricsViewModelTests.swift - 30% stability impact
-- ✅ ConnectionStorageManagerTests.swift - 25% stability impact  
-- ✅ WebSocketServiceTests.swift - 35% stability impact
-
-### Test Coverage Achieved:
-- Total tests: [X] tests
-- Critical path coverage: [X]%
-- Execution time: [X] seconds
-
-### Next Priority: Phase 2 Integration Tests
-```
-
-### Update `docs/01_memory_bank/05_active_context.md`:
-```markdown
-## Current Focus: iOS Testing Strategy Implementation
-
-### Recently Completed:
-- Phase 1 foundation tests providing 90% combined stability impact
-- TDD methodology successfully applied to critical components
-
-### Next Steps:
-1. Phase 2: Integration Tests (MetricsService, DashboardVoiceProcessor)
-2. Phase 2: Error handling for network failures and permissions
-3. Phase 2: Performance baseline tests for MermaidRenderer
-
-### Blockers: None - autonomous execution continuing
-```
-
-## PHASE 2: Integration & Error Handling (Week 2-3)
-
-### Priority 1: Integration Tests
-**Target Files to Create:**
-- `LeanVibeTests/Integration/MetricsServiceIntegrationTests.swift`
-- `LeanVibeTests/Integration/VoiceProcessorIntegrationTests.swift`
-
-**Test Scenarios:**
-1. **MetricsService Integration**: Mock backend responses, test data parsing and error handling
-2. **DashboardVoiceProcessor Integration**: Test speech recognition → command processing flow
-3. **WebSocket → UI Integration**: Test real-time updates reaching the UI layer
-
-### Priority 2: Error Handling Tests
-**Focus Areas:**
-1. Network failure scenarios in WebSocketService
-2. Permission denial handling in VoicePermissionManager  
-3. Data corruption scenarios in ConnectionStorageManager
-
-### Priority 3: Performance Baseline Tests
-**Target**: MermaidRenderer performance benchmarks to prevent future regressions
-
-## PHASE 3: UI & Regression Prevention (Week 4)
-
-### Priority 1: Critical UI Flow Tests
-- Onboarding flow end-to-end test
-- Dashboard main screen UI test  
-- Voice command UI interaction test
-
-### Priority 2: Edge Case Coverage
-- Large architecture diagram handling
-- WebSocket message flooding scenarios
-- Memory pressure testing
-
-## ERROR HANDLING PROTOCOL
-
-### If Tests Fail During Implementation:
-1. **Analyze the Failure**: Read error message carefully
-2. **Check Implementation**: Verify the production code exists and is correct
-3. **Review Test Logic**: Ensure test accurately reflects expected behavior
-4. **Fix Root Cause**: Implement minimal fix
-5. **Re-run Tests**: Validate fix works
-6. **If Same Error Occurs Twice**: Write 3 different analysis paragraphs exploring different causes
-
-### If Build Errors Occur:
+### Step 0.3: Critical Assessment Based on Gemini Analysis
 ```bash
-# Clean build folder
-xcodebuild clean -project LeanVibe.xcodeproj -scheme LeanVibe
-
-# Rebuild
-xcodebuild -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' build
+# Document current state in active-context.md
+echo "## iOS Testing Implementation Status - $(date)" >> docs/01_memory_bank/05_active_context.md
+echo "### Baseline Assessment:" >> docs/01_memory_bank/05_active_context.md
 ```
 
-## SUCCESS METRICS & CONTINUATION
+**Key Questions to Address:**
+1. Which critical issues from Gemini analysis block MVP launch?
+2. What is the current test coverage baseline?
+3. Which user journeys are completely untested?
+4. What integration points with backend are most fragile?
+5. Which performance bottlenecks could cause App Store rejection?
 
-### Weekly Success Criteria:
-- [ ] All implemented tests pass consistently
-- [ ] No regressions in existing functionality  
-- [ ] Code coverage maintained >80% for tested components
-- [ ] Test execution time <2 minutes total
-- [ ] Memory usage during tests <1GB
+## Phase 1: Critical Stability Tests (High Impact - Week 1)
 
-### Automatic Continuation Logic:
-1. **After each test suite completion**: Automatically start next priority test suite
-2. **After each phase completion**: Update memory bank, then start next phase
-3. **If blocked by missing dependencies**: Implement minimal required dependencies
-4. **If tests reveal bugs in production code**: Fix bugs using TDD approach
+### Phase 1A: Foundation Tests for Core Components
 
-## FINAL INSTRUCTIONS
+Based on typical iOS architecture, prioritize testing:
 
-**DO NOT STOP UNTIL ALL PHASES ARE COMPLETE**
+#### 1.1: Core ViewModel Testing
+```swift
+// Create: LeanVibeTests/ViewModels/MetricsViewModelTests.swift
+@testable import LeanVibe
+import XCTest
+import Combine
 
-1. Start with Phase 0 (memory bank analysis)
-2. Execute Phase 1 completely before moving to Phase 2  
-3. Update memory bank after each phase completion
-4. Continue autonomously through all phases
-5. Apply TDD rigorously - failing test first, minimal implementation, refactor
-6. Focus on the Pareto principle - maximum impact tests first
-7. Document all discoveries and update `.neorules` with new patterns
+class MetricsViewModelTests: XCTestCase {
+    var viewModel: MetricsViewModel!
+    var cancellables: Set<AnyCancellable>!
+    
+    override func setUp() {
+        super.setUp()
+        viewModel = MetricsViewModel()
+        cancellables = Set<AnyCancellable>()
+    }
+    
+    func testInitialState() {
+        // Test initial state is correct
+        XCTAssertFalse(viewModel.isLoading)
+        XCTAssertTrue(viewModel.metrics.isEmpty)
+    }
+    
+    func testMetricsLoading() {
+        // Test loading state management
+        let expectation = XCTestExpectation(description: "Metrics loaded")
+        
+        viewModel.$isLoading
+            .dropFirst()
+            .sink { isLoading in
+                if !isLoading {
+                    expectation.fulfill()
+                }
+            }
+            .store(in: &cancellables)
+        
+        viewModel.loadMetrics()
+        wait(for: [expectation], timeout: 5.0)
+    }
+    
+    func testErrorHandling() {
+        // Test error state handling
+        // Implementation based on actual error handling patterns
+    }
+}
+```
 
-**Commit frequently with descriptive messages:**
-- `test: add MetricsViewModel test suite with 30% stability impact`
-- `feat: implement ConnectionStorageManager error handling`
-- `docs: update memory bank with Phase 1 testing completion`
+#### 1.2: Backend Communication Testing
+```swift
+// Create: LeanVibeTests/Services/BackendServiceTests.swift
+@testable import LeanVibe
+import XCTest
 
-Begin execution immediately with Phase 0, Step 1: Memory Bank Analysis.
+class BackendServiceTests: XCTestCase {
+    var service: BackendService!
+    
+    override func setUp() {
+        super.setUp()
+        service = BackendService()
+    }
+    
+    func testWebSocketConnection() {
+        let expectation = XCTestExpectation(description: "WebSocket connected")
+        
+        service.connect { result in
+            switch result {
+            case .success:
+                expectation.fulfill()
+            case .failure(let error):
+                XCTFail("Connection failed: \(error)")
+            }
+        }
+        
+        wait(for: [expectation], timeout: 10.0)
+    }
+    
+    func testReconnectionLogic() {
+        // Test automatic reconnection after disconnection
+    }
+    
+    func testMessageSerialization() {
+        // Test proper encoding/decoding of messages
+    }
+}
+```
 
-🐙 **Execute with discipline. Test with precision. Continue with determination.**
+#### 1.3: Data Persistence Testing
+```swift
+// Create: LeanVibeTests/Storage/DataStorageTests.swift
+@testable import LeanVibe
+import XCTest
+
+class DataStorageTests: XCTestCase {
+    var storage: DataStorage!
+    
+    override func setUp() {
+        super.setUp()
+        storage = DataStorage(testing: true)  // Use test database
+    }
+    
+    override func tearDown() {
+        storage.clearAllData()
+        super.tearDown()
+    }
+    
+    func testProjectPersistence() {
+        // Test project data saving and retrieval
+        let project = Project(id: "test", name: "Test Project")
+        
+        storage.save(project: project)
+        let retrieved = storage.loadProject(id: "test")
+        
+        XCTAssertEqual(retrieved?.name, "Test Project")
+    }
+    
+    func testSettingsPersistence() {
+        // Test settings persistence across app restarts
+    }
+}
+```
+
+### Phase 1B: Critical User Journey Testing
+
+#### 1.4: Onboarding Flow Testing
+```swift
+// Create: LeanVibeTests/Features/OnboardingTests.swift
+@testable import LeanVibe
+import XCTest
+
+class OnboardingTests: XCTestCase {
+    func testOnboardingCompletion() {
+        // Test complete onboarding flow
+        let onboardingManager = OnboardingManager()
+        
+        XCTAssertFalse(onboardingManager.isComplete)
+        
+        onboardingManager.completeStep(.welcome)
+        onboardingManager.completeStep(.permissions)
+        onboardingManager.completeStep(.backendConnection)
+        
+        XCTAssertTrue(onboardingManager.isComplete)
+    }
+    
+    func testOnboardingInterruption() {
+        // Test recovery from interrupted onboarding
+    }
+    
+    func testPermissionHandling() {
+        // Test proper permission request handling
+    }
+}
+```
+
+#### 1.5: Navigation Testing
+```swift
+// Create: LeanVibeTests/Navigation/NavigationTests.swift
+@testable import LeanVibe
+import XCTest
+import SwiftUI
+
+class NavigationTests: XCTestCase {
+    func testTabNavigation() {
+        // Test main tab navigation works correctly
+    }
+    
+    func testDeepLinking() {
+        // Test deep link handling
+    }
+    
+    func testBackButtonBehavior() {
+        // Test navigation stack management
+    }
+}
+```
+
+## Phase 2: Integration & Error Handling Tests (Week 2)
+
+### Phase 2A: Backend Integration Testing
+
+#### 2.1: API Integration Tests
+```swift
+// Create: LeanVibeTests/Integration/APIIntegrationTests.swift
+@testable import LeanVibe
+import XCTest
+
+class APIIntegrationTests: XCTestCase {
+    var apiClient: APIClient!
+    
+    override func setUp() {
+        super.setUp()
+        apiClient = APIClient(baseURL: TestConfig.backendURL)
+    }
+    
+    func testTaskCreation() {
+        let expectation = XCTestExpectation(description: "Task created")
+        
+        let task = Task(title: "Test Task", description: "Test Description")
+        
+        apiClient.createTask(task) { result in
+            switch result {
+            case .success(let createdTask):
+                XCTAssertNotNil(createdTask.id)
+                expectation.fulfill()
+            case .failure(let error):
+                XCTFail("Task creation failed: \(error)")
+            }
+        }
+        
+        wait(for: [expectation], timeout: 10.0)
+    }
+    
+    func testErrorHandling() {
+        // Test proper error handling for API failures
+    }
+    
+    func testOfflineMode() {
+        // Test app behavior when backend is unreachable
+    }
+}
+```
+
+#### 2.2: WebSocket Event Testing
+```swift
+// Create: LeanVibeTests/Integration/WebSocketEventTests.swift
+@testable import LeanVibe
+import XCTest
+
+class WebSocketEventTests: XCTestCase {
+    func testRealTimeUpdates() {
+        // Test real-time event handling
+    }
+    
+    func testEventSerialization() {
+        // Test proper event encoding/decoding
+    }
+    
+    func testConnectionRecovery() {
+        // Test recovery from connection drops
+    }
+}
+```
+
+### Phase 2B: Feature Integration Testing
+
+#### 2.3: Kanban Integration Tests
+```swift
+// Create: LeanVibeTests/Features/KanbanIntegrationTests.swift
+@testable import LeanVibe
+import XCTest
+
+class KanbanIntegrationTests: XCTestCase {
+    func testTaskDragAndDrop() {
+        // Test task movement between columns
+    }
+    
+    func testRealTimeSync() {
+        // Test task updates sync with backend
+    }
+    
+    func testConflictResolution() {
+        // Test handling of concurrent task modifications
+    }
+}
+```
+
+#### 2.4: Voice Interface Tests
+```swift
+// Create: LeanVibeTests/Features/VoiceInterfaceTests.swift
+@testable import LeanVibe
+import XCTest
+
+class VoiceInterfaceTests: XCTestCase {
+    func testVoiceCommandRecognition() {
+        // Test speech recognition accuracy
+    }
+    
+    func testPermissionHandling() {
+        // Test microphone permission management
+    }
+    
+    func testOfflineVoiceCommands() {
+        // Test fallback for network issues
+    }
+}
+```
+
+## Phase 3: UI & Performance Tests (Week 3-4)
+
+### Phase 3A: SwiftUI View Testing
+
+#### 3.1: View Rendering Tests
+```swift
+// Create: LeanVibeTests/Views/ViewRenderingTests.swift
+import ViewInspector
+@testable import LeanVibe
+import XCTest
+import SwiftUI
+
+class ViewRenderingTests: XCTestCase {
+    func testDashboardViewRendering() throws {
+        let view = DashboardView()
+        let body = try view.inspect().body
+        
+        // Test view structure
+        XCTAssertNoThrow(try body.find(ViewType.NavigationView.self))
+    }
+    
+    func testErrorStateRendering() throws {
+        let viewModel = MetricsViewModel()
+        viewModel.error = NetworkError.connectionFailed
+        
+        let view = MetricsView(viewModel: viewModel)
+        let errorMessage = try view.inspect().find(text: "Connection Failed")
+        
+        XCTAssertNotNil(errorMessage)
+    }
+    
+    func testLoadingStateRendering() throws {
+        // Test loading state UI
+    }
+}
+```
+
+#### 3.2: Performance Tests
+```swift
+// Create: LeanVibeTests/Performance/PerformanceTests.swift
+@testable import LeanVibe
+import XCTest
+
+class PerformanceTests: XCTestCase {
+    func testAppLaunchTime() {
+        measure {
+            // Test app launch performance
+            let app = XCUIApplication()
+            app.launch()
+        }
+    }
+    
+    func testMemoryUsage() {
+        // Test memory usage patterns
+        let viewController = UIHostingController(rootView: ContentView())
+        
+        measure(metrics: [XCTMemoryMetric()]) {
+            // Perform memory-intensive operations
+            viewController.loadView()
+        }
+    }
+    
+    func testLargeDatasetRendering() {
+        // Test performance with large datasets
+    }
+}
+```
+
+### Phase 3B: Edge Case & Regression Tests
+
+#### 3.3: Edge Case Testing
+```swift
+// Create: LeanVibeTests/EdgeCases/EdgeCaseTests.swift
+@testable import LeanVibe
+import XCTest
+
+class EdgeCaseTests: XCTestCase {
+    func testEmptyDataStates() {
+        // Test UI with no data
+    }
+    
+    func testLargeDataSets() {
+        // Test with large amounts of data
+    }
+    
+    func testNetworkTimeouts() {
+        // Test long network request handling
+    }
+    
+    func testLowMemoryConditions() {
+        // Test app behavior under memory pressure
+    }
+}
+```
+
+#### 3.4: Accessibility Tests
+```swift
+// Create: LeanVibeTests/Accessibility/AccessibilityTests.swift
+@testable import LeanVibe
+import XCTest
+
+class AccessibilityTests: XCTestCase {
+    func testVoiceOverSupport() {
+        // Test VoiceOver compatibility
+    }
+    
+    func testDynamicTypeSupport() {
+        // Test text scaling support
+    }
+    
+    func testHighContrastSupport() {
+        // Test high contrast mode
+    }
+}
+```
+
+## Testing Infrastructure Setup
+
+### Test Configuration
+```swift
+// Create: LeanVibeTests/TestConfig.swift
+import Foundation
+
+struct TestConfig {
+    static let backendURL = "http://localhost:8000"
+    static let testTimeout: TimeInterval = 30.0
+    static let simulatorDevice = "iPhone 15"
+    
+    static var isRunningTests: Bool {
+        return ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+}
+```
+
+### Mock Services
+```swift
+// Create: LeanVibeTests/Mocks/MockBackendService.swift
+@testable import LeanVibe
+import Foundation
+import Combine
+
+class MockBackendService: BackendServiceProtocol {
+    var shouldFailConnection = false
+    var mockTasks: [Task] = []
+    
+    func connect(completion: @escaping (Result<Void, Error>) -> Void) {
+        if shouldFailConnection {
+            completion(.failure(NetworkError.connectionFailed))
+        } else {
+            completion(.success(()))
+        }
+    }
+    
+    func createTask(_ task: Task, completion: @escaping (Result<Task, Error>) -> Void) {
+        var newTask = task
+        newTask.id = UUID().uuidString
+        mockTasks.append(newTask)
+        completion(.success(newTask))
+    }
+    
+    // Implement other protocol methods
+}
+```
+
+## Quality Gates & Validation
+
+### After Phase 1 (Critical Tests):
+```bash
+# Run critical test suite
+xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:LeanVibeTests/ViewModels
+xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:LeanVibeTests/Services
+xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:LeanVibeTests/Features/OnboardingTests
+
+# Verify no critical failures
+echo "✅ Phase 1 Critical Tests Complete"
+```
+
+### After Phase 2 (Integration Tests):
+```bash
+# Run integration test suite
+xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:LeanVibeTests/Integration
+
+# Test with real backend if available
+if curl -f http://localhost:8000/health; then
+    echo "✅ Backend available - running full integration tests"
+    # Run tests that require backend
+else
+    echo "⚠️  Backend not available - running mock-only tests"
+fi
+```
+
+### After Phase 3 (Complete Test Suite):
+```bash
+# Run full test suite with coverage
+xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' -enableCodeCoverage YES
+
+# Performance benchmarking
+xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:LeanVibeTests/Performance
+
+# Accessibility validation
+xcodebuild test -project LeanVibe.xcodeproj -scheme LeanVibe -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:LeanVibeTests/Accessibility
+```
+
+## Final Success Criteria
+
+### MVP Launch Readiness:
+- [ ] **Core user journey tests pass** (onboarding → dashboard → key features)
+- [ ] **Backend integration tests pass** (API calls, WebSocket events)
+- [ ] **Error handling validated** (network failures, permission denials)
+- [ ] **Performance benchmarks met** (launch time, memory usage, rendering)
+- [ ] **Accessibility standards met** (VoiceOver, Dynamic Type)
+- [ ] **No critical crashes** in test scenarios
+
+### Test Coverage Targets:
+- [ ] **ViewModels**: >90% test coverage
+- [ ] **Services**: >85% test coverage  
+- [ ] **Critical user flows**: 100% test coverage
+- [ ] **Error handling**: >80% test coverage
+- [ ] **Integration points**: 100% test coverage
+
+## Memory Bank Updates
+
+### After Phase 1:
+Update `docs/01_memory_bank/06_progress.md`:
+```markdown
+## iOS Testing Implementation - Phase 1 Complete
+- ✅ Critical ViewModels tested (MetricsViewModel, etc.)
+- ✅ Backend service integration tested
+- ✅ Core data persistence validated
+- ✅ Onboarding flow tested
+- ✅ Basic navigation tested
+- 🔄 Integration tests in progress (Phase 2)
+```
+
+### After Phase 2:
+```markdown
+## iOS Testing Implementation - Phase 2 Complete
+- ✅ API integration tests implemented
+- ✅ WebSocket event handling tested
+- ✅ Kanban board integration validated
+- ✅ Voice interface core functionality tested
+- 🔄 UI and performance tests in progress (Phase 3)
+```
+
+### After Phase 3:
+```markdown
+## iOS Testing Implementation - Complete ✅
+- ✅ Comprehensive test suite implemented
+- ✅ Performance benchmarks established
+- ✅ Accessibility standards validated
+- ✅ Edge cases and error handling covered
+- ✅ MVP launch readiness achieved
+
+### Test Metrics:
+- Total Tests: [X]
+- Coverage: [X]%
+- Performance: Launch <3s, Memory <200MB
+- Accessibility: VoiceOver compatible
+```
+
+## Error Handling & Recovery Protocol
+
+### If Critical Tests Fail:
+1. **Identify root cause** - is it a test issue or implementation issue?
+2. **Fix implementation first** - make the test pass correctly
+3. **Refactor test if needed** - ensure test accurately reflects requirements
+4. **Document any architectural changes** needed
+5. **Re-run full test suite** to ensure no regressions
+
+### If Performance Tests Fail:
+1. **Profile the specific performance issue** using Instruments
+2. **Identify bottlenecks** in rendering, memory, or computation
+3. **Implement targeted optimizations** 
+4. **Re-validate performance benchmarks**
+5. **Update performance documentation**
+
+### If Integration Tests Fail:
+1. **Check backend connectivity** and API compatibility
+2. **Verify data serialization** between iOS and backend
+3. **Test with mock services** to isolate iOS-specific issues
+4. **Update integration protocols** if needed
+
+## Autonomous Execution Protocol
+
+### Start Immediately:
+```bash
+cd leanvibe-ios
+# Begin Phase 0 - Memory bank analysis and iOS assessment
+```
+
+### Execution Sequence:
+1. **Phase 0**: Memory bank analysis + iOS health check
+2. **Phase 1**: Critical stability tests (ViewModels, Services, Core flows)
+3. **Phase 2**: Integration tests (Backend, Features, WebSocket)
+4. **Phase 3**: UI, Performance, and Edge case tests
+5. **Memory Bank Updates**: After each phase completion
+6. **Quality Gates**: Validate success criteria at each phase
+
+### Commit Strategy:
+```bash
+# After each test suite completion
+git add LeanVibeTests/
+git commit -m "feat(ios-tests): implement [Phase X] testing suite
+
+- Add comprehensive tests for [component/feature]
+- Establish [performance/quality] benchmarks  
+- Validate [user journey/integration] scenarios
+- Coverage: [X]% for [component]
+
+Resolves: MVP testing requirements for [area]"
+```
+
+This autonomous execution protocol ensures systematic implementation of comprehensive iOS testing that prevents MVP launch blockers and establishes long-term stability.

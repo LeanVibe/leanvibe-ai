@@ -50,43 +50,41 @@ class MLXServiceInterface(ABC):
 
 
 class ProductionMLXStrategy(MLXServiceInterface):
-    """Production MLX implementation using real models"""
+    """Production MLX implementation using real models with transformers"""
     
     def __init__(self):
         self.is_initialized = False
-        self._production_service = None
+        self._transformers_service = None
         
     async def initialize(self) -> bool:
-        """Initialize production MLX service"""
+        """Initialize production MLX service with transformers"""
         try:
-            # Import and initialize production service
-            from .production_model_service import ProductionModelService, ModelConfig
+            # Import and initialize transformers service
+            from .transformers_phi3_service import transformers_phi3_service
             
-            config = ModelConfig(
-                model_name="microsoft/Phi-3-mini-128k-instruct",
-                max_tokens=512,
-                temperature=0.3
-            )
+            self._transformers_service = transformers_phi3_service
+            success = await self._transformers_service.initialize()
             
-            self._production_service = ProductionModelService(config)
-            await self._production_service.initialize()
-            
-            self.is_initialized = True
-            logger.info("Production MLX strategy initialized successfully")
-            return True
+            if success:
+                self.is_initialized = True
+                logger.info("Production MLX strategy (transformers) initialized successfully")
+                return True
+            else:
+                logger.error("Failed to initialize transformers service")
+                return False
             
         except Exception as e:
-            logger.error(f"Failed to initialize Production MLX strategy: {e}")
+            logger.error(f"Failed to initialize Production MLX strategy (transformers): {e}")
             return False
     
     async def generate_code_completion(
         self, context: Dict[str, Any], intent: str = "suggest"
     ) -> Dict[str, Any]:
-        """Generate code completion using production models"""
-        if not self.is_initialized or not self._production_service:
+        """Generate code completion using transformers models"""
+        if not self.is_initialized or not self._transformers_service:
             return {
                 "status": "error",
-                "error": "Production service not initialized",
+                "error": "Transformers service not initialized",
                 "response": "",
                 "confidence": 0.0
             }
@@ -95,19 +93,35 @@ class ProductionMLXStrategy(MLXServiceInterface):
             # Create a prompt from context and intent
             prompt = self._create_prompt_from_context(context, intent)
             
-            # Use the production service's generate_text method
-            text_result = await self._production_service.generate_text(prompt)
+            # Use the transformers service's generate_text method
+            result = await self._transformers_service.generate_text(
+                prompt,
+                max_new_tokens=150,
+                temperature=0.7
+            )
             
-            return {
-                "status": "success",
-                "response": text_result,
-                "confidence": 0.8,  # Default confidence for production
-                "language": self._detect_language(context),
-                "requires_human_review": False,
-                "suggestions": ["Consider reviewing the generated code"],
-                "model": "production-phi3-mini",
-                "context_used": True
-            }
+            if result["status"] == "success":
+                return {
+                    "status": "success",
+                    "response": result["response"],
+                    "confidence": 0.9,  # High confidence for real model
+                    "language": self._detect_language(context),
+                    "requires_human_review": False,
+                    "suggestions": ["Generated with Phi-3 real model weights"],
+                    "model": f"phi3-transformers-{result.get('model_name', 'unknown')}",
+                    "context_used": True,
+                    "using_pretrained": result.get("using_pretrained", True),
+                    "generation_time": result.get("generation_time", 0),
+                    "tokens_per_second": result.get("tokens_per_second", 0)
+                }
+            else:
+                return {
+                    "status": "error",
+                    "error": result.get("error", "Unknown transformers error"),
+                    "response": "",
+                    "confidence": 0.0
+                }
+            
         except Exception as e:
             logger.error(f"Production MLX completion failed: {e}")
             return {
@@ -119,12 +133,22 @@ class ProductionMLXStrategy(MLXServiceInterface):
     
     def get_model_health(self) -> Dict[str, Any]:
         """Get production model health"""
-        return {
-            "strategy": "production",
-            "initialized": self.is_initialized,
-            "model_loaded": self._production_service is not None,
-            "status": "healthy" if self.is_initialized else "unavailable"
-        }
+        if self._transformers_service:
+            service_health = self._transformers_service.get_health_status()
+            return {
+                "strategy": "production-transformers",
+                "initialized": self.is_initialized,
+                "model_loaded": service_health.get("model_loaded", False),
+                "status": "healthy" if self.is_initialized else "unavailable",
+                "service_details": service_health
+            }
+        else:
+            return {
+                "strategy": "production-transformers",
+                "initialized": self.is_initialized,
+                "model_loaded": False,
+                "status": "unavailable"
+            }
     
     def is_available(self) -> bool:
         """Check if production strategy is available"""

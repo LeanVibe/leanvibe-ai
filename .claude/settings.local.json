@@ -110,7 +110,8 @@
       "Bash(if grep -q \"struct.*SettingsView.*: View\" \"$file\")",
       "Bash(pkill:*)",
       "Bash(pytest:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(./ci-check.sh)"
     ],
     "deny": []
   }

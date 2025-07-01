@@ -20,7 +20,7 @@ struct TaskEditView: View {
         
         // Initialize state with current task values
         self._title = State(initialValue: task.wrappedValue.title)
-        self._description = State(initialValue: task.wrappedValue.description)
+        self._description = State(initialValue: task.wrappedValue.description ?? "")
         self._priority = State(initialValue: task.wrappedValue.priority)
         self._assignedTo = State(initialValue: task.wrappedValue.assignedTo ?? "")
         self._tags = State(initialValue: task.wrappedValue.tags)
@@ -154,7 +154,7 @@ struct TaskEditView: View {
             return "🟡"
         case .high:
             return "🟠"
-        case .critical:
+        case .urgent:
             return "🔴"
         }
     }
@@ -169,6 +169,7 @@ struct TaskEditView_Previews: PreviewProvider {
                 description: "This is a sample task for preview",
                 status: .inProgress,
                 priority: .medium,
+                projectId: UUID(),
                 confidence: 0.85,
                 clientId: "preview-client"
             )),

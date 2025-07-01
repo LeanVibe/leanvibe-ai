@@ -1,6 +1,6 @@
 # Git Worktrees Management
 
-Create git worktrees for parallel development on multiple branches.
+Create git worktrees for parallel development on multiple branches. Worktrees should be created under worktrees directory of the main repository, using descriptive names that reflect the feature or branch being developed. Each worktree should be linked to a specific branch and configured for independent development while maintaining integration with the main codebase.
 
 ## Instructions
 

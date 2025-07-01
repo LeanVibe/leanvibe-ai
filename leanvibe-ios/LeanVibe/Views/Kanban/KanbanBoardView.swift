@@ -84,7 +84,7 @@ struct KanbanBoardView: View {
         let statusTasks = taskService.tasks.filter { $0.status == status }
         let filtered = searchText.isEmpty ? statusTasks : statusTasks.filter {
             $0.title.localizedCaseInsensitiveContains(searchText) ||
-            $0.description.localizedCaseInsensitiveContains(searchText) ||
+            ($0.description?.localizedCaseInsensitiveContains(searchText) ?? false) ||
             $0.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
         }
         
@@ -154,11 +154,9 @@ struct KanbanColumnView: View {
     
     private func getStatusColor(_ status: TaskStatus) -> String {
         switch status {
-        case .backlog: return "gray"
+        case .todo: return "gray"
         case .inProgress: return "blue"
-        case .testing: return "orange"
         case .done: return "green"
-        case .blocked: return "red"
         }
     }
 }
@@ -180,8 +178,8 @@ struct TaskCardView: View {
                     .frame(width: 8, height: 8)
             }
             
-            if !task.description.isEmpty {
-                Text(task.description)
+            if let description = task.description, !description.isEmpty {
+                Text(description)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .lineLimit(3)

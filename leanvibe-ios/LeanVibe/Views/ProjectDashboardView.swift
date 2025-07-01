@@ -259,7 +259,7 @@ struct ProjectCard: View {
                             .font(.title2)
                         
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(project.name)
+                            Text(project.displayName)
                                 .font(.headline)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.primary)

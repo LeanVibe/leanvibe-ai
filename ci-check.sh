@@ -16,11 +16,11 @@ cd "leanvibe-ios" || {
 }
 
 echo "🏗️  Building iOS project..."
-echo "Running: swift build"
+echo "Running: xcodebuild -project LeanVibe.xcodeproj -scheme LeanVibe build"
 echo ""
 
 # Run build and capture output
-swift build 2>&1 | tee build.log
+xcodebuild -project LeanVibe.xcodeproj -scheme LeanVibe build 2>&1 | tee build.log
 
 # Check for compilation errors
 if grep -q "error:" build.log; then

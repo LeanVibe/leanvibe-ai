@@ -58,7 +58,8 @@ struct DashboardTabView: View {
                     .navigationDestination(for: String.self) { destination in
                         if destination.hasPrefix("project-") {
                             let projectId = String(destination.dropFirst("project-".count))
-                            if let project = projectManager.projects.first(where: { $0.id == projectId }) {
+                            if let projectUUID = UUID(uuidString: projectId),
+                               let project = projectManager.projects.first(where: { $0.id == projectUUID }) {
                                 ProjectDetailView(
                                     project: project, 
                                     projectManager: projectManager,
