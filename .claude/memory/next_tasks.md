@@ -1,125 +1,179 @@
 # Priority Task Queue - Next Session
 
-## Immediate High Priority (Next Session)
+## 🚨 Critical: Production Hardening Sprint (Phase 1)
 
-### 1. Error Handling System Restoration 🔥
-**Estimated Effort**: 4-6 hours
-**Files**: `DashboardTabView.swift`, `SettingsView.swift`, `TaskDetailView.swift`, `KanbanBoardView.swift`
+### 1. Security Audit & Hardening 🔐 (3 days)
+**Owner**: Security specialist agent
+**Priority**: CRITICAL
+
+**WebSocket Security Tasks**:
+- [ ] Input validation on all WebSocket messages
+- [ ] Rate limiting for WebSocket connections  
+- [ ] Authentication token validation
+- [ ] Message encryption/signing verification
+
+**Data Persistence Security**:
+- [ ] UserDefaults data sanitization
+- [ ] Sensitive data encryption at rest
+- [ ] Secure keychain usage for credentials
+- [ ] Core Data access control patterns
+
+**Voice Privacy Compliance**:
+- [ ] Microphone permission handling audit
+- [ ] On-device speech processing verification
+- [ ] Voice data retention policies
+- [ ] Wake phrase false positive prevention
+
+### 2. Edge Case Testing & Robustness 🛡️ (4 days)
+**Owner**: QA specialist agent
+**Priority**: HIGH
+
+**Network Connectivity Scenarios**:
+- [ ] Test drag-drop during network loss
+- [ ] Test voice commands offline
+- [ ] Test WebSocket reconnection flows
+- [ ] Implement offline Kanban operations
+
+**Permission Revocation Handling**:
+- [ ] Microphone permission revoked during voice
+- [ ] Notification permission changes
+- [ ] Dynamic permission state management
+
+**Memory Pressure Testing**:
+- [ ] Large project visualization (>1000 nodes)
+- [ ] Extended voice sessions (>30 min)
+- [ ] Memory cleanup validation
+
+### 3. UX Polish & Performance 🎨 (3 days)
+**Owner**: UX specialist agent
+**Priority**: HIGH
+
+**Animation Enhancement**:
+- [ ] Smooth Kanban drag-drop animations
+- [ ] Voice interface waveform improvements
+- [ ] Architecture viewer zoom/pan polish
+
+**Accessibility**:
+- [ ] VoiceOver optimization for all features
+- [ ] Dynamic Type scaling validation
+- [ ] Color contrast compliance
+
+**Performance**:
+- [ ] 60fps animation validation
+- [ ] Battery usage optimization
+- [ ] Memory footprint reduction
+
+## 🔄 Previously Identified High Priority
+
+### 4. GlobalErrorManager Restoration 🔥
+**From Previous Session** - Now integrated into Security Audit
+**Context**: Module resolution issues affecting error handling
 
 **Tasks**:
-- [ ] Investigate iOS 18.0+ availability attribute module resolution
-- [ ] Fix GlobalErrorManager import/scope issues  
-- [ ] Restore `.withGlobalErrorHandling()` extension functionality
-- [ ] Test error display and retry mechanisms
-- [ ] Validate error handling across all affected views
+- [ ] Fix iOS 18.0+ availability conflicts
+- [ ] Restore `.withGlobalErrorHandling()` 
+- [ ] Test error display across views
+- [ ] Integrate with production error monitoring
 
-**Context**: Currently commented out with TODO markers, core app functionality depends on this
+### 5. Technical Debt (Post-Hardening)
+**Priority**: DEFERRED until after production infrastructure
 
-### 2. RetryManager Integration Fix 🔥  
-**Estimated Effort**: 2-3 hours
-**Files**: `TaskService.swift`, `ProjectManager.swift`, `RetryManager.swift`
+**High-Impact Items**:
+- [ ] VoiceManager refactoring (2,800+ lines)
+- [ ] PushNotificationService decomposition (3,300+ lines)
+- [ ] KanbanBoardView business logic extraction
+- [ ] WebSocketService enhancement
 
-**Tasks**:
-- [ ] Resolve BackoffStrategy availability conflicts
-- [ ] Restore async retry logic in TaskService operations
-- [ ] Verify RetryManager.shared accessibility across modules
-- [ ] Test exponential backoff and retry conditions
-- [ ] Re-enable retry functionality for network operations
+## 📊 Phase 2: Critical Infrastructure (5 days)
 
-**Context**: Network resilience currently disabled, affects user experience
+### 6. Analytics & Monitoring Framework 📈
+**Owner**: DevOps specialist agent
+**Priority**: HIGH (after hardening)
 
-## High Priority (Same Week)
+**Implementation Tasks**:
+- [ ] Privacy-focused analytics framework
+- [ ] Feature usage tracking (Kanban, Voice, Architecture)
+- [ ] Error monitoring and alerting
+- [ ] Performance metrics collection
 
-### 3. Test Coverage Expansion 📊
-**Estimated Effort**: 8-12 hours  
-**Files**: All test files in `LeanVibeTests/`
+### 7. CI/CD Pipeline 🚀
+**Owner**: DevOps specialist agent
+**Priority**: HIGH (after hardening)
 
-**Tasks**:
-- [ ] Replace placeholder PushNotificationTests with real tests
-- [ ] Add comprehensive unit tests for error handling system
-- [ ] Create integration tests for RetryManager functionality  
-- [ ] Add UI tests for critical user workflows
-- [ ] Achieve 80%+ code coverage target per CLAUDE.md requirements
+**Pipeline Setup**:
+- [ ] GitHub Actions workflow configuration
+- [ ] Automated iOS build and test
+- [ ] Backend test automation
+- [ ] TestFlight deployment automation
 
-### 4. Build System Optimization ⚡
-**Estimated Effort**: 3-4 hours
-
-**Tasks**:
-- [ ] Address iOS 17.0+ deprecation warnings (8 instances)
-- [ ] Optimize compilation time (currently ~240s)
-- [ ] Review SwiftLint configuration for quality gates
-- [ ] Validate on physical iOS devices (not just simulator)
-
-## Medium Priority (Next 2 Weeks)
-
-### 5. Architecture Review & Documentation 📋
-**Estimated Effort**: 6-8 hours
-
-**Tasks**:
-- [ ] Create architecture decision records (ADRs) for error handling
-- [ ] Document availability attribute patterns and best practices
-- [ ] Review and update CLAUDE.md build/test commands
-- [ ] Create troubleshooting guide for future compilation issues
-
-### 6. Performance Validation 🚀
-**Estimated Effort**: 4-6 hours
-
-**Tasks**:
-- [ ] Validate <2s story generation target (per CLAUDE.md)
-- [ ] Test <500MB memory usage requirement
-- [ ] Benchmark build times across different hardware
-- [ ] Profile app launch time (<1s target)
-
-## Future Enhancements (Backlog)
-
-### 7. Error Handling UX Polish
-- [ ] Design error message improvements
-- [ ] Add user-friendly retry interfaces  
-- [ ] Implement progressive error disclosure
-- [ ] Create error analytics and reporting
-
-### 8. Test Infrastructure Modernization
-- [ ] Implement Swift Testing framework migration
-- [ ] Add snapshot testing for UI components
-- [ ] Create performance regression test suite
-- [ ] Add automated accessibility testing
-
-## Success Criteria for Next Session
+## 📋 Success Criteria for Next Session
 
 ### Must Achieve ✅
-- [ ] GlobalErrorManager fully restored and functional
-- [ ] RetryManager integration working end-to-end
-- [ ] All TODO markers from this session resolved
-- [ ] Build remains stable with 0 errors
-- [ ] Test suite maintains 100% pass rate
+- [ ] Security audit initiated with findings documented
+- [ ] Critical vulnerabilities identified and prioritized
+- [ ] Edge case test plan created and execution started
+- [ ] UX polish roadmap defined with mockups
+- [ ] GlobalErrorManager issues resolved
 
-### Should Achieve 🎯  
-- [ ] At least 3 new meaningful test cases added
-- [ ] Deprecation warnings reduced by 50%
-- [ ] Architecture documentation updated
-- [ ] Performance baseline established
+### Should Achieve 🎯
+- [ ] 25% of security hardening complete
+- [ ] Key edge cases implemented and tested
+- [ ] Animation improvements visible
+- [ ] Analytics framework design complete
 
 ### Could Achieve 🌟
-- [ ] Full test coverage for error handling system
-- [ ] Build time optimization implemented
-- [ ] Device testing validation completed
+- [ ] Security score baseline established
+- [ ] CI/CD pipeline prototype working
+- [ ] Performance benchmarks improved by 10%
 
-## Knowledge Continuity Notes
+## 🧭 Implementation Strategy
 
-### Context to Preserve
-- All current TODO markers represent working -> non-working state transitions
-- Availability attributes are core issue, not SwiftUI patterns
-- Test infrastructure is fragile, validate early and often
-- Build system is working well, don't over-optimize
+### Worktree Setup
+```bash
+# Security hardening worktree
+git worktree add ../leanvibe-security feature/security-hardening
 
-### Patterns to Continue
-- Systematic error resolution (dependency order)
-- Minimal viable fixes with restoration roadmap
-- Comprehensive TODO documentation
-- Regular build/test validation cycles
+# Edge case testing worktree
+git worktree add ../leanvibe-edge-cases feature/edge-case-testing
 
-### Risks to Monitor
-- Technical debt accumulation if fixes aren't restored
-- Module resolution instability with iOS updates
-- Test coverage regression if placeholder tests multiply
-- Performance degradation from workarounds
+# UX polish worktree
+git worktree add ../leanvibe-ux-polish feature/ux-polish
+```
+
+### Parallel Execution
+- Security agent: Focus on audit and critical fixes
+- QA agent: Implement edge case scenarios
+- UX agent: Polish animations and accessibility
+
+## 📚 Context from Previous Sessions
+
+### Combined Technical Debt
+1. **Build Issues**: GlobalErrorManager, RetryManager
+2. **Agent Code**: VoiceManager, PushNotificationService refactoring
+3. **Test Coverage**: UI tests implemented, integration needed
+
+### Strategic Decisions
+- Production robustness before technical debt
+- Security and infrastructure enable deployment
+- Phased approach reduces risk
+
+### Key Metrics to Track
+- Security score (target: 95+)
+- Edge case coverage (target: 90+)
+- UX polish score (target: 92+)
+- Performance benchmarks maintained
+
+## 🎯 Next Session Focus
+
+**Primary**: Begin Phase 1 Security Hardening Sprint
+1. Launch security audit with specialized agent
+2. Document all security findings
+3. Prioritize critical vulnerabilities
+4. Begin implementing security fixes
+
+**Secondary**: Parallel edge case and UX work
+1. QA agent implements network scenarios
+2. UX agent starts animation polish
+3. Coordinate findings across agents
+
+**Success Factor**: Clean handoff between planning and execution phases with specialized agents taking ownership of their domains.
