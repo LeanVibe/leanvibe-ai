@@ -37,22 +37,8 @@ class TaskService: ObservableObject {
     // MARK: - Core Task Operations
     
     func loadTasks(for projectId: UUID) async throws {
-        // TODO: Fix RetryManager resolution issue
-        // try await RetryManager.shared.executeWithRetry(
-        //     operation: { [weak self] in
-        //         await self?.loadTasksInternal(for: projectId)
-        //     },
-        //     maxAttempts: 3,
-        //     backoffStrategy: BackoffStrategy.exponential(base: 1.0, multiplier: 2.0),
-        //     retryCondition: RetryManager.shouldRetry,
-        // Simplified without retry logic for now
-        //     onAttempt: { attempt, error in
-        //         if let error = error {
-        //             print("Task loading attempt \(attempt) failed: \(error.localizedDescription)")
-        //         }
-        //     },
-        //     context: "Loading tasks for project \(projectId)"
-        // )
+        // Load tasks for the specified project
+        try await loadTasksInternal(for: projectId)
     }
     
     private func loadTasksInternal(for projectId: UUID) async throws {
@@ -60,14 +46,21 @@ class TaskService: ObservableObject {
         lastError = nil
         defer { isLoading = false }
         
-        // In production, fetch from backend
-        // For now, filter persisted tasks by project
-        let projectTasks = tasks.filter { $0.projectId == projectId }
-        
-        // If no tasks exist for project, load sample data
-        if projectTasks.isEmpty {
-            generateSampleTasks(for: projectId)
+        // Try to fetch from backend API first
+        if let backendTasks = try await fetchTasksFromBackend(projectId: projectId) {
+            // Backend returned tasks - update our local tasks
+            tasks = backendTasks
             try await saveTasks()
+        } else {
+            // Backend unavailable - use local data
+            loadPersistedTasks()
+            
+            // If no persisted tasks exist for project, generate samples
+            let projectTasks = tasks.filter { $0.projectId == projectId }
+            if projectTasks.isEmpty {
+                generateSampleTasks(for: projectId)
+                try await saveTasks()
+            }
         }
     }
     
@@ -218,6 +211,52 @@ class TaskService: ObservableObject {
         }
         
         return try JSONDecoder().decode(TaskStatsAPIResponse.self, from: data)
+    }
+    
+    @MainActor
+    private func fetchTasksFromBackend(projectId: UUID) async throws -> [LeanVibeTask]? {
+        guard let url = URL(string: "\(baseURL)/api/projects/\(projectId)/tasks") else {
+            throw TaskServiceError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 10.0
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return nil
+            }
+            
+            switch httpResponse.statusCode {
+            case 200...299:
+                // Success - decode tasks
+                let tasksResponse = try jsonDecoder.decode(TasksAPIResponse.self, from: data)
+                return tasksResponse.tasks
+                
+            case 404:
+                // No tasks endpoint available, use fallback
+                return nil
+                
+            case 500...599:
+                // Server error, use fallback
+                return nil
+                
+            default:
+                // Other error, use fallback
+                return nil
+            }
+            
+        } catch is DecodingError {
+            // JSON decoding failed, but don't crash - use fallback
+            return nil
+        } catch {
+            // Network error, use fallback
+            return nil
+        }
     }
     
     // MARK: - Kanban Statistics
@@ -494,6 +533,20 @@ class TaskService: ObservableObject {
         ]
         
         tasks.append(contentsOf: sampleTasks)
+    }
+}
+
+// MARK: - API Response Types
+
+struct TasksAPIResponse: Codable {
+    let tasks: [LeanVibeTask]
+    let total: Int?
+    let status: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case tasks
+        case total
+        case status
     }
 }
 
