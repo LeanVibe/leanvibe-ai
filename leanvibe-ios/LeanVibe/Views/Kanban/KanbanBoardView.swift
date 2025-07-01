@@ -26,9 +26,8 @@ struct KanbanBoardView: View {
                             selectedTask: $selectedTask,
                             draggedTask: $draggedTask,
                             onDragError: { error in
-                                // TODO: Fix GlobalErrorManager resolution
-                                // GlobalErrorManager.shared.showValidationError(error)
-                                print("Drag error: \(error)")
+                                // Error is handled by the ErrorDisplayView overlay
+                                // TaskService.lastError will be displayed
                             }
                         )
                     }
@@ -68,6 +67,20 @@ struct KanbanBoardView: View {
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
+                }
+            }
+            .overlay(alignment: .top) {
+                // Display task service errors
+                if let error = taskService.lastError {
+                    ErrorDisplayView(
+                        error: error,
+                        onRetry: {
+                            Task {
+                                try? await taskService.loadTasks(for: projectId)
+                            }
+                        }
+                    )
+                    .padding()
                 }
             }
             .sheet(isPresented: $showingStatistics) {
