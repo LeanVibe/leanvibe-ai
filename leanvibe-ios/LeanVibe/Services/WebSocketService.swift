@@ -47,13 +47,17 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         do {
             try config.validateConfiguration()
             
+            // Parse URL to extract host and port
+            let url = URL(string: config.apiBaseURL)
+            let host = url?.host ?? "localhost"
+            let port = url?.port ?? 8001
+            
             return ConnectionSettings(
-                id: UUID(),
-                displayName: "Local Development",
-                websocketURL: config.webSocketURL.replacingOccurrences(of: "/ws", with: ""),
-                apiKey: "development",
-                isActive: true,
-                lastConnected: Date()
+                host: host,
+                port: port,
+                websocketPath: "/ws",
+                serverName: "Local Development",
+                network: "development"
             )
         } catch {
             print("⚠️ Cannot create default connection: \(error)")

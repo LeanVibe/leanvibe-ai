@@ -144,7 +144,7 @@ struct ErrorHistoryRowView: View {
             if !error.context.isEmpty {
                 Text("Context: \(error.context)")
                     .font(.caption)
-                    .foregroundColor(.tertiary)
+                    .foregroundColor(.secondary.opacity(0.7))
             }
         }
         .padding(.vertical, 4)

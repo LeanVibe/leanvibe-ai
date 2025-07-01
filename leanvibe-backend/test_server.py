@@ -12,12 +12,34 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="LeanVibe Test Server", version="1.0.0")
 
-# Enable CORS for all domains (for testing)
+# Environment-aware CORS configuration
+import os
+environment = os.getenv("LEANVIBE_ENV", "development").lower()
+
+if environment == "production":
+    allowed_origins = [
+        "https://app.leanvibe.ai",
+        "https://leanvibe.ai"
+    ]
+elif environment == "staging":
+    allowed_origins = [
+        "https://staging.leanvibe.ai",
+        "https://app-staging.leanvibe.ai"
+    ]
+else:
+    # Development - allow localhost and iOS simulator
+    allowed_origins = [
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8080"
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 

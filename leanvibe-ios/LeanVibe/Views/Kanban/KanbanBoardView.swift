@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor
@@ -11,7 +12,7 @@ struct KanbanBoardView: View {
     @State private var searchText = ""
     @State private var showingStatistics = false
     @State private var showingSettings = false
-    @State private var sortOption: TaskSortOption = .priority
+    @State private var sortOption: String = "priority"
     @State private var draggedTask: LeanVibeTask?
 
     var body: some View {
@@ -47,10 +48,10 @@ struct KanbanBoardView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
                         Section("Sort by") {
-                            ForEach(TaskSortOption.allCases, id: \.self) { option in
+                            ForEach(["priority", "due_date", "title"], id: \.self) { option in
                                 Button(action: { sortOption = option }) {
                                     HStack {
-                                        Text(option.rawValue.capitalized)
+                                        Text(option.capitalized)
                                         if sortOption == option {
                                             Image(systemName: "checkmark")
                                         }

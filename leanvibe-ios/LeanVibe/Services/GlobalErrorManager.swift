@@ -4,13 +4,13 @@ import Foundation
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class GlobalErrorManager: ObservableObject {
-    static let shared = GlobalErrorManager()
+    nonisolated static let shared = GlobalErrorManager()
     
     @Published var currentError: AppError?
     @Published var showingErrorAlert = false
     @Published var errorHistory: [AppError] = []
     
-    private init() {}
+    nonisolated private init() {}
     
     /// Display an error with automatic dismissal
     func showError(_ error: AppError) {

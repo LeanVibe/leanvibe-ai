@@ -7,7 +7,7 @@ struct KanbanSettingsView: View {
     
     // MARK: - Properties
     
-    @Environment(\.settingsManager) private var settingsManager
+    @StateObject private var settingsManager = SettingsManager.shared
     @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
     @State private var showingColumnCustomization = false
     @State private var showingTaskDefaults = false
@@ -401,7 +401,7 @@ struct KanbanSettingsView: View {
 
 struct ColumnCustomizationView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.settingsManager) private var settingsManager
+    @StateObject private var settingsManager = SettingsManager.shared
     @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
     @State private var columnOrder: [String] = []
     @State private var newColumnName = ""

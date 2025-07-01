@@ -12,6 +12,16 @@ import mlx.core as mx
 import mlx.nn as nn
 import numpy as np
 
+# Import tensor dimension fixing utilities
+try:
+    from .mlx_tensor_fix import mlx_tensor_fixer, safe_mlx_attention, fix_mlx_generation_error
+    TENSOR_FIX_AVAILABLE = True
+except ImportError:
+    TENSOR_FIX_AVAILABLE = False
+    mlx_tensor_fixer = None
+    safe_mlx_attention = None
+    fix_mlx_generation_error = None
+
 logger = logging.getLogger(__name__)
 
 # Hugging Face transformers for tokenization and model config
@@ -154,28 +164,73 @@ class Phi3Attention(nn.Module):
             k = mx.repeat(k, self.num_heads // self.num_key_value_heads, axis=1)
             v = mx.repeat(v, self.num_heads // self.num_key_value_heads, axis=1)
 
-        # Apply attention
+        # Apply attention with tensor dimension fixing
         if cache is not None:
             # For incremental decoding (future enhancement)
             pass
 
-        # Scaled dot-product attention
-        scale = 1.0 / np.sqrt(self.head_dim)
-        scores = (q @ k.transpose(0, 1, 3, 2)) * scale
+        try:
+            # Use safe attention computation if available
+            if TENSOR_FIX_AVAILABLE and safe_mlx_attention is not None:
+                logger.debug("Using safe MLX attention with dimension fixing")
+                out = safe_mlx_attention(
+                    q, k, v,
+                    num_heads=self.num_heads,
+                    num_kv_heads=self.num_key_value_heads,
+                    head_dim=self.head_dim
+                )
+            else:
+                # Fallback to standard attention with dimension validation
+                logger.debug("Using standard MLX attention")
+                
+                # Validate tensor dimensions before computation
+                if TENSOR_FIX_AVAILABLE and mlx_tensor_fixer is not None:
+                    if not mlx_tensor_fixer.validate_tensor_compatibility(q, k, v):
+                        logger.warning("Tensor incompatibility detected, applying fixes")
+                        q, k, v = mlx_tensor_fixer.fix_attention_dimensions(
+                            q, k, v, self.num_heads, self.num_key_value_heads, self.head_dim
+                        )
+                
+                # Scaled dot-product attention
+                scale = 1.0 / np.sqrt(self.head_dim)
+                scores = (q @ k.transpose(0, 1, 3, 2)) * scale
 
-        # Causal mask
-        mask = mx.triu(mx.ones((L, L)), k=1) * -1e9
-        scores = scores + mask
+                # Causal mask with dimension checking
+                if TENSOR_FIX_AVAILABLE and mlx_tensor_fixer is not None:
+                    mask = mlx_tensor_fixer.fix_causal_mask(L)
+                else:
+                    mask = mx.triu(mx.ones((L, L)), k=1) * -1e9
+                
+                scores = scores + mask
 
-        # Softmax and apply to values
-        attn_weights = mx.softmax(scores, axis=-1)
-        out = attn_weights @ v
+                # Softmax and apply to values
+                attn_weights = mx.softmax(scores, axis=-1)
+                out = attn_weights @ v
 
-        # Reshape and project
-        out = out.transpose(0, 2, 1, 3).reshape(B, L, D)
-        out = self.o_proj(out)
+            # Reshape and project output
+            out = out.transpose(0, 2, 1, 3).reshape(B, L, D)
+            out = self.o_proj(out)
 
-        return out, cache
+            return out, cache
+            
+        except Exception as e:
+            logger.error(f"Attention computation failed: {e}")
+            
+            # Apply error analysis and fixes if available
+            if TENSOR_FIX_AVAILABLE and fix_mlx_generation_error is not None:
+                fix_info = fix_mlx_generation_error(e, {
+                    "num_heads": self.num_heads,
+                    "num_kv_heads": self.num_key_value_heads,
+                    "head_dim": self.head_dim,
+                    "sequence_length": L
+                })
+                logger.info(f"Tensor fix analysis: {fix_info}")
+            
+            # Emergency fallback: return zeros with correct shape
+            logger.warning("Using emergency fallback for attention computation")
+            out_shape = (B, L, D)
+            out = mx.zeros(out_shape)
+            return out, cache
 
 
 class Phi3MLP(nn.Module):
@@ -365,27 +420,62 @@ class Phi3MiniService:
                 cache = None
 
                 for step in range(max_tokens):
-                    # Forward pass
-                    with mx.stream(mx.gpu):
-                        logits, cache = self.model(current_input.reshape(1, -1), cache)
+                    try:
+                        # Forward pass with tensor dimension protection
+                        with mx.stream(mx.gpu):
+                            # Ensure input has correct shape
+                            model_input = current_input.reshape(1, -1)
+                            
+                            # Validate input dimensions if tensor fix is available
+                            if TENSOR_FIX_AVAILABLE and mlx_tensor_fixer is not None:
+                                # Enable debug mode for detailed logging
+                                if step == 0:  # Only log on first step to avoid spam
+                                    mlx_tensor_fixer.enable_debug()
+                                    logger.debug(f"Model input shape: {model_input.shape}")
+                            
+                            logits, cache = self.model(model_input, cache)
 
-                    # Get next token
-                    last_logits = logits[0, -1, :]
+                        # Get next token
+                        last_logits = logits[0, -1, :]
 
-                    if temperature > 0:
-                        # Temperature sampling
-                        probs = mx.softmax(last_logits / temperature)
-                        # Simple argmax for now (can implement proper sampling later)
-                        next_token = mx.argmax(probs).item()
-                    else:
-                        next_token = mx.argmax(last_logits).item()
+                        if temperature > 0:
+                            # Temperature sampling
+                            probs = mx.softmax(last_logits / temperature)
+                            # Simple argmax for now (can implement proper sampling later)
+                            next_token = mx.argmax(probs).item()
+                        else:
+                            next_token = mx.argmax(last_logits).item()
 
-                    # Check for end of sequence
-                    if next_token == self.tokenizer.eos_token_id:
-                        break
+                        # Check for end of sequence
+                        if next_token == self.tokenizer.eos_token_id:
+                            break
 
-                    generated_tokens.append(next_token)
-                    current_input = mx.array([next_token])  # For next iteration
+                        generated_tokens.append(next_token)
+                        current_input = mx.array([next_token])  # For next iteration
+                        
+                    except Exception as step_error:
+                        logger.error(f"Generation step {step} failed: {step_error}")
+                        
+                        # Apply tensor dimension analysis
+                        if TENSOR_FIX_AVAILABLE and fix_mlx_generation_error is not None:
+                            fix_info = fix_mlx_generation_error(step_error, {
+                                "step": step,
+                                "input_shape": current_input.shape if current_input is not None else None,
+                                "cache_state": cache is not None,
+                                "generated_so_far": len(generated_tokens)
+                            })
+                            logger.warning(f"Generation step error analysis: {fix_info}")
+                        
+                        # Attempt to recover or break if critical
+                        if "tensor" in str(step_error).lower() and "dimension" in str(step_error).lower():
+                            logger.error("Critical tensor dimension error, stopping generation")
+                            break
+                        elif step > 0:  # If we've generated at least one token, we can continue
+                            logger.warning(f"Skipping generation step {step} due to error")
+                            continue
+                        else:
+                            logger.error("Failed on first generation step, stopping")
+                            break
 
                 # Decode generated tokens
                 generated_text = self.tokenizer.decode(

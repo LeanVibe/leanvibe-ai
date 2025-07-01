@@ -15,7 +15,7 @@ class RetryManager: ObservableObject {
     func executeWithRetry<T>(
         operation: @escaping () async throws -> T,
         maxAttempts: Int = 3,
-        backoffStrategy: BackoffStrategy = .exponential,
+        backoffStrategy: BackoffStrategy = .exponential(),
         retryCondition: @escaping (Error) -> Bool = { _ in true },
         onAttempt: @escaping (Int, Error?) -> Void = { _, _ in },
         context: String = ""
@@ -72,7 +72,7 @@ class RetryManager: ObservableObject {
     func createRetryAction<T>(
         operation: @escaping () async throws -> T,
         maxAttempts: Int = 3,
-        backoffStrategy: BackoffStrategy = .exponential,
+        backoffStrategy: BackoffStrategy = .exponential(),
         context: String = "",
         onSuccess: @escaping (T) -> Void = { _ in },
         onFailure: @escaping (Error) -> Void = { _ in }
@@ -116,17 +116,17 @@ class RetryManager: ObservableObject {
 }
 
 @available(iOS 18.0, macOS 14.0, *)
-struct RetryOperation: Identifiable {
+class RetryOperation: ObservableObject, Identifiable {
     let id = UUID()
     let createdAt = Date()
     let maxAttempts: Int
     let backoffStrategy: BackoffStrategy
     let context: String
     
-    var currentAttempt: Int = 0
-    var status: RetryStatus = .pending
-    var lastAttemptTime: Date?
-    var nextRetryTime: Date?
+    @Published var currentAttempt: Int = 0
+    @Published var status: RetryStatus = .pending
+    @Published var lastAttemptTime: Date?
+    @Published var nextRetryTime: Date?
     var lastError: Error?
     
     init(maxAttempts: Int, backoffStrategy: BackoffStrategy, context: String) {

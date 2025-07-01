@@ -111,7 +111,8 @@
       "Bash(pkill:*)",
       "Bash(pytest:*)",
       "Bash(pip install:*)",
-      "Bash(./ci-check.sh)"
+      "Bash(./ci-check.sh)",
+      "Bash(git branch:*)"
     ],
     "deny": []
   }

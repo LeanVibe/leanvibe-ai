@@ -12,7 +12,7 @@ struct DashboardTabView: View {
     @StateObject private var navigationCoordinator = NavigationCoordinator()
     @StateObject private var performanceAnalytics = PerformanceAnalytics()
     @StateObject private var batteryManager = BatteryOptimizedManager()
-    @Environment(\.settingsManager) private var settingsManager
+    @StateObject private var settingsManager = SettingsManager.shared
     
     @State private var showingVoiceInterface = false
     
@@ -130,6 +130,7 @@ struct DashboardTabView: View {
                 }
                 .tag(NavigationCoordinator.Tab.voice.rawValue)
                 .hapticFeedback(.navigation)
+                
             }
             .premiumShadow(PremiumDesignSystem.Shadows.elevated)
             .animation(PremiumTransitions.easeInOut, value: navigationCoordinator.selectedTab)
@@ -148,7 +149,7 @@ struct DashboardTabView: View {
                     .transition(PremiumTransitions.modalTransition)
                     .zIndex(999)
             }
-        }
+        }                                                                                                                                                                     
         // .withGlobalErrorHandling() // TODO: Fix View extension availability issue
         .environmentObject(navigationCoordinator)
         .onAppear {

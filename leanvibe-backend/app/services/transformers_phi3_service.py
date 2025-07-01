@@ -11,6 +11,30 @@ from typing import Any, Dict, Optional
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+# Import compatibility utilities
+try:
+    from .transformers_compatibility import (
+        get_safe_generation_kwargs,
+        handle_generation_error,
+        get_model_loading_kwargs,
+        log_compatibility_info,
+        patch_dynamic_cache_globally
+    )
+    COMPATIBILITY_AVAILABLE = True
+except ImportError:
+    # Fallback for direct execution
+    from transformers_compatibility import (
+        get_safe_generation_kwargs,
+        handle_generation_error,
+        get_model_loading_kwargs,
+        log_compatibility_info,
+        patch_dynamic_cache_globally
+    )
+    COMPATIBILITY_AVAILABLE = True
+
+# Apply compatibility patches
+patch_dynamic_cache_globally()
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,6 +55,10 @@ class TransformersPhi3Service:
         """Initialize the model and tokenizer"""
         try:
             logger.info(f"🚀 Initializing Phi-3-Mini service with {self.model_name}")
+            
+            # Log compatibility information
+            log_compatibility_info()
+            
             start_time = time.time()
             
             # Load tokenizer
@@ -63,13 +91,51 @@ class TransformersPhi3Service:
         )
         
     def _load_model(self):
-        """Load model synchronously"""
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_name,
-            torch_dtype=torch.float16 if self.device != "cpu" else torch.float32,
-            trust_remote_code=True,
-            device_map="auto"
+        """Load model synchronously with compatibility handling"""
+        torch_dtype = torch.float16 if self.device != "cpu" else torch.float32
+        
+        # Get compatible model loading kwargs
+        model_kwargs = get_model_loading_kwargs(
+            model_name=self.model_name,
+            device="auto",
+            torch_dtype=torch_dtype
         )
+        
+        # Force eager attention to avoid tensor dimension issues
+        model_kwargs["attn_implementation"] = "eager"
+        
+        try:
+            logger.info(f"Loading model {self.model_name} with compatibility settings...")
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                **model_kwargs
+            )
+            
+            # Log model info if available
+            if hasattr(self.model, 'config'):
+                if hasattr(self.model.config, 'num_parameters'):
+                    logger.info(f"Model loaded successfully with {self.model.config.num_parameters} parameters")
+                else:
+                    logger.info("Model loaded successfully")
+            else:
+                logger.info("Model loaded successfully")
+                
+        except Exception as e:
+            logger.error(f"Error loading model with compatibility settings: {e}")
+            # Fallback to minimal loading
+            logger.info("Retrying model loading with minimal configuration...")
+            try:
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    self.model_name,
+                    torch_dtype=torch_dtype,
+                    trust_remote_code=True,
+                    device_map="auto",
+                    attn_implementation="eager"  # Force eager attention
+                )
+                logger.info("Model loaded successfully with minimal configuration")
+            except Exception as fallback_error:
+                logger.error(f"Failed to load model even with minimal configuration: {fallback_error}")
+                raise fallback_error
         
     async def generate_text(
         self, 
@@ -89,21 +155,61 @@ class TransformersPhi3Service:
         try:
             start_time = time.time()
             
-            # Tokenize input
-            inputs = self.tokenizer(prompt, return_tensors="pt")
+            # Tokenize input with proper attention mask and padding
+            inputs = self.tokenizer(
+                prompt, 
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=512,  # Reasonable max length to prevent issues
+                add_special_tokens=True
+            )
+            
+            # Ensure attention mask is present
+            if "attention_mask" not in inputs:
+                inputs["attention_mask"] = torch.ones_like(inputs["input_ids"])
+            
             if self.device != "cpu":
                 inputs = {k: v.to(self.device) for k, v in inputs.items()}
             
-            # Generate response
+            # Get safe generation parameters using compatibility layer
+            generation_kwargs = get_safe_generation_kwargs(
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                do_sample=do_sample,
+                pad_token_id=self.tokenizer.eos_token_id,
+                use_cache=False  # Disable cache to avoid dimension issues
+            )
+            
             with torch.no_grad():
-                outputs = await asyncio.to_thread(
-                    self.model.generate,
-                    inputs["input_ids"],
-                    max_new_tokens=max_new_tokens,
-                    do_sample=do_sample,
-                    temperature=temperature,
-                    pad_token_id=self.tokenizer.eos_token_id
-                )
+                try:
+                    outputs = await asyncio.to_thread(
+                        self.model.generate,
+                        inputs["input_ids"],
+                        attention_mask=inputs["attention_mask"],
+                        **generation_kwargs
+                    )
+                except Exception as e:
+                    logger.warning(f"Generation failed with error: {e}")
+                    
+                    # Handle the error using compatibility layer
+                    modified_kwargs = handle_generation_error(e, generation_kwargs)
+                    
+                    if modified_kwargs != generation_kwargs:
+                        logger.info("Retrying generation with modified parameters...")
+                        try:
+                            outputs = await asyncio.to_thread(
+                                self.model.generate,
+                                inputs["input_ids"],
+                                attention_mask=inputs["attention_mask"],
+                                **modified_kwargs
+                            )
+                            logger.info("Generation succeeded with fallback parameters")
+                        except Exception as fallback_error:
+                            logger.error(f"Generation failed even with fallback: {fallback_error}")
+                            raise fallback_error
+                    else:
+                        raise e
             
             # Decode response
             full_response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)

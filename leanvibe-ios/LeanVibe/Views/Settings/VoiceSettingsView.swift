@@ -7,7 +7,7 @@ struct VoiceSettingsView: View {
     
     // MARK: - Properties
     
-    @Environment(\.settingsManager) private var settingsManager
+    @StateObject private var settingsManager = SettingsManager.shared
     @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
     @State private var isTestingVoice = false
     @State private var showingVoiceTest = false
