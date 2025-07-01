@@ -129,7 +129,7 @@ struct TaskCreationView: View {
             return "🟡"
         case .high:
             return "🟠"
-        case .critical:
+        case .urgent:
             return "🔴"
         }
     }

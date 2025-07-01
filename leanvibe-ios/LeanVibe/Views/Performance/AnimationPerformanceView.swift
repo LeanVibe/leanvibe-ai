@@ -468,7 +468,7 @@ class KanbanViewModel: ObservableObject {
             AnimationTask(title: "Design UI Components", status: .todo, priority: .high, columnId: columns[0].id),
             AnimationTask(title: "Implement API Integration", status: .inProgress, priority: .medium, assignee: "John", columnId: columns[1].id),
             AnimationTask(title: "Write Unit Tests", status: .review, priority: .low, assignee: "Sarah", columnId: columns[2].id),
-            AnimationTask(title: "Deploy to Production", status: .done, priority: .critical, assignee: "Mike", columnId: columns[3].id)
+            AnimationTask(title: "Deploy to Production", status: .done, priority: .urgent, assignee: "Mike", columnId: columns[3].id)
         ]
     }
 }

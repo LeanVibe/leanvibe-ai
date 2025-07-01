@@ -18,7 +18,7 @@ struct TaskDetailView: View {
                     taskHeaderSection
                     
                     // Description Section
-                    if !task.description.isEmpty {
+                    if let description = task.description, !description.isEmpty {
                         descriptionSection
                     }
                     
@@ -104,7 +104,7 @@ struct TaskDetailView: View {
             Text("Description")
                 .font(.headline)
             
-            Text(task.description)
+            Text(task.description ?? "")
                 .font(.body)
                 .padding(.leading, 8)
         }
@@ -345,31 +345,23 @@ struct StatusBadge: View {
     
     private func statusIcon(for status: TaskStatus) -> String {
         switch status {
-        case .backlog:
+        case .todo:
             return "tray.full"
         case .inProgress:
             return "play.circle"
-        case .testing:
-            return "checkmark.circle"
         case .done:
             return "checkmark.circle.fill"
-        case .blocked:
-            return "exclamationmark.triangle"
         }
     }
     
     private func statusColor(for status: TaskStatus) -> Color {
         switch status {
-        case .backlog:
+        case .todo:
             return .gray
         case .inProgress:
             return .blue
-        case .testing:
-            return .orange
         case .done:
             return .green
-        case .blocked:
-            return .red
         }
     }
 }
@@ -468,16 +460,12 @@ struct StatusChangeMenu: View {
     
     private func statusIcon(for status: TaskStatus) -> String {
         switch status {
-        case .backlog:
+        case .todo:
             return "tray.full"
         case .inProgress:
             return "play.circle"
-        case .testing:
-            return "checkmark.circle"
         case .done:
             return "checkmark.circle.fill"
-        case .blocked:
-            return "exclamationmark.triangle"
         }
     }
 }
@@ -508,6 +496,7 @@ struct TaskDetailView_Previews: PreviewProvider {
                 description: "This is a sample task for preview",
                 status: .inProgress,
                 priority: .medium,
+                projectId: UUID(),
                 confidence: 0.85,
                 clientId: "preview-client"
             )
