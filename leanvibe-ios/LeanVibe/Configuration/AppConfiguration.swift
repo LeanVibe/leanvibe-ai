@@ -80,6 +80,33 @@ struct AppConfiguration {
         return Bundle.main.object(forInfoDictionaryKey: "CODE_COMPLETION_ENABLED") as? Bool ?? true
     }
     
+    // MARK: - Voice System Configuration
+    
+    /// Whether to use the new UnifiedVoiceService instead of legacy voice managers
+    /// Enable for gradual migration and testing
+    var useUnifiedVoiceService: Bool {
+        return ProcessInfo.processInfo.environment["LEANVIBE_USE_UNIFIED_VOICE"] == "true" ||
+               Bundle.main.object(forInfoDictionaryKey: "USE_UNIFIED_VOICE_SERVICE") as? Bool ?? false
+    }
+    
+    /// Voice recognition confidence threshold (0.0 to 1.0)
+    var voiceConfidenceThreshold: Float {
+        if let threshold = ProcessInfo.processInfo.environment["LEANVIBE_VOICE_THRESHOLD"],
+           let value = Float(threshold) {
+            return max(0.0, min(1.0, value))
+        }
+        return 0.6  // Default threshold
+    }
+    
+    /// Maximum voice recording duration in seconds
+    var maxVoiceRecordingDuration: TimeInterval {
+        if let duration = ProcessInfo.processInfo.environment["LEANVIBE_MAX_VOICE_DURATION"],
+           let value = TimeInterval(duration) {
+            return max(5.0, min(60.0, value))
+        }
+        return 30.0  // Default duration
+    }
+    
     // MARK: - Timeouts & Limits
     
     /// Network request timeout in seconds
@@ -149,6 +176,8 @@ struct AppConfiguration {
         print("   Logging: \(isLoggingEnabled)")
         print("   Analytics: \(isAnalyticsEnabled)")
         print("   Voice Features: \(isVoiceEnabled)")
+        print("   Unified Voice Service: \(useUnifiedVoiceService)")
+        print("   Voice Confidence Threshold: \(voiceConfidenceThreshold)")
         print("   Code Completion: \(isCodeCompletionEnabled)")
         print("   Network Timeout: \(networkTimeout)s")
         #endif

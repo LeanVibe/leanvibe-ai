@@ -380,7 +380,4 @@ struct ConfidenceBadge: View {
     }
 }
 
-// MARK: - Voice Settings (placeholder)
-struct VoiceSettings {
-    // Placeholder for voice settings
-}
+// MARK: - Voice Settings placeholder removed (conflicts with SettingsManager.VoiceSettings)

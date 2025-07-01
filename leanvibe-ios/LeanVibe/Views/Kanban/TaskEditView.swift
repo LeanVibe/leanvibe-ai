@@ -101,9 +101,8 @@ struct TaskEditView: View {
                 }
             }
             .navigationTitle("Edit Task")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
@@ -167,6 +166,7 @@ struct TaskEditView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct TaskEditView_Previews: PreviewProvider {
     static var previews: some View {
         TaskEditView(

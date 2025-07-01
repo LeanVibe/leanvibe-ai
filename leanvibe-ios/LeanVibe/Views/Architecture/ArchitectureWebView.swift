@@ -1,6 +1,9 @@
 
 import SwiftUI
 import WebKit
+#if canImport(UIKit)
+import UIKit
+#endif
 
 @available(iOS 18.0, macOS 14.0, *)
 struct ArchitectureWebView: UIViewRepresentable {
