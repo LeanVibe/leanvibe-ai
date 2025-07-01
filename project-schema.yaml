@@ -1,0 +1,257 @@
+# LeanVibe iOS App - Shared Data Model Schema
+# Purpose: Prevent interface contract violations that caused 100+ compilation errors
+# All agents MUST follow these canonical names and structures
+
+version: "1.0"
+created: "2025-07-01"
+purpose: "Prevent integration failures through consistent interface contracts"
+
+# CRITICAL: These are the ONLY approved model definitions
+# Any deviation will cause compilation failures during integration
+
+models:
+  # Task Model - MUST use LeanVibeTask to avoid Swift.Task conflicts
+  Task:
+    canonical_name: "LeanVibeTask"
+    swift_type: "struct LeanVibeTask"
+    purpose: "Represents a work item in the Kanban system"
+    properties:
+      - name: "id"
+        type: "UUID"
+        required: true
+        description: "Unique identifier for the task"
+      
+      - name: "title"
+        type: "String"
+        required: true
+        description: "Display title of the task"
+      
+      - name: "description"
+        type: "String?"
+        required: false
+        description: "Optional detailed description"
+      
+      - name: "status"
+        type: "TaskStatus"
+        required: true
+        description: "Current status (todo, inProgress, done)"
+      
+      - name: "priority"
+        type: "TaskPriority"
+        required: true
+        default: "medium"
+        description: "Priority level (low, medium, high, urgent)"
+      
+      - name: "projectId"
+        type: "UUID"
+        required: true
+        description: "ID of parent project"
+      
+      - name: "createdAt"
+        type: "Date"
+        required: true
+        description: "Creation timestamp"
+      
+      - name: "updatedAt"
+        type: "Date"
+        required: true
+        description: "Last modification timestamp"
+
+  # Project Model - Consistent naming to prevent displayName vs name conflicts
+  Project:
+    canonical_name: "Project"
+    swift_type: "struct Project"
+    purpose: "Represents a project containing tasks"
+    properties:
+      - name: "id"
+        type: "UUID"
+        required: true
+        description: "Unique identifier for the project"
+      
+      - name: "displayName"
+        type: "String"
+        required: true
+        description: "Display name - NOT 'name' to avoid conflicts"
+      
+      - name: "description"
+        type: "String?"
+        required: false
+        description: "Optional project description"
+      
+      - name: "status"
+        type: "ProjectStatus"
+        required: true
+        description: "Current project status"
+      
+      - name: "tasksCount"
+        type: "Int"
+        required: true
+        default: 0
+        description: "Total number of tasks - NOT 'taskCount'"
+      
+      - name: "completedTasksCount"
+        type: "Int"
+        required: true
+        default: 0
+        description: "Number of completed tasks"
+      
+      - name: "issuesCount"
+        type: "Int"
+        required: true
+        default: 0
+        description: "Number of issues - NOT 'issueCount'"
+      
+      - name: "createdAt"
+        type: "Date"
+        required: true
+        description: "Creation timestamp"
+      
+      - name: "updatedAt"
+        type: "Date"
+        required: true
+        description: "Last modification timestamp"
+
+# Enum Definitions - MUST match exactly across all components
+enums:
+  TaskStatus:
+    swift_type: "enum TaskStatus: String, CaseIterable, Codable"
+    cases:
+      - "todo"
+      - "inProgress" 
+      - "done"
+    
+  TaskPriority:
+    swift_type: "enum TaskPriority: String, CaseIterable, Codable"
+    cases:
+      - "low"
+      - "medium"
+      - "high"
+      - "urgent"
+  
+  ProjectStatus:
+    swift_type: "enum ProjectStatus: String, CaseIterable, Codable"
+    cases:
+      - "planning"
+      - "active"
+      - "completed"
+      - "archived"
+
+# Service Interface Contracts - MUST be implemented exactly
+service_contracts:
+  ProjectManagerProtocol:
+    purpose: "Manages project data and persistence"
+    properties:
+      - name: "projects"
+        type: "[Project]"
+        published: true
+        description: "Array of all projects"
+      
+      - name: "isLoading"
+        type: "Bool"
+        published: true
+        description: "Loading state indicator"
+      
+      - name: "lastError"
+        type: "String?"
+        published: true
+        description: "Last error message for UI display"
+    
+    methods:
+      - name: "refreshProjects"
+        signature: "async throws -> Void"
+        description: "Fetch projects from backend"
+      
+      - name: "addProject"
+        signature: "(_ project: Project) async throws -> Void"
+        description: "Add new project with persistence"
+      
+      - name: "updateProject"
+        signature: "(_ project: Project) async throws -> Void"
+        description: "Update existing project"
+      
+      - name: "deleteProject"
+        signature: "(_ projectId: UUID) async throws -> Void"
+        description: "Delete project by ID"
+
+  TaskServiceProtocol:
+    purpose: "Manages task data and Kanban operations"
+    properties:
+      - name: "tasks"
+        type: "[LeanVibeTask]"
+        published: true
+        description: "Array of all tasks - MUST use LeanVibeTask"
+      
+      - name: "isLoading"
+        type: "Bool"
+        published: true
+        description: "Loading state indicator"
+      
+      - name: "lastError"
+        type: "String?"
+        published: true
+        description: "Last error message for UI display"
+    
+    methods:
+      - name: "loadTasks"
+        signature: "(_ projectId: UUID) async throws -> Void"
+        description: "Load tasks for specific project"
+      
+      - name: "addTask"
+        signature: "(_ task: LeanVibeTask) async throws -> Void"
+        description: "Add new task with persistence"
+      
+      - name: "updateTaskStatus"
+        signature: "(_ taskId: UUID, _ status: TaskStatus) async throws -> Void"
+        description: "Update task status for drag-and-drop"
+      
+      - name: "deleteTask"
+        signature: "(_ taskId: UUID) async throws -> Void"
+        description: "Delete task by ID"
+
+  OnboardingManagerProtocol:
+    purpose: "Manages onboarding flow state"
+    properties:
+      - name: "completedSteps"
+        type: "Set<OnboardingStep>"
+        description: "Set of completed onboarding steps"
+      
+      - name: "isOnboardingComplete"
+        type: "Bool"
+        description: "Whether onboarding is fully complete"
+    
+    methods:
+      - name: "markStepCompleted"
+        signature: "(_ step: OnboardingStep) -> Void"
+        description: "Mark onboarding step as completed"
+      
+      - name: "getNextIncompleteStep"
+        signature: "() -> OnboardingStep?"
+        description: "Get next step to resume onboarding"
+
+# Critical Integration Rules
+integration_rules:
+  - "ALL model names MUST match canonical_name exactly"
+  - "NO variations of property names (displayName vs name, issuesCount vs issueCount)"
+  - "ALL services MUST implement their Protocol contract exactly"
+  - "NO private properties that views need to access"
+  - "ALL async operations MUST include proper error handling"
+  - "ALL Swift concurrency MUST use @MainActor consistently"
+  - "NO mixing of async/await with completion handlers"
+
+# Build Verification Requirements
+build_requirements:
+  - "swift build MUST succeed after every change"
+  - "All protocol implementations MUST compile"
+  - "All property names MUST match schema"
+  - "All enum cases MUST match schema"
+  - "No compilation warnings allowed"
+
+# Common Integration Failures to Prevent
+prevention_checklist:
+  - "✅ Task vs LeanVibeTask naming conflict"
+  - "✅ displayName vs name property conflict"
+  - "✅ issuesCount vs issueCount property conflict"
+  - "✅ Private service properties accessed by views"
+  - "✅ Inconsistent async/concurrency patterns"
+  - "✅ Missing error handling in UI"
+  - "✅ Protocol method signature mismatches"

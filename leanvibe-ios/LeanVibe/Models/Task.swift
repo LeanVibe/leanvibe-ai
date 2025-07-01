@@ -5,14 +5,17 @@ import Foundation
 struct LeanVibeTask: Identifiable, Codable, Sendable {
     let id: UUID
     var title: String
-    var description: String
+    var description: String? // Optional per schema
     var status: TaskStatus
     var priority: TaskPriority
+    var projectId: UUID // Required per schema
+    var createdAt: Date
+    var updatedAt: Date
+    
+    // Extended properties (not in core schema but useful for implementation)
     var confidence: Double // 0.0 to 1.0 for AI confidence
     var agentDecision: AgentDecision?
     var clientId: String
-    var createdAt: Date
-    var updatedAt: Date
     var assignedTo: String? // Agent or user identifier
     var estimatedEffort: TimeInterval? // In seconds
     var actualEffort: TimeInterval? // In seconds
@@ -23,9 +26,10 @@ struct LeanVibeTask: Identifiable, Codable, Sendable {
     init(
         id: UUID = UUID(),
         title: String,
-        description: String,
-        status: TaskStatus = .backlog,
+        description: String? = nil, // Optional per schema
+        status: TaskStatus = .todo, // Updated to match schema
         priority: TaskPriority = .medium,
+        projectId: UUID, // Required per schema
         confidence: Double = 1.0,
         clientId: String,
         assignedTo: String? = nil,
@@ -39,11 +43,12 @@ struct LeanVibeTask: Identifiable, Codable, Sendable {
         self.description = description
         self.status = status
         self.priority = priority
+        self.projectId = projectId
+        self.createdAt = Date()
+        self.updatedAt = Date()
         self.confidence = confidence
         self.agentDecision = nil
         self.clientId = clientId
-        self.createdAt = Date()
-        self.updatedAt = Date()
         self.assignedTo = assignedTo
         self.estimatedEffort = estimatedEffort
         self.actualEffort = nil
@@ -77,16 +82,12 @@ struct LeanVibeTask: Identifiable, Codable, Sendable {
     
     var statusColor: String {
         switch status {
-        case .backlog:
+        case .todo:
             return "gray"
         case .inProgress:
             return "blue"
-        case .testing:
-            return "orange"
         case .done:
             return "green"
-        case .blocked:
-            return "red"
         }
     }
     
@@ -98,46 +99,36 @@ struct LeanVibeTask: Identifiable, Codable, Sendable {
             return "🟡"
         case .high:
             return "🟠"
-        case .critical:
+        case .urgent:
             return "🔴"
         }
     }
 }
 
 enum TaskStatus: String, CaseIterable, Codable, Sendable {
-    case backlog = "backlog"
-    case inProgress = "in_progress"
-    case testing = "testing"
+    case todo = "todo"
+    case inProgress = "inProgress"
     case done = "done"
-    case blocked = "blocked"
     
     var displayName: String {
         switch self {
-        case .backlog:
-            return "Backlog"
+        case .todo:
+            return "To Do"
         case .inProgress:
             return "In Progress"
-        case .testing:
-            return "Testing"
         case .done:
             return "Done"
-        case .blocked:
-            return "Blocked"
         }
     }
     
     var systemIcon: String {
         switch self {
-        case .backlog:
+        case .todo:
             return "tray"
         case .inProgress:
             return "gear"
-        case .testing:
-            return "checkmark.circle"
         case .done:
             return "checkmark.circle.fill"
-        case .blocked:
-            return "exclamationmark.triangle.fill"
         }
     }
 }
@@ -146,7 +137,7 @@ enum TaskPriority: String, CaseIterable, Codable, Sendable {
     case low = "low"
     case medium = "medium"
     case high = "high"
-    case critical = "critical"
+    case urgent = "urgent"
     
     var weight: Int {
         switch self {
@@ -156,7 +147,7 @@ enum TaskPriority: String, CaseIterable, Codable, Sendable {
             return 2
         case .high:
             return 3
-        case .critical:
+        case .urgent:
             return 4
         }
     }
@@ -173,7 +164,7 @@ extension TaskPriority {
             return .blue
         case .high:
             return .orange
-        case .critical:
+        case .urgent:
             return .red
         }
     }

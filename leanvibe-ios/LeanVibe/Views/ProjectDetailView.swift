@@ -22,7 +22,7 @@ struct ProjectDetailView: View {
                 }
                 .padding()
             }
-            .navigationTitle(project.name)
+            .navigationTitle(project.displayName)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -42,7 +42,7 @@ struct ProjectDetailView: View {
                     .font(.largeTitle)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(project.name)
+                    Text(project.displayName)
                         .font(.title)
                         .fontWeight(.bold)
                     
@@ -222,7 +222,7 @@ struct ProjectActionButton: View {
 #Preview {
     ProjectDetailView(
         project: Project(
-            name: "Sample Project",
+            displayName: "Sample Project",
             path: "/path/to/project",
             language: .swift
         ),

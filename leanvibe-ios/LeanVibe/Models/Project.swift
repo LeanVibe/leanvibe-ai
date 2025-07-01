@@ -3,21 +3,49 @@ import Foundation
 // MARK: - Project Models
 
 struct Project: Identifiable, Codable, Equatable {
-    let id: String
-    let name: String
+    // Schema-required properties
+    let id: UUID
+    var displayName: String // NOT 'name' to avoid conflicts per schema
+    var description: String?
+    var status: ProjectStatus
+    var tasksCount: Int // NOT 'taskCount' per schema
+    var completedTasksCount: Int
+    var issuesCount: Int // NOT 'issueCount' per schema
+    let createdAt: Date
+    var updatedAt: Date
+    
+    // Extended properties for implementation
     let path: String
     let language: ProjectLanguage
-    let status: ProjectStatus
     let lastActivity: Date
     let metrics: ProjectMetrics
     let clientId: String?
     
-    init(id: String = UUID().uuidString, name: String, path: String, language: ProjectLanguage, status: ProjectStatus = .active, lastActivity: Date = Date(), metrics: ProjectMetrics = ProjectMetrics(), clientId: String? = nil) {
+    init(
+        id: UUID = UUID(),
+        displayName: String,
+        description: String? = nil,
+        status: ProjectStatus = .active,
+        tasksCount: Int = 0,
+        completedTasksCount: Int = 0,
+        issuesCount: Int = 0,
+        path: String,
+        language: ProjectLanguage,
+        lastActivity: Date = Date(),
+        metrics: ProjectMetrics = ProjectMetrics(),
+        clientId: String? = nil
+    ) {
         self.id = id
-        self.name = name
+        self.displayName = displayName
+        self.description = description
+        self.status = status
+        self.tasksCount = tasksCount
+        self.completedTasksCount = completedTasksCount
+        self.issuesCount = issuesCount
+        self.createdAt = Date()
+        self.updatedAt = Date()
         self.path = path
         self.language = language
-        self.status = status
         self.lastActivity = lastActivity
         self.metrics = metrics
         self.clientId = clientId
@@ -66,26 +94,35 @@ enum ProjectLanguage: String, CaseIterable, Codable {
 }
 
 enum ProjectStatus: String, CaseIterable, Codable {
-    case active = "Active"
-    case maintenance = "Maintenance"
-    case archived = "Archived"
-    case error = "Error"
+    case planning = "planning"
+    case active = "active"
+    case completed = "completed"
+    case archived = "archived"
     
     var color: String {
         switch self {
+        case .planning: return "blue"
         case .active: return "green"
-        case .maintenance: return "yellow"
+        case .completed: return "purple"
         case .archived: return "gray"
-        case .error: return "red"
         }
     }
     
     var icon: String {
         switch self {
+        case .planning: return "calendar"
         case .active: return "checkmark.circle.fill"
-        case .maintenance: return "wrench.and.screwdriver.fill"
+        case .completed: return "checkmark.seal.fill"
         case .archived: return "archivebox.fill"
-        case .error: return "exclamationmark.triangle.fill"
+        }
+    }
+    
+    var displayName: String {
+        switch self {
+        case .planning: return "Planning"
+        case .active: return "Active"
+        case .completed: return "Completed"
+        case .archived: return "Archived"
         }
     }
 }
