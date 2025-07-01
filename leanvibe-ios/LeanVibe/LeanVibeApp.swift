@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 @main
 struct LeanVibeApp: App {
     @StateObject private var coordinator = AppCoordinator()

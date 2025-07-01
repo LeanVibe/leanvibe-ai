@@ -9,6 +9,7 @@ enum AppView {
     case voice
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ContextualHelpButton: View {
     let currentView: AppView
     @State private var showHelpContent = false

@@ -89,7 +89,8 @@ struct DashboardTabView: View {
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     MonitoringView(
                         projectManager: projectManager,
-                        webSocketService: webSocketService
+                        webSocketService: webSocketService,
+                        taskService: taskService
                     )
                 }
                 .tabItem {

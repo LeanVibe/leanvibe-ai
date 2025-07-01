@@ -9,6 +9,8 @@ struct TaskDetailView: View {
     @State private var isEditing = false
     @State private var showingApprovalSheet = false
     @State private var approvalFeedback = ""
+    @State private var errorMessage: String?
+    @State private var showingError = false
     
     var body: some View {
         NavigationView {
@@ -61,7 +63,14 @@ struct TaskDetailView: View {
                             }
                         }
                         
-                        StatusChangeMenu(task: task, taskService: taskService)
+                        StatusChangeMenu(
+                            task: $task, 
+                            taskService: taskService,
+                            onError: { error in
+                                errorMessage = error
+                                showingError = true
+                            }
+                        )
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
@@ -75,6 +84,14 @@ struct TaskDetailView: View {
             // TODO: Implement AgentDecisionApprovalView
             Text("Agent Decision Approval - Coming Soon")
                 .padding()
+        }
+        .alert("Task Error", isPresented: $showingError) {
+            Button("OK") {
+                showingError = false
+                errorMessage = nil
+            }
+        } message: {
+            Text(errorMessage ?? "An error occurred with the task operation")
         }
     }
     
@@ -435,18 +452,25 @@ struct TimelineItem: View {
 }
 
 struct StatusChangeMenu: View {
-    let task: LeanVibeTask
+    @Binding var task: LeanVibeTask
     let taskService: TaskService
+    let onError: (String) -> Void
     
     var body: some View {
         Menu("Change Status") {
             ForEach(TaskStatus.allCases, id: \.self) { status in
                 if status != task.status {
                     Button(action: {
-                        // TODO: Implement moveTask in TaskService
-                        // Task {
-                        //     await taskService.moveTask(task, to: status)
-                        // }
+                        Task { @MainActor in
+                            do {
+                                try await taskService.updateTaskStatus(task.id, status)
+                                // Update local task status for immediate UI feedback
+                                task.status = status
+                                task.updatedAt = Date()
+                            } catch {
+                                onError("Failed to update task status: \(error.localizedDescription)")
+                            }
+                        }
                     }) {
                         HStack {
                             Image(systemName: statusIcon(for: status))

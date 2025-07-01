@@ -18,10 +18,140 @@ class TaskService: ObservableObject {
     private let baseURL: String
     private var cancellables = Set<AnyCancellable>()
     private let session = URLSession.shared
+    private let userDefaultsKey = "leanvibe_tasks"
+    private let jsonEncoder = JSONEncoder()
+    private let jsonDecoder = JSONDecoder()
     
     init(baseURL: String = "http://localhost:8002") {
         self.baseURL = baseURL
+        setupDateFormatting()
+        loadPersistedTasks()
         setupPerformanceMonitoring()
+    }
+    
+    private func setupDateFormatting() {
+        jsonEncoder.dateEncodingStrategy = .iso8601
+        jsonDecoder.dateDecodingStrategy = .iso8601
+    }
+    
+    // MARK: - Core Task Operations
+    
+    func loadTasks(for projectId: UUID) async throws {
+        isLoading = true
+        lastError = nil
+        defer { isLoading = false }
+        
+        do {
+            // In production, fetch from backend
+            // For now, filter persisted tasks by project
+            let projectTasks = tasks.filter { $0.projectId == projectId }
+            
+            // If no tasks exist for project, load sample data
+            if projectTasks.isEmpty {
+                generateSampleTasks(for: projectId)
+                try await saveTasks()
+            }
+        } catch {
+            lastError = "Failed to load tasks: \(error.localizedDescription)"
+            throw error
+        }
+    }
+    
+    func addTask(_ task: LeanVibeTask) async throws {
+        lastError = nil
+        
+        do {
+            // Validate task data
+            guard !task.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw TaskServiceError.invalidTaskData("Task title cannot be empty")
+            }
+            
+            tasks.append(task)
+            try await saveTasks()
+        } catch {
+            lastError = "Failed to add task: \(error.localizedDescription)"
+            throw error
+        }
+    }
+    
+    func updateTaskStatus(_ taskId: UUID, _ status: TaskStatus) async throws {
+        lastError = nil
+        
+        do {
+            guard let index = tasks.firstIndex(where: { $0.id == taskId }) else {
+                throw TaskServiceError.taskNotFound
+            }
+            
+            var updatedTask = tasks[index]
+            updatedTask.status = status
+            updatedTask.updatedAt = Date()
+            
+            tasks[index] = updatedTask
+            try await saveTasks()
+        } catch {
+            lastError = "Failed to update task status: \(error.localizedDescription)"
+            throw error
+        }
+    }
+    
+    func updateTask(_ task: LeanVibeTask) async throws {
+        lastError = nil
+        
+        do {
+            guard let index = tasks.firstIndex(where: { $0.id == task.id }) else {
+                throw TaskServiceError.taskNotFound
+            }
+            
+            // Validate task data
+            guard !task.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw TaskServiceError.invalidTaskData("Task title cannot be empty")
+            }
+            
+            var updatedTask = task
+            updatedTask.updatedAt = Date()
+            
+            tasks[index] = updatedTask
+            try await saveTasks()
+        } catch {
+            lastError = "Failed to update task: \(error.localizedDescription)"
+            throw error
+        }
+    }
+    
+    func deleteTask(_ taskId: UUID) async throws {
+        lastError = nil
+        
+        do {
+            guard let index = tasks.firstIndex(where: { $0.id == taskId }) else {
+                throw TaskServiceError.taskNotFound
+            }
+            
+            tasks.remove(at: index)
+            try await saveTasks()
+        } catch {
+            lastError = "Failed to delete task: \(error.localizedDescription)"
+            throw error
+        }
+    }
+    
+    func moveTask(_ taskId: UUID, to newProjectId: UUID) async throws {
+        lastError = nil
+        
+        do {
+            guard let index = tasks.firstIndex(where: { $0.id == taskId }) else {
+                throw TaskServiceError.taskNotFound
+            }
+            
+            var movedTask = tasks[index]
+            movedTask.projectId = newProjectId
+            movedTask.updatedAt = Date()
+            
+            tasks[index] = movedTask
+            try await saveTasks()
+        } catch {
+            lastError = "Failed to move task: \(error.localizedDescription)"
+            throw error
+        }
     }
     
     // MARK: - Task Statistics
@@ -260,6 +390,86 @@ class TaskService: ObservableObject {
     func stopAutoRefresh() {
         cancellables.removeAll()
     }
+    
+    // MARK: - Persistence
+    
+    private func saveTasks() async throws {
+        do {
+            let data = try jsonEncoder.encode(tasks)
+            UserDefaults.standard.set(data, forKey: userDefaultsKey)
+            UserDefaults.standard.synchronize()
+        } catch {
+            throw TaskServiceError.persistenceError("Failed to save tasks: \(error.localizedDescription)")
+        }
+    }
+    
+    private func loadPersistedTasks() {
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
+            // No persisted tasks found, start empty
+            return
+        }
+        
+        do {
+            tasks = try jsonDecoder.decode([LeanVibeTask].self, from: data)
+        } catch {
+            // If decoding fails, log error but don't crash
+            lastError = "Failed to load saved tasks: \(error.localizedDescription)"
+            // Start with empty tasks
+            tasks = []
+        }
+    }
+    
+    private func generateSampleTasks(for projectId: UUID) {
+        let sampleTasks = [
+            LeanVibeTask(
+                title: "Setup project infrastructure",
+                description: "Initialize development environment and CI/CD pipeline",
+                status: .done,
+                priority: .high,
+                projectId: projectId,
+                confidence: 0.95,
+                clientId: "sample-client"
+            ),
+            LeanVibeTask(
+                title: "Implement user authentication",
+                description: "Add secure login and registration functionality",
+                status: .inProgress,
+                priority: .high,
+                projectId: projectId,
+                confidence: 0.85,
+                clientId: "sample-client"
+            ),
+            LeanVibeTask(
+                title: "Design dashboard UI",
+                description: "Create responsive dashboard with data visualization",
+                status: .todo,
+                priority: .medium,
+                projectId: projectId,
+                confidence: 0.75,
+                clientId: "sample-client"
+            ),
+            LeanVibeTask(
+                title: "Write unit tests",
+                description: "Ensure comprehensive test coverage for core functionality",
+                status: .todo,
+                priority: .medium,
+                projectId: projectId,
+                confidence: 0.80,
+                clientId: "sample-client"
+            ),
+            LeanVibeTask(
+                title: "Performance optimization",
+                description: "Optimize loading times and memory usage",
+                status: .todo,
+                priority: .low,
+                projectId: projectId,
+                confidence: 0.65,
+                clientId: "sample-client"
+            )
+        ]
+        
+        tasks.append(contentsOf: sampleTasks)
+    }
 }
 
 // MARK: - Error Types
@@ -268,6 +478,9 @@ enum TaskServiceError: LocalizedError {
     case invalidURL
     case httpError(String)
     case decodingError(Error)
+    case taskNotFound
+    case invalidTaskData(String)
+    case persistenceError(String)
     
     var errorDescription: String? {
         switch self {
@@ -277,6 +490,12 @@ enum TaskServiceError: LocalizedError {
             return "HTTP Error: \(message)"
         case .decodingError(let error):
             return "Failed to decode response: \(error.localizedDescription)"
+        case .taskNotFound:
+            return "Task not found"
+        case .invalidTaskData(let message):
+            return message
+        case .persistenceError(let message):
+            return message
         }
     }
 }

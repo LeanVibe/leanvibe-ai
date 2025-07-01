@@ -58,20 +58,31 @@ class ProjectManager: ObservableObject {
         defer { isLoading = false }
         
         do {
-            // In production, this would fetch from backend
-            // For now, simulate network delay and load from persistence
-            try await Task.sleep(nanoseconds: 500_000_000) // 0.5 second
-            
-            // Load from persistent storage
-            loadPersistedProjects()
-            
-            // If no projects exist, load sample data
-            if projects.isEmpty {
-                loadSampleProjects()
-                try await saveProjects()
+            // Try to fetch from backend API
+            if let backendProjects = try await fetchProjectsFromBackend() {
+                projects = backendProjects
+                try await saveProjects() // Persist fetched data
+            } else {
+                // Fallback to persistent storage if backend unavailable
+                loadPersistedProjects()
+                
+                // If no projects exist locally, load sample data
+                if projects.isEmpty {
+                    loadSampleProjects()
+                    try await saveProjects()
+                }
             }
         } catch {
             lastError = "Failed to refresh projects: \(error.localizedDescription)"
+            
+            // On error, still try to load from persistence as fallback
+            loadPersistedProjects()
+            
+            // If completely empty, show sample data so UI isn't broken
+            if projects.isEmpty {
+                loadSampleProjects()
+            }
+            
             throw error
         }
     }
@@ -205,6 +216,62 @@ class ProjectManager: ObservableObject {
         ]
     }
     
+    private func fetchProjectsFromBackend() async throws -> [Project]? {
+        // Get backend URL from WebSocket service connection settings
+        guard let webSocketService = webSocketService,
+              let connectionInfo = webSocketService.getCurrentConnectionInfo() else {
+            // No backend connection available, return nil to use fallback
+            return nil
+        }
+        
+        // Convert WebSocket URL to HTTP API URL
+        let baseURL = connectionInfo.websocketURL
+            .replacingOccurrences(of: "ws://", with: "http://")
+            .replacingOccurrences(of: "wss://", with: "https://")
+        
+        guard let url = URL(string: "\(baseURL)/api/projects") else {
+            throw ProjectManagerError.persistenceError("Invalid backend URL")
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 10.0
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw ProjectManagerError.persistenceError("Invalid response from server")
+            }
+            
+            switch httpResponse.statusCode {
+            case 200...299:
+                // Success - decode projects
+                let projectsResponse = try jsonDecoder.decode(ProjectsAPIResponse.self, from: data)
+                return projectsResponse.projects
+                
+            case 404:
+                // No projects endpoint available, use fallback
+                return nil
+                
+            case 500...599:
+                // Server error, use fallback
+                return nil
+                
+            default:
+                throw ProjectManagerError.persistenceError("Server returned error: \(httpResponse.statusCode)")
+            }
+            
+        } catch is DecodingError {
+            // JSON decoding failed, but don't crash - use fallback
+            return nil
+        } catch {
+            // Network error, use fallback
+            return nil
+        }
+    }
+    
     private func processProjectResponse(_ content: String) {
         // Process project analysis response
         // This would parse the backend response and update projects
@@ -252,4 +319,16 @@ class ProjectManager: ObservableObject {
 struct AnalysisRequest: Codable {
     let projectId: String
     let analysisType: String
+}
+
+struct ProjectsAPIResponse: Codable {
+    let projects: [Project]
+    let total: Int?
+    let status: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case projects
+        case total
+        case status
+    }
 }

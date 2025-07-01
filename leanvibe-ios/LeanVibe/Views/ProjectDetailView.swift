@@ -5,6 +5,7 @@ struct ProjectDetailView: View {
     let project: Project
     @ObservedObject var projectManager: ProjectManager
     @ObservedObject var webSocketService: WebSocketService
+    @StateObject private var taskService = TaskService()
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -23,11 +24,30 @@ struct ProjectDetailView: View {
                 .padding()
             }
             .navigationTitle(project.displayName)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()
+                    }
+                }
+            }
+            #else
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+            #endif
+            .onAppear {
+                Task {
+                    do {
+                        try await taskService.loadTasks(for: project.id)
+                    } catch {
+                        // Error handled by taskService.lastError
                     }
                 }
             }
@@ -61,11 +81,11 @@ struct ProjectDetailView: View {
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color(.systemGray6))
+                .background(Color(red: 0.95, green: 0.95, blue: 0.97))
                 .cornerRadius(8)
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color(red: 0.95, green: 0.95, blue: 0.97))
         .cornerRadius(16)
     }
     
@@ -117,7 +137,7 @@ struct ProjectDetailView: View {
                 HealthScoreBar(score: project.metrics.healthScore)
             }
             .padding()
-            .background(Color(.systemGray6))
+            .background(Color(red: 0.95, green: 0.95, blue: 0.97))
             .cornerRadius(12)
         }
     }
@@ -194,7 +214,7 @@ struct MetricDetailCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color(red: 0.95, green: 0.95, blue: 0.97))
         .cornerRadius(12)
     }
 }
@@ -219,7 +239,7 @@ struct ProjectActionButton: View {
                 Spacer()
             }
             .padding()
-            .background(isEnabled ? color.opacity(0.1) : Color(.systemGray5))
+            .background(isEnabled ? color.opacity(0.1) : Color(red: 0.93, green: 0.93, blue: 0.95))
             .foregroundColor(isEnabled ? color : .gray)
             .cornerRadius(12)
         }

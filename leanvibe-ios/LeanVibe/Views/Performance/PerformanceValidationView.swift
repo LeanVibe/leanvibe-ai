@@ -339,8 +339,8 @@ class PerformanceValidationSuite: ObservableObject {
 }
 
 extension ValidationResult {
-    var status: ValidationStatus {
-        passed ? .passed : .failed
+    var statusText: String {
+        passed ? "Passed" : "Failed"
     }
     
     var executionTime: Double {
@@ -348,19 +348,6 @@ extension ValidationResult {
     }
 }
 
-struct ValidationStatus {
-    let passed: Bool
-    
-    static let passed = ValidationStatus(passed: true)
-    static let failed = ValidationStatus(passed: false)
-    
-    var color: Color {
-        passed ? .green : .red
-    }
-    
-    var description: String {
-        passed ? "Passed" : "Failed"
-    }
-}
+// ValidationStatus enum is defined in PerformanceValidationSuite.swift
 
 // Additional required views are now in PremiumDesignSystem

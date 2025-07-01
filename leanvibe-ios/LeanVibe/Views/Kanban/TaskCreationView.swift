@@ -4,6 +4,7 @@ import SwiftUI
 struct TaskCreationView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var taskService: TaskService
+    let projectId: UUID
     
     @State private var title = ""
     @State private var description = ""
@@ -105,18 +106,31 @@ struct TaskCreationView: View {
         isCreating = true
         
         Task {
-            // TODO: Implement createTask in TaskService
-            // await taskService.createTask(
-            //     title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-            //     description: description.trimmingCharacters(in: .whitespacesAndNewlines),
-            //     priority: priority,
-            //     assignedTo: assignedTo.isEmpty ? nil : assignedTo,
-            //     tags: tags
-            // )
-            
-            await MainActor.run {
-                isCreating = false
-                dismiss()
+            do {
+                let newTask = LeanVibeTask(
+                    title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+                    description: description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines),
+                    status: .todo,
+                    priority: priority,
+                    projectId: projectId,
+                    confidence: 0.8,
+                    clientId: "ui-client",
+                    assignedTo: assignedTo.isEmpty ? nil : assignedTo,
+                    tags: tags
+                )
+                
+                try await taskService.addTask(newTask)
+                
+                await MainActor.run {
+                    isCreating = false
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    isCreating = false
+                    // Error is handled by taskService.lastError
+                    print("Failed to create task: \(error)")
+                }
             }
         }
     }
@@ -165,6 +179,9 @@ struct TagsFlowView: View {
 
 struct TaskCreationView_Previews: PreviewProvider {
     static var previews: some View {
-        TaskCreationView(taskService: TaskService())
+        TaskCreationView(
+            taskService: TaskService(),
+            projectId: UUID()
+        )
     }
 }

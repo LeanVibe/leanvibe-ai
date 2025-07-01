@@ -4,6 +4,10 @@ import SwiftUI
 struct MonitoringView: View {
     @ObservedObject var projectManager: ProjectManager
     @ObservedObject var webSocketService: WebSocketService
+    @ObservedObject var taskService: TaskService
+    
+    @State private var selectedProject: Project?
+    @State private var showingKanban = false
     
     private func colorFromString(_ colorName: String) -> Color {
         switch colorName {
@@ -36,6 +40,37 @@ struct MonitoringView: View {
             }
             .navigationTitle("Monitor")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        // Show Kanban with first active project if available
+                        if let activeProject = projectManager.projects.first(where: { $0.status == .active }) {
+                            selectedProject = activeProject
+                            showingKanban = true
+                        }
+                    }) {
+                        Image(systemName: "kanban")
+                            .font(.title2)
+                    }
+                    .disabled(projectManager.projects.filter({ $0.status == .active }).isEmpty)
+                }
+            }
+            .sheet(isPresented: $showingKanban) {
+                if let project = selectedProject {
+                    NavigationView {
+                        KanbanBoardView(taskService: taskService, projectId: project.id)
+                            .navigationTitle("Tasks - \(project.displayName)")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                ToolbarItem(placement: .navigationBarLeading) {
+                                    Button("Done") {
+                                        showingKanban = false
+                                    }
+                                }
+                            }
+                    }
+                }
+            }
         }
     }
     
@@ -83,27 +118,43 @@ struct MonitoringView: View {
                     .cornerRadius(12)
             } else {
                 ForEach(projectManager.projects.filter({ $0.status == .active }), id: \.id) { project in
-                    HStack {
-                        Image(systemName: project.language.icon)
-                            .foregroundColor(colorFromString(project.language.color))
-                        
-                        VStack(alignment: .leading) {
-                            Text(project.displayName)
-                                .font(.headline)
-                            Text(project.language.rawValue)
-                                .font(.caption)
+                    Button(action: {
+                        selectedProject = project
+                        showingKanban = true
+                    }) {
+                        HStack {
+                            Image(systemName: project.language.icon)
+                                .foregroundColor(colorFromString(project.language.color))
+                            
+                            VStack(alignment: .leading) {
+                                Text(project.displayName)
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                Text(project.language.rawValue)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            VStack(alignment: .trailing) {
+                                Text("\(project.metrics.filesCount) files")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("Tap for tasks")
+                                    .font(.caption2)
+                                    .foregroundColor(.blue)
+                            }
+                            
+                            Image(systemName: "chevron.right")
                                 .foregroundColor(.secondary)
+                                .font(.caption)
                         }
-                        
-                        Spacer()
-                        
-                        Text("\(project.metrics.filesCount) files")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
                     }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(12)
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
         }
@@ -155,6 +206,7 @@ struct MonitoringMetricCard: View {
 #Preview {
     MonitoringView(
         projectManager: ProjectManager(),
-        webSocketService: WebSocketService()
+        webSocketService: WebSocketService(),
+        taskService: TaskService()
     )
 }

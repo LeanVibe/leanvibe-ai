@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 struct KanbanBoardView: View {
     @ObservedObject var taskService: TaskService
+    let projectId: UUID
     @State private var showingCreateTask = false
     @State private var selectedTask: LeanVibeTask?
     @State private var editingTask: LeanVibeTask?
@@ -12,6 +13,8 @@ struct KanbanBoardView: View {
     @State private var showingSettings = false
     @State private var sortOption: TaskSortOption = .priority
     @State private var draggedTask: LeanVibeTask?
+    @State private var errorMessage: String?
+    @State private var showingError = false
 
     var body: some View {
         NavigationView {
@@ -22,7 +25,12 @@ struct KanbanBoardView: View {
                             status: status,
                             tasks: filteredTasks(for: status),
                             taskService: taskService,
-                            selectedTask: $selectedTask
+                            selectedTask: $selectedTask,
+                            draggedTask: $draggedTask,
+                            onDragError: { error in
+                                errorMessage = error
+                                showingError = true
+                            }
                         )
                     }
                 }
@@ -69,14 +77,34 @@ struct KanbanBoardView: View {
             .sheet(item: $selectedTask) { task in
                 TaskDetailView(taskService: taskService, task: task)
             }
-            .alert("Error", isPresented: .constant(false)) {
-                Button("OK") {}
+            .alert("Drag & Drop Error", isPresented: $showingError) {
+                Button("OK") { 
+                    showingError = false
+                    errorMessage = nil
+                }
             } message: {
-                Text("An error occurred")
+                Text(errorMessage ?? "An error occurred while moving the task")
             }
         }
         .task {
-            // Load tasks when view appears
+            // Load tasks for the current project when view appears
+            do {
+                try await taskService.loadTasks(for: projectId)
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to load tasks: \(error.localizedDescription)"
+                    showingError = true
+                }
+            }
+        }
+        .refreshable {
+            // Add pull-to-refresh functionality with error handling
+            do {
+                try await taskService.loadTasks(for: projectId)
+            } catch {
+                errorMessage = "Failed to refresh tasks: \(error.localizedDescription)"
+                showingError = true
+            }
         }
     }
     
@@ -99,6 +127,9 @@ struct KanbanColumnView: View {
     let tasks: [LeanVibeTask]
     let taskService: TaskService
     @Binding var selectedTask: LeanVibeTask?
+    @Binding var draggedTask: LeanVibeTask?
+    let onDragError: (String) -> Void
+    @State private var isDropTarget = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -127,18 +158,84 @@ struct KanbanColumnView: View {
             ScrollView {
                 LazyVStack(spacing: 8) {
                     ForEach(tasks) { task in
-                        TaskCardView(task: task)
-                            .onTapGesture {
-                                selectedTask = task
-                            }
+                        TaskCardView(
+                            task: task,
+                            isDragged: draggedTask?.id == task.id,
+                            onDragStarted: { draggedTask = task },
+                            onDragEnded: { draggedTask = nil }
+                        )
+                        .onTapGesture {
+                            selectedTask = task
+                        }
                     }
                 }
                 .padding(.horizontal)
             }
         }
         .frame(width: 280)
-        .background(Color(.systemGray6))
+        .background(isDropTarget ? Color.blue.opacity(0.1) : Color(red: 0.95, green: 0.95, blue: 0.97))
         .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isDropTarget ? Color.blue : Color.clear, lineWidth: 2)
+        )
+        .dropDestination(for: String.self) { droppedItems, location in
+            guard let droppedTaskId = droppedItems.first,
+                  let taskUUID = UUID(uuidString: droppedTaskId),
+                  let draggedTaskFound = taskService.tasks.first(where: { $0.id == taskUUID }) else {
+                onDragError("Invalid task data")
+                return false
+            }
+            
+            // Check if this is actually a move (different status)
+            guard draggedTaskFound.status != status else {
+                return false // Same column, no need to move
+            }
+            
+            // Provide immediate visual feedback
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                isDropTarget = false
+            }
+            
+            // Update task status with proper error handling
+            Task {
+                do {
+                    try await taskService.updateTaskStatus(taskUUID, status)
+                    
+                    // Haptic feedback for successful move
+                    DispatchQueue.main.async {
+                        #if os(iOS)
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                        #endif
+                    }
+                } catch {
+                    DispatchQueue.main.async {
+                        onDragError("Failed to move task: \(error.localizedDescription)")
+                        
+                        // Error haptic feedback
+                        #if os(iOS)
+                        let notificationFeedback = UINotificationFeedbackGenerator()
+                        notificationFeedback.notificationOccurred(.error)
+                        #endif
+                    }
+                }
+            }
+            
+            return true
+        } isTargeted: { isTargeted in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isDropTarget = isTargeted
+            }
+            
+            // Subtle haptic feedback when hovering over drop target
+            if isTargeted {
+                #if os(iOS)
+                let selectionFeedback = UISelectionFeedbackGenerator()
+                selectionFeedback.selectionChanged()
+                #endif
+            }
+        }
     }
     
     private func colorFromString(_ colorName: String) -> Color {
@@ -163,6 +260,10 @@ struct KanbanColumnView: View {
 
 struct TaskCardView: View {
     let task: LeanVibeTask
+    let isDragged: Bool
+    let onDragStarted: () -> Void
+    let onDragEnded: () -> Void
+    @State private var isDraggedOver = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -208,7 +309,58 @@ struct TaskCardView: View {
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(8)
-        .shadow(radius: 1)
+        .shadow(radius: isDragged ? 8 : 2)
+        .opacity(isDragged ? 0.7 : 1.0)
+        .scaleEffect(isDragged ? 0.95 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isDragged)
+        .draggable(task.id.uuidString) {
+            // Enhanced drag preview with better styling
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(task.title)
+                        .font(.headline)
+                        .lineLimit(1)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Circle()
+                        .fill(task.priority.color)
+                        .frame(width: 8, height: 8)
+                }
+                
+                Text(task.status.displayName)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color(.systemGray5))
+                    .cornerRadius(4)
+            }
+            .padding(12)
+            .background(Color(.systemBackground))
+            .cornerRadius(10)
+            .shadow(color: .black.opacity(0.3), radius: 12, x: 0, y: 8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(task.priority.color, lineWidth: 2)
+            )
+        }
+        .onDrag {
+            onDragStarted()
+            
+            // Haptic feedback on drag start
+            #if os(iOS)
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
+            #endif
+            
+            return NSItemProvider(object: task.id.uuidString as NSString)
+        }
+        .onDrop(of: ["public.text"], delegate: TaskCardDropDelegate(
+            task: task,
+            onDragEnded: onDragEnded
+        ))
     }
 }
 
@@ -218,6 +370,24 @@ enum TaskSortOption: String, CaseIterable {
     case title = "title"
 }
 
+struct TaskCardDropDelegate: DropDelegate {
+    let task: LeanVibeTask
+    let onDragEnded: () -> Void
+    
+    func performDrop(info: DropInfo) -> Bool {
+        onDragEnded()
+        return false // Let the column handle the actual drop
+    }
+    
+    func dropExited(info: DropInfo) {
+        onDragEnded()
+    }
+    
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
+    }
+}
+
 #Preview {
-    KanbanBoardView(taskService: TaskService())
+    KanbanBoardView(taskService: TaskService(), projectId: UUID())
 }
