@@ -9,6 +9,7 @@ struct DashboardTabView: View {
     @StateObject private var wakePhraseManager: WakePhraseManager
     @StateObject private var permissionManager = VoicePermissionManager()
     @StateObject private var globalVoice: GlobalVoiceManager
+    @StateObject private var unifiedVoice = UnifiedVoiceService.shared
     @StateObject private var navigationCoordinator = NavigationCoordinator()
     @StateObject private var performanceAnalytics = PerformanceAnalytics()
     @StateObject private var batteryManager = BatteryOptimizedManager()
@@ -144,10 +145,21 @@ struct DashboardTabView: View {
             )
             
             // Global voice command overlay with premium transitions
-            if globalVoice.isVoiceCommandActive {
-                GlobalVoiceCommandView(globalVoice: globalVoice)
-                    .transition(PremiumTransitions.modalTransition)
-                    .zIndex(999)
+            if AppConfiguration.shared.useUnifiedVoiceService {
+                // Use UnifiedVoiceService for new voice interface
+                if unifiedVoice.state == .listening || unifiedVoice.state == .processing {
+                    // TODO: Create UnifiedVoiceCommandView - using legacy view for now
+                    GlobalVoiceCommandView(globalVoice: globalVoice)
+                        .transition(PremiumTransitions.modalTransition)
+                        .zIndex(999)
+                }
+            } else {
+                // Fallback to legacy GlobalVoiceManager
+                if globalVoice.isVoiceCommandActive {
+                    GlobalVoiceCommandView(globalVoice: globalVoice)
+                        .transition(PremiumTransitions.modalTransition)
+                        .zIndex(999)
+                }
             }
         }                                                                                                                                                                     
         // .withGlobalErrorHandling() // TODO: Fix View extension availability issue
@@ -161,7 +173,13 @@ struct DashboardTabView: View {
             
             // Start global voice listening if permissions are available
             if permissionManager.isFullyAuthorized {
-                globalVoice.startGlobalVoiceListening()
+                if AppConfiguration.shared.useUnifiedVoiceService {
+                    Task {
+                        await unifiedVoice.startListening(mode: .wakeWord)
+                    }
+                } else {
+                    globalVoice.startGlobalVoiceListening()
+                }
             }
             
             // Premium haptic feedback for app launch
@@ -169,7 +187,11 @@ struct DashboardTabView: View {
         }
         .onDisappear {
             // Stop global voice listening when view disappears
-            globalVoice.stopGlobalVoiceListening()
+            if AppConfiguration.shared.useUnifiedVoiceService {
+                unifiedVoice.stopListening()
+            } else {
+                globalVoice.stopGlobalVoiceListening()
+            }
             
             // Stop performance monitoring
             performanceAnalytics.stopPerformanceMonitoring()
