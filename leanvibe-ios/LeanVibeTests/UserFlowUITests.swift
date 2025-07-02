@@ -2,6 +2,7 @@ import XCTest
 @testable import LeanVibe
 
 @available(iOS 18.0, macOS 14.0, *)
+@MainActor
 final class UserFlowUITests: XCTestCase {
     
     private var app: XCUIApplication!
@@ -110,8 +111,8 @@ final class UserFlowUITests: XCTestCase {
             // Look for Kanban access button
             if app.buttons["kanban"].exists {
                 app.buttons["kanban"].tap()
-            } else if app.staticTexts.containing("tasks").firstMatch.exists {
-                app.staticTexts.containing("tasks").firstMatch.tap()
+            } else if app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'tasks'")).firstMatch.exists {
+                app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'tasks'")).firstMatch.tap()
             }
             
             // Then: Should see Kanban board
@@ -240,7 +241,7 @@ final class UserFlowUITests: XCTestCase {
                     app.buttons["Send"].tap()
                     
                     // Should show message in chat
-                    XCTAssertTrue(app.staticTexts.containing("Hello, test message").firstMatch.waitForExistence(timeout: 3))
+                    XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Hello, test message'")).firstMatch.waitForExistence(timeout: 3))
                 }
             }
         }
@@ -288,11 +289,11 @@ final class UserFlowUITests: XCTestCase {
             }
             
             // Look for error dismissal
-            if app.buttons["Close"].exists && app.staticTexts.containing("Error").firstMatch.exists {
+            if app.buttons["Close"].exists && app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Error'")).firstMatch.exists {
                 app.buttons["Close"].tap()
                 
                 // Error should be dismissed
-                XCTAssertTrue(app.staticTexts.containing("Error").firstMatch.waitForNonExistence(timeout: 3))
+                XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Error'")).firstMatch.waitForNonExistence(timeout: 3))
             }
         }
     }
@@ -396,6 +397,7 @@ extension XCUIElement {
 // MARK: - Page Object Models (for better test organization)
 
 @available(iOS 18.0, macOS 14.0, *)
+@MainActor
 struct OnboardingPage {
     let app: XCUIApplication
     
@@ -421,6 +423,7 @@ struct OnboardingPage {
 }
 
 @available(iOS 18.0, macOS 14.0, *)
+@MainActor
 struct DashboardPage {
     let app: XCUIApplication
     
@@ -439,6 +442,7 @@ struct DashboardPage {
 }
 
 @available(iOS 18.0, macOS 14.0, *)
+@MainActor
 struct KanbanPage {
     let app: XCUIApplication
     

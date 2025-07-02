@@ -73,20 +73,17 @@ final class CodeCompletionIntegrationTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 5.0)
     }
     
-    func testDefaultConnectionSettings() {
-        // Given
-        let defaultConnection = webSocketService.defaultConnection
+    func testConnectionStatus() {
+        // Given & When
+        let connectionStatus = webSocketService.connectionStatus
         
-        // When & Then
-        if let connection = defaultConnection {
-            XCTAssertFalse(connection.host.isEmpty)
-            XCTAssertGreaterThan(connection.port, 0)
-            XCTAssertLessThan(connection.port, 65536)
-            XCTAssertEqual(connection.websocketPath, "/ws")
-        } else {
-            // It's okay if no default connection in some environments
-            XCTAssertTrue(true, "No default connection available")
-        }
+        // Then
+        XCTAssertFalse(connectionStatus.isEmpty)
+        // Connection status should be a valid string
+        XCTAssertTrue(connectionStatus == "Disconnected" || 
+                     connectionStatus == "Connected" ||
+                     connectionStatus.contains("Connecting") ||
+                     connectionStatus.contains("Error"))
     }
     
     // MARK: - Error Handling Integration Tests

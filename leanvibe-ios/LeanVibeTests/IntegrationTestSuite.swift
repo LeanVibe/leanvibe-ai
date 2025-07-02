@@ -591,7 +591,7 @@ extension IntegrationTestSuite {
     /// Test complete user journey from first launch to productive use
     func testCompleteUserJourneyIntegration() async throws {
         // GIVEN: Fresh app installation simulation
-        await try resetAllServices()
+        try await resetAllServices()
         verifyServiceHealth()
         
         // WHEN: Complete user journey

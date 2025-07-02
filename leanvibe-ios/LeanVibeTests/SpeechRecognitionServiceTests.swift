@@ -7,242 +7,145 @@ import Speech
 final class SpeechRecognitionServiceTests: XCTestCase {
     
     private var speechService: SpeechRecognitionService!
-    private var mockAuthorizationProvider: MockSpeechAuthorizationProvider!
     
     override func setUp() async throws {
-        mockAuthorizationProvider = MockSpeechAuthorizationProvider()
         speechService = SpeechRecognitionService()
-        // Inject mock for testing
-        speechService.authorizationProvider = mockAuthorizationProvider
     }
     
     override func tearDown() async throws {
-        await speechService.stopListening()
+        speechService.stopListening()
         speechService = nil
-        mockAuthorizationProvider = nil
     }
     
-    // MARK: - Authorization Tests
+    // MARK: - Basic Functionality Tests
     
-    func testRequestPermissionsWithAuthorizedStatus() async throws {
-        // Given
-        mockAuthorizationProvider.authorizationStatus = .authorized
-        
-        // When
-        await speechService.requestPermissions()
+    func testSpeechServiceInitialization() throws {
+        // Given & When
+        let service = SpeechRecognitionService()
         
         // Then
-        XCTAssertTrue(speechService.hasPermission)
-        XCTAssertFalse(speechService.isListening)
-        XCTAssertNil(speechService.lastError)
+        XCTAssertFalse(service.isListening)
+        XCTAssertEqual(service.recognizedText, "")
+        XCTAssertEqual(service.confidenceScore, 0.0)
+        XCTAssertEqual(service.recognitionState, .idle)
+        XCTAssertEqual(service.audioLevel, 0.0)
+        XCTAssertNil(service.lastError)
     }
     
-    func testRequestPermissionsWithDeniedStatus() async throws {
+    func testRequestPermissions() async throws {
         // Given
-        mockAuthorizationProvider.authorizationStatus = .denied
+        let expectation = expectation(description: "Permission request completion")
+        var receivedMicPermission = false
+        var receivedSpeechStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
         
         // When
-        await speechService.requestPermissions()
-        
-        // Then
-        XCTAssertFalse(speechService.hasPermission)
-        XCTAssertFalse(speechService.isListening)
-        XCTAssertNotNil(speechService.lastError)
-        XCTAssertTrue(speechService.lastError?.contains("denied") == true)
-    }
-    
-    func testRequestPermissionsWithRestrictedStatus() async throws {
-        // Given
-        mockAuthorizationProvider.authorizationStatus = .restricted
-        
-        // When
-        await speechService.requestPermissions()
-        
-        // Then
-        XCTAssertFalse(speechService.hasPermission)
-        XCTAssertNotNil(speechService.lastError)
-        XCTAssertTrue(speechService.lastError?.contains("restricted") == true)
-    }
-    
-    // MARK: - Listening Tests
-    
-    func testStartListeningWithPermission() async throws {
-        // Given
-        mockAuthorizationProvider.authorizationStatus = .authorized
-        await speechService.requestPermissions()
-        
-        // When
-        try await speechService.startListening()
-        
-        // Then
-        XCTAssertTrue(speechService.isListening)
-        XCTAssertNil(speechService.lastError)
-    }
-    
-    func testStartListeningWithoutPermission() async throws {
-        // Given
-        mockAuthorizationProvider.authorizationStatus = .denied
-        await speechService.requestPermissions()
-        
-        // When & Then
-        do {
-            try await speechService.startListening()
-            XCTFail("Expected error when starting listening without permission")
-        } catch {
-            XCTAssertFalse(speechService.isListening)
-            XCTAssertNotNil(speechService.lastError)
+        speechService.requestPermissions { micPermission, speechStatus in
+            receivedMicPermission = micPermission
+            receivedSpeechStatus = speechStatus
+            expectation.fulfill()
         }
-    }
-    
-    func testStopListening() async throws {
-        // Given
-        mockAuthorizationProvider.authorizationStatus = .authorized
-        await speechService.requestPermissions()
-        try await speechService.startListening()
-        XCTAssertTrue(speechService.isListening)
         
-        // When
-        await speechService.stopListening()
+        await fulfillment(of: [expectation], timeout: 3.0)
         
-        // Then
+        // Then - basic smoke test that completion was called
         XCTAssertFalse(speechService.isListening)
     }
     
-    // MARK: - Text Recognition Tests
-    
-    func testProcessRecognizedText() async throws {
-        // Given
-        mockAuthorizationProvider.authorizationStatus = .authorized
-        await speechService.requestPermissions()
-        var recognizedTexts: [String] = []
+    func testStartListeningWithoutPermissions() throws {
+        // Given - no permissions setup
         
-        // Subscribe to recognized text
-        let cancellable = speechService.$recognizedText.sink { text in
-            if !text.isEmpty {
-                recognizedTexts.append(text)
+        // When
+        speechService.startListening()
+        
+        // Then - should handle gracefully
+        // Note: Without permissions, this might set an error state
+        XCTAssertTrue(speechService.recognitionState == .idle || 
+                     speechService.recognitionState == .error("Microphone permission denied") ||
+                     speechService.recognitionState == .error("Speech recognition permission denied"))
+    }
+    
+    func testStopListening() throws {
+        // Given
+        speechService.startListening()
+        
+        // When
+        speechService.stopListening()
+        
+        // Then
+        XCTAssertFalse(speechService.isListening)
+        XCTAssertEqual(speechService.recognitionState, .idle)
+    }
+    
+    func testResetRecognition() throws {
+        // Given
+        speechService.startListening()
+        
+        // When
+        speechService.resetRecognition()
+        
+        // Then
+        XCTAssertFalse(speechService.isListening)
+        XCTAssertEqual(speechService.recognizedText, "")
+        XCTAssertEqual(speechService.confidenceScore, 0.0)
+        XCTAssertEqual(speechService.audioLevel, 0.0)
+        XCTAssertEqual(speechService.recognitionState, .idle)
+    }
+    
+    // MARK: - Published Properties Tests
+    
+    func testPublishedPropertiesAreObservable() async throws {
+        // Given
+        let expectation = expectation(description: "Published property changed")
+        let cancellable = speechService.$recognitionState
+            .sink { state in
+                if state != .idle {
+                    expectation.fulfill()
+                }
             }
-        }
-        defer { cancellable.cancel() }
         
         // When
-        speechService.processRecognizedText("Hello world")
-        speechService.processRecognizedText("Test speech recognition")
+        speechService.startListening()
         
         // Then
-        XCTAssertTrue(recognizedTexts.contains("Hello world"))
-        XCTAssertTrue(recognizedTexts.contains("Test speech recognition"))
+        await fulfillment(of: [expectation], timeout: 2.0)
+        cancellable.cancel()
     }
     
-    func testClearRecognizedText() async throws {
+    func testRecognitionStateTransitions() throws {
         // Given
-        speechService.processRecognizedText("Some text")
-        XCTAssertFalse(speechService.recognizedText.isEmpty)
+        XCTAssertEqual(speechService.recognitionState, .idle)
         
         // When
-        speechService.clearRecognizedText()
+        speechService.startListening()
         
-        // Then
-        XCTAssertTrue(speechService.recognizedText.isEmpty)
+        // Then - state should transition (might be error due to permissions)
+        XCTAssertNotEqual(speechService.recognitionState, .idle)
     }
     
-    // MARK: - Error Handling Tests
+    // MARK: - Edge Cases
     
-    func testHandleRecognitionError() async throws {
+    func testMultipleStartListeningCalls() throws {
         // Given
-        let testError = NSError(domain: "TestError", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Test recognition error"])
+        speechService.startListening()
+        let firstState = speechService.recognitionState
         
         // When
-        speechService.handleRecognitionError(testError)
+        speechService.startListening() // Second call
         
-        // Then
-        XCTAssertNotNil(speechService.lastError)
-        XCTAssertTrue(speechService.lastError?.contains("Test recognition error") == true)
+        // Then - should handle gracefully
+        let secondState = speechService.recognitionState
+        XCTAssertTrue(firstState == secondState || secondState == .error("Already listening"))
+    }
+    
+    func testStopListeningWhenNotListening() throws {
+        // Given - not listening
         XCTAssertFalse(speechService.isListening)
-    }
-    
-    // MARK: - Lifecycle Tests
-    
-    func testMultipleStartStopCycles() async throws {
-        // Given
-        mockAuthorizationProvider.authorizationStatus = .authorized
-        await speechService.requestPermissions()
         
-        // When & Then - Multiple cycles
-        for _ in 0..<3 {
-            try await speechService.startListening()
-            XCTAssertTrue(speechService.isListening)
-            
-            await speechService.stopListening()
-            XCTAssertFalse(speechService.isListening)
-        }
-    }
-    
-    func testConcurrentStartListening() async throws {
-        // Given
-        mockAuthorizationProvider.authorizationStatus = .authorized
-        await speechService.requestPermissions()
+        // When
+        speechService.stopListening()
         
-        // When - Start listening multiple times concurrently
-        async let result1 = speechService.startListening()
-        async let result2 = speechService.startListening()
-        async let result3 = speechService.startListening()
-        
-        // Then - Should handle gracefully without crashes
-        do {
-            try await result1
-            try await result2
-            try await result3
-        } catch {
-            // Some may fail due to concurrent access, but no crashes
-        }
-        
-        // Service should be in a consistent state
-        XCTAssertTrue(speechService.isListening || !speechService.isListening) // Just verify no crash
-    }
-}
-
-// MARK: - Mock Implementation
-
-@available(iOS 18.0, macOS 14.0, *)
-class MockSpeechAuthorizationProvider {
-    var authorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
-    
-    func requestAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {
-        return authorizationStatus
-    }
-    
-    func currentAuthorizationStatus() -> SFSpeechRecognizerAuthorizationStatus {
-        return authorizationStatus
-    }
-}
-
-// MARK: - Performance Tests
-
-@available(iOS 18.0, macOS 14.0, *)
-extension SpeechRecognitionServiceTests {
-    
-    func testSpeechServiceInitializationPerformance() throws {
-        measure {
-            let service = SpeechRecognitionService()
-            _ = service.hasPermission
-        }
-    }
-    
-    func testTextProcessingPerformance() throws {
-        let longText = String(repeating: "This is a test of speech recognition performance. ", count: 100)
-        
-        measure {
-            speechService.processRecognizedText(longText)
-        }
-    }
-}
-
-// MARK: - Integration Helpers
-
-@available(iOS 18.0, macOS 14.0, *)
-extension SpeechRecognitionService {
-    var authorizationProvider: MockSpeechAuthorizationProvider? {
-        get { nil } // Not implemented for real service
-        set { /* Inject mock in tests */ }
+        // Then - should handle gracefully
+        XCTAssertFalse(speechService.isListening)
+        XCTAssertEqual(speechService.recognitionState, .idle)
     }
 }

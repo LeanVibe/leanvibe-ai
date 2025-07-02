@@ -5,41 +5,71 @@ import SwiftUI
 // MARK: - MockWebSocketServiceForUITests for UI Tests
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor
-class MockWebSocketServiceForUITests: ObservableObject {
-    @Published var isConnected = false
-    @Published var connectionStatus = "Disconnected"
-    @Published var lastError: String?
-    @Published var lastResponse: [String: Any]?
-    
+class MockWebSocketServiceForUITests: WebSocketService {
     var mockResponse: CodeCompletionResponse?
     var shouldFail = false
     var delay: TimeInterval = 0.0
     var lastSentMessage: String?
     
-    init() {
+    override init() {
+        super.init()
         isConnected = true
         connectionStatus = "Connected (Mock)"
     }
     
-    func sendMessage(_ message: [String: Any]) async throws -> [String: Any] {
-        lastSentMessage = String(data: try JSONSerialization.data(withJSONObject: message), encoding: .utf8)
-        
-        if delay > 0 {
-            try await Task.sleep(for: .seconds(delay))
-        }
+    override func sendMessage(_ content: String, type: String = "message") {
+        lastSentMessage = content
         
         if shouldFail {
-            throw URLError(.networkConnectionLost)
+            lastError = "Mock connection failed"
+            return
         }
         
-        return [
-            "status": "success",
-            "intent": "suggest", 
-            "response": "Mock UI response",
-            "confidence": 0.9,
-            "requires_review": false,
-            "suggestions": ["Mock suggestion 1", "Mock suggestion 2"]
-        ]
+        // Simulate a successful code completion response
+        Task {
+            if delay > 0 {
+                try? await Task.sleep(for: .seconds(delay))
+            }
+            
+            // Post mock response via notification to simulate real WebSocket behavior
+            let mockResponseJSON = """
+            {
+                "intent": "suggest",
+                "response": "Mock UI response",
+                "confidence": 0.9,
+                "requires_review": false,
+                "suggestions": ["Mock suggestion 1", "Mock suggestion 2"]
+            }
+            """
+            
+            NotificationCenter.default.post(
+                name: Notification.Name("codeCompletionResponse"),
+                object: mockResponseJSON
+            )
+        }
+    }
+}
+
+// MARK: - Simple Test View for UI Tests
+@available(iOS 18.0, macOS 14.0, *)
+struct CodeCompletionTestView: View {
+    let webSocketService: WebSocketService
+    @StateObject private var codeCompletionService: CodeCompletionService
+    
+    init(webSocketService: WebSocketService) {
+        self.webSocketService = webSocketService
+        self._codeCompletionService = StateObject(wrappedValue: CodeCompletionService(webSocketService: webSocketService))
+    }
+    
+    var body: some View {
+        VStack {
+            Text("Code Completion Test View")
+            Button("Test Suggest") {
+                Task {
+                    await codeCompletionService.suggest(content: "test code")
+                }
+            }
+        }
     }
 }
 
@@ -61,10 +91,9 @@ final class CodeCompletionUITests: XCTestCase {
     func testCodeCompletionTestViewRendering() {
         // Given
         let webSocketService = WebSocketService.shared
-        let codeCompletionService = CodeCompletionService(webSocketService: webSocketService)
         
         // When
-        let view = CodeCompletionTestView(codeCompletionService: codeCompletionService)
+        let view = CodeCompletionTestView(webSocketService: webSocketService)
         let hostingController = UIHostingController(rootView: view)
         
         // Then
@@ -90,10 +119,10 @@ final class CodeCompletionUITests: XCTestCase {
             }
         
         // Trigger a state change
-        _ = await codeCompletionService.suggestCodeCompletion(
+        await codeCompletionService.suggest(
+            for: "/test.swift",
             content: "test",
-            language: "swift",
-            filePath: "/test.swift"
+            language: "swift"
         )
         
         await fulfillment(of: [expectation], timeout: 2.0)
@@ -215,10 +244,8 @@ final class CodeCompletionUITests: XCTestCase {
         // When & Then
         XCTAssertNoThrow(try config.validateConfiguration())
         
-        // In debug mode, should be able to print configuration
-        if config.isDebugBuild {
-            XCTAssertNoThrow(config.printConfiguration())
-        }
+        // Test that configuration can be printed (debug method)
+        XCTAssertNoThrow(config.printConfiguration())
     }
     
     // MARK: - Real Clipboard Integration UI Tests
@@ -258,17 +285,20 @@ final class CodeCompletionUITests: XCTestCase {
         // When - start a code completion request
         let startTime = Date()
         
-        async let completionTask = codeCompletionService.suggestCodeCompletion(
-            content: "test code",
-            language: "swift",
-            filePath: "/test.swift"
-        )
+        // Start the code completion request asynchronously
+        let completionTask = Task {
+            await codeCompletionService.suggest(
+                for: "/test.swift",
+                content: "test code",
+                language: "swift"
+            )
+        }
         
         // Simulate UI interactions during the request
         let uiInteractionTime = Date()
         let uiResponseTime = Date().timeIntervalSince(uiInteractionTime)
         
-        _ = await completionTask
+        await completionTask.value
         let totalTime = Date().timeIntervalSince(startTime)
         
         // Then
@@ -281,8 +311,7 @@ final class CodeCompletionUITests: XCTestCase {
     func testAccessibilitySupport() {
         // Given
         let webSocketService = WebSocketService.shared
-        let codeCompletionService = CodeCompletionService(webSocketService: webSocketService)
-        let view = CodeCompletionTestView(codeCompletionService: codeCompletionService)
+        let view = CodeCompletionTestView(webSocketService: webSocketService)
         
         // When
         let hostingController = UIHostingController(rootView: view)
@@ -298,17 +327,14 @@ final class CodeCompletionUITests: XCTestCase {
     func testViewMemoryManagement() {
         // Given
         weak var weakWebSocketService: WebSocketService?
-        weak var weakCodeCompletionService: CodeCompletionService?
         weak var weakView: CodeCompletionTestView?
         
         // When
         autoreleasepool {
             let webSocketService = WebSocketService.shared // This is a singleton, so won't be deallocated
-            let codeCompletionService = CodeCompletionService(webSocketService: webSocketService)
-            let view = CodeCompletionTestView(codeCompletionService: codeCompletionService)
+            let view = CodeCompletionTestView(webSocketService: webSocketService)
             
             weakWebSocketService = webSocketService
-            weakCodeCompletionService = codeCompletionService
             weakView = view
             
             // Use the view briefly
