@@ -243,6 +243,61 @@ class BackendClient:
             self.connected = False
             console.print(f"[red]WebSocket error: {e}[/red]")
     
+    # CLI Bridge Integration Methods
+    
+    async def notify_command_execution(self, command_name: str, command_args: list, working_dir: str):
+        """Notify backend of command execution start"""
+        try:
+            await self.post("/cli/command", {
+                "command": command_name,
+                "args": command_args[1:] if len(command_args) > 1 else [],
+                "workspace_path": working_dir,
+                "timestamp": datetime.now().isoformat()
+            })
+        except Exception as e:
+            if self.config.verbose:
+                console.print(f"[yellow]Could not notify backend of command execution: {e}[/yellow]")
+    
+    async def notify_command_completion(self, command_name: str, exit_code: int):
+        """Notify backend of command completion"""
+        try:
+            if self.websocket:
+                await self.websocket.send(json.dumps({
+                    "type": "cli_command_completed",
+                    "command": command_name,
+                    "exit_code": exit_code,
+                    "timestamp": datetime.now().isoformat()
+                }))
+        except Exception as e:
+            if self.config.verbose:
+                console.print(f"[yellow]Could not notify backend of command completion: {e}[/yellow]")
+    
+    async def notify_command_error(self, command_name: str, error_message: str):
+        """Notify backend of command error"""
+        try:
+            if self.websocket:
+                await self.websocket.send(json.dumps({
+                    "type": "cli_command_error",
+                    "command": command_name,
+                    "error": error_message,
+                    "timestamp": datetime.now().isoformat()
+                }))
+        except Exception as e:
+            if self.config.verbose:
+                console.print(f"[yellow]Could not notify backend of command error: {e}[/yellow]")
+    
+    async def get_cli_bridge_status(self) -> Dict[str, Any]:
+        """Get CLI bridge status from backend"""
+        return await self.get("/cli/status")
+    
+    async def get_monitoring_data(self) -> Dict[str, Any]:
+        """Get monitoring data from backend"""
+        return await self.get("/cli/monitor")
+    
+    async def list_connected_devices(self) -> Dict[str, Any]:
+        """List connected iOS devices"""
+        return await self.get("/cli/devices")
+    
     async def query_agent(self, query: str, workspace_path: str = ".") -> Dict[str, Any]:
         """Send a natural language query to the L3 agent"""
         if not self.websocket:

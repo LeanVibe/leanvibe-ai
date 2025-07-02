@@ -17,7 +17,7 @@ from rich.text import Text
 
 from .config import CLIConfig, load_config
 from .client import BackendClient
-from .commands import status, analyze, monitor, query, info, config, qr
+from .commands import status, analyze, monitor, query, info, config, qr, project, bridge
 
 
 console = Console()
@@ -89,6 +89,8 @@ cli.add_command(query.query)
 cli.add_command(info.info)
 cli.add_command(config.config)
 cli.add_command(qr.qr)
+cli.add_command(project.project)
+cli.add_command(bridge.bridge)
 
 
 def main():

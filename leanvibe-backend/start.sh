@@ -133,14 +133,23 @@ print(f'✅ Cache directory ready: {cache_dir}')
 echo "🔍 Detecting network configuration..."
 uv run python -c "
 import sys
-sys.path.append('app')
-from utils.connection_service import print_startup_qr
-print_startup_qr(8000)
+import os
+sys.path.insert(0, os.path.join(os.getcwd(), 'app'))
+try:
+    from utils.connection_service import print_startup_qr
+    print_startup_qr(8000)
+except ImportError as e:
+    print(f'⚠️  QR code service not available: {e}')
+    print('📱 Backend will start on: http://localhost:8000')
 "
 
 # Test MLX availability before starting server
 echo "🧪 Testing MLX and model service..."
 uv run python -c "
+import sys
+import os
+sys.path.insert(0, os.path.join(os.getcwd(), 'app'))
+
 try:
     import mlx.core as mx
     import mlx.nn as nn
@@ -152,16 +161,12 @@ try:
     mx.eval(y)
     print('✅ MLX operations working')
     
-    # Test model services
-    import sys
-    sys.path.append('app')
-    
     # Check which services are available
     try:
         from services.simple_model_service import SimpleModelService
         print('✅ SimpleModelService available (lightweight MLX inference)')
-    except:
-        print('⚠️  SimpleModelService not available')
+    except Exception as e:
+        print(f'⚠️  SimpleModelService not available: {e}')
     
     try:
         from services.phi3_mini_service import Phi3MiniService, HF_AVAILABLE
@@ -169,15 +174,19 @@ try:
             print('✅ Phi-3-Mini service with full transformers support')
         else:
             print('⚠️  Phi-3-Mini service loaded but transformers not available')
-    except:
-        print('⚠️  Phi-3-Mini service not available')
+    except Exception as e:
+        print(f'⚠️  Phi-3-Mini service not available: {e}')
     
-    # Show which inference mode will be used
-    from services.real_mlx_service import RealMLXService
-    service = RealMLXService()
-    print('')
-    print('🚀 MLX inference priority: Phi-3-Mini -> SimpleModelService -> Mock')
-    print('   Phi-3-Mini provides high-quality AI responses with MLX optimization')
+    try:
+        # Show which inference mode will be used
+        from services.real_mlx_service import RealMLXService
+        service = RealMLXService()
+        print('')
+        print('🚀 MLX inference priority: Phi-3-Mini -> SimpleModelService -> Mock')
+        print('   Phi-3-Mini provides high-quality AI responses with MLX optimization')
+    except Exception as e:
+        print(f'⚠️  RealMLXService not available: {e}')
+        print('✅ MLX core functionality working, services will initialize during startup')
     
 except Exception as e:
     print(f'❌ MLX/Model test failed: {e}')
