@@ -2,7 +2,7 @@ import SwiftUI
 
 @available(iOS 18.0, macOS 14.0, *)
 struct QROnboardingView: View {
-    @StateObject private var webSocketService = WebSocketService()
+    @StateObject private var webSocketService = WebSocketService.shared
     @ObservedObject var coordinator: AppCoordinator
     @State private var showingQRScanner = true
     

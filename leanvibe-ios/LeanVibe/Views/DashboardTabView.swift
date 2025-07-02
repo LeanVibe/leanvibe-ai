@@ -2,7 +2,7 @@ import SwiftUI
 
 @available(iOS 18.0, macOS 14.0, *)
 struct DashboardTabView: View {
-    @StateObject private var webSocketService = WebSocketService()
+    @StateObject private var webSocketService = WebSocketService.shared
     @StateObject private var projectManager = ProjectManager()
     @StateObject private var speechService: SpeechRecognitionService
     @StateObject private var taskService = TaskService()
@@ -17,7 +17,7 @@ struct DashboardTabView: View {
     @State private var showingVoiceInterface = false
     
     init() {
-        let webSocket = WebSocketService()
+        let webSocket = WebSocketService.shared
         let projectMgr = ProjectManager()
         let settingsMgr = SettingsManager.shared
         let voiceProcessor = DashboardVoiceProcessor(

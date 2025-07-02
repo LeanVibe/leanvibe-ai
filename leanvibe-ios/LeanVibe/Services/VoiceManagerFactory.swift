@@ -35,7 +35,7 @@ class VoiceManagerFactory: ObservableObject {
     ) {
         self.appConfiguration = appConfiguration
         self.speechService = speechService ?? SpeechRecognitionService()
-        self.webSocketService = webSocketService ?? WebSocketService()
+        self.webSocketService = webSocketService ?? WebSocketService.shared
         self.projectManager = projectManager ?? ProjectManager()
         self.settingsManager = settingsManager ?? SettingsManager.shared
         

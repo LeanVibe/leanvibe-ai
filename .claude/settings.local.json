@@ -114,7 +114,9 @@
       "Bash(./ci-check.sh)",
       "Bash(git branch:*)",
       "Bash(./quick_validate.sh:*)",
-      "Bash(./start.sh:*)"
+      "Bash(./start.sh:*)",
+      "Bash(if grep -q \"$file\" LeanVibe.xcodeproj/project.pbxproj)",
+      "Bash(else)"
     ],
     "deny": []
   }

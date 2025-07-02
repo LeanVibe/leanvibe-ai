@@ -11,5 +11,5 @@ struct SettingsTabView: View {
 }
 
 #Preview {
-    SettingsTabView(webSocketService: WebSocketService())
+    SettingsTabView(webSocketService: WebSocketService.shared)
 }

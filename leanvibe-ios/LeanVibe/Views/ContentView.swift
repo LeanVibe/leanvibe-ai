@@ -2,7 +2,7 @@ import SwiftUI
 
 @available(iOS 18.0, macOS 14.0, *)
 struct ContentView: View {
-    @StateObject private var webSocketService = WebSocketService()
+    @StateObject private var webSocketService = WebSocketService.shared
     @State private var inputText = ""
     @State private var showingSettings = false
     @State private var showingCodeCompletion = false

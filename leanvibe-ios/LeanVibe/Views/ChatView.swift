@@ -12,5 +12,5 @@ struct ChatView: View {
 }
 
 #Preview {
-    ChatView(webSocketService: WebSocketService())
+    ChatView(webSocketService: WebSocketService.shared)
 }
