@@ -9,7 +9,10 @@ struct DashboardTabView: View {
     @StateObject private var wakePhraseManager: WakePhraseManager
     @StateObject private var permissionManager = VoicePermissionManager()
     @StateObject private var globalVoice: GlobalVoiceManager
-    @StateObject private var unifiedVoice = UnifiedVoiceService.shared
+    // Conditional service initialization based on configuration
+    private var unifiedVoice: UnifiedVoiceService? {
+        AppConfiguration.shared.useUnifiedVoiceService ? UnifiedVoiceService.shared : nil
+    }
     @StateObject private var navigationCoordinator = NavigationCoordinator()
     @StateObject private var performanceAnalytics = PerformanceAnalytics()
     @StateObject private var batteryManager = BatteryOptimizedManager()
@@ -145,9 +148,9 @@ struct DashboardTabView: View {
             )
             
             // Global voice command overlay with premium transitions
-            if AppConfiguration.shared.useUnifiedVoiceService {
+            if let unifiedService = unifiedVoice {
                 // Use UnifiedVoiceService for new voice interface
-                if unifiedVoice.state.isListening || isProcessingState(unifiedVoice.state) {
+                if unifiedService.state.isListening || isProcessingState(unifiedService.state) {
                     // TODO: Create UnifiedVoiceCommandView - using legacy view for now
                     GlobalVoiceCommandView(globalVoice: globalVoice)
                         .transition(PremiumTransitions.modalTransition)
@@ -173,9 +176,17 @@ struct DashboardTabView: View {
             
             // Start global voice listening if permissions are available
             if permissionManager.isFullyAuthorized {
-                if AppConfiguration.shared.useUnifiedVoiceService {
+                if let unifiedService = unifiedVoice {
                     Task {
-                        await unifiedVoice.startListening(mode: .wakeWord)
+                        do {
+                            await unifiedService.startListening(mode: .wakeWord)
+                        } catch {
+                            // Critical: Graceful fallback to legacy service on error
+                            print("⚠️ UnifiedVoiceService failed to start, falling back to legacy: \(error)")
+                            await MainActor.run {
+                                globalVoice.startGlobalVoiceListening()
+                            }
+                        }
                     }
                 } else {
                     globalVoice.startGlobalVoiceListening()
@@ -187,8 +198,8 @@ struct DashboardTabView: View {
         }
         .onDisappear {
             // Stop global voice listening when view disappears
-            if AppConfiguration.shared.useUnifiedVoiceService {
-                unifiedVoice.stopListening()
+            if let unifiedService = unifiedVoice {
+                unifiedService.stopListening()
             } else {
                 globalVoice.stopGlobalVoiceListening()
             }

@@ -110,8 +110,9 @@ class UnifiedVoiceService: ObservableObject {
         
         if !recognizedText.isEmpty {
             state = .processing(transcript: recognizedText)
-            Task {
-                await processVoiceCommand(recognizedText)
+            Task { [weak self] in
+                let textToProcess = self?.recognizedText ?? ""
+                await self?.processVoiceCommand(textToProcess)
             }
         } else {
             state = .idle
@@ -217,8 +218,9 @@ class UnifiedVoiceService: ObservableObject {
         case .completed:
             if !recognizedText.isEmpty {
                 state = .processing(transcript: recognizedText)
-                Task {
-                    await processVoiceCommand(recognizedText)
+                Task { [weak self] in
+                    let textToProcess = self?.recognizedText ?? ""
+                    await self?.processVoiceCommand(textToProcess)
                 }
             } else {
                 state = .idle
@@ -249,10 +251,12 @@ class UnifiedVoiceService: ObservableObject {
         state = .error(error)
         
         // Auto-recovery for certain errors
-        Task {
+        Task { [weak self] in
             try? await Task.sleep(for: .seconds(2))
-            if case .error = state {
-                state = .idle
+            await MainActor.run {
+                if case .error = self?.state {
+                    self?.state = .idle
+                }
             }
         }
     }
