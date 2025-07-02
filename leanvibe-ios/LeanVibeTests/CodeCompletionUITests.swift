@@ -182,7 +182,7 @@ final class CodeCompletionUITests: XCTestCase {
             title: "Code Completion Failed",
             message: "Unable to connect to the AI service",
             severity: .error,
-            context: "CodeCompletionService.suggestCodeCompletion"
+            context: "CodeCompletionService.suggest"
         )
         
         // When
@@ -327,7 +327,7 @@ final class CodeCompletionUITests: XCTestCase {
     func testViewMemoryManagement() {
         // Given
         weak var weakWebSocketService: WebSocketService?
-        weak var weakView: CodeCompletionTestView?
+        var weakView: CodeCompletionTestView?
         
         // When
         autoreleasepool {

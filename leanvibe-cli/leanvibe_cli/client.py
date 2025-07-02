@@ -314,6 +314,26 @@ class BackendClient:
         
         return await self.send_message(command, "command", workspace_path)
     
+    # HTTP Utility Methods
+    
+    async def get(self, endpoint: str) -> Dict[str, Any]:
+        """Make GET request to backend endpoint"""
+        try:
+            response = await self.http_client.get(f"{self.config.backend_url}{endpoint}")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            raise ConnectionError(f"GET request failed: {e}")
+    
+    async def post(self, endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Make POST request to backend endpoint"""
+        try:
+            response = await self.http_client.post(f"{self.config.backend_url}{endpoint}", json=data)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            raise ConnectionError(f"POST request failed: {e}")
+    
     # Utility Methods
     
     async def test_connection(self) -> bool:

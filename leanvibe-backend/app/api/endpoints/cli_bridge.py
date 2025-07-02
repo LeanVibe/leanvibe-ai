@@ -119,8 +119,6 @@ async def get_monitoring_data():
 @router.post("/command")
 async def execute_cli_command(command: CLICommand):
     """Execute a CLI command and broadcast to connected iOS devices"""
-    from ... import main
-    
     logger.info(f"Executing CLI command: {command.command}")
     
     try:
@@ -142,18 +140,23 @@ async def execute_cli_command(command: CLICommand):
         )
         
         # Emit event to all connected devices
-        await main.event_streaming_service.emit_event(command_event)
-        
-        # Broadcast to iOS devices via WebSocket
-        command_message = {
-            "type": "cli_command",
-            "command": command.command,
-            "args": command.args,
-            "workspace_path": command.workspace_path,
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        ios_notification_count = await main.connection_manager.broadcast_to_ios_devices(command_message)
+        try:
+            from ...main import event_streaming_service, connection_manager
+            await event_streaming_service.emit_event(command_event)
+            
+            # Broadcast to iOS devices via WebSocket
+            command_message = {
+                "type": "cli_command",
+                "command": command.command,
+                "args": command.args,
+                "workspace_path": command.workspace_path,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            ios_notification_count = await connection_manager.broadcast_to_ios_devices(command_message)
+        except Exception as import_error:
+            logger.warning(f"Could not access streaming/connection services: {import_error}")
+            ios_notification_count = 0
         
         return {
             "success": True,
@@ -169,9 +172,13 @@ async def execute_cli_command(command: CLICommand):
 @router.get("/devices")
 async def list_connected_devices():
     """List all connected iOS devices and their status"""
-    from ... import main
     
-    connection_info = main.connection_manager.get_connection_info()
+    try:
+        from ...main import connection_manager
+        connection_info = connection_manager.get_connection_info()
+    except Exception:
+        # Fallback if connection manager not available
+        connection_info = {}
     
     devices = []
     for client_id, info in connection_info.items():
@@ -195,10 +202,10 @@ async def list_connected_devices():
 @router.post("/devices/{device_id}/message")
 async def send_message_to_device(device_id: str, message: dict):
     """Send a direct message to a specific iOS device"""
-    from ... import main
     
     try:
-        success = await main.connection_manager.send_to_client(device_id, message)
+        from ...main import connection_manager
+        success = await connection_manager.send_to_client(device_id, message)
         
         if success:
             return {
@@ -260,9 +267,12 @@ async def cli_bridge_websocket(websocket: WebSocket, cli_id: str):
                 elif message_type == "command_broadcast":
                     # Handle command broadcast to iOS devices
                     command_data = message.get("data", {})
-                    from ... import main
                     
-                    ios_count = await main.connection_manager.broadcast_to_ios_devices(command_data)
+                    try:
+                        from ...main import connection_manager
+                        ios_count = await connection_manager.broadcast_to_ios_devices(command_data)
+                    except Exception:
+                        ios_count = 0
                     
                     await websocket.send_text(json.dumps({
                         "type": "broadcast_confirmation",

@@ -2,27 +2,31 @@ import XCTest
 @testable import LeanVibe
 
 @available(iOS 18.0, macOS 14.0, *)
-@MainActor
+@MainActor  // Add MainActor to entire class for UI testing
 final class UserFlowUITests: XCTestCase {
     
     private var app: XCUIApplication!
     
-    override func setUpWithError() throws {
+    nonisolated override func setUpWithError() throws {
         continueAfterFailure = false
-        app = XCUIApplication()
-        app.launch()
+        // App setup moved to test methods due to MainActor requirements
     }
     
-    override func tearDownWithError() throws {
-        app = nil
+    nonisolated override func tearDownWithError() throws {
+        // Teardown handled in test methods
+    }
+    
+    private func setupApp() {
+        app = XCUIApplication()
+        app.launch()
     }
     
     // MARK: - Critical User Flow Tests
     
     /// Test the complete onboarding flow from first launch to main dashboard
     func testCompleteOnboardingFlow() throws {
-        // Note: This test assumes the app launches with onboarding on first run
         // Given: Fresh app launch
+        setupApp()
         
         // When: User goes through onboarding steps
         // Welcome Screen
