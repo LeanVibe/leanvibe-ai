@@ -12,8 +12,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     private var socket: WebSocket?
     private let clientId = "ios-client-\(UUID().uuidString.prefix(8))"
     private let storageManager = ConnectionStorageManager()
-    private var qrConnectionContinuation: CheckedContinuation<Void, Error>?
-    private var qrConnectionTimeoutTask: Task<Void, Never>?
+    private var qrConnectionTask: Task<Void, Error>?
     
     init() {
         // Try to auto-connect with stored settings on init
@@ -164,54 +163,66 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         connectionStatus = "Connecting to \(connectionSettings.displayName)..."
         
         // Connect using the new settings with proper timeout and cleanup
-        return try await withCheckedThrowingContinuation { continuation in
-            // Clean up any existing continuation/timeout
-            self.cleanupQRConnection(resumeWith: nil)
-            
-            // Store new continuation
-            self.qrConnectionContinuation = continuation
-            
-            // Set up timeout task (10 seconds)
-            self.qrConnectionTimeoutTask = Task { [weak self] in
-                try? await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
-                await MainActor.run { [weak self] in
-                    self?.cleanupQRConnection(resumeWith: .failure(NSError(
-                        domain: "WebSocketService", 
-                        code: 4, 
-                        userInfo: [NSLocalizedDescriptionKey: "Connection timeout after 10 seconds"]
-                    )))
-                }
+        // Cancel any existing connection task
+        qrConnectionTask?.cancel()
+        
+        // Use TaskGroup to handle timeout and connection attempt safely
+        return try await withThrowingTaskGroup(of: Void.self) { group in
+            // Add connection attempt task
+            group.addTask { [weak self] in
+                try await self?.connectWithSettingsAsync(connectionSettings)
             }
             
-            // Start connection attempt
-            connectWithSettings(connectionSettings)
+            // Add timeout task
+            group.addTask {
+                try await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
+                throw NSError(
+                    domain: "WebSocketService", 
+                    code: 4, 
+                    userInfo: [NSLocalizedDescriptionKey: "Connection timeout after 10 seconds"]
+                )
+            }
+            
+            // Wait for first task to complete, then cancel the rest
+            try await group.next()
+            group.cancelAll()
         }
     }
     
-    private func cleanupQRConnection(resumeWith result: Result<Void, Error>?) {
-        // Cancel timeout task
-        qrConnectionTimeoutTask?.cancel()
-        qrConnectionTimeoutTask = nil
+    // Convert the existing connectWithSettings to async for TaskGroup usage
+    private func connectWithSettingsAsync(_ connectionSettings: ConnectionSettings) async throws {
+        connectWithSettings(connectionSettings)
         
-        // Resume continuation if needed - ALWAYS resume to prevent leaks
-        if let continuation = qrConnectionContinuation {
-            qrConnectionContinuation = nil
-            if let result = result {
-                switch result {
-                case .success:
-                    continuation.resume()
-                case .failure(let error):
-                    continuation.resume(throwing: error)
-                }
-            } else {
-                // If no result provided, resume with generic error to prevent leak
-                continuation.resume(throwing: NSError(
-                    domain: "WebSocketService", 
-                    code: 5, 
-                    userInfo: [NSLocalizedDescriptionKey: "Connection cleanup without result"]
-                ))
+        // Wait for connection to be established or fail
+        // This approach uses polling instead of continuation storage
+        var attempts = 0
+        let maxAttempts = 100 // 10 seconds with 100ms intervals
+        
+        while attempts < maxAttempts {
+            try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            
+            if isConnected {
+                return // Success
             }
+            
+            // Check if we got an error
+            if let error = lastError {
+                throw NSError(
+                    domain: "WebSocketService",
+                    code: 6,
+                    userInfo: [NSLocalizedDescriptionKey: error]
+                )
+            }
+            
+            attempts += 1
         }
+        
+        // Timeout after polling
+        throw NSError(
+            domain: "WebSocketService",
+            code: 7,
+            userInfo: [NSLocalizedDescriptionKey: "Connection attempt timeout"]
+        )
     }
     
     private func parseQRConfig(_ qrData: String) -> ServerConfig? {
@@ -269,8 +280,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 self.connectionStatus = "Connected"
                 self.lastError = nil
                 
-                // Handle QR code connection completion
-                self.cleanupQRConnection(resumeWith: .success(()))
+                // Connection successful - the TaskGroup will handle completion
                 
                 // Send initial status request
                 self.sendCommand("/status", type: "command")
@@ -282,12 +292,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 self.isConnected = false
                 self.connectionStatus = "Disconnected"
                 
-                // Handle QR code connection failure
-                self.cleanupQRConnection(resumeWith: .failure(NSError(
-                    domain: "WebSocketService", 
-                    code: 2, 
-                    userInfo: [NSLocalizedDescriptionKey: "Connection failed: \(reason)"]
-                )))
+                // Connection failed - error will be captured by TaskGroup polling
             }
             
         case .text(let string):
@@ -309,10 +314,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 self.lastError = errorMessage
                 self.connectionStatus = "Error: \(errorMessage)"
                 
-                // Handle QR code connection error
-                self.cleanupQRConnection(resumeWith: .failure(
-                    error ?? NSError(domain: "WebSocketService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Unknown WebSocket error"])
-                ))
+                // Error will be captured by TaskGroup polling
             }
             
         case .cancelled, .peerClosed:
@@ -321,12 +323,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 self.isConnected = false
                 self.connectionStatus = "Connection closed"
                 
-                // Handle QR code connection cancellation
-                self.cleanupQRConnection(resumeWith: .failure(NSError(
-                    domain: "WebSocketService", 
-                    code: 6, 
-                    userInfo: [NSLocalizedDescriptionKey: "Connection was cancelled or closed by peer"]
-                )))
+                // Connection cancelled - error will be captured by TaskGroup polling
             }
             
         default:

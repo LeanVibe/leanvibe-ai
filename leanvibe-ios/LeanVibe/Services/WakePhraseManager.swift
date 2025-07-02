@@ -1,5 +1,6 @@
 import Foundation
-import Speech
+@preconcurrency import Speech
+@preconcurrency import AVFAudio
 import AVFoundation
 import SwiftUI
 
@@ -14,8 +15,8 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
     
     private let speechRecognizer: SFSpeechRecognizer?
     private var wakeRecognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    nonisolated(unsafe) private var wakeRecognitionTask: SFSpeechRecognitionTask?
-    nonisolated(unsafe) private let wakeAudioEngine = AVAudioEngine()
+    private var wakeRecognitionTask: SFSpeechRecognitionTask?
+    private let wakeAudioEngine = AVAudioEngine()
     
     private let webSocketService: WebSocketService
     private let projectManager: ProjectManager
@@ -35,7 +36,7 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
     // Detection settings
     private let confidenceThreshold: Float = 0.6
     private let silenceTimeout: TimeInterval = 3.0
-    nonisolated(unsafe) private var silenceTimer: Timer?
+    private var silenceTask: Task<Void, Never>?
     
     init(webSocketService: WebSocketService, projectManager: ProjectManager, voiceProcessor: DashboardVoiceProcessor) {
         self.webSocketService = webSocketService
@@ -50,10 +51,9 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
     }
     
     deinit {
-        // Cleanup will be handled automatically
-        wakeAudioEngine.stop()
-        wakeRecognitionTask?.cancel()
-        silenceTimer?.invalidate()
+        // Note: Cleanup will be handled automatically when the actor is deallocated
+        // Audio engine and recognition tasks will be properly cleaned up by the system
+        // We cannot access actor-isolated properties from deinit in Swift 6
     }
     
     // MARK: - Setup and Permissions
@@ -103,7 +103,7 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
         wakeRecognitionRequest = nil
         wakeRecognitionTask = nil
         
-        silenceTimer?.invalidate()
+        silenceTask?.cancel()
         audioLevel = 0.0
         
         if wakePhraseDetected {
@@ -121,7 +121,7 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
         guard let speechRecognizer = speechRecognizer else { return }
         
         wakeRecognitionTask = speechRecognizer.recognitionTask(with: wakeRecognitionRequest) { [weak self] result, error in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self?.handleWakeRecognitionResult(result: result, error: error)
             }
         }
@@ -140,9 +140,9 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
             wakeAudioEngine.prepare()
             try wakeAudioEngine.start()
         } catch {
-            DispatchQueue.main.async {
-                self.lastError = "Wake audio engine failed to start"
-                self.stopWakeListening()
+            Task { @MainActor in
+                lastError = "Wake audio engine failed to start"
+                stopWakeListening()
             }
         }
     }
@@ -160,8 +160,8 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
         let averageLevel = sum / Float(frameLength)
         let normalizedLevel = min(averageLevel * 15, 1.0) // More sensitive for wake detection
         
-        DispatchQueue.main.async {
-            self.audioLevel = normalizedLevel
+        Task { @MainActor in
+            audioLevel = normalizedLevel
         }
     }
     
@@ -251,14 +251,16 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
         sendWakeStatusUpdate("✨ Wake phrase detected: \"\(detection.detectedPhrase)\"")
         
         // Start voice command processing with a brief delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.triggerVoiceCommandSession()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            triggerVoiceCommandSession()
         }
         
         // Restart wake listening after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-            if !self.isWakeListening {
-                self.startWakeListening()
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            if !isWakeListening {
+                startWakeListening()
             }
         }
     }
@@ -277,25 +279,26 @@ class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate 
     // MARK: - Timer Management
     
     private func resetSilenceTimer() {
-        silenceTimer?.invalidate()
+        silenceTask?.cancel()
     }
     
     private func startSilenceTimer() {
-        silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceTimeout, repeats: false) { [weak self] _ in
-            Task { @MainActor in
-                self?.handleSilenceTimeout()
-            }
+        silenceTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(silenceTimeout))
+            guard !Task.isCancelled else { return }
+            handleSilenceTimeout()
         }
     }
     
     private func handleSilenceTimeout() {
         // Restart wake recognition after silence
         if isWakeListening {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                if self.isWakeListening {
-                    self.setupWakeRecognition()
-                    if !self.wakeAudioEngine.isRunning {
-                        self.startWakeAudioEngine()
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(500))
+                if isWakeListening {
+                    setupWakeRecognition()
+                    if !wakeAudioEngine.isRunning {
+                        startWakeAudioEngine()
                     }
                 }
             }

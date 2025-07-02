@@ -93,9 +93,7 @@ class GlobalVoiceManager: ObservableObject {
         wakePhraseManager.stopWakeListening()
         
         // Start listening for command
-        Task {
-            await speechRecognition.startListening()
-        }
+        speechRecognition.startListening()
     }
     
     func dismissVoiceCommand() {
@@ -104,9 +102,10 @@ class GlobalVoiceManager: ObservableObject {
         speechRecognition.stopListening()
         
         // Resume wake phrase listening after a short delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if self.permissionManager.isFullyAuthorized {
-                self.wakePhraseManager.startWakeListening()
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            if permissionManager.isFullyAuthorized {
+                wakePhraseManager.startWakeListening()
             }
         }
     }
@@ -116,8 +115,9 @@ class GlobalVoiceManager: ObservableObject {
         await voiceProcessor.processVoiceCommand(command)
         
         // Dismiss the voice interface after processing
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.dismissVoiceCommand()
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1))
+            dismissVoiceCommand()
         }
     }
     

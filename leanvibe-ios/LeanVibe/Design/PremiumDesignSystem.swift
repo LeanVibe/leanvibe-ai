@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - Premium Design System
 
+@available(iOS 15.0, *)
 struct PremiumDesignSystem {
     // MARK: - Material Design
     static let glassMaterial = Material.ultraThinMaterial
