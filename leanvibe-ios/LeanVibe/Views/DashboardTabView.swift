@@ -1,14 +1,48 @@
 import SwiftUI
 
+// Voice service wrapper to handle optional initialization
+@MainActor
+class VoiceServiceContainer: ObservableObject {
+    let speechService: SpeechRecognitionService?
+    let wakePhraseManager: WakePhraseManager?
+    let permissionManager: VoicePermissionManager?
+    let globalVoice: GlobalVoiceManager?
+    
+    init(webSocket: WebSocketService, projectManager: ProjectManager, settingsManager: SettingsManager, isVoiceEnabled: Bool) {
+        if isVoiceEnabled {
+            let voiceProcessor = DashboardVoiceProcessor(
+                projectManager: projectManager,
+                webSocketService: webSocket,
+                settingsManager: settingsManager
+            )
+            
+            self.speechService = SpeechRecognitionService()
+            self.wakePhraseManager = WakePhraseManager(
+                webSocketService: webSocket,
+                projectManager: projectManager,
+                voiceProcessor: voiceProcessor
+            )
+            self.globalVoice = GlobalVoiceManager(
+                webSocketService: webSocket,
+                projectManager: projectManager,
+                settingsManager: settingsManager
+            )
+            self.permissionManager = VoicePermissionManager()
+        } else {
+            self.speechService = nil
+            self.wakePhraseManager = nil
+            self.globalVoice = nil
+            self.permissionManager = nil
+        }
+    }
+}
+
 @available(iOS 18.0, macOS 14.0, *)
 struct DashboardTabView: View {
     @StateObject private var webSocketService = WebSocketService.shared
     @StateObject private var projectManager = ProjectManager()
-    @StateObject private var speechService: SpeechRecognitionService
+    @StateObject private var voiceContainer: VoiceServiceContainer
     @StateObject private var taskService = TaskService()
-    @StateObject private var wakePhraseManager: WakePhraseManager
-    @StateObject private var permissionManager = VoicePermissionManager()
-    @StateObject private var globalVoice: GlobalVoiceManager
     // Conditional service initialization based on configuration
     private var unifiedVoice: UnifiedVoiceService? {
         guard AppConfiguration.shared.isVoiceEnabled else { return nil }
@@ -25,25 +59,16 @@ struct DashboardTabView: View {
         let webSocket = WebSocketService.shared
         let projectMgr = ProjectManager()
         let settingsMgr = SettingsManager.shared
-        let voiceProcessor = DashboardVoiceProcessor(
-            projectManager: projectMgr, 
-            webSocketService: webSocket, 
-            settingsManager: settingsMgr
-        )
         
         self._webSocketService = StateObject(wrappedValue: webSocket)
         self._projectManager = StateObject(wrappedValue: projectMgr)
-        self._speechService = StateObject(wrappedValue: SpeechRecognitionService())
-        // SettingsManager is injected via environment in iOS 18+
-        self._wakePhraseManager = StateObject(wrappedValue: WakePhraseManager(
-            webSocketService: webSocket,
+        
+        // Initialize voice container with conditional voice services
+        self._voiceContainer = StateObject(wrappedValue: VoiceServiceContainer(
+            webSocket: webSocket,
             projectManager: projectMgr,
-            voiceProcessor: voiceProcessor
-        ))
-        self._globalVoice = StateObject(wrappedValue: GlobalVoiceManager(
-            webSocketService: webSocket,
-            projectManager: projectMgr,
-            settingsManager: settingsMgr
+            settingsManager: settingsMgr,
+            isVoiceEnabled: AppConfiguration.shared.isVoiceEnabled
         ))
     }
     
@@ -127,11 +152,14 @@ struct DashboardTabView: View {
                             Label(NavigationCoordinator.Tab.voice.title,
                                   systemImage: NavigationCoordinator.Tab.voice.systemImage)
                             
-                            VoiceStatusBadge(
-                                wakePhraseManager: wakePhraseManager,
-                                speechService: speechService
-                            )
-                            .offset(x: 10, y: -10)
+                            if let wakePhraseManager = voiceContainer.wakePhraseManager,
+                               let speechService = voiceContainer.speechService {
+                                VoiceStatusBadge(
+                                    wakePhraseManager: wakePhraseManager,
+                                    speechService: speechService
+                                )
+                                .offset(x: 10, y: -10)
+                            }
                         }
                     }
                     .tag(NavigationCoordinator.Tab.voice.rawValue)
@@ -143,7 +171,10 @@ struct DashboardTabView: View {
             .animation(PremiumTransitions.easeInOut, value: navigationCoordinator.selectedTab)
             
             // Floating voice indicator (appears on all tabs except Voice tab)
-            if AppConfiguration.shared.isVoiceEnabled {
+            if AppConfiguration.shared.isVoiceEnabled,
+               let wakePhraseManager = voiceContainer.wakePhraseManager,
+               let speechService = voiceContainer.speechService,
+               let permissionManager = voiceContainer.permissionManager {
                 FloatingVoiceIndicator(
                     wakePhraseManager: wakePhraseManager,
                     speechService: speechService,
@@ -153,7 +184,8 @@ struct DashboardTabView: View {
             }
             
             // Global voice command overlay with premium transitions
-            if AppConfiguration.shared.isVoiceEnabled {
+            if AppConfiguration.shared.isVoiceEnabled,
+               let globalVoice = voiceContainer.globalVoice {
                 if let unifiedService = unifiedVoice {
                     // Use UnifiedVoiceService for new voice interface
                     if unifiedService.state.isListening || isProcessingState(unifiedService.state) {
@@ -182,7 +214,10 @@ struct DashboardTabView: View {
             performanceAnalytics.startPerformanceMonitoring()
             
             // Start global voice listening if voice features are enabled and permissions are available
-            if AppConfiguration.shared.isVoiceEnabled && permissionManager.isFullyAuthorized {
+            if AppConfiguration.shared.isVoiceEnabled,
+               let permissionManager = voiceContainer.permissionManager,
+               let globalVoice = voiceContainer.globalVoice,
+               permissionManager.isFullyAuthorized {
                 if let unifiedService = unifiedVoice {
                     Task {
                         do {
@@ -205,7 +240,8 @@ struct DashboardTabView: View {
         }
         .onDisappear {
             // Stop global voice listening when view disappears
-            if AppConfiguration.shared.isVoiceEnabled {
+            if AppConfiguration.shared.isVoiceEnabled,
+               let globalVoice = voiceContainer.globalVoice {
                 if let unifiedService = unifiedVoice {
                     unifiedService.stopListening()
                 } else {
