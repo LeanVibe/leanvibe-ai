@@ -52,11 +52,16 @@ ios_device_connections: Dict[str, Dict] = {}
 @router.get("/status", response_model=CLIStatus)
 async def get_cli_status():
     """Get CLI bridge status and connection information"""
-    from ... import main
     
-    # Get connection statistics
-    connection_info = main.connection_manager.get_connection_info()
-    session_stats = main.session_manager.get_stats()
+    # Get connection statistics from the global objects
+    try:
+        from ...main import connection_manager, session_manager
+        connection_info = connection_manager.get_connection_info()
+        session_stats = session_manager.get_stats()
+    except Exception:
+        # Fallback to basic status if managers not available
+        connection_info = {}
+        session_stats = {"active_sessions": 0}
     
     # Count iOS devices (clients with 'ios' in their user agent or client type)
     ios_devices = 0
@@ -75,10 +80,15 @@ async def get_cli_status():
 @router.get("/monitor")
 async def get_monitoring_data():
     """Get CLI monitoring and performance data"""
-    from ... import main
     
-    session_stats = main.session_manager.get_stats()
-    connection_info = main.connection_manager.get_connection_info()
+    try:
+        from ...main import connection_manager, session_manager
+        session_stats = session_manager.get_stats()
+        connection_info = connection_manager.get_connection_info()
+    except Exception:
+        # Fallback to basic data if managers not available
+        session_stats = {"active_sessions": 0}
+        connection_info = {}
     
     # Calculate basic metrics
     total_connections = len(connection_info)

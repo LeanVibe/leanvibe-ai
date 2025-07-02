@@ -16,7 +16,8 @@ check_docker() {
 start_services() {
     echo "🐳 Starting external services with Docker Compose..."
     
-    # Navigate to project root where docker-compose.yml is located
+    # Save current directory and navigate to project root where docker-compose.yml is located
+    BACKEND_DIR="$(cd "$(dirname "$0")" && pwd)"
     cd "$(dirname "$0")/.."
     
     # Check if Docker Compose file exists
@@ -45,9 +46,10 @@ start_services() {
     
     # Wait for Chroma
     echo "   Checking Chroma..."
-    timeout=60
+    timeout=30
     while [ $timeout -gt 0 ]; do
-        if curl -f http://localhost:8001/api/v1/heartbeat >/dev/null 2>&1; then
+        # Check if Chroma responds (even with deprecation message means it's running)
+        if curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/api/v1/collections | grep -E "(200|410)" >/dev/null 2>&1; then
             echo "   ✅ Chroma is ready"
             break
         fi
@@ -68,6 +70,9 @@ start_services() {
     done
     
     echo "🎉 All services are ready!"
+    
+    # Return to backend directory
+    cd "$BACKEND_DIR"
 }
 
 # Check if --skip-services flag is provided
@@ -85,8 +90,9 @@ if [ "$SKIP_SERVICES" = false ]; then
     start_services
 fi
 
-# Navigate back to backend directory
-cd "$(dirname "$0")"
+# Ensure we're in the backend directory for dependency management
+BACKEND_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$BACKEND_DIR"
 
 # Check if uv is installed
 if ! command -v uv &> /dev/null; then
