@@ -83,7 +83,7 @@ class SpeechRecognitionService: NSObject, ObservableObject {
                 case .success:
                     await self.setupRecognitionRequest()
                     self.isListening = true
-                    self.startTimers()
+                    self.startTimersCompat()
                     self.setupAudioBufferSubscription()
                 case .failure(let error):
                     self.recognitionState = .error(error.localizedDescription)
@@ -115,6 +115,7 @@ class SpeechRecognitionService: NSObject, ObservableObject {
         }
     }
     
+    @available(iOS 16.0, macOS 13.0, *)
     private func startTimers() {
         // Silence detection using modern async Task.sleep
         silenceTask = Task { [weak self] in
@@ -128,6 +129,35 @@ class SpeechRecognitionService: NSObject, ObservableObject {
         // Maximum recording duration using modern async Task.sleep
         recordingTimeoutTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(self?.maxRecordingDuration ?? 30.0))
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
+                self?.handleRecordingTimeout()
+            }
+        }
+    }
+    
+    // Compatibility wrapper for iOS 17 support
+    private func startTimersCompat() {
+        if #available(iOS 16.0, macOS 13.0, *) {
+            startTimers()
+        } else {
+            // Fallback implementation for older iOS versions
+            startTimersLegacy()
+        }
+    }
+    
+    private func startTimersLegacy() {
+        // Legacy implementation using DispatchQueue for iOS 15/16 compatibility
+        silenceTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64((self?.silenceTimeout ?? 3.0) * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            await MainActor.run { [weak self] in
+                self?.handleSilenceTimeout()
+            }
+        }
+        
+        recordingTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64((self?.maxRecordingDuration ?? 30.0) * 1_000_000_000))
             guard !Task.isCancelled else { return }
             await MainActor.run { [weak self] in
                 self?.handleRecordingTimeout()

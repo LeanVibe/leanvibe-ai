@@ -160,7 +160,7 @@ class VoiceManagerFactory: ObservableObject {
     private func setupMigrationLogging() {
         #if DEBUG
         appConfiguration.printConfiguration()
-        print("🎤 VoiceManagerFactory: Using \\(isUsingUnifiedService ? "UnifiedVoiceService" : "Legacy Services")")
+        print("🎤 VoiceManagerFactory: Using \(isUsingUnifiedService ? "UnifiedVoiceService" : "Legacy Services")")
         #endif
     }
 }
