@@ -7,7 +7,7 @@ struct RealTimePerformanceDashboard: View {
     @StateObject private var performanceAnalytics = PerformanceAnalytics()
     @StateObject private var batteryManager = BatteryOptimizedManager()
     @StateObject private var memoryManager = OptimizedArchitectureService()
-    @StateObject private var voiceManager = OptimizedVoiceManager()
+    @StateObject private var voiceFactory = VoiceManagerFactory()
     @StateObject private var networkManager = OptimizedWebSocketService()
     @StateObject private var integratedManager: IntegratedPerformanceManager
     
@@ -37,19 +37,19 @@ struct RealTimePerformanceDashboard: View {
         let analytics = PerformanceAnalytics()
         let battery = BatteryOptimizedManager()
         let memory = OptimizedArchitectureService()
-        let voice = OptimizedVoiceManager()
+        let voiceFactory = VoiceManagerFactory()
         let network = OptimizedWebSocketService()
         
         self._performanceAnalytics = StateObject(wrappedValue: analytics)
         self._batteryManager = StateObject(wrappedValue: battery)
         self._memoryManager = StateObject(wrappedValue: memory)
-        self._voiceManager = StateObject(wrappedValue: voice)
+        self._voiceFactory = StateObject(wrappedValue: voiceFactory)
         self._networkManager = StateObject(wrappedValue: network)
         self._integratedManager = StateObject(wrappedValue: IntegratedPerformanceManager(
             performanceAnalytics: analytics,
             batteryManager: battery,
             memoryManager: memory,
-            voiceManager: voice,
+            voiceManager: voiceFactory.optimizedVoiceManager ?? OptimizedVoiceManager(),
             networkManager: network
         ))
     }
@@ -189,9 +189,9 @@ struct RealTimePerformanceDashboard: View {
             // Voice Latency Card
             MetricCard(
                 title: "Voice Latency",
-                value: String(format: "%.0f", voiceManager.currentLatency * 1000),
+                value: String(format: "%.0f", (voiceFactory.optimizedVoiceManager?.currentLatency ?? 0.0) * 1000),
                 unit: "ms",
-                color: voiceManager.currentLatency < 0.5 ? .green : .orange,
+                color: (voiceFactory.optimizedVoiceManager?.currentLatency ?? 0.0) < 0.5 ? .green : .orange,
                 trend: .stable,
                 icon: "mic"
             )
@@ -272,9 +272,9 @@ struct RealTimePerformanceDashboard: View {
                     
                     OptimizationStatusRow(
                         title: "Voice Optimization",
-                        isEnabled: voiceManager.isOptimized,
-                        level: voiceManager.isLowLatencyMode ? "Low Latency" : "Standard",
-                        color: voiceManager.isOptimized ? .green : .gray
+                        isEnabled: voiceFactory.optimizedVoiceManager?.isOptimized ?? false,
+                        level: (voiceFactory.optimizedVoiceManager?.isLowLatencyMode ?? false) ? "Low Latency" : "Standard",
+                        color: (voiceFactory.optimizedVoiceManager?.isOptimized ?? false) ? .green : .gray
                     )
                     
                     OptimizationStatusRow(

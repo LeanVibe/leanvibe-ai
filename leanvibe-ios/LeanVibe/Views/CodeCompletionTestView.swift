@@ -4,7 +4,7 @@ import SwiftUI
 struct CodeCompletionTestView: View {
     let webSocketService: WebSocketService
     @StateObject private var codeCompletionService: CodeCompletionService
-    @StateObject private var voiceManager = OptimizedVoiceManager()
+    @StateObject private var voiceFactory = VoiceManagerFactory()
     
     @State private var sampleCode = """
     def hello_world():
