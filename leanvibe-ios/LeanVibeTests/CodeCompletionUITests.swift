@@ -5,7 +5,7 @@ import SwiftUI
 // MARK: - MockWebSocketServiceForUITests for UI Tests
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor
-class MockWebSocketServiceForUITestsForUITests: ObservableObject {
+class MockWebSocketServiceForUITests: ObservableObject {
     @Published var isConnected = false
     @Published var connectionStatus = "Disconnected"
     @Published var lastError: String?
@@ -44,6 +44,7 @@ class MockWebSocketServiceForUITestsForUITests: ObservableObject {
 }
 
 @available(iOS 18.0, macOS 14.0, *)
+@MainActor
 final class CodeCompletionUITests: XCTestCase {
     
     override func setUpWithError() throws {
@@ -71,7 +72,7 @@ final class CodeCompletionUITests: XCTestCase {
         XCTAssertNoThrow(hostingController.loadViewIfNeeded())
     }
     
-    func testCodeCompletionServiceObservableChanges() async {
+    func testCodeCompletionServiceObservableChanges() async throws {
         // Given
         let mockWebSocketService = MockWebSocketServiceForUITests()
         let codeCompletionService = CodeCompletionService(webSocketService: mockWebSocketService)
@@ -246,7 +247,7 @@ final class CodeCompletionUITests: XCTestCase {
     
     // MARK: - Performance UI Tests
     
-    func testUIResponsivenessDuringCodeCompletion() async {
+    func testUIResponsivenessDuringCodeCompletion() async throws {
         // Given
         let mockWebSocketService = MockWebSocketServiceForUITests()
         mockWebSocketService.delay = 1.0 // Simulate network delay

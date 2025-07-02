@@ -9,6 +9,9 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     @Published var connectionStatus = "Disconnected"
     @Published var lastError: String?
     
+    // MARK: - Singleton Pattern
+    static let shared = WebSocketService()
+    
     private var socket: WebSocket?
     private let clientId = "ios-client-\(UUID().uuidString.prefix(8))"
     private let storageManager = ConnectionStorageManager()

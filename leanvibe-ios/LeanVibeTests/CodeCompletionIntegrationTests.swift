@@ -3,6 +3,7 @@ import Combine
 @testable import LeanVibe
 
 @available(iOS 18.0, macOS 14.0, *)
+@MainActor
 final class CodeCompletionIntegrationTests: XCTestCase {
     var webSocketService: WebSocketService!
     var codeCompletionService: CodeCompletionService!
@@ -59,7 +60,7 @@ final class CodeCompletionIntegrationTests: XCTestCase {
     
     // MARK: - WebSocket Integration Tests
     
-    func testWebSocketConnectionFlow() async {
+    func testWebSocketConnectionFlow() async throws {
         // Given
         let expectation = expectation(description: "WebSocket connection flow")
         
@@ -98,7 +99,7 @@ final class CodeCompletionIntegrationTests: XCTestCase {
     
     // MARK: - Error Handling Integration Tests
     
-    func testGlobalErrorManagerIntegration() async {
+    func testGlobalErrorManagerIntegration() async throws {
         // Given
         let errorManager = GlobalErrorManager.shared
         let initialErrorCount = errorManager.errorHistory.count
@@ -120,7 +121,7 @@ final class CodeCompletionIntegrationTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(errorManager.errorHistory.count, initialErrorCount)
     }
     
-    func testRetryManagerIntegration() async {
+    func testRetryManagerIntegration() async throws {
         // Given
         let retryManager = RetryManager.shared
         let initialRetryCount = retryManager.retryHistory.count
@@ -145,7 +146,7 @@ final class CodeCompletionIntegrationTests: XCTestCase {
     
     // MARK: - NotificationCenter Integration Tests
     
-    func testNotificationCenterIntegration() async {
+    func testNotificationCenterIntegration() async throws {
         // Given
         let expectation = expectation(description: "NotificationCenter integration")
         var receivedNotification = false
@@ -247,7 +248,7 @@ final class CodeCompletionIntegrationTests: XCTestCase {
     
     // MARK: - Real-world Scenario Tests
     
-    func testCompleteCodeCompletionWorkflow() async {
+    func testCompleteCodeCompletionWorkflow() async throws {
         // Given - simulate a real user workflow
         let testCode = """
         import Foundation
@@ -281,7 +282,7 @@ final class CodeCompletionIntegrationTests: XCTestCase {
         }
     }
     
-    func testMultipleLanguageSupport() async {
+    func testMultipleLanguageSupport() async throws {
         // Given - different programming languages
         let testCases = [
             ("swift", "import Foundation\nclass Test {}"),
@@ -306,7 +307,7 @@ final class CodeCompletionIntegrationTests: XCTestCase {
     
     // MARK: - Performance Integration Tests
     
-    func testMemoryUsageDuringOperations() async {
+    func testMemoryUsageDuringOperations() async throws {
         // Given
         let initialMemory = getMemoryUsage()
         
