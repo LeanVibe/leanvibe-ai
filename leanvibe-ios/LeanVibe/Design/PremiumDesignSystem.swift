@@ -1,17 +1,16 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - Premium Design System
 
 @available(iOS 15.0, macOS 12.0, *)
 struct PremiumDesignSystem {
     // MARK: - Material Design
-    @available(iOS 15.0, macOS 12.0, *)
     static let glassMaterial = Material.ultraThinMaterial
-    @available(iOS 15.0, macOS 12.0, *)
     static let thickGlassMaterial = Material.thickMaterial
-    @available(iOS 13.0, macOS 10.15, *)
     static let cardShadow = Color.black.opacity(0.1)
-    @available(iOS 13.0, macOS 10.15, *)
     static let elevatedShadow = Color.black.opacity(0.2)
     
     // MARK: - Shadow Definitions
@@ -60,14 +59,25 @@ struct PremiumDesignSystem {
         static let info = Color.blue
         
         // Neutral Colors
-        static let background = Color(.systemBackground)
-        static let secondaryBackground = Color(.secondarySystemBackground)
-        static let tertiaryBackground = Color(.tertiarySystemBackground)
+        #if canImport(UIKit)
+        static let background = Color(UIColor.systemBackground)
+        static let secondaryBackground = Color(UIColor.secondarySystemBackground)
+        static let tertiaryBackground = Color(UIColor.tertiarySystemBackground)
         
         // Text Colors
-        static let primaryText = Color(.label)
-        static let secondaryText = Color(.secondaryLabel)
-        static let tertiaryText = Color(.tertiaryLabel)
+        static let primaryText = Color(UIColor.label)
+        static let secondaryText = Color(UIColor.secondaryLabel)
+        static let tertiaryText = Color(UIColor.tertiaryLabel)
+        #else
+        static let background = Color.white
+        static let secondaryBackground = Color.gray.opacity(0.1)
+        static let tertiaryBackground = Color.gray.opacity(0.05)
+        
+        // Text Colors
+        static let primaryText = Color.primary
+        static let secondaryText = Color.secondary
+        static let tertiaryText = Color.secondary.opacity(0.7)
+        #endif
         
         // Glassmorphism Colors
         static let glassBackground = Color.white.opacity(0.1)
@@ -98,6 +108,7 @@ struct PremiumDesignSystem {
 
 // MARK: - Premium Card Component
 
+@available(iOS 18.0, macOS 14.0, *)
 struct PremiumCard<Content: View>: View {
     let content: Content
     let style: CardStyle
@@ -186,6 +197,7 @@ struct PremiumCard<Content: View>: View {
 
 // MARK: - Premium Button Styles
 
+@available(iOS 18.0, macOS 14.0, *)
 struct PremiumButtonStyle: ButtonStyle {
     let variant: ButtonVariant
     
@@ -259,18 +271,22 @@ struct PremiumButtonStyle: ButtonStyle {
 
 @MainActor
 class PremiumHaptics {
+    #if canImport(UIKit) && !os(macOS)
     private static let lightImpactGenerator = UIImpactFeedbackGenerator(style: .light)
     private static let mediumImpactGenerator = UIImpactFeedbackGenerator(style: .medium)
     private static let heavyImpactGenerator = UIImpactFeedbackGenerator(style: .heavy)
     private static let notificationGenerator = UINotificationFeedbackGenerator()
     private static let selectionGenerator = UISelectionFeedbackGenerator()
+    #endif
     
     static func prepareGenerators() {
+        #if canImport(UIKit) && !os(macOS)
         lightImpactGenerator.prepare()
         mediumImpactGenerator.prepare()
         heavyImpactGenerator.prepare()
         notificationGenerator.prepare()
         selectionGenerator.prepare()
+        #endif
     }
     
     // MARK: - Basic Haptics
@@ -402,6 +418,7 @@ class PremiumHaptics {
 
 // MARK: - Premium Transitions
 
+@available(iOS 18.0, macOS 14.0, *)
 struct PremiumTransitions {
     static let spring = Animation.spring(
         response: 0.6,
@@ -450,6 +467,7 @@ struct PremiumTransitions {
 
 // MARK: - View Extensions for Premium Design
 
+@available(iOS 18.0, macOS 14.0, *)
 extension View {
     func premiumCard(style: PremiumCard<AnyView>.CardStyle = .standard) -> some View {
         PremiumCard(style: style) {
@@ -502,6 +520,7 @@ struct Shadow {
 
 // MARK: - Premium Loading States
 
+@available(iOS 18.0, macOS 14.0, *)
 struct PremiumLoadingView: View {
     @State private var isAnimating = false
     let size: CGFloat
@@ -534,6 +553,7 @@ struct PremiumLoadingView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct PremiumProgressBar: View {
     let progress: Double
     let color: Color

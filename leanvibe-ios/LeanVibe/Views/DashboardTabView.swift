@@ -147,7 +147,7 @@ struct DashboardTabView: View {
             // Global voice command overlay with premium transitions
             if AppConfiguration.shared.useUnifiedVoiceService {
                 // Use UnifiedVoiceService for new voice interface
-                if unifiedVoice.state == .listening || unifiedVoice.state == .processing {
+                if unifiedVoice.state.isListening || isProcessingState(unifiedVoice.state) {
                     // TODO: Create UnifiedVoiceCommandView - using legacy view for now
                     GlobalVoiceCommandView(globalVoice: globalVoice)
                         .transition(PremiumTransitions.modalTransition)
@@ -199,6 +199,16 @@ struct DashboardTabView: View {
         .onOpenURL { url in
             navigationCoordinator.handleURL(url)
         }
+    }
+    
+    // MARK: - Helper Methods
+    
+    /// Check if the voice state is in processing mode
+    private func isProcessingState(_ state: VoiceState) -> Bool {
+        if case .processing = state {
+            return true
+        }
+        return false
     }
 }
 
