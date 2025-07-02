@@ -8,7 +8,7 @@ struct DashboardTabView: View {
     @StateObject private var taskService = TaskService()
     @StateObject private var wakePhraseManager: WakePhraseManager
     @StateObject private var permissionManager = VoicePermissionManager()
-    @StateObject private var voiceFactory: VoiceManagerFactory
+    @StateObject private var globalVoice: GlobalVoiceManager
     @StateObject private var navigationCoordinator = NavigationCoordinator()
     @StateObject private var performanceAnalytics = PerformanceAnalytics()
     @StateObject private var batteryManager = BatteryOptimizedManager()
@@ -35,7 +35,7 @@ struct DashboardTabView: View {
             projectManager: projectMgr,
             voiceProcessor: voiceProcessor
         ))
-        self._voiceFactory = StateObject(wrappedValue: VoiceManagerFactory(
+        self._globalVoice = StateObject(wrappedValue: GlobalVoiceManager(
             webSocketService: webSocket,
             projectManager: projectMgr,
             settingsManager: settingsMgr
@@ -144,7 +144,7 @@ struct DashboardTabView: View {
             )
             
             // Global voice command overlay with premium transitions
-            if let globalVoice = voiceFactory.globalVoiceManager, globalVoice.isVoiceCommandActive {
+            if globalVoice.isVoiceCommandActive {
                 GlobalVoiceCommandView(globalVoice: globalVoice)
                     .transition(PremiumTransitions.modalTransition)
                     .zIndex(999)
@@ -161,7 +161,7 @@ struct DashboardTabView: View {
             
             // Start global voice listening if permissions are available
             if permissionManager.isFullyAuthorized {
-                voiceFactory.globalVoiceManager?.startGlobalVoiceListening()
+                globalVoice.startGlobalVoiceListening()
             }
             
             // Premium haptic feedback for app launch
@@ -169,7 +169,7 @@ struct DashboardTabView: View {
         }
         .onDisappear {
             // Stop global voice listening when view disappears
-            voiceFactory.globalVoiceManager?.stopGlobalVoiceListening()
+            globalVoice.stopGlobalVoiceListening()
             
             // Stop performance monitoring
             performanceAnalytics.stopPerformanceMonitoring()

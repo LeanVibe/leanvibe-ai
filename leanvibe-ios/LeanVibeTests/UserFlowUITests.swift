@@ -2,7 +2,6 @@ import XCTest
 @testable import LeanVibe
 
 @available(iOS 18.0, macOS 14.0, *)
-@MainActor
 final class UserFlowUITests: XCTestCase {
     
     private var app: XCUIApplication!
