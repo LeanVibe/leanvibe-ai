@@ -25,6 +25,7 @@ struct TutorialOverlay: ViewModifier {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 extension View {
     func tutorialOverlay(_ tutorial: Tutorial) -> some View {
         modifier(TutorialOverlay(tutorial: tutorial))

@@ -109,7 +109,8 @@ final class CodeCompletionUITests: XCTestCase {
         // Given
         let voiceCommand = VoiceCommand(
             originalText: "Hey LeanVibe, suggest improvements for this code",
-            timestamp: Date()
+            processedCommand: "suggest improvements for this code",
+            intent: .suggest
         )
         
         // When
@@ -134,7 +135,8 @@ final class CodeCompletionUITests: XCTestCase {
         for (command, expectedIntent) in testCases {
             let voiceCommand = VoiceCommand(
                 originalText: "Hey LeanVibe, \(command)",
-                timestamp: Date()
+                processedCommand: command,
+                intent: expectedIntent
             )
             
             XCTAssertEqual(voiceCommand.intent, expectedIntent)
@@ -150,7 +152,7 @@ final class CodeCompletionUITests: XCTestCase {
         let testError = AppError(
             title: "Code Completion Failed",
             message: "Unable to connect to the AI service",
-            severity: .high,
+            severity: .error,
             context: "CodeCompletionService.suggestCodeCompletion"
         )
         

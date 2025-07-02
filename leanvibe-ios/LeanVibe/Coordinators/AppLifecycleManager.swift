@@ -1,6 +1,9 @@
 import SwiftUI
 import Foundation
 import Combine
+#if canImport(UIKit)
+import UIKit
+#endif
 
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor
@@ -62,6 +65,7 @@ class AppLifecycleManager: ObservableObject {
     
     private func setupAppLifecycleObservers() {
         // Observe app lifecycle notifications
+        #if canImport(UIKit)
         NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
             .sink { [weak self] _ in
                 self?.handleForegroundTransition()
@@ -73,12 +77,15 @@ class AppLifecycleManager: ObservableObject {
                 self?.handleBackgroundTransition()
             }
             .store(in: &cancellables)
+        #endif
         
+        #if canImport(UIKit)
         NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)
             .sink { [weak self] _ in
                 self?.handleAppTermination()
             }
             .store(in: &cancellables)
+        #endif
     }
     
     private func startSessionTracking() {

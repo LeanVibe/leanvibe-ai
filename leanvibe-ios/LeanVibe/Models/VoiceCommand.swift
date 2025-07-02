@@ -28,6 +28,16 @@ struct VoiceCommand: Identifiable, Codable, Sendable {
         self.timestamp = Date()
         self.processingTime = processingTime
     }
+    
+    /// Convenience property to check if this is a code completion related command
+    var isCodeCompletionIntent: Bool {
+        switch intent {
+        case .codeCompletion, .suggest, .explain, .refactor, .debug, .optimize:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 enum CommandIntent: String, CaseIterable, Codable, Sendable {
