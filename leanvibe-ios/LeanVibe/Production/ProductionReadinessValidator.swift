@@ -3,6 +3,7 @@ import Combine
 
 // MARK: - Production Readiness Validator
 
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class ProductionReadinessValidator: ObservableObject {
     @Published var readinessScore: Double = 0

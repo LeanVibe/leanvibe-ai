@@ -2,7 +2,7 @@ import SwiftUI
 import Foundation
 import Combine
 
-@available(macOS 10.15, iOS 13.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 @available(*, deprecated, message: "GlobalVoiceManager is deprecated. Use VoiceManagerFactory with UnifiedVoiceService instead. See VoiceServiceDeprecationPlan for migration guidance.")
 @MainActor
 class GlobalVoiceManager: ObservableObject {

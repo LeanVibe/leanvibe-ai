@@ -26,7 +26,7 @@ struct ContentView: View {
                     connectionButton
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     HStack {
                         Button("Code Test") {
                             showingCodeCompletion = true
@@ -356,7 +356,7 @@ struct ConnectionSettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Done") {
                         dismiss()
                     }

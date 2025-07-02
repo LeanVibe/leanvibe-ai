@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Premium Transition Extensions
 
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 extension View {
     // MARK: - Page Transitions
     

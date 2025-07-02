@@ -4,6 +4,7 @@ import XCTest
 
 // MARK: - Performance Validation Suite
 
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class PerformanceValidationSuite: ObservableObject {
     @Published var validationResults: [ValidationResult] = []

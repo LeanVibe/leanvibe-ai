@@ -357,6 +357,7 @@ struct ProjectStatusBadge: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct MetricItem: View {
     let icon: String
     let value: String
@@ -383,6 +384,7 @@ struct MetricItem: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct HealthScoreBar: View {
     let score: Double
     
@@ -404,7 +406,7 @@ struct HealthScoreBar: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(Color(.systemGray5))
+                        .fill(Color.gray.opacity(0.2))
                         .frame(height: 4)
                         .cornerRadius(2)
                     
@@ -426,6 +428,7 @@ struct HealthScoreBar: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct QuickActionCard: View {
     let title: String
     let icon: String
@@ -446,13 +449,14 @@ struct QuickActionCard: View {
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(Color(.systemGray6))
+            .background(Color.gray.opacity(0.1))
             .cornerRadius(12)
         }
         .buttonStyle(PlainButtonStyle())
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ProjectDashboardView_Previews: PreviewProvider {
     static var previews: some View {
         ProjectDashboardView(

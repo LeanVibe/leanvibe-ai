@@ -43,7 +43,9 @@ struct MetricsDashboardView: View {
                 }
             }
             .navigationTitle("")
-            .navigationBarHidden(true)
+            #if canImport(UIKit)
+            .toolbar(.hidden, for: .navigationBar)
+            #endif
             .task {
                 await viewModel.fetchMetrics()
                 await viewModel.fetchDecisions()
@@ -52,6 +54,7 @@ struct MetricsDashboardView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct MetricSummaryCard: View {
     let title: String
     let value: String

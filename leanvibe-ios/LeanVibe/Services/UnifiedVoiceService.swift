@@ -5,7 +5,7 @@ import SwiftUI
 
 /// Unified voice service that consolidates all voice-related functionality
 /// This replaces the fragmented VoiceManager, GlobalVoiceManager, and related services
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class UnifiedVoiceService: ObservableObject {
     

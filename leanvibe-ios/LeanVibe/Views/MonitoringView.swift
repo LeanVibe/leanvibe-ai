@@ -177,6 +177,7 @@ struct MonitoringView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct MonitoringMetricCard: View {
     let title: String
     let value: String

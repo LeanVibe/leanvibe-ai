@@ -3,6 +3,7 @@ import AVFoundation
 import Speech
 import Accelerate
 
+@available(iOS 18.0, macOS 14.0, *)
 @available(*, deprecated, message: "OptimizedVoiceManager is deprecated. Use VoiceManagerFactory with UnifiedVoiceService instead. See VoiceServiceDeprecationPlan for migration guidance.")
 @MainActor
 class OptimizedVoiceManager: ObservableObject {

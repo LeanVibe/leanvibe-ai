@@ -114,6 +114,7 @@ struct AppError: Identifiable, Equatable {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 enum ErrorSeverity {
     case info
     case warning

@@ -136,6 +136,7 @@ class RetryOperation: ObservableObject, Identifiable {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 enum RetryStatus {
     case pending
     case inProgress

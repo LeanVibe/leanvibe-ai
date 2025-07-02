@@ -4,6 +4,7 @@ import AVFoundation
 import Combine
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 @available(*, deprecated, message: "VoiceManager is deprecated. Use VoiceManagerFactory with UnifiedVoiceService instead. See VoiceServiceDeprecationPlan for migration guidance.")
 @MainActor
 class VoiceManager: ObservableObject {

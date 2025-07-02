@@ -25,7 +25,7 @@ struct DecisionLogView: View {
 
             TextField("Search decisions", text: $searchText)
                 .padding(7)
-                .background(Color(.systemGray6))
+                .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
                 .padding(.horizontal)
 
