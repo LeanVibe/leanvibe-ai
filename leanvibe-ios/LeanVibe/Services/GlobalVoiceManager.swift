@@ -73,6 +73,11 @@ class GlobalVoiceManager: ObservableObject {
     }
     
     func startGlobalVoiceListening() {
+        guard AppConfiguration.shared.isVoiceEnabled else {
+            print("Voice features disabled")
+            return
+        }
+        
         guard permissionManager.isFullyAuthorized else {
             print("Voice permissions not granted")
             return
@@ -82,10 +87,18 @@ class GlobalVoiceManager: ObservableObject {
     }
     
     func stopGlobalVoiceListening() {
+        guard AppConfiguration.shared.isVoiceEnabled else {
+            return
+        }
+        
         wakePhraseManager.stopWakeListening()
     }
     
     func triggerVoiceCommand() {
+        guard AppConfiguration.shared.isVoiceEnabled else {
+            return
+        }
+        
         isVoiceCommandActive = true
         voiceCommandText = ""
         

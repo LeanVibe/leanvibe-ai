@@ -11,7 +11,8 @@ struct DashboardTabView: View {
     @StateObject private var globalVoice: GlobalVoiceManager
     // Conditional service initialization based on configuration
     private var unifiedVoice: UnifiedVoiceService? {
-        AppConfiguration.shared.useUnifiedVoiceService ? UnifiedVoiceService.shared : nil
+        guard AppConfiguration.shared.isVoiceEnabled else { return nil }
+        return AppConfiguration.shared.useUnifiedVoiceService ? UnifiedVoiceService.shared : nil
     }
     @StateObject private var navigationCoordinator = NavigationCoordinator()
     @StateObject private var performanceAnalytics = PerformanceAnalytics()
@@ -114,54 +115,60 @@ struct DashboardTabView: View {
                 .tag(NavigationCoordinator.Tab.settings.rawValue)
                 .hapticFeedback(.navigation)
                 
-                NavigationStack(path: $navigationCoordinator.navigationPath) {
-                    VoiceTabView(
-                        webSocketService: webSocketService,
-                        projectManager: projectManager
-                    )
-                }
-                .tabItem {
-                    ZStack {
-                        Label(NavigationCoordinator.Tab.voice.title,
-                              systemImage: NavigationCoordinator.Tab.voice.systemImage)
-                        
-                        VoiceStatusBadge(
-                            wakePhraseManager: wakePhraseManager,
-                            speechService: speechService
+                if AppConfiguration.shared.isVoiceEnabled {
+                    NavigationStack(path: $navigationCoordinator.navigationPath) {
+                        VoiceTabView(
+                            webSocketService: webSocketService,
+                            projectManager: projectManager
                         )
-                        .offset(x: 10, y: -10)
                     }
+                    .tabItem {
+                        ZStack {
+                            Label(NavigationCoordinator.Tab.voice.title,
+                                  systemImage: NavigationCoordinator.Tab.voice.systemImage)
+                            
+                            VoiceStatusBadge(
+                                wakePhraseManager: wakePhraseManager,
+                                speechService: speechService
+                            )
+                            .offset(x: 10, y: -10)
+                        }
+                    }
+                    .tag(NavigationCoordinator.Tab.voice.rawValue)
+                    .hapticFeedback(.navigation)
                 }
-                .tag(NavigationCoordinator.Tab.voice.rawValue)
-                .hapticFeedback(.navigation)
                 
             }
             .premiumShadow(PremiumDesignSystem.Shadows.elevated)
             .animation(PremiumTransitions.easeInOut, value: navigationCoordinator.selectedTab)
             
             // Floating voice indicator (appears on all tabs except Voice tab)
-            FloatingVoiceIndicator(
-                wakePhraseManager: wakePhraseManager,
-                speechService: speechService,
-                permissionManager: permissionManager,
-                webSocketService: webSocketService
-            )
+            if AppConfiguration.shared.isVoiceEnabled {
+                FloatingVoiceIndicator(
+                    wakePhraseManager: wakePhraseManager,
+                    speechService: speechService,
+                    permissionManager: permissionManager,
+                    webSocketService: webSocketService
+                )
+            }
             
             // Global voice command overlay with premium transitions
-            if let unifiedService = unifiedVoice {
-                // Use UnifiedVoiceService for new voice interface
-                if unifiedService.state.isListening || isProcessingState(unifiedService.state) {
-                    // TODO: Create UnifiedVoiceCommandView - using legacy view for now
-                    GlobalVoiceCommandView(globalVoice: globalVoice)
-                        .transition(PremiumTransitions.modalTransition)
-                        .zIndex(999)
-                }
-            } else {
-                // Fallback to legacy GlobalVoiceManager
-                if globalVoice.isVoiceCommandActive {
-                    GlobalVoiceCommandView(globalVoice: globalVoice)
-                        .transition(PremiumTransitions.modalTransition)
-                        .zIndex(999)
+            if AppConfiguration.shared.isVoiceEnabled {
+                if let unifiedService = unifiedVoice {
+                    // Use UnifiedVoiceService for new voice interface
+                    if unifiedService.state.isListening || isProcessingState(unifiedService.state) {
+                        // TODO: Create UnifiedVoiceCommandView - using legacy view for now
+                        GlobalVoiceCommandView(globalVoice: globalVoice)
+                            .transition(PremiumTransitions.modalTransition)
+                            .zIndex(999)
+                    }
+                } else {
+                    // Fallback to legacy GlobalVoiceManager
+                    if globalVoice.isVoiceCommandActive {
+                        GlobalVoiceCommandView(globalVoice: globalVoice)
+                            .transition(PremiumTransitions.modalTransition)
+                            .zIndex(999)
+                    }
                 }
             }
         }                                                                                                                                                                     
@@ -174,8 +181,8 @@ struct DashboardTabView: View {
             // Start performance monitoring
             performanceAnalytics.startPerformanceMonitoring()
             
-            // Start global voice listening if permissions are available
-            if permissionManager.isFullyAuthorized {
+            // Start global voice listening if voice features are enabled and permissions are available
+            if AppConfiguration.shared.isVoiceEnabled && permissionManager.isFullyAuthorized {
                 if let unifiedService = unifiedVoice {
                     Task {
                         do {
@@ -198,10 +205,12 @@ struct DashboardTabView: View {
         }
         .onDisappear {
             // Stop global voice listening when view disappears
-            if let unifiedService = unifiedVoice {
-                unifiedService.stopListening()
-            } else {
-                globalVoice.stopGlobalVoiceListening()
+            if AppConfiguration.shared.isVoiceEnabled {
+                if let unifiedService = unifiedVoice {
+                    unifiedService.stopListening()
+                } else {
+                    globalVoice.stopGlobalVoiceListening()
+                }
             }
             
             // Stop performance monitoring

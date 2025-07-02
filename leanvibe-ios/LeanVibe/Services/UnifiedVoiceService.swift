@@ -76,6 +76,11 @@ class UnifiedVoiceService: ObservableObject {
     
     /// Start voice listening in the specified mode
     func startListening(mode: ListeningMode = .pushToTalk) async {
+        guard AppConfiguration.shared.isVoiceEnabled else {
+            print("🎤 UnifiedVoiceService: Voice features disabled")
+            return
+        }
+        
         guard state.canStartListening else {
             print("🎤 UnifiedVoiceService: Cannot start listening in current state: \(state)")
             return

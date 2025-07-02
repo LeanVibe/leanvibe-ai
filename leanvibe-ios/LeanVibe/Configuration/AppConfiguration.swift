@@ -71,8 +71,9 @@ struct AppConfiguration {
     }
     
     /// Whether to enable voice features
+    /// DISABLED: Voice features temporarily disabled due to stability issues
     var isVoiceEnabled: Bool {
-        return Bundle.main.object(forInfoDictionaryKey: "VOICE_FEATURES_ENABLED") as? Bool ?? true
+        return Bundle.main.object(forInfoDictionaryKey: "VOICE_FEATURES_ENABLED") as? Bool ?? false
     }
     
     /// Whether to enable code completion features
