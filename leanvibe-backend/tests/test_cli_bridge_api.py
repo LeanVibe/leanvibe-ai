@@ -42,6 +42,15 @@ def mock_connection_manager():
     }
     mock_manager.broadcast_to_ios_devices = AsyncMock(return_value=1)
     mock_manager.send_to_client = AsyncMock(return_value=True)
+    mock_manager.get_ios_devices.return_value = [
+        {
+            "client_id": "ios_device_1",
+            "client_type": "ios",
+            "connected_at": datetime.now().isoformat(),
+            "user_agent": "LeanVibe/1.0 (iPhone; iOS 17.0)",
+            "is_connected": True
+        }
+    ]
     return mock_manager
 
 
@@ -69,6 +78,7 @@ class TestCLIBridgeStatus:
                                   mock_connection_manager, mock_session_manager):
         """Test CLI status with active connections"""
         mock_conn_mgr.get_connection_info.return_value = mock_connection_manager.get_connection_info()
+        mock_conn_mgr.get_ios_devices.return_value = mock_connection_manager.get_ios_devices()
         mock_session_mgr.get_stats.return_value = mock_session_manager.get_stats()
         
         # Add active CLI bridge connection
@@ -92,7 +102,11 @@ class TestCLIBridgeStatus:
                                 mock_connection_manager, mock_session_manager):
         """Test CLI status with no active CLI connections"""
         mock_conn_mgr.get_connection_info.return_value = mock_connection_manager.get_connection_info()
+        mock_conn_mgr.get_ios_devices.return_value = mock_connection_manager.get_ios_devices()
         mock_session_mgr.get_stats.return_value = mock_session_manager.get_stats()
+        
+        # Ensure CLI bridge connections are clear
+        cli_bridge_connections.clear()
         
         response = test_client.get("/cli/status")
         
@@ -183,6 +197,7 @@ class TestDeviceManagement:
     def test_list_connected_devices(self, mock_conn_mgr, test_client, mock_connection_manager):
         """Test listing connected iOS devices"""
         mock_conn_mgr.get_connection_info.return_value = mock_connection_manager.get_connection_info()
+        mock_conn_mgr.get_ios_devices.return_value = mock_connection_manager.get_ios_devices()
         
         response = test_client.get("/cli/devices")
         

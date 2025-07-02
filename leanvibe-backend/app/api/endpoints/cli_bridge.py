@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
 from ...core.connection_manager import ConnectionManager
-from ...models.event_models import EventData, EventType, EventPriority, NotificationChannel
+from ...models.event_models import AgentEvent, EventType, EventPriority, NotificationChannel
 
 logger = logging.getLogger(__name__)
 
@@ -53,29 +53,46 @@ ios_device_connections: Dict[str, Dict] = {}
 async def get_cli_status():
     """Get CLI bridge status and connection information"""
     
-    # Get connection statistics from the global objects
     try:
         from ...main import connection_manager, session_manager
+        
+        # Get real connection and session data
         connection_info = connection_manager.get_connection_info()
         session_stats = session_manager.get_stats()
-    except Exception:
+        
+        # Get iOS devices using dedicated method
+        ios_devices = connection_manager.get_ios_devices()
+        ios_device_count = len(ios_devices)
+        
+        # Determine status based on CLI bridge connections (not total connections)
+        active_sessions = session_stats.get('active_sessions', 0)
+        cli_connections = len(cli_bridge_connections)
+        
+        if cli_connections > 0:
+            status = "active"
+            message = f"CLI bridge operational with {cli_connections} CLI connections"
+        else:
+            status = "idle"
+            message = "CLI bridge operational, no active connections"
+        
+        return CLIStatus(
+            status=status,
+            message=message,
+            active_sessions=active_sessions,
+            connected_ios_devices=ios_device_count,
+            last_activity=datetime.now().isoformat()
+        )
+        
+    except Exception as e:
+        logger.warning(f"Could not access connection/session managers: {e}")
         # Fallback to basic status if managers not available
-        connection_info = {}
-        session_stats = {"active_sessions": 0}
-    
-    # Count iOS devices (clients with 'ios' in their user agent or client type)
-    ios_devices = 0
-    for client_id, info in connection_info.items():
-        if 'ios' in info.get('client_type', '').lower() or 'iphone' in info.get('user_agent', '').lower():
-            ios_devices += 1
-    
-    return CLIStatus(
-        status="active" if len(cli_bridge_connections) > 0 else "idle",
-        message=f"CLI bridge operational with {len(cli_bridge_connections)} CLI connections",
-        active_sessions=session_stats.get('active_sessions', 0),
-        connected_ios_devices=ios_devices,
-        last_activity=datetime.now().isoformat()
-    )
+        return CLIStatus(
+            status="operational",
+            message="CLI bridge operational (limited monitoring)",
+            active_sessions=0,
+            connected_ios_devices=0,
+            last_activity=datetime.now().isoformat()
+        )
 
 @router.get("/monitor")
 async def get_monitoring_data():
@@ -123,13 +140,15 @@ async def execute_cli_command(command: CLICommand):
     
     try:
         # Create event for command execution
-        command_event = EventData(
+        command_event = AgentEvent(
             event_id=f"cli_cmd_{int(asyncio.get_event_loop().time() * 1000)}",
-            event_type=EventType.task_created,
-            priority=EventPriority.medium,
-            channel=NotificationChannel.tasks,
+            event_type=EventType.AGENT_STARTED,
+            priority=EventPriority.MEDIUM,
+            channel=NotificationChannel.AGENT,
             timestamp=datetime.now(),
             source="cli_bridge",
+            session_id="cli_bridge",
+            query=f"{command.command} {' '.join(command.args or [])}",
             data={
                 "command": command.command,
                 "args": command.args,
@@ -154,9 +173,12 @@ async def execute_cli_command(command: CLICommand):
             }
             
             ios_notification_count = await connection_manager.broadcast_to_ios_devices(command_message)
-        except Exception as import_error:
+        except ImportError as import_error:
             logger.warning(f"Could not access streaming/connection services: {import_error}")
             ios_notification_count = 0
+        except Exception as broadcast_error:
+            logger.error(f"Broadcasting failed: {broadcast_error}")
+            raise HTTPException(status_code=500, detail=f"Command execution failed: {str(broadcast_error)}")
         
         return {
             "success": True,
@@ -175,29 +197,39 @@ async def list_connected_devices():
     
     try:
         from ...main import connection_manager
-        connection_info = connection_manager.get_connection_info()
-    except Exception:
-        # Fallback if connection manager not available
-        connection_info = {}
-    
-    devices = []
-    for client_id, info in connection_info.items():
-        if 'ios' in info.get('client_type', '').lower() or 'iphone' in info.get('user_agent', '').lower():
+        
+        # Use dedicated method to get iOS devices
+        ios_devices = connection_manager.get_ios_devices()
+        
+        # Reformat for CLI bridge API consistency
+        formatted_devices = []
+        for device in ios_devices:
             device_info = {
-                "client_id": client_id,
-                "connected_at": info.get('connected_at'),
-                "last_seen": info.get('last_seen'),
-                "device_type": info.get('client_type', 'ios'),
-                "user_agent": info.get('user_agent', ''),
-                "status": "connected"
+                "client_id": device.get('client_id'),
+                "device_type": device.get('client_type', 'ios'),
+                "connected_at": device.get('connected_at'),
+                "last_seen": device.get('connected_at'),  # Using connected_at as last_seen fallback
+                "status": "connected" if device.get('is_connected', False) else "disconnected",
+                "user_agent": device.get('user_agent', ''),
+                "is_active": device.get('is_connected', False)
             }
-            devices.append(device_info)
-    
-    return {
-        "devices": devices,
-        "total_count": len(devices),
-        "timestamp": datetime.now().isoformat()
-    }
+            formatted_devices.append(device_info)
+        
+        return {
+            "devices": formatted_devices,
+            "total_count": len(formatted_devices),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.warning(f"Could not access connection manager: {e}")
+        # Fallback to empty list if manager not available
+        return {
+            "devices": [],
+            "total_count": 0,
+            "error": f"Connection manager not available: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
 
 @router.post("/devices/{device_id}/message")
 async def send_message_to_device(device_id: str, message: dict):
@@ -217,6 +249,9 @@ async def send_message_to_device(device_id: str, message: dict):
         else:
             raise HTTPException(status_code=404, detail="Device not found or disconnected")
             
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         logger.error(f"Error sending message to device {device_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Message delivery failed: {str(e)}")
