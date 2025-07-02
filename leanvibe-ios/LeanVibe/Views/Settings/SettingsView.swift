@@ -29,8 +29,8 @@ struct SettingsView: View {
                 // App Preferences Section
                 appPreferencesSection
                 
-                // Advanced Features Section
-                advancedFeaturesSection
+                // Advanced Features Section - Hidden until features are implemented
+                // advancedFeaturesSection
                 
                 // Support & About Section
                 supportSection
@@ -63,6 +63,8 @@ struct SettingsView: View {
                 )
             }
             
+            // TODO: Implement WakePhraseSettingsView - currently placeholder
+            /*
             NavigationLink(destination: WakePhraseSettingsView()) {
                 SettingsRow(
                     icon: "waveform",
@@ -71,7 +73,10 @@ struct SettingsView: View {
                     subtitle: "\"\(settingsManager.voice.wakeWord)\""
                 )
             }
+            */
             
+            // TODO: Implement SpeechSettingsView - currently placeholder
+            /*
             NavigationLink(destination: SpeechSettingsView()) {
                 SettingsRow(
                     icon: "bubble.left.and.bubble.right",
@@ -80,7 +85,10 @@ struct SettingsView: View {
                     subtitle: "Default"
                 )
             }
+            */
             
+            // TODO: Implement VoiceTestView - currently placeholder
+            /*
             NavigationLink(destination: VoiceTestView()) {
                 SettingsRow(
                     icon: "testtube.2",
@@ -89,6 +97,7 @@ struct SettingsView: View {
                     subtitle: "Test voice recognition"
                 )
             }
+            */
         }
     }
     
@@ -103,6 +112,8 @@ struct SettingsView: View {
                 )
             }
             
+            // TODO: Implement TaskNotificationSettingsView - currently placeholder
+            /*
             NavigationLink(destination: TaskNotificationSettingsView()) {
                 SettingsRow(
                     icon: "bell.badge",
@@ -111,7 +122,10 @@ struct SettingsView: View {
                     subtitle: "Enabled"
                 )
             }
+            */
             
+            // TODO: Implement MetricsSettingsView - currently placeholder
+            /*
             NavigationLink(destination: MetricsSettingsView()) {
                 SettingsRow(
                     icon: "chart.bar.fill",
@@ -120,7 +134,10 @@ struct SettingsView: View {
                     subtitle: "Visible"
                 )
             }
+            */
             
+            // TODO: Implement TaskCreationSettingsView - currently placeholder
+            /*
             NavigationLink(destination: TaskCreationSettingsView()) {
                 SettingsRow(
                     icon: "plus.square.fill",
@@ -129,6 +146,7 @@ struct SettingsView: View {
                     subtitle: "Default settings & quick actions"
                 )
             }
+            */
         }
     }
     
@@ -143,6 +161,8 @@ struct SettingsView: View {
                 )
             }
             
+            // TODO: Implement SyncSettingsView - currently placeholder
+            /*
             NavigationLink(destination: SyncSettingsView()) {
                 SettingsRow(
                     icon: "arrow.triangle.2.circlepath",
@@ -151,7 +171,10 @@ struct SettingsView: View {
                     subtitle: "Background sync on"
                 )
             }
+            */
             
+            // TODO: Implement OfflineSettingsView - currently placeholder
+            /*
             NavigationLink(destination: OfflineSettingsView()) {
                 SettingsRow(
                     icon: "wifi.slash",
@@ -160,7 +183,10 @@ struct SettingsView: View {
                     subtitle: "Enabled"
                 )
             }
+            */
             
+            // TODO: Implement NetworkDiagnosticsView - currently placeholder
+            /*
             NavigationLink(destination: NetworkDiagnosticsView()) {
                 SettingsRow(
                     icon: "network",
@@ -169,11 +195,14 @@ struct SettingsView: View {
                     subtitle: "Connection testing & troubleshooting"
                 )
             }
+            */
         }
     }
     
     private var appPreferencesSection: some View {
         Section("Appearance & Behavior") {
+            // TODO: Implement InterfaceSettingsView - currently placeholder
+            /*
             NavigationLink(destination: InterfaceSettingsView()) {
                 SettingsRow(
                     icon: "paintbrush.fill",
@@ -182,8 +211,8 @@ struct SettingsView: View {
                     subtitle: "Default theme"
                 )
             }
+            */
             
-            /*
             NavigationLink(destination: AccessibilitySettingsView()) {
                 SettingsRow(
                     icon: "accessibility",
@@ -192,7 +221,6 @@ struct SettingsView: View {
                     subtitle: "Default"
                 )
             }
-            */
             
             NavigationLink(destination: NotificationSettingsView()) {
                 SettingsRow(
@@ -203,6 +231,8 @@ struct SettingsView: View {
                 )
             }
             
+            // TODO: Implement PerformanceSettingsView - currently placeholder
+            /*
             NavigationLink(destination: PerformanceSettingsView()) {
                 SettingsRow(
                     icon: "speedometer",
@@ -211,6 +241,7 @@ struct SettingsView: View {
                     subtitle: "Animations & responsiveness"
                 )
             }
+            */
         }
     }
     
@@ -236,6 +267,8 @@ struct SettingsView: View {
             //     )
             // }
             
+            // TODO: Implement DeveloperSettingsView - currently placeholder
+            /*
             NavigationLink(destination: DeveloperSettingsView()) {
                 SettingsRow(
                     icon: "hammer.fill",
@@ -244,7 +277,10 @@ struct SettingsView: View {
                     subtitle: "Disabled"
                 )
             }
+            */
             
+            // TODO: Implement ArchitectureViewerSettingsView - currently placeholder
+            /*
             NavigationLink(destination: ArchitectureViewerSettingsView()) {
                 SettingsRow(
                     icon: "network",
@@ -253,7 +289,10 @@ struct SettingsView: View {
                     subtitle: "Diagram preferences & rendering"
                 )
             }
+            */
             
+            // TODO: Implement IntegrationSettingsView - currently placeholder
+            /*
             NavigationLink(destination: IntegrationSettingsView()) {
                 SettingsRow(
                     icon: "link",
@@ -262,7 +301,10 @@ struct SettingsView: View {
                     subtitle: "Cross-system communication"
                 )
             }
+            */
             
+            // TODO: Implement BackupRestoreView - currently placeholder
+            /*
             NavigationLink(destination: BackupRestoreView()) {
                 SettingsRow(
                     icon: "externaldrive.fill",
@@ -271,11 +313,14 @@ struct SettingsView: View {
                     subtitle: "Settings backup & migration"
                 )
             }
+            */
         }
     }
     
     private var supportSection: some View {
         Section("Support & About") {
+            // TODO: Implement HelpView - currently placeholder
+            /*
             NavigationLink(destination: HelpView()) {
                 SettingsRow(
                     icon: "questionmark.circle.fill",
@@ -284,6 +329,7 @@ struct SettingsView: View {
                     subtitle: "Guides & tutorials"
                 )
             }
+            */
             
             Button(action: {
                 showingAbout.toggle()
@@ -296,6 +342,8 @@ struct SettingsView: View {
                 )
             }
             
+            // TODO: Implement PrivacyPolicyView - currently placeholder
+            /*
             NavigationLink(destination: PrivacyPolicyView()) {
                 SettingsRow(
                     icon: "lock.shield.fill",
@@ -304,6 +352,7 @@ struct SettingsView: View {
                     subtitle: "Your data, your rights"
                 )
             }
+            */
         }
     }
     
