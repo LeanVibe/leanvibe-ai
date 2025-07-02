@@ -304,17 +304,17 @@ struct MigrationDetailsView: View {
                     Text("Feature Flag Configuration")
                         .font(.headline)
                     
-                    Text("USE_UNIFIED_VOICE_SERVICE: \\(AppConfiguration.shared.useUnifiedVoiceService ? "true" : "false")")
+                    Text("USE_UNIFIED_VOICE_SERVICE: \(AppConfiguration.shared.useUnifiedVoiceService ? "true" : "false")")
                         .font(.caption)
-                        .fontFamily(.monospaced)
+                        .fontDesign(.monospaced)
                     
-                    Text("Voice Confidence Threshold: \\(AppConfiguration.shared.voiceConfidenceThreshold)")
+                    Text("Voice Confidence Threshold: \(AppConfiguration.shared.voiceConfidenceThreshold)")
                         .font(.caption)
-                        .fontFamily(.monospaced)
+                        .fontDesign(.monospaced)
                     
-                    Text("Max Recording Duration: \\(AppConfiguration.shared.maxVoiceRecordingDuration)s")
+                    Text("Max Recording Duration: \(AppConfiguration.shared.maxVoiceRecordingDuration)s")
                         .font(.caption)
-                        .fontFamily(.monospaced)
+                        .fontDesign(.monospaced)
                 }
                 .padding()
                 .background(Color(.systemGray6))

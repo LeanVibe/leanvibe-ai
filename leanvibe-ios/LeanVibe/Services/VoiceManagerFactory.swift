@@ -21,7 +21,6 @@ class VoiceManagerFactory: ObservableObject {
     private let settingsManager: SettingsManager
     
     // MARK: - Legacy Services (for fallback)
-    private var legacyVoiceManager: VoiceManager?
     private var legacyGlobalVoiceManager: GlobalVoiceManager?
     private var legacyOptimizedVoiceManager: OptimizedVoiceManager?
     
@@ -40,16 +39,25 @@ class VoiceManagerFactory: ObservableObject {
         self.projectManager = projectManager ?? ProjectManager()
         self.settingsManager = settingsManager ?? SettingsManager.shared
         
-        // Initialize with appropriate service based on feature flag
-        self.isUsingUnifiedService = appConfiguration.useUnifiedVoiceService
+        // Initialize required properties based on feature flag
+        let useUnified = appConfiguration.useUnifiedVoiceService
+        self.isUsingUnifiedService = useUnified
         
-        if isUsingUnifiedService {
+        if useUnified {
             self.currentVoiceService = UnifiedVoiceService.shared
             self.migrationStatus = .completed
         } else {
-            // Create legacy service set
-            self.currentVoiceService = createLegacyVoiceManager()
+            // Initialize with legacy service - we'll set this after self is fully initialized
+            self.currentVoiceService = VoiceManager(
+                speechService: self.speechService,
+                webSocketService: self.webSocketService
+            )
             self.migrationStatus = .usingLegacy
+        }
+        
+        // Now that self is fully initialized, set up legacy services if needed
+        if !useUnified {
+            setupLegacyServices()
         }
         
         setupMigrationLogging()
@@ -132,12 +140,7 @@ class VoiceManagerFactory: ObservableObject {
     
     // MARK: - Private Implementation
     
-    private func createLegacyVoiceManager() -> VoiceManager {
-        let voiceManager = VoiceManager(
-            speechService: speechService,
-            webSocketService: webSocketService
-        )
-        
+    private func setupLegacyServices() {
         // Create supporting legacy services
         legacyGlobalVoiceManager = GlobalVoiceManager(
             webSocketService: webSocketService,
@@ -146,13 +149,21 @@ class VoiceManagerFactory: ObservableObject {
         )
         
         legacyOptimizedVoiceManager = OptimizedVoiceManager()
+    }
+    
+    private func createLegacyVoiceManager() -> VoiceManager {
+        let voiceManager = VoiceManager(
+            speechService: speechService,
+            webSocketService: webSocketService
+        )
+        
+        setupLegacyServices()
         
         return voiceManager
     }
     
     private func stopLegacyServices() async {
         // Legacy services don't have async stop methods, so we just reset references
-        legacyVoiceManager = nil
         legacyGlobalVoiceManager = nil
         legacyOptimizedVoiceManager = nil
     }
