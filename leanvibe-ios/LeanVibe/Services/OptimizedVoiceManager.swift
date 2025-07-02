@@ -3,6 +3,7 @@ import AVFoundation
 import Speech
 import Accelerate
 
+@available(*, deprecated, message: "OptimizedVoiceManager is deprecated. Use VoiceManagerFactory with UnifiedVoiceService instead. See VoiceServiceDeprecationPlan for migration guidance.")
 @MainActor
 class OptimizedVoiceManager: ObservableObject {
     @Published var isOptimized = false

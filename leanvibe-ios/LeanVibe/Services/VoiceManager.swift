@@ -4,6 +4,7 @@ import AVFoundation
 import Combine
 import SwiftUI
 
+@available(*, deprecated, message: "VoiceManager is deprecated. Use VoiceManagerFactory with UnifiedVoiceService instead. See VoiceServiceDeprecationPlan for migration guidance.")
 @MainActor
 class VoiceManager: ObservableObject {
     @Published var isListening = false

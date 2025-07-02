@@ -3,6 +3,7 @@ import Foundation
 import Combine
 
 @available(macOS 10.15, iOS 13.0, *)
+@available(*, deprecated, message: "GlobalVoiceManager is deprecated. Use VoiceManagerFactory with UnifiedVoiceService instead. See VoiceServiceDeprecationPlan for migration guidance.")
 @MainActor
 class GlobalVoiceManager: ObservableObject {
     @Published var isListening = false
