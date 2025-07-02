@@ -2,15 +2,81 @@ import XCTest
 import Combine
 @testable import LeanVibe
 
+// MARK: - MockWebSocketService for Code Completion Tests
+@available(iOS 18.0, macOS 14.0, *)
+@MainActor
+class MockWebSocketServiceForCodeCompletion: ObservableObject {
+    @Published var isConnected = false
+    @Published var connectionStatus = "Disconnected"
+    @Published var lastError: String?
+    @Published var lastResponse: [String: Any]?
+    
+    var mockResponse: CodeCompletionResponse?
+    var shouldFail = false
+    var delay: TimeInterval = 0.0
+    var lastSentMessage: String?
+    
+    init() {
+        isConnected = true
+        connectionStatus = "Connected (Mock)"
+    }
+    
+    func connect() {
+        isConnected = true
+        connectionStatus = "Connected (Mock)"
+        lastError = nil
+    }
+    
+    func disconnect() {
+        isConnected = false
+        connectionStatus = "Disconnected (Mock)"
+    }
+    
+    func sendMessage(_ message: [String: Any]) async throws -> [String: Any] {
+        lastSentMessage = String(data: try JSONSerialization.data(withJSONObject: message), encoding: .utf8)
+        
+        if delay > 0 {
+            try await Task.sleep(for: .seconds(delay))
+        }
+        
+        if shouldFail {
+            throw URLError(.networkConnectionLost)
+        }
+        
+        if let response = mockResponse {
+            let responseDict = [
+                "status": response.status,
+                "intent": response.intent,
+                "response": response.response,
+                "confidence": response.confidence,
+                "requires_review": response.requiresReview,
+                "suggestions": response.suggestions
+            ] as [String: Any]
+            
+            lastResponse = responseDict
+            return responseDict
+        } else {
+            return [
+                "status": "success",
+                "intent": "suggest",
+                "response": "Mock default response",
+                "confidence": 0.8,
+                "requires_review": false,
+                "suggestions": ["Mock suggestion 1", "Mock suggestion 2"]
+            ]
+        }
+    }
+}
+
 @available(iOS 18.0, macOS 14.0, *)
 final class CodeCompletionServiceTests: XCTestCase {
     var codeCompletionService: CodeCompletionService!
-    var mockWebSocketService: MockWebSocketService!
+    var mockWebSocketService: MockWebSocketServiceForCodeCompletion!
     var cancellables: Set<AnyCancellable>!
     
     override func setUpWithError() throws {
         try super.setUpWithError()
-        mockWebSocketService = MockWebSocketService()
+        mockWebSocketService = MockWebSocketServiceForCodeCompletion()
         codeCompletionService = CodeCompletionService(webSocketService: mockWebSocketService)
         cancellables = Set<AnyCancellable>()
     }
@@ -320,72 +386,6 @@ final class CodeCompletionServiceTests: XCTestCase {
             ]
         )
     }
-}
-
-// MARK: - Mock WebSocket Service
-
-class MockWebSocketService: WebSocketServiceProtocol {
-    var mockResponse: CodeCompletionResponse?
-    var shouldFail = false
-    var delay: TimeInterval = 0.0
-    var lastSentMessage: String?
-    
-    @Published var isConnected = true
-    @Published var lastResponse: [String: Any]?
-    @Published var connectionError: Error?
-    
-    func connect() {
-        isConnected = true
-    }
-    
-    func disconnect() {
-        isConnected = false
-    }
-    
-    func sendMessage(_ message: [String: Any]) async throws -> [String: Any] {
-        lastSentMessage = String(data: try JSONSerialization.data(withJSONObject: message), encoding: .utf8)
-        
-        if delay > 0 {
-            try await Task.sleep(for: .seconds(delay))
-        }
-        
-        if shouldFail {
-            throw URLError(.networkConnectionLost)
-        }
-        
-        if let response = mockResponse {
-            return [
-                "status": response.status,
-                "intent": response.intent,
-                "response": response.response,
-                "confidence": response.confidence,
-                "requires_review": response.requiresReview,
-                "suggestions": response.suggestions
-            ]
-        } else {
-            return createDefaultMockResponse()
-        }
-    }
-    
-    private func createDefaultMockResponse() -> [String: Any] {
-        return [
-            "status": "success",
-            "intent": "suggest",
-            "response": "Default mock response",
-            "confidence": 0.8,
-            "requires_review": false,
-            "suggestions": ["Default suggestion"]
-        ]
-    }
-}
-
-// MARK: - WebSocket Service Protocol
-
-protocol WebSocketServiceProtocol {
-    var isConnected: Bool { get }
-    func connect()
-    func disconnect()
-    func sendMessage(_ message: [String: Any]) async throws -> [String: Any]
 }
 
 // MARK: - Code Completion Result

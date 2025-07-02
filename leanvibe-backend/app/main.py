@@ -11,6 +11,7 @@ from .api.endpoints.code_completion import get_enhanced_agent
 from .api.endpoints.code_completion import router as code_completion_router
 from .api.endpoints.tasks import router as tasks_router
 from .api.endpoints.health_mlx import router as health_mlx_router
+from .api.endpoints.cli_bridge import router as cli_bridge_router
 from .api.models import CodeCompletionRequest
 from .core.connection_manager import ConnectionManager
 from .models.event_models import ClientPreferences, EventType
@@ -41,6 +42,7 @@ app.add_middleware(
 app.include_router(code_completion_router)
 app.include_router(tasks_router)
 app.include_router(health_mlx_router)
+app.include_router(cli_bridge_router)
 
 
 # Code completion WebSocket handler

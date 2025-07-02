@@ -112,7 +112,8 @@
       "Bash(pytest:*)",
       "Bash(pip install:*)",
       "Bash(./ci-check.sh)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(./quick_validate.sh:*)"
     ],
     "deny": []
   }

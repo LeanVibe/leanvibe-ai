@@ -2,6 +2,47 @@ import XCTest
 import SwiftUI
 @testable import LeanVibe
 
+// MARK: - MockWebSocketServiceForUITests for UI Tests
+@available(iOS 18.0, macOS 14.0, *)
+@MainActor
+class MockWebSocketServiceForUITestsForUITests: ObservableObject {
+    @Published var isConnected = false
+    @Published var connectionStatus = "Disconnected"
+    @Published var lastError: String?
+    @Published var lastResponse: [String: Any]?
+    
+    var mockResponse: CodeCompletionResponse?
+    var shouldFail = false
+    var delay: TimeInterval = 0.0
+    var lastSentMessage: String?
+    
+    init() {
+        isConnected = true
+        connectionStatus = "Connected (Mock)"
+    }
+    
+    func sendMessage(_ message: [String: Any]) async throws -> [String: Any] {
+        lastSentMessage = String(data: try JSONSerialization.data(withJSONObject: message), encoding: .utf8)
+        
+        if delay > 0 {
+            try await Task.sleep(for: .seconds(delay))
+        }
+        
+        if shouldFail {
+            throw URLError(.networkConnectionLost)
+        }
+        
+        return [
+            "status": "success",
+            "intent": "suggest", 
+            "response": "Mock UI response",
+            "confidence": 0.9,
+            "requires_review": false,
+            "suggestions": ["Mock suggestion 1", "Mock suggestion 2"]
+        ]
+    }
+}
+
 @available(iOS 18.0, macOS 14.0, *)
 final class CodeCompletionUITests: XCTestCase {
     
@@ -32,7 +73,7 @@ final class CodeCompletionUITests: XCTestCase {
     
     func testCodeCompletionServiceObservableChanges() async {
         // Given
-        let mockWebSocketService = MockWebSocketService()
+        let mockWebSocketService = MockWebSocketServiceForUITests()
         let codeCompletionService = CodeCompletionService(webSocketService: mockWebSocketService)
         
         let expectation = expectation(description: "Observable changes")
@@ -207,7 +248,7 @@ final class CodeCompletionUITests: XCTestCase {
     
     func testUIResponsivenessDuringCodeCompletion() async {
         // Given
-        let mockWebSocketService = MockWebSocketService()
+        let mockWebSocketService = MockWebSocketServiceForUITests()
         mockWebSocketService.delay = 1.0 // Simulate network delay
         let codeCompletionService = CodeCompletionService(webSocketService: mockWebSocketService)
         
@@ -277,55 +318,4 @@ final class CodeCompletionUITests: XCTestCase {
         XCTAssertNotNil(weakWebSocketService) // Singleton should persist
         // Other objects may or may not be deallocated depending on implementation
     }
-}
-
-// MARK: - Mock WebSocket Service for UI Tests
-
-class MockWebSocketService: WebSocketServiceProtocol {
-    var mockResponse: CodeCompletionResponse?
-    var shouldFail = false
-    var delay: TimeInterval = 0.0
-    var lastSentMessage: String?
-    
-    @Published var isConnected = true
-    @Published var lastResponse: [String: Any]?
-    @Published var connectionError: Error?
-    
-    func connect() {
-        isConnected = true
-    }
-    
-    func disconnect() {
-        isConnected = false
-    }
-    
-    func sendMessage(_ message: [String: Any]) async throws -> [String: Any] {
-        lastSentMessage = String(data: try JSONSerialization.data(withJSONObject: message), encoding: .utf8)
-        
-        if delay > 0 {
-            try await Task.sleep(for: .seconds(delay))
-        }
-        
-        if shouldFail {
-            throw URLError(.networkConnectionLost)
-        }
-        
-        return [
-            "status": "success",
-            "intent": "suggest", 
-            "response": "Mock UI response",
-            "confidence": 0.9,
-            "requires_review": false,
-            "suggestions": ["Mock suggestion 1", "Mock suggestion 2"]
-        ]
-    }
-}
-
-// MARK: - WebSocket Service Protocol
-
-protocol WebSocketServiceProtocol {
-    var isConnected: Bool { get }
-    func connect()
-    func disconnect()
-    func sendMessage(_ message: [String: Any]) async throws -> [String: Any]
 }

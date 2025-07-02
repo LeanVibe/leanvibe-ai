@@ -30,74 +30,75 @@ LeanVibe AI has achieved a sophisticated, production-ready backend system with a
 
 ## Strategic Roadmap: 3-Sprint Plan
 
-### Sprint 1: Production Hardening & Stability (Week 1)
-**Goal**: Achieve 99.5%+ crash-free rate and production-ready stability
+### Sprint 1: Backend Infrastructure Hardening (Week 1)
+**Goal**: Deliver production-ready backend infrastructure and testing foundation
 
 #### Critical Deliverables
-- **iOS Memory Leak Resolution**: Fix Swift Continuation leaks in WebSocket connections
-- **Crash Elimination**: Resolve asset resource crashes and stability issues
-- **Quality Gates**: Implement comprehensive test validation pipeline
-- **Beta Deployment**: Deploy stable build to 10 internal testers
+- **CLI iOS Bridge Backend**: WebSocket server endpoints for iOS connectivity
+- **Backend Testing Suite**: Comprehensive pytest coverage for agent-developed APIs
+- **Docker Services Integration**: Complete Neo4j, Chroma, Redis production setup
+- **API Documentation**: Complete backend endpoint documentation
 
 #### Acceptance Criteria
-- ✅ Zero memory leaks in 24-hour stress testing
-- ✅ <1% crash rate across all iOS devices
-- ✅ All critical user journeys function without errors
-- ✅ 80%+ unit test coverage on critical paths
+- ✅ WebSocket endpoints ready for iOS consumption
+- ✅ 95% test coverage for critical backend paths
+- ✅ All external services running via Docker Compose
+- ✅ API documentation complete and validated
 
 #### Risk Mitigation
-- **Daily stability reports** with crash analytics
-- **Dedicated iOS debugging team** (ALPHA agent focus)
-- **Rollback plan** if issues cannot be resolved in Sprint 1
+- **Backend-only focus** eliminates iOS dependency risks
+- **Comprehensive testing** prevents production regressions
+- **Docker isolation** ensures consistent deployment environments
 
-### Sprint 2: Core Experience & User Journey (Week 2)
-**Goal**: Deliver complete end-to-end MVP user experience
+### Sprint 2: CLI Quick Wins & Developer Experience (Week 2)
+**Goal**: Deliver feature-complete CLI with enhanced developer workflow integration
 
 #### Quick-Win CLI Features (Prioritized)
-1. **iOS Bridge Implementation** *(High Value/Medium Effort)*
-   - `leanvibe monitor` command with WebSocket connectivity
-   - Real-time state synchronization between CLI and iOS
-   - **Estimate**: 3-5 days
-
-2. **Custom Project Commands** *(High Value/Low Effort)*
+1. **Custom Project Commands** *(High Value/Low Effort)*
    - `/project:<command>` feature from Claude CLI specification
    - YAML configuration for custom workflows
    - **Estimate**: 2-3 days
 
-3. **Enhanced Git Integration** *(Medium Value/Low Effort)*
+2. **Enhanced Git Integration** *(Medium Value/Low Effort)*
    - `leanvibe commit` with AI-generated semantic messages
    - Intelligent staging and conflict resolution
    - **Estimate**: 2 days
 
+3. **CLI Monitoring Commands** *(High Value/Medium Effort)*
+   - `leanvibe monitor` for WebSocket connectivity status
+   - `leanvibe status` for system health checks
+   - `leanvibe metrics` for performance insights
+   - **Estimate**: 2-3 days
+
 #### Core Experience Deliverables
-- **Complete Onboarding Flow**: `leanvibe init` + QR code pairing
-- **Agent Metrics Dashboard**: Real-time performance visualization in iOS
-- **WebSocket Stability**: <1ms reconnection detection and recovery
+- **Complete Onboarding Flow**: `leanvibe init` with backend project setup
+- **CLI Configuration System**: Robust YAML-based configuration management
+- **Backend Connectivity**: Reliable WebSocket client for backend communication
 
 #### Acceptance Criteria
-- ✅ Seamless CLI-to-iOS state synchronization
-- ✅ One-command project initialization
-- ✅ Real-time metrics visible on iOS during CLI operations
-- ✅ 95% onboarding completion rate in user testing
+- ✅ Custom project commands working with YAML configuration
+- ✅ AI-powered git commits generating semantic messages
+- ✅ CLI monitoring commands providing real-time backend status
+- ✅ One-command project initialization via `leanvibe init`
 
-### Sprint 3: L3 Agent Capabilities & Differentiation (Week 3)
-**Goal**: Launch first "wow" feature demonstrating L3 agent value
+### Sprint 3: L3 Backend Capabilities & Intelligence (Week 3)
+**Goal**: Launch backend intelligence features that differentiate LeanVibe as L3 agent
 
-#### L3 Architecture System
+#### L3 Architecture System (Backend)
 - **Dependency Graph Mapping**: Tree-sitter + Neo4j integration
-- **Interactive Architecture Visualization**: Mermaid.js in iOS WebView
+- **Architecture API Endpoints**: REST APIs for dependency analysis and visualization
 - **Enhanced CLI Intelligence**: Context-aware `leanvibe explain` with dependency insights
 
-#### Advanced Features
-- **Real-time Architecture Updates**: <2s refresh on code changes
-- **Dependency Impact Analysis**: Highlight affected components
-- **Navigation Integration**: Tap-to-navigate to code entities
+#### Advanced Backend Features
+- **Real-time Architecture Updates**: File watcher + Neo4j updates <2s
+- **Dependency Impact Analysis**: API endpoints for affected component analysis
+- **Code Intelligence Services**: Enhanced AI context with project structure
 
 #### Acceptance Criteria
-- ✅ Interactive architecture diagram loads in <2s
-- ✅ Real-time updates reflect code changes within 5s
-- ✅ Dependency mapping accuracy >90% for supported languages
-- ✅ Mobile navigation enables direct code entity access
+- ✅ Tree-sitter parsing 90%+ accuracy for supported languages
+- ✅ Neo4j dependency graph updated in real-time on code changes
+- ✅ Architecture API endpoints providing JSON data for visualization
+- ✅ Enhanced CLI commands leveraging dependency intelligence
 
 ## Feature Prioritization Matrix
 
@@ -107,9 +108,9 @@ LeanVibe AI has achieved a sophisticated, production-ready backend system with a
 - **Onboarding Polish**: Critical for adoption
 
 ### High Impact, Medium Effort (Sprint Focus)
-- **iOS Stability Fixes**: Production blocker resolution
-- **CLI-iOS Bridge**: Core user journey enablement
-- **Architecture Visualization**: Key differentiator
+- **Backend Testing Suite**: Production quality assurance
+- **CLI-iOS Bridge Backend**: Core user journey enablement
+- **Architecture Intelligence Backend**: Key differentiator
 
 ### Medium Impact, Low Effort (Sprint 2-3)
 - **User Metrics Dashboard**: Performance transparency
@@ -207,8 +208,8 @@ LeanVibe AI has achieved a sophisticated, production-ready backend system with a
 
 | Agent | Status | Completion | Next Assignment |
 |-------|--------|------------|-----------------|
-| **ALPHA** | Active | 100% (iOS Foundation) | iOS Stability Sprint |
-| **BETA** | Active | 100% (Backend APIs) | CLI-iOS Bridge |
+| **ALPHA** | Reassigned | 100% (iOS Foundation) | External iOS Team |
+| **BETA** | Active | 100% (Backend APIs) | Backend Testing Suite |
 | **GAMMA** | Archived | 100% (Architecture Viewer) | N/A |
 | **DELTA** | Active | 67% (CLI Enhancement) | CLI Quick-Wins |
 | **KAPPA** | Offboarded | 100% (Voice Interface) | N/A |
@@ -229,21 +230,21 @@ LeanVibe AI has achieved a sophisticated, production-ready backend system with a
 
 ### Quality Gates & Build Validation Protocol
 ```bash
-# Required after each implementation phase
-swift test --enable-code-coverage
-xcodebuild -project LeanVibe.xcodeproj -scheme LeanVibe build
-./scripts/performance_validation.sh
-./scripts/accessibility_check.sh
+# Required after each implementation phase (Backend/CLI only)
+cd leanvibe-backend && python -m pytest --cov=app tests/
+cd leanvibe-cli && python -m pytest --cov=leanvibe_cli tests/
+./scripts/backend_performance_validation.sh
+./scripts/api_documentation_check.sh
 ```
 
 ### Mandatory Validation Checklist
-- [ ] All UI tests pass with >90% coverage of agent features
-- [ ] End-to-end workflows complete successfully
-- [ ] Performance benchmarks meet targets (voice <2s, UI <100ms)
-- [ ] Memory usage <200MB total across all features
-- [ ] Security and privacy requirements validated
-- [ ] Accessibility compliance verified
+- [ ] All backend tests pass with >95% coverage
+- [ ] CLI-to-backend workflows complete successfully  
+- [ ] Performance benchmarks meet targets (API <100ms, AI <2s)
+- [ ] Memory usage <200MB for backend services
+- [ ] Security and privacy requirements validated for APIs
+- [ ] WebSocket connectivity stable and reliable
 - [ ] Technical debt reduced to <10% complexity score
-- [ ] Documentation complete for all agent features
+- [ ] Documentation complete for all backend/CLI features
 
 *This plan leverages the remarkable work of 5 AI agents while ensuring production quality through comprehensive testing and validation, focused on the critical path to market entry.*

@@ -6,10 +6,10 @@ import XCTest
 final class ProjectManagerTests: XCTestCase {
     
     private var projectManager: ProjectManager!
-    private var mockWebSocketService: MockWebSocketService!
+    private var mockWebSocketService: MockWebSocketServiceForProjectManager!
     
     override func setUp() async throws {
-        mockWebSocketService = MockWebSocketService()
+        mockWebSocketService = MockWebSocketServiceForProjectManager()
         projectManager = ProjectManager()
         projectManager.configure(with: mockWebSocketService)
     }
@@ -266,7 +266,7 @@ final class ProjectManagerTests: XCTestCase {
     
     func testWebSocketConfiguration() throws {
         // Given
-        let webSocketService = MockWebSocketService()
+        let webSocketService = MockWebSocketServiceForProjectManager()
         let projectManager = ProjectManager()
         
         // When
@@ -348,10 +348,10 @@ final class ProjectManagerTests: XCTestCase {
     }
 }
 
-// MARK: - Mock WebSocket Service
+// MARK: - Mock WebSocket Service for Project Manager Tests
 
 @available(iOS 18.0, macOS 14.0, *)
-class MockWebSocketService: WebSocketService {
+class MockWebSocketServiceForProjectManager: WebSocketService {
     var shouldSucceed = true
     var simulatedDelay: TimeInterval = 0.1
     
@@ -368,11 +368,11 @@ class MockWebSocketService: WebSocketService {
         }
     }
     
-    override func sendMessage(_ message: String) {
+    override func sendMessage(_ content: String, type: String = "message") {
         if shouldSucceed {
             // Simulate successful message sending
             let agentMessage = AgentMessage()
-            agentMessage.content = message
+            agentMessage.content = content
             agentMessage.isFromUser = true
             agentMessage.timestamp = Date()
             messages.append(agentMessage)

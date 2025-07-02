@@ -137,6 +137,63 @@ class ConnectionManager:
             event_streaming_service.update_client_preferences(client_id, preferences)
             logger.info(f"Updated streaming preferences for client {client_id}")
 
+    async def send_to_client(self, client_id: str, message: dict) -> bool:
+        """Send a message to a specific client, return success status"""
+        if client_id in self.active_connections:
+            try:
+                await self.send_json_message(message, client_id)
+                return True
+            except Exception as e:
+                logger.error(f"Failed to send message to client {client_id}: {e}")
+                return False
+        return False
+
+    async def broadcast_to_ios_devices(self, message: dict) -> int:
+        """Broadcast message to all connected iOS devices, return count of notified devices"""
+        ios_count = 0
+        disconnected_clients = []
+        
+        for client_id, info in self.client_info.items():
+            # Check if client is iOS device
+            client_type = info.get('client_type', '').lower()
+            user_agent = info.get('user_agent', '').lower()
+            
+            if 'ios' in client_type or 'iphone' in user_agent or 'ipad' in user_agent:
+                if client_id in self.active_connections:
+                    try:
+                        await self.send_json_message(message, client_id)
+                        ios_count += 1
+                        logger.debug(f"Message sent to iOS device {client_id}")
+                    except Exception as e:
+                        logger.error(f"Error sending to iOS device {client_id}: {e}")
+                        disconnected_clients.append(client_id)
+        
+        # Clean up disconnected clients
+        for client_id in disconnected_clients:
+            self.disconnect(client_id)
+        
+        logger.info(f"Broadcasted message to {ios_count} iOS devices")
+        return ios_count
+
+    def get_ios_devices(self) -> list:
+        """Get list of connected iOS devices"""
+        ios_devices = []
+        for client_id, info in self.client_info.items():
+            client_type = info.get('client_type', '').lower()
+            user_agent = info.get('user_agent', '').lower()
+            
+            if 'ios' in client_type or 'iphone' in user_agent or 'ipad' in user_agent:
+                device_info = {
+                    'client_id': client_id,
+                    'connected_at': info.get('connected_at'),
+                    'user_agent': info.get('user_agent', ''),
+                    'client_type': info.get('client_type', 'ios'),
+                    'is_connected': client_id in self.active_connections
+                }
+                ios_devices.append(device_info)
+        
+        return ios_devices
+
     def _detect_client_type(self, user_agent: str) -> str:
         """Detect client type from user agent"""
         user_agent_lower = user_agent.lower()
