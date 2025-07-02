@@ -335,6 +335,7 @@ struct QuickCommandCard: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct VoiceCommandHistoryRow: View {
     let message: AgentMessage
     

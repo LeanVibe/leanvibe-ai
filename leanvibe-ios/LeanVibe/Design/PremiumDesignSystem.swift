@@ -2,12 +2,16 @@ import SwiftUI
 
 // MARK: - Premium Design System
 
-@available(iOS 15.0, *)
+@available(iOS 15.0, macOS 12.0, *)
 struct PremiumDesignSystem {
     // MARK: - Material Design
+    @available(iOS 15.0, macOS 12.0, *)
     static let glassMaterial = Material.ultraThinMaterial
+    @available(iOS 15.0, macOS 12.0, *)
     static let thickGlassMaterial = Material.thickMaterial
+    @available(iOS 13.0, macOS 10.15, *)
     static let cardShadow = Color.black.opacity(0.1)
+    @available(iOS 13.0, macOS 10.15, *)
     static let elevatedShadow = Color.black.opacity(0.2)
     
     // MARK: - Shadow Definitions

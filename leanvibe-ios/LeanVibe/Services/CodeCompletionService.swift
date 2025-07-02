@@ -7,7 +7,7 @@ import UIKit
 import AppKit
 #endif
 
-@available(iOS 18.0, *)
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class CodeCompletionService: ObservableObject {
     @Published var isLoading = false
