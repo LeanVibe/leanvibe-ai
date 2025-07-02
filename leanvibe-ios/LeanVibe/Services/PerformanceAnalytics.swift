@@ -29,6 +29,7 @@ class PerformanceAnalytics: ObservableObject {
     deinit {
         displayLink?.invalidate()
         displayLink = nil
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Performance Monitoring

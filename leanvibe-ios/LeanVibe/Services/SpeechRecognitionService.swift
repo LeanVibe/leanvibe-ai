@@ -119,19 +119,23 @@ class SpeechRecognitionService: NSObject, ObservableObject {
     private func startTimers() {
         // Silence detection using modern async Task.sleep
         silenceTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(self?.silenceTimeout ?? 3.0))
+            guard let self = self else { return }
+            try? await Task.sleep(for: .seconds(self.silenceTimeout))
             guard !Task.isCancelled else { return }
             await MainActor.run { [weak self] in
-                self?.handleSilenceTimeout()
+                guard let self = self else { return }
+                self.handleSilenceTimeout()
             }
         }
         
         // Maximum recording duration using modern async Task.sleep
         recordingTimeoutTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(self?.maxRecordingDuration ?? 30.0))
+            guard let self = self else { return }
+            try? await Task.sleep(for: .seconds(self.maxRecordingDuration))
             guard !Task.isCancelled else { return }
             await MainActor.run { [weak self] in
-                self?.handleRecordingTimeout()
+                guard let self = self else { return }
+                self.handleRecordingTimeout()
             }
         }
     }
