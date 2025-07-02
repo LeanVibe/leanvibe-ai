@@ -83,10 +83,10 @@ struct AppConfiguration {
     // MARK: - Voice System Configuration
     
     /// Whether to use the new UnifiedVoiceService instead of legacy voice managers
-    /// Enable for gradual migration and testing
+    /// NOW ENABLED BY DEFAULT for MVP readiness
     var useUnifiedVoiceService: Bool {
         return ProcessInfo.processInfo.environment["LEANVIBE_USE_UNIFIED_VOICE"] == "true" ||
-               Bundle.main.object(forInfoDictionaryKey: "USE_UNIFIED_VOICE_SERVICE") as? Bool ?? false
+               Bundle.main.object(forInfoDictionaryKey: "USE_UNIFIED_VOICE_SERVICE") as? Bool ?? true
     }
     
     /// Voice recognition confidence threshold (0.0 to 1.0)
