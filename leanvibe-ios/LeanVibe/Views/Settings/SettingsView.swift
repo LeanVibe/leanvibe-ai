@@ -1,5 +1,8 @@
 import SwiftUI
 
+// Ensure ArchitectureViewerSettingsView is available
+// (The implementation is in ArchitectureViewerSettingsView.swift)
+
 /// Main Settings view providing comprehensive configuration for all LeanVibe features
 /// Built by KAPPA to configure Voice, Kanban, Architecture, and other systems
 @available(iOS 18.0, macOS 14.0, *)
@@ -7,7 +10,7 @@ struct SettingsView: View {
     
     // MARK: - Properties
     
-    @Environment(\.settingsManager) private var settingsManager
+    @StateObject private var settingsManager = SettingsManager.shared
     @ObservedObject var webSocketService: WebSocketService
     @State private var showingAbout = false
     @State private var showingExportImport = false
@@ -29,8 +32,8 @@ struct SettingsView: View {
                 // App Preferences Section
                 appPreferencesSection
                 
-                // Advanced Features Section - Hidden until features are implemented
-                // advancedFeaturesSection
+                // Advanced Features Section
+                advancedFeaturesSection
                 
                 // Support & About Section
                 supportSection
@@ -279,17 +282,14 @@ struct SettingsView: View {
             }
             */
             
-            // TODO: Implement ArchitectureViewerSettingsView - currently placeholder
-            /*
             NavigationLink(destination: ArchitectureViewerSettingsView()) {
                 SettingsRow(
                     icon: "network",
                     iconColor: .purple,
                     title: "Architecture Viewer",
-                    subtitle: "Diagram preferences & rendering"
+                    subtitle: architectureStatusText
                 )
             }
-            */
             
             // TODO: Implement IntegrationSettingsView - currently placeholder
             /*
@@ -382,6 +382,12 @@ struct SettingsView: View {
     
     private var accessibilityStatusText: String {
         "Default"
+    }
+    
+    private var architectureStatusText: String {
+        let theme = settingsManager.architecture.diagramTheme.capitalized
+        let quality = settingsManager.architecture.renderQuality.capitalized
+        return "\(theme) theme, \(quality) quality"
     }
 }
 
@@ -508,10 +514,170 @@ struct DeveloperSettingsView: View {
     }
 }
 
+
 @available(iOS 18.0, macOS 14.0, *)
 struct ArchitectureViewerSettingsView: View {
+    @StateObject private var settingsManager = SettingsManager.shared
+    @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
+    @State private var showingResetConfirmation = false
+
     var body: some View {
-        Text("Architecture Viewer Settings")
+        List {
+            // Diagram Rendering Section
+            Section("Diagram Rendering") {
+                HStack {
+                    Text("Theme")
+                    Spacer()
+                    Picker("Theme", selection: $bindableSettingsManager.architecture.diagramTheme) {
+                        Text("Default").tag("default")
+                        Text("Dark").tag("dark")
+                        Text("Forest").tag("forest")
+                        Text("Neutral").tag("neutral")
+                        Text("Base").tag("base")
+                    }
+                    .pickerStyle(.menu)
+                }
+                
+                HStack {
+                    Text("Layout")
+                    Spacer()
+                    Picker("Layout", selection: $bindableSettingsManager.architecture.diagramLayout) {
+                        Text("Auto").tag("auto")
+                        Text("Top to Bottom").tag("TB")
+                        Text("Bottom to Top").tag("BT")
+                        Text("Left to Right").tag("LR")
+                        Text("Right to Left").tag("RL")
+                    }
+                    .pickerStyle(.menu)
+                }
+                
+                HStack {
+                    Text("Quality")
+                    Spacer()
+                    Picker("Quality", selection: $bindableSettingsManager.architecture.renderQuality) {
+                        Text("High").tag("high")
+                        Text("Medium").tag("medium")
+                        Text("Low").tag("low")
+                    }
+                    .pickerStyle(.segmented)
+                }
+                
+                Toggle("Enable Animations", isOn: $bindableSettingsManager.architecture.enableAnimations)
+                Toggle("Show Node Labels", isOn: $bindableSettingsManager.architecture.showNodeLabels)
+                Toggle("Show Edge Labels", isOn: $bindableSettingsManager.architecture.showEdgeLabels)
+            }
+            
+            // Change Detection Section
+            Section("Change Detection") {
+                Toggle("Auto-Refresh", isOn: $bindableSettingsManager.architecture.autoRefreshEnabled)
+                
+                if settingsManager.architecture.autoRefreshEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Refresh Interval")
+                            Spacer()
+                            Text("\(Int(settingsManager.architecture.refreshInterval))s")
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Slider(
+                            value: $bindableSettingsManager.architecture.refreshInterval,
+                            in: 5...300,
+                            step: 5
+                        )
+                    }
+                    .padding(.vertical, 4)
+                }
+                
+                Toggle("Change Notifications", isOn: $bindableSettingsManager.architecture.changeNotificationsEnabled)
+                Toggle("Highlight Changes", isOn: $bindableSettingsManager.architecture.highlightChanges)
+                
+                HStack {
+                    Text("Compare Mode")
+                    Spacer()
+                    Picker("Compare Mode", selection: $bindableSettingsManager.architecture.compareMode) {
+                        Text("Side by Side").tag("side-by-side")
+                        Text("Overlay").tag("overlay")
+                        Text("Sequential").tag("sequential")
+                    }
+                    .pickerStyle(.menu)
+                }
+            }
+            
+            // Performance Section
+            Section("Performance") {
+                Toggle("Memory Optimization", isOn: $bindableSettingsManager.architecture.enableMemoryOptimization)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Cache Size")
+                        Spacer()
+                        Text("\(settingsManager.architecture.maxCacheSize) MB")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Slider(
+                        value: Binding(
+                            get: { Double(settingsManager.architecture.maxCacheSize) },
+                            set: { bindableSettingsManager.architecture.maxCacheSize = Int($0) }
+                        ),
+                        in: 10...200,
+                        step: 10
+                    )
+                }
+                .padding(.vertical, 4)
+                
+                Toggle("WebView Pooling", isOn: $bindableSettingsManager.architecture.enableWebViewPooling)
+                Toggle("Performance Monitoring", isOn: $bindableSettingsManager.architecture.performanceMonitoringEnabled)
+            }
+            
+            // Export & Sharing Section
+            Section("Export & Sharing") {
+                HStack {
+                    Text("Default Export Format")
+                    Spacer()
+                    Picker("Export Format", selection: $bindableSettingsManager.architecture.defaultExportFormat) {
+                        Text("Mermaid").tag("mermaid")
+                        Text("SVG").tag("svg")
+                        Text("PNG").tag("png")
+                        Text("PDF").tag("pdf")
+                    }
+                    .pickerStyle(.menu)
+                }
+                
+                Toggle("Include Metadata", isOn: $bindableSettingsManager.architecture.includeMetadataInExport)
+                Toggle("Auto-Save Exports", isOn: $bindableSettingsManager.architecture.autoSaveExports)
+            }
+            
+            // Advanced Features Section
+            Section("Advanced Features") {
+                Toggle("Diagram Versioning", isOn: $bindableSettingsManager.architecture.enableDiagramVersioning)
+                Toggle("Collaborative Editing", isOn: $bindableSettingsManager.architecture.enableCollaborativeEditing)
+                Toggle("Real-Time Sync", isOn: $bindableSettingsManager.architecture.enableRealTimeSync)
+            }
+            
+            // Reset Section
+            Section("Reset") {
+                Button("Reset All Architecture Settings") {
+                    showingResetConfirmation = true
+                }
+                .foregroundColor(.red)
+            }
+        }
+        .navigationTitle("Architecture Viewer")
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(
+            "Reset Architecture Settings",
+            isPresented: $showingResetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reset All Settings", role: .destructive) {
+                settingsManager.architecture = ArchitectureSettings()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will reset all Architecture Viewer settings to their default values. This action cannot be undone.")
+        }
     }
 }
 

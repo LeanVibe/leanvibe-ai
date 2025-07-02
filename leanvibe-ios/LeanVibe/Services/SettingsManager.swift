@@ -37,6 +37,11 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
             save(accessibility, for: .accessibility)
         }
     }
+    var architecture: ArchitectureSettings {
+        didSet {
+            save(architecture, for: .architecture)
+        }
+    }
 
     init() {
         // Initialize with defaults first to satisfy Swift 6 initialization requirements
@@ -45,6 +50,7 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         self.notifications = NotificationSettings()
         self.kanban = KanbanSettings()
         self.accessibility = AccessibilitySettings()
+        self.architecture = ArchitectureSettings()
         
         // Then load saved values
         loadStoredValues()
@@ -66,6 +72,9 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         if let loadedAccessibility = load(.accessibility, as: AccessibilitySettings.self) {
             self.accessibility = loadedAccessibility
         }
+        if let loadedArchitecture = load(.architecture, as: ArchitectureSettings.self) {
+            self.architecture = loadedArchitecture
+        }
     }
 
     // MARK: - Public Methods
@@ -75,6 +84,7 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         self.notifications = NotificationSettings()
         self.kanban = KanbanSettings()
         self.accessibility = AccessibilitySettings()
+        self.architecture = ArchitectureSettings()
         saveAll()
     }
     
@@ -115,6 +125,7 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         save(notifications, for: .notifications)
         save(kanban, for: .kanban)
         save(accessibility, for: .accessibility)
+        save(architecture, for: .architecture)
     }
 }
 
@@ -126,6 +137,7 @@ enum SettingsKey: String {
     case notifications = "LeanVibe.NotificationSettings"
     case kanban = "LeanVibe.KanbanSettings"
     case accessibility = "LeanVibe.AccessibilitySettings"
+    case architecture = "LeanVibe.ArchitectureSettings"
 }
 
 /// A protocol for settings structures to ensure they provide default values.
@@ -294,6 +306,106 @@ struct AccessibilitySettings: SettingsProtocol {
     
     init() {
         // Default initializer
+    }
+}
+
+/// Stores the settings related to architecture visualization features.
+struct ArchitectureSettings: SettingsProtocol {
+    // MARK: - Diagram Rendering Settings
+    var diagramTheme: String = "default"
+    var diagramLayout: String = "auto"
+    var renderQuality: String = "high"
+    var maxNodeCount: Int = 100
+    var enableAnimations: Bool = true
+    var animationSpeed: Double = 1.0
+    var zoomLevel: Double = 1.0
+    var showNodeLabels: Bool = true
+    var showEdgeLabels: Bool = true
+    var compactLayout: Bool = false
+    
+    // MARK: - Change Detection Settings
+    var autoRefreshEnabled: Bool = true
+    var refreshInterval: Double = 30.0
+    var changeNotificationsEnabled: Bool = true
+    var highlightChanges: Bool = true
+    var changeNotificationSound: Bool = false
+    var autoDetectArchitectureChanges: Bool = true
+    var compareMode: String = "side-by-side" // "side-by-side", "overlay", "sequential"
+    
+    // MARK: - Approval Workflow Settings
+    var requireApprovalForChanges: Bool = false
+    var autoApproveMinorChanges: Bool = true
+    var approvalNotificationsEnabled: Bool = true
+    var approvalTimeoutMinutes: Int = 60
+    var enableApprovalComments: Bool = true
+    var showApprovalHistory: Bool = true
+    
+    // MARK: - Performance Settings
+    var enableMemoryOptimization: Bool = false
+    var maxCacheSize: Int = 50 // MB
+    var renderTimeoutSeconds: Int = 10
+    var enableWebViewPooling: Bool = true
+    var maxConcurrentRenders: Int = 3
+    var enableBackgroundRendering: Bool = false
+    var performanceMonitoringEnabled: Bool = false
+    
+    // MARK: - Export and Sharing Settings
+    var defaultExportFormat: String = "mermaid" // "mermaid", "svg", "png", "pdf"
+    var exportQuality: String = "high"
+    var includeMetadataInExport: Bool = true
+    var enableShareExtension: Bool = true
+    var autoSaveExports: Bool = false
+    var exportCompressionEnabled: Bool = true
+    
+    // MARK: - UI Customization Settings
+    var showToolbar: Bool = true
+    var showMinimap: Bool = false
+    var enableFullScreenMode: Bool = true
+    var showGridLines: Bool = false
+    var showRuler: Bool = false
+    var darkModeSupport: Bool = true
+    var customColorScheme: String = "system" // "system", "light", "dark", "custom"
+    
+    // MARK: - Interaction Settings  
+    var enableNodeInteraction: Bool = true
+    var enableZoomGestures: Bool = true
+    var enablePanGestures: Bool = true
+    var doubleTapToZoom: Bool = true
+    var longPressForDetails: Bool = true
+    var keyboardShortcutsEnabled: Bool = true
+    
+    // MARK: - Advanced Features
+    var enableDiagramVersioning: Bool = false
+    var maxVersionHistory: Int = 10
+    var enableCollaborativeEditing: Bool = false
+    var enableRealTimeSync: Bool = false
+    var enableDiagramComments: Bool = false
+    var enableDiagramAnnotations: Bool = false
+    var enableCustomNodeTypes: Bool = false
+    
+    // MARK: - Network and Sync Settings
+    var enableOnlineSync: Bool = true
+    var syncConflictResolution: String = "manual" // "manual", "local-wins", "remote-wins", "merge"
+    var offlineModeEnabled: Bool = true
+    var enableDiagramSharing: Bool = true
+    var sharePermissionLevel: String = "view-only" // "view-only", "comment", "edit"
+    
+    // MARK: - Notification Settings
+    var diagramUpdateNotifications: Bool = true
+    var errorNotifications: Bool = true
+    var performanceWarnings: Bool = false
+    var newFeatureNotifications: Bool = true
+    var weeklyDigestEnabled: Bool = false
+    
+    // MARK: - Accessibility Features
+    var highContrastDiagrams: Bool = false
+    var largeTextInDiagrams: Bool = false
+    var voiceOverDiagramDescriptions: Bool = false
+    var reducedMotionDiagrams: Bool = false
+    var alternativeTextForNodes: Bool = true
+    
+    init() {
+        // Default initializer with sensible defaults
     }
 }
 

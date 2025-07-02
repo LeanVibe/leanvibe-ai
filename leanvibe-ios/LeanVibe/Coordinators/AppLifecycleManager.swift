@@ -104,6 +104,15 @@ class AppLifecycleManager: ObservableObject {
         sessionDuration = Date().timeIntervalSince(startTime)
     }
     
+    /// Detect if the app is running in iOS Simulator
+    private func isRunningInSimulator() -> Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return false
+        #endif
+    }
+    
     // MARK: - Lifecycle State Management
     
     func initialize() async {
@@ -112,17 +121,25 @@ class AppLifecycleManager: ObservableObject {
         // Small delay to show launch screen
         try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
         
-        // Check connection
-        guard connectionManager.hasStoredConnection() else {
-            appState = .needsOnboarding
-            return
+        // In simulator mode, bypass stored connection check and auto-create connection
+        let isSimulator = isRunningInSimulator()
+        if !isSimulator {
+            // Only check for stored connection on real devices
+            guard connectionManager.hasStoredConnection() else {
+                appState = .needsOnboarding
+                return
+            }
+        } else {
+            print("🤖 Simulator detected - bypassing connection requirement")
         }
         
-        // Check permissions
-        let hasVoicePermission = await checkVoicePermissions()
-        guard hasVoicePermission else {
-            appState = .needsPermissions
-            return
+        // Check permissions (only if voice features are enabled)
+        if AppConfiguration.shared.isVoiceEnabled {
+            let hasVoicePermission = await checkVoicePermissions()
+            guard hasVoicePermission else {
+                appState = .needsPermissions
+                return
+            }
         }
         
         // Test connection

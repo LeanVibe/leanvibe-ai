@@ -116,7 +116,15 @@
       "Bash(./quick_validate.sh:*)",
       "Bash(./start.sh:*)",
       "Bash(if grep -q \"$file\" LeanVibe.xcodeproj/project.pbxproj)",
-      "Bash(else)"
+      "Bash(else)",
+      "mcp__mobile__mobile_list_available_devices",
+      "mcp__mobile__mobile_use_default_device",
+      "mcp__mobile__mobile_use_device",
+      "mcp__mobile__mobile_list_apps",
+      "mcp__mobile__mobile_launch_app",
+      "mcp__mobile__mobile_take_screenshot",
+      "mcp__mobile__mobile_list_elements_on_screen",
+      "Bash(brew list:*)"
     ],
     "deny": []
   }

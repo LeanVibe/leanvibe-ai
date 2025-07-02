@@ -25,6 +25,20 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     // MARK: - Connection Management
     
     private func autoConnectIfAvailable() {
+        // In simulator mode, always try to connect to localhost first
+        if isRunningInSimulator() {
+            if let defaultConnection = createDefaultConnection() {
+                connectionStatus = "Auto-connecting to simulator backend..."
+                print("🤖 Simulator mode: bypassing QR and connecting to \(defaultConnection.host):\(defaultConnection.port)")
+                
+                // Save this connection for future use
+                storageManager.saveConnection(defaultConnection)
+                
+                connectWithSettings(defaultConnection)
+                return
+            }
+        }
+        
         guard let storedConnection = storageManager.currentConnection else {
             // Try default configuration for development
             if let defaultConnection = createDefaultConnection() {
@@ -43,28 +57,48 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     private func createDefaultConnection() -> ConnectionSettings? {
         let config = AppConfiguration.shared
         
-        // Only auto-connect in debug builds or when explicitly configured
+        // Always auto-connect in debug builds or when explicitly configured
         guard config.isLoggingEnabled else { return nil }
+        
+        // Detect if running in simulator
+        let isSimulator = isRunningInSimulator()
         
         do {
             try config.validateConfiguration()
             
             // Parse URL to extract host and port
             let url = URL(string: config.apiBaseURL)
-            let host = url?.host ?? "localhost"
-            let port = url?.port ?? 8001
+            var host = url?.host ?? "localhost"
+            var port = url?.port ?? 8001
+            
+            // For simulator, try multiple common development ports
+            if isSimulator {
+                host = "localhost"
+                // Try port 8002 first (since 8001 might be used by OrbStack), then 8001
+                port = 8002
+                print("🤖 Simulator detected - auto-connecting to \(host):\(port)")
+            }
             
             return ConnectionSettings(
                 host: host,
                 port: port,
                 websocketPath: "/ws",
-                serverName: "Local Development",
-                network: "development"
+                serverName: isSimulator ? "Simulator Development" : "Local Development",
+                network: isSimulator ? "simulator" : "development"
             )
         } catch {
             print("⚠️ Cannot create default connection: \(error)")
             return nil
         }
+    }
+    
+    /// Detect if the app is running in iOS Simulator
+    private func isRunningInSimulator() -> Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return false
+        #endif
     }
     
     private func connectWithSettings(_ settings: ConnectionSettings) {

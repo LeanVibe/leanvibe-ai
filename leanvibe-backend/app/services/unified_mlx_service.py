@@ -982,8 +982,24 @@ class UnifiedMLXService:
         ]
 
 
-# Global instance for backward compatibility with mock strategy for MVP
-unified_mlx_service = UnifiedMLXService(preferred_strategy=MLXInferenceStrategy.MOCK)
+# Global instance configured from environment settings
+def _get_strategy_from_config() -> MLXInferenceStrategy:
+    """Get MLX strategy from configuration settings"""
+    try:
+        from ..config.settings import settings
+        strategy_mapping = {
+            "PRODUCTION": MLXInferenceStrategy.PRODUCTION,
+            "PRAGMATIC": MLXInferenceStrategy.PRAGMATIC,
+            "MOCK": MLXInferenceStrategy.MOCK,
+            "AUTO": MLXInferenceStrategy.AUTO,
+            "FALLBACK": MLXInferenceStrategy.FALLBACK
+        }
+        return strategy_mapping.get(settings.mlx_strategy.value, MLXInferenceStrategy.AUTO)
+    except Exception as e:
+        logger.warning(f"Failed to load strategy from config: {e}, using AUTO")
+        return MLXInferenceStrategy.AUTO
+
+unified_mlx_service = UnifiedMLXService(preferred_strategy=_get_strategy_from_config())
 
 # Aliases for backward compatibility
 real_mlx_service = unified_mlx_service

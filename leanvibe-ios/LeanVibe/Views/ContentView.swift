@@ -41,10 +41,11 @@ struct ContentView: View {
                 ConnectionSettingsView(webSocketService: webSocketService)
             }
             .sheet(isPresented: $showingCodeCompletion) {
-                Text("Code Completion Test - Feature Integration Complete")
-                    .padding()
-                // TODO: Add CodeCompletionTestView back once file is added to target
-                // CodeCompletionTestView(webSocketService: webSocketService)
+                CodeCompletionTestView(webSocketService: webSocketService)
+            }
+            .onTapGesture {
+                // Dismiss keyboard when tapping outside text field
+                hideKeyboard()
             }
         }
     }
@@ -87,6 +88,10 @@ struct ContentView: View {
                     }
                 }
                 .padding()
+            }
+            .onTapGesture {
+                // Dismiss keyboard when tapping on messages area
+                hideKeyboard()
             }
             .onChange(of: webSocketService.messages.count) { _ in
                 // Auto-scroll to bottom when new message arrives
@@ -190,10 +195,17 @@ struct ContentView: View {
         webSocketService.sendMessage(inputText.trimmingCharacters(in: .whitespacesAndNewlines), type: commandType)
         
         inputText = ""
+        // Dismiss keyboard after sending message
+        hideKeyboard()
     }
     
     private func sendQuickCommand(_ command: String) {
         webSocketService.sendCommand(command)
+    }
+    
+    /// Hide the keyboard by ending text editing
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
