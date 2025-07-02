@@ -108,16 +108,24 @@ async def get_monitoring_data():
         connection_info = {}
     
     # Calculate basic metrics
-    total_connections = len(connection_info)
+    total_connections = connection_info.get('total_connections', 0)
+    client_details = connection_info.get('client_details', {})
     active_sessions = session_stats.get('active_sessions', 0)
+    
+    # Count iOS devices from client details
+    ios_device_count = 0
+    if client_details:
+        for client_info in client_details.values():
+            client_type = client_info.get('client_type', '').lower()
+            if 'ios' in client_type:
+                ios_device_count += 1
     
     monitoring_data = {
         "timestamp": datetime.now().isoformat(),
         "connections": {
             "total": total_connections,
             "cli_bridges": len(cli_bridge_connections),
-            "ios_devices": len([c for c in connection_info.values() 
-                             if 'ios' in c.get('client_type', '').lower()]),
+            "ios_devices": ios_device_count,
             "active_sessions": active_sessions
         },
         "performance": {
