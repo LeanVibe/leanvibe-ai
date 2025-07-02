@@ -860,15 +860,91 @@ The enhanced AI infrastructure is ready and working with your project context.
             return {"status": "error", "message": f"Stats retrieval failed: {e}"}
 
     async def _get_status(self, args: str, client_id: str) -> Dict[str, Any]:
-        """Get enhanced status with all service information"""
+        """Get enhanced status with CLI-style helpful information"""
         # Get individual service statuses
         mlx_status = self.mlx_service.get_health_status()
         ast_status = self.ast_service.get_status()
         vector_status = self.vector_service.get_status()
 
+        # Build user-friendly status message
+        status_lines = []
+        status_lines.append("🤖 LeanVibe AI Agent Status")
+        status_lines.append("=" * 35)
+        
+        # Overall health indicator
+        if self.is_initialized:
+            status_lines.append("✅ Agent Status: OPERATIONAL")
+        else:
+            status_lines.append("❌ Agent Status: INITIALIZING")
+        
+        status_lines.append("")
+        
+        # Service status with indicators
+        status_lines.append("🔧 Core Services:")
+        
+        # MLX Model Service
+        mlx_indicator = "✅" if self.initialization_status["mlx"] else "❌"
+        mlx_model = mlx_status.get("model_name", "Unknown")
+        mlx_device = mlx_status.get("device", "Unknown")
+        status_lines.append(f"   {mlx_indicator} MLX Model: {mlx_model} ({mlx_device})")
+        
+        # AST Parser Service  
+        ast_indicator = "✅" if self.initialization_status["ast"] else "❌"
+        ast_languages = ast_status.get("supported_languages", [])
+        lang_count = len(ast_languages) if ast_languages else 0
+        status_lines.append(f"   {ast_indicator} Code Parser: {lang_count} languages supported")
+        
+        # Vector Store Service
+        vector_indicator = "✅" if self.initialization_status["vector"] else "❌"
+        vector_indexed = vector_status.get("total_embeddings", 0)
+        status_lines.append(f"   {vector_indicator} Vector Search: {vector_indexed} code chunks indexed")
+        
+        status_lines.append("")
+        
+        # Capabilities
+        status_lines.append("🚀 Available Capabilities:")
+        cap_code = "✅" if self.initialization_status["ast"] else "❌"
+        cap_search = "✅" if self.initialization_status["vector"] else "❌"
+        cap_ai = "✅" if self.initialization_status["mlx"] else "❌"
+        cap_indexing = "✅" if (self.initialization_status["ast"] and self.initialization_status["vector"]) else "❌"
+        
+        status_lines.append(f"   {cap_code} Code Analysis & Parsing")
+        status_lines.append(f"   {cap_search} Semantic Code Search")
+        status_lines.append(f"   {cap_ai} AI Code Generation & Completion")
+        status_lines.append(f"   {cap_indexing} Project Indexing & Context")
+        
+        status_lines.append("")
+        
+        # Performance info
+        if mlx_status.get("is_initialized"):
+            model_params = mlx_status.get("model_parameters", 0)
+            total_gens = mlx_status.get("total_generations", 0)
+            status_lines.append("📊 Performance Metrics:")
+            status_lines.append(f"   • Model size: {model_params:.1f}M parameters")
+            status_lines.append(f"   • Completions generated: {total_gens}")
+            
+            if mlx_status.get("load_time"):
+                load_time = mlx_status.get("load_time", 0)
+                status_lines.append(f"   • Model load time: {load_time:.2f}s")
+            
+            status_lines.append("")
+        
+        # Quick help
+        status_lines.append("💡 Quick Commands:")
+        status_lines.append("   /help - Show all available commands")
+        status_lines.append("   /list-files - List current directory")
+        status_lines.append("   /current-dir - Show working directory")
+        if self.initialization_status["vector"]:
+            status_lines.append("   /search-code <query> - Search codebase")
+        if self.initialization_status["ast"]:
+            status_lines.append("   /analyze-file <path> - Analyze code file")
+        
+        formatted_message = "\n".join(status_lines)
+        
+        # Keep detailed data for programmatic access
         status_data = {
             "service": "Enhanced AI Service",
-            "version": "1.0.0-sprint1",
+            "version": "1.0.0-sprint1", 
             "ready": self.is_initialized,
             "initialization_status": self.initialization_status,
             "supported_commands": list(self.supported_commands.keys()),
@@ -881,8 +957,7 @@ The enhanced AI infrastructure is ready and working with your project context.
                 "code_analysis": self.initialization_status["ast"],
                 "vector_search": self.initialization_status["vector"],
                 "ai_inference": self.initialization_status["mlx"],
-                "project_indexing": self.initialization_status["ast"]
-                and self.initialization_status["vector"],
+                "project_indexing": self.initialization_status["ast"] and self.initialization_status["vector"],
             },
         }
 
@@ -890,7 +965,7 @@ The enhanced AI infrastructure is ready and working with your project context.
             "status": "success",
             "type": "enhanced_status",
             "data": status_data,
-            "message": "Enhanced AI Service status retrieved",
+            "message": formatted_message,
             "confidence": 1.0,
         }
 

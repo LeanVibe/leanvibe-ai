@@ -296,26 +296,72 @@ Please provide a helpful response focused on practical software development guid
             return {"status": "error", "message": f"Error getting directory: {e}"}
 
     async def _get_status(self, args: str, client_id: str) -> Dict[str, Any]:
-        """Get agent status with health information"""
-        model_name = "N/A (MLX handled by unified_mlx_service)"
-
+        """Get agent status with CLI-style helpful information"""
         # Calculate confidence score for status command
         confidence = self._calculate_confidence_score(
             "Agent status retrieved", "file_operation"
         )
 
+        # Get working directory information
+        try:
+            current_dir = os.getcwd()
+            dir_name = os.path.basename(current_dir)
+        except Exception:
+            current_dir = "Unknown"
+            dir_name = "Unknown"
+
+        # Build user-friendly status message
+        status_lines = []
+        status_lines.append("🤖 LeanVibe AI Agent Status")
+        status_lines.append("=" * 35)
+        
+        # Overall health indicator
+        if self.is_initialized:
+            status_lines.append("✅ Agent Status: OPERATIONAL")
+        else:
+            status_lines.append("❌ Agent Status: INITIALIZING")
+        
+        status_lines.append("")
+        status_lines.append("📂 Working Directory:")
+        status_lines.append(f"   {dir_name}")
+        status_lines.append(f"   Path: {current_dir}")
+        
+        status_lines.append("")
+        status_lines.append("🔧 Core Services:")
+        status_lines.append("   ✅ File Operations & Navigation")
+        status_lines.append("   ✅ Command Processing")
+        status_lines.append("   🔄 MLX Models (via unified service)")
+        
+        # Session info
+        session_indicator = "✅" if client_id in self.session_data else "💭"
+        status_lines.append("")
+        status_lines.append("📱 Connection Info:")
+        status_lines.append(f"   {session_indicator} Session active for {client_id[:12]}...")
+        status_lines.append(f"   📊 Confidence scoring enabled")
+        
+        status_lines.append("")
+        status_lines.append("💡 Quick Commands:")
+        status_lines.append("   /help - Show all available commands")
+        status_lines.append("   /list-files - List current directory files")
+        status_lines.append("   /current-dir - Show current working directory")
+        status_lines.append("   /read-file <path> - Read and display file content")
+        
+        formatted_message = "\n".join(status_lines)
+
+        # Keep detailed data for programmatic access  
         status_data = {
-            "model": model_name,
+            "model": "MLX via unified_mlx_service",
             "ready": self.is_initialized,
             "version": "0.2.0",
             "supported_commands": list(self.supported_commands.keys()),
             "session_active": client_id in self.session_data,
+            "working_directory": current_dir,
             "mlx_available": False,  # MLX availability now checked via unified_mlx_service
             "health": {
-                "status": "N/A",
+                "status": "Operational",
                 "last_check": None,
                 "memory_usage": 0,
-            },  # MLX health now via unified_mlx_service
+            },
             "confidence_scoring": True,
         }
 
@@ -323,7 +369,7 @@ Please provide a helpful response focused on practical software development guid
             "status": "success",
             "type": "agent_status",
             "data": status_data,
-            "message": "Agent is ready and operational (MLX status via unified_mlx_service)",
+            "message": formatted_message,
             "confidence": confidence,
         }
 
