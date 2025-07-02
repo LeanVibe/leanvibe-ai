@@ -71,9 +71,9 @@ struct AppConfiguration {
     }
     
     /// Whether to enable voice features
-    /// DISABLED: Voice features temporarily disabled due to stability issues
+    /// RESTORED: Voice features re-enabled after stability fixes
     var isVoiceEnabled: Bool {
-        return Bundle.main.object(forInfoDictionaryKey: "VOICE_FEATURES_ENABLED") as? Bool ?? false
+        return Bundle.main.object(forInfoDictionaryKey: "VOICE_FEATURES_ENABLED") as? Bool ?? true
     }
     
     /// Whether to enable code completion features
@@ -84,10 +84,10 @@ struct AppConfiguration {
     // MARK: - Voice System Configuration
     
     /// Whether to use the new UnifiedVoiceService instead of legacy voice managers
-    /// CONSERVATIVE DEFAULT: Explicit opt-in for MVP safety, gradual rollout strategy
+    /// ENABLED DEFAULT: Production-ready unified voice service
     var useUnifiedVoiceService: Bool {
         return ProcessInfo.processInfo.environment["LEANVIBE_USE_UNIFIED_VOICE"] == "true" ||
-               Bundle.main.object(forInfoDictionaryKey: "USE_UNIFIED_VOICE_SERVICE") as? Bool ?? false
+               Bundle.main.object(forInfoDictionaryKey: "USE_UNIFIED_VOICE_SERVICE") as? Bool ?? true
     }
     
     /// Voice recognition confidence threshold (0.0 to 1.0)

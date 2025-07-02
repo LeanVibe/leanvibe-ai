@@ -14,7 +14,7 @@ class ProductionReadinessValidator: ObservableObject {
     
     // Dependencies
     nonisolated(unsafe) private let performanceValidator: PerformanceValidationSuite
-    nonisolated(unsafe) private let integratedManager: IntegratedPerformanceManager
+    private let integratedManager: IntegratedPerformanceManager
     
     // Production readiness criteria
     struct ProductionCriteria {

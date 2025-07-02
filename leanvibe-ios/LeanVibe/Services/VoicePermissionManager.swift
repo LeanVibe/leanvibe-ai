@@ -14,7 +14,7 @@ class VoicePermissionManager: ObservableObject {
     
     @Published private(set) var speechAuthorizationStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
     #if os(iOS)
-    @Published private(set) var microphoneAuthorizationStatus: AVAudioSession.RecordPermission = .granted
+    @Published private(set) var microphoneAuthorizationStatus: AVAudioSession.RecordPermission = .denied
     #endif
     
     enum PermissionStatus {
