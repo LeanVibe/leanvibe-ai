@@ -124,7 +124,10 @@
       "mcp__mobile__mobile_launch_app",
       "mcp__mobile__mobile_take_screenshot",
       "mcp__mobile__mobile_list_elements_on_screen",
-      "Bash(brew list:*)"
+      "Bash(brew list:*)",
+      "Bash(xcrun simctl device:*)",
+      "Bash(xcrun simctl ui:*)",
+      "Bash(xcrun simctl openurl:*)"
     ],
     "deny": []
   }

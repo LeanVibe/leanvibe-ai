@@ -55,6 +55,7 @@ async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks):
 
 @router.get("/", response_model=List[Task])
 async def list_tasks(
+    project_id: Optional[str] = Query(None, description="Filter by project ID"),
     status: Optional[TaskStatus] = Query(None, description="Filter by status"),
     priority: Optional[TaskPriority] = Query(None, description="Filter by priority"),
     assigned_to: Optional[str] = Query(None, description="Filter by assignee"),
@@ -65,11 +66,12 @@ async def list_tasks(
     """List all tasks with optional filtering"""
     try:
         filters = TaskFilters(
+            project_id=project_id,
             status=status,
             priority=priority,
             assigned_to=assigned_to,
             tags=tags
-        ) if any([status, priority, assigned_to, tags]) else None
+        ) if any([project_id, status, priority, assigned_to, tags]) else None
         
         tasks = await task_service.list_tasks(filters)
         
@@ -79,6 +81,17 @@ async def list_tasks(
     except Exception as e:
         logger.error(f"Failed to list tasks: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to list tasks: {str(e)}")
+
+@router.get("/project/{project_id}", response_model=List[Task])
+async def get_tasks_by_project(project_id: str):
+    """Get all tasks for a specific project"""
+    try:
+        filters = TaskFilters(project_id=project_id)
+        tasks = await task_service.list_tasks(filters)
+        return tasks
+    except Exception as e:
+        logger.error(f"Failed to get tasks for project {project_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get tasks for project: {str(e)}")
 
 @router.get("/{task_id}", response_model=Task)
 async def get_task(task_id: str):

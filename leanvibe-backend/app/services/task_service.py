@@ -47,10 +47,35 @@ class TaskService:
                 content = await f.read()
                 if content.strip():
                     data = json.loads(content)
-                    self._tasks = {
-                        task_id: Task.parse_obj(task_data)
-                        for task_id, task_data in data.items()
-                    }
+                    self._tasks = {}
+                    for task_id, task_data in data.items():
+                        try:
+                            # Handle legacy tasks by adding required fields
+                            if 'project_id' not in task_data:
+                                task_data['project_id'] = 'legacy-project'
+                            if 'client_id' not in task_data:
+                                task_data['client_id'] = 'legacy-client'
+                            if 'confidence' not in task_data and 'confidence_score' in task_data:
+                                task_data['confidence'] = task_data['confidence_score']
+                            elif 'confidence' not in task_data:
+                                task_data['confidence'] = 1.0
+                            
+                            # Map legacy status values
+                            if task_data.get('status') == 'backlog':
+                                task_data['status'] = 'todo'
+                            if task_data.get('priority') == 'critical':
+                                task_data['priority'] = 'urgent'
+                            
+                            # Ensure all required fields exist
+                            task_data.setdefault('dependencies', [])
+                            task_data.setdefault('attachments', [])
+                            task_data.setdefault('tags', [])
+                            
+                            task = Task.parse_obj(task_data)
+                            self._tasks[task_id] = task
+                        except Exception as e:
+                            logger.warning(f"Could not load task {task_id}: {e}")
+                            continue
                 else:
                     self._tasks = {}
         except (json.JSONDecodeError, FileNotFoundError) as e:
@@ -74,13 +99,19 @@ class TaskService:
     async def create_task(self, task_data: TaskCreate) -> Task:
         """Create a new task"""
         async with self._lock:
+            # Handle legacy fields mapping
+            estimated_effort = task_data.estimated_effort or task_data.estimated_hours
+            
             task = Task(
                 title=task_data.title,
                 description=task_data.description,
                 priority=task_data.priority,
+                project_id=task_data.project_id,
+                client_id=task_data.client_id,
                 assigned_to=task_data.assigned_to,
-                estimated_hours=task_data.estimated_hours,
+                estimated_effort=estimated_effort,
                 tags=task_data.tags,
+                dependencies=task_data.dependencies,
                 metadata=task_data.metadata
             )
             
@@ -102,6 +133,9 @@ class TaskService:
             return tasks
         
         # Apply filters
+        if filters.project_id:
+            tasks = [t for t in tasks if getattr(t, 'project_id', None) == filters.project_id]
+            
         if filters.status:
             tasks = [t for t in tasks if t.status == filters.status]
         
@@ -181,7 +215,7 @@ class TaskService:
         # Create columns
         columns = []
         column_configs = [
-            (TaskStatus.BACKLOG, "Backlog"),
+            (TaskStatus.TODO, "To Do"),
             (TaskStatus.IN_PROGRESS, "In Progress"), 
             (TaskStatus.TESTING, "Testing"),
             (TaskStatus.DONE, "Done")
@@ -229,23 +263,27 @@ class TaskService:
         if total_tasks == 0:
             return TaskStats(
                 total_tasks=0,
-                by_status={status: 0 for status in TaskStatus},
-                by_priority={priority: 0 for priority in TaskPriority},
+                by_status={status.value: 0 for status in TaskStatus},
+                by_priority={priority.value: 0 for priority in TaskPriority},
                 completion_rate=0.0
             )
         
-        # Count by status
-        by_status = {status: 0 for status in TaskStatus}
+        # Count by status - using string values for JSON compatibility
+        by_status = {status.value: 0 for status in TaskStatus}
         for task in tasks:
-            by_status[task.status] += 1
+            status_key = task.status.value if hasattr(task.status, 'value') else str(task.status)
+            if status_key in by_status:
+                by_status[status_key] += 1
         
-        # Count by priority
-        by_priority = {priority: 0 for priority in TaskPriority}
+        # Count by priority - using string values for JSON compatibility
+        by_priority = {priority.value: 0 for priority in TaskPriority}
         for task in tasks:
-            by_priority[task.priority] += 1
+            priority_key = task.priority.value if hasattr(task.priority, 'value') else str(task.priority)
+            if priority_key in by_priority:
+                by_priority[priority_key] += 1
         
         # Calculate completion rate
-        completed_tasks = by_status[TaskStatus.DONE]
+        completed_tasks = by_status.get(TaskStatus.DONE.value, 0)
         completion_rate = completed_tasks / total_tasks if total_tasks > 0 else 0.0
         
         # Calculate average completion time for done tasks
@@ -278,7 +316,7 @@ class TaskService:
         async with self._lock:
             tasks_to_remove = [
                 task_id for task_id, task in self._tasks.items()
-                if task.status == TaskStatus.DONE and task.updated_at < cutoff_date
+                if str(task.status) == TaskStatus.DONE.value and task.updated_at < cutoff_date
             ]
             
             for task_id in tasks_to_remove:

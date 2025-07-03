@@ -24,6 +24,27 @@ struct LeanVibeTask: Identifiable, Codable, Sendable, Transferable {
     var dependencies: [UUID] // Task IDs this task depends on
     var attachments: [TaskAttachment]
     
+    // MARK: - Backend Compatibility
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case description
+        case status
+        case priority
+        case projectId = "project_id"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case confidence
+        case agentDecision = "agent_decision"
+        case clientId = "client_id"
+        case assignedTo = "assigned_to"
+        case estimatedEffort = "estimated_effort"
+        case actualEffort = "actual_effort"
+        case tags
+        case dependencies
+        case attachments
+    }
+    
     init(
         id: UUID = UUID(),
         title: String,
@@ -118,7 +139,7 @@ extension UTType {
 
 enum TaskStatus: String, CaseIterable, Codable, Sendable {
     case todo = "todo"
-    case inProgress = "inProgress"
+    case inProgress = "in_progress"  // Backend compatibility
     case done = "done"
     
     var displayName: String {

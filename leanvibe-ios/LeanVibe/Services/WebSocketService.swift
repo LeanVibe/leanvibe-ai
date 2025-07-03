@@ -374,6 +374,12 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             return
         }
         
+        // Check if this might be a task update message
+        if text.contains("\"type\":\"task_update\"") {
+            handleTaskUpdateMessage(data)
+            return
+        }
+        
         // Check if this might be a code completion response by looking for key fields
         if text.contains("\"intent\"") && text.contains("\"confidence\"") && text.contains("\"suggestions\"") {
             // This looks like a code completion response, forward it to interested parties
@@ -411,6 +417,32 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             
         } catch {
             handleFallbackMessage(text)
+        }
+    }
+    
+    private func handleTaskUpdateMessage(_ data: Data) {
+        do {
+            let taskUpdate = try JSONDecoder().decode(TaskUpdateWebSocketMessage.self, from: data)
+            
+            // Forward to TaskService via notification
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(
+                    name: Notification.Name("taskUpdated"),
+                    object: taskUpdate
+                )
+            }
+            
+            // Also add to messages for visibility
+            let content = "Task \(taskUpdate.action): \(taskUpdate.task?.title ?? "Unknown")"
+            let agentMessage = AgentMessage(
+                content: content,
+                isFromUser: false,
+                type: .status
+            )
+            messages.append(agentMessage)
+            
+        } catch {
+            print("Failed to decode task update message: \(error)")
         }
     }
     
@@ -491,5 +523,14 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         formatter.countStyle = .file
         return "(\(formatter.string(fromByteCount: Int64(bytes))))"
     }
+}
+
+// MARK: - Task WebSocket Message Models
+
+struct TaskUpdateWebSocketMessage: Codable {
+    let type: String
+    let action: String // "created", "updated", "deleted", "moved"
+    let task: LeanVibeTask?
+    let timestamp: String?
 }
 

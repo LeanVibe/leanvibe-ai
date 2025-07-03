@@ -12,6 +12,7 @@ from .api.endpoints.code_completion import router as code_completion_router
 from .api.endpoints.tasks import router as tasks_router
 from .api.endpoints.health_mlx import router as health_mlx_router
 from .api.endpoints.cli_bridge import router as cli_bridge_router
+from .api.endpoints.projects import router as projects_router
 from .api.models import CodeCompletionRequest
 from .core.connection_manager import ConnectionManager
 from .models.event_models import ClientPreferences, EventType
@@ -21,6 +22,7 @@ from .services.reconnection_service import (
     client_heartbeat,
     reconnection_service,
 )
+from .services.task_service import task_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -43,6 +45,7 @@ app.include_router(code_completion_router)
 app.include_router(tasks_router)
 app.include_router(health_mlx_router)
 app.include_router(cli_bridge_router)
+app.include_router(projects_router)
 
 
 # Code completion WebSocket handler
@@ -199,6 +202,7 @@ async def startup_event():
     await session_manager.start()
     await event_streaming_service.start()
     await reconnection_service.start()
+    await task_service.initialize()
 
 
 @app.on_event("shutdown")

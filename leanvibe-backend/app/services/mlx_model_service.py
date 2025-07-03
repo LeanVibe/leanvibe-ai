@@ -49,12 +49,13 @@ class MLXModelService:
     """Service for handling MLX model loading and inference"""
 
     def __init__(self):
+        # Import settings to get configured model
+        from ..config.settings import settings
+        
         self.model = None
         self.tokenizer = None
         self.is_initialized = False
-        self.model_name = (
-            "microsoft/Phi-3-mini-128k-instruct"  # Production Phi-3-Mini model
-        )
+        self.model_name = settings.mlx_model  # Use configured model from settings
         self.max_tokens = 512
         self.temperature = 0.7
         self.mlx_available = MLX_AVAILABLE
@@ -129,7 +130,7 @@ class MLXModelService:
             if PHI3_MINI_AVAILABLE:
                 logger.info("Initializing Phi-3-Mini service as fallback...")
                 self.phi3_mini_service = Phi3MiniService(
-                    "microsoft/Phi-3-mini-128k-instruct"
+                    self.model_name  # Use configured model instead of hardcoded
                 )
                 success = await self.phi3_mini_service.initialize()
 

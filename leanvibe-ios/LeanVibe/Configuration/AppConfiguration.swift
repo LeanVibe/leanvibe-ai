@@ -71,9 +71,9 @@ struct AppConfiguration {
     }
     
     /// Whether to enable voice features
-    /// DISABLED: Voice features disabled to prevent app crashes during testing
+    /// ENABLED: Voice features enabled with UnifiedVoiceService for MVP
     var isVoiceEnabled: Bool {
-        return false
+        return true
     }
     
     /// Whether to enable code completion features
@@ -84,9 +84,10 @@ struct AppConfiguration {
     // MARK: - Voice System Configuration
     
     /// Whether to use the new UnifiedVoiceService instead of legacy voice managers
-    /// DISABLED: Voice services disabled to prevent app crashes during testing
+    /// ENABLED: UnifiedVoiceService enabled as default for MVP deployment
     var useUnifiedVoiceService: Bool {
-        return false
+        return ProcessInfo.processInfo.environment["LEANVIBE_USE_UNIFIED_VOICE"] == "true" ||
+               Bundle.main.object(forInfoDictionaryKey: "USE_UNIFIED_VOICE_SERVICE") as? Bool ?? true
     }
     
     /// Voice recognition confidence threshold (0.0 to 1.0)

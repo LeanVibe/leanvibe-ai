@@ -7,10 +7,15 @@ from enum import Enum
 from typing import List, Optional
 from pydantic import Field
 try:
-    from pydantic_settings import BaseSettings
+    from pydantic_settings import BaseSettings, SettingsConfigDict
 except ImportError:
     # Fallback for older pydantic versions
     from pydantic import BaseSettings
+    SettingsConfigDict = None
+
+# Explicitly load .env file
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class Environment(str, Enum):
@@ -22,59 +27,65 @@ class Environment(str, Enum):
 
 class MLXStrategy(str, Enum):
     """MLX service strategy options."""
-    MOCK = "MOCK"
-    PRAGMATIC = "PRAGMATIC"
-    PRODUCTION = "PRODUCTION"
+    MOCK = "mock"
+    PRAGMATIC = "pragmatic"
+    PRODUCTION = "production"
 
 
 class LeanVibeSettings(BaseSettings):
     """LeanVibe backend configuration settings."""
     
+    # Use modern pydantic-settings configuration
+    if SettingsConfigDict:
+        model_config = SettingsConfigDict(
+            env_file=".env",
+            env_prefix="LEANVIBE_",
+            extra="ignore",
+            case_sensitive=False
+        )
+    
     # Environment
     environment: Environment = Field(
         default=Environment.DEVELOPMENT,
-        env="LEANVIBE_ENV",
         description="Current environment"
     )
     
-    # Server Configuration
-    host: str = Field(default="0.0.0.0", env="LEANVIBE_HOST")
-    port: int = Field(default=8001, env="LEANVIBE_PORT")
+    # Server Configuration  
+    host: str = Field(default="0.0.0.0")
+    port: int = Field(default=8001)
     
     # Security
     secret_key: str = Field(
         default="dev-secret-key-change-in-production",
-        env="LEANVIBE_SECRET_KEY",
         description="Secret key for JWT tokens and encryption"
     )
     
     # Database
-    database_url: Optional[str] = Field(default=None, env="LEANVIBE_DATABASE_URL")
-    redis_url: Optional[str] = Field(default=None, env="LEANVIBE_REDIS_URL")
+    database_url: Optional[str] = Field(default=None)
+    redis_url: Optional[str] = Field(default=None)
     
     # MLX AI Configuration
-    mlx_model: str = Field(
-        default="microsoft/Phi-3.5-mini-instruct",
-        env="LEANVIBE_MLX_MODEL"
-    )
-    mlx_strategy: MLXStrategy = Field(
-        default=MLXStrategy.MOCK,
-        env="LEANVIBE_MLX_STRATEGY"
-    )
+    mlx_model: str = Field(default="microsoft/Phi-3.5-mini-instruct")
+    mlx_strategy: MLXStrategy = Field(default=MLXStrategy.MOCK)
     
     # API Configuration
-    api_url: str = Field(default="http://localhost:8001", env="LEANVIBE_API_URL")
+    api_url: str = Field(default="http://localhost:8001")
+    api_base_url: str = Field(default="http://localhost:8001", env="API_BASE_URL")
     
     # Feature Flags
-    enable_logging: bool = Field(default=True, env="LEANVIBE_ENABLE_LOGGING")
-    enable_monitoring: bool = Field(default=False, env="LEANVIBE_ENABLE_MONITORING")
-    enable_rate_limiting: bool = Field(default=False, env="LEANVIBE_ENABLE_RATE_LIMITING")
-    enable_api_key_auth: bool = Field(default=False, env="LEANVIBE_ENABLE_API_KEY_AUTH")
-    disable_analytics: bool = Field(default=True, env="LEANVIBE_DISABLE_ANALYTICS")
+    enable_logging: bool = Field(default=True)
+    enable_monitoring: bool = Field(default=False)
+    enable_rate_limiting: bool = Field(default=False)
+    enable_api_key_auth: bool = Field(default=False)
+    disable_analytics: bool = Field(default=True)
+    
+    # iOS App Feature Flags  
+    voice_features_enabled: bool = Field(default=True, env="VOICE_FEATURES_ENABLED")
+    code_completion_enabled: bool = Field(default=True, env="CODE_COMPLETION_ENABLED")
     
     # Performance
-    metrics_port: int = Field(default=9090, env="LEANVIBE_METRICS_PORT")
-    log_level: str = Field(default="INFO", env="LEANVIBE_LOG_LEVEL")
+    metrics_port: int = Field(default=9090)
+    log_level: str = Field(default="INFO")
     
     @property
     def is_development(self) -> bool:
@@ -142,13 +153,9 @@ class LeanVibeSettings(BaseSettings):
             
         if errors:
             raise ValueError(f"Production configuration errors: {', '.join(errors)}")
-    
-    class Config:
-        env_file = "../.env"  # Look for .env in parent directory
-        case_sensitive = False
 
 
-# Global settings instance
+# Global settings instance - created after dotenv loading
 settings = LeanVibeSettings()
 
 # Validate production configuration on import

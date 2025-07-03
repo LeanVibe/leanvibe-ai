@@ -27,11 +27,57 @@ class TaskService: ObservableObject {
         setupDateFormatting()
         loadPersistedTasks()
         setupPerformanceMonitoring()
+        setupWebSocketListener()
     }
     
     private func setupDateFormatting() {
         jsonEncoder.dateEncodingStrategy = .iso8601
         jsonDecoder.dateDecodingStrategy = .iso8601
+    }
+    
+    private func setupWebSocketListener() {
+        // Listen for task update notifications from WebSocket
+        NotificationCenter.default.publisher(for: Notification.Name("taskUpdated"))
+            .sink { [weak self] notification in
+                Task { @MainActor [weak self] in
+                    await self?.handleWebSocketTaskUpdate(notification)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    @MainActor
+    private func handleWebSocketTaskUpdate(_ notification: Notification) {
+        guard let taskUpdate = notification.object as? TaskUpdateWebSocketMessage,
+              let updatedTask = taskUpdate.task else {
+            return
+        }
+        
+        switch taskUpdate.action {
+        case "created":
+            // Add new task if not already present
+            if !tasks.contains(where: { $0.id == updatedTask.id }) {
+                tasks.append(updatedTask)
+            }
+            
+        case "updated", "moved":
+            // Update existing task
+            if let index = tasks.firstIndex(where: { $0.id == updatedTask.id }) {
+                tasks[index] = updatedTask
+            }
+            
+        case "deleted":
+            // Remove task
+            tasks.removeAll { $0.id == updatedTask.id }
+            
+        default:
+            break
+        }
+        
+        // Persist changes
+        Task {
+            try? await saveTasks()
+        }
     }
     
     // MARK: - Core Task Operations
@@ -47,20 +93,25 @@ class TaskService: ObservableObject {
         defer { isLoading = false }
         
         // Try to fetch from backend API first
-        if let backendTasks = try await fetchTasksFromBackend(projectId: projectId) {
-            // Backend returned tasks - update our local tasks
-            tasks = backendTasks
-            try await saveTasks()
-        } else {
-            // Backend unavailable - use local data
-            loadPersistedTasks()
-            
-            // If no persisted tasks exist for project, generate samples
-            let projectTasks = tasks.filter { $0.projectId == projectId }
-            if projectTasks.isEmpty {
-                generateSampleTasks(for: projectId)
+        do {
+            if let backendTasks = try await fetchTasksFromBackend(projectId: projectId) {
+                // Backend returned tasks - update our local tasks
+                tasks = backendTasks
                 try await saveTasks()
+            } else {
+                // Backend unavailable - use local data
+                loadPersistedTasks()
+                
+                // If no persisted tasks exist for project, generate samples
+                let projectTasks = tasks.filter { $0.projectId == projectId }
+                if projectTasks.isEmpty {
+                    generateSampleTasks(for: projectId)
+                    try await saveTasks()
+                }
             }
+        } catch {
+            // Network error - throw network failure for UI to handle
+            throw TaskServiceError.networkFailure
         }
     }
     
@@ -73,7 +124,15 @@ class TaskService: ObservableObject {
                 throw TaskServiceError.invalidTaskData("Task title cannot be empty")
             }
             
-            tasks.append(task)
+            // Try backend first
+            if let createdTask = try await createTaskOnBackend(task) {
+                // Backend success - update local state
+                tasks.append(createdTask)
+            } else {
+                // Backend unavailable - add locally
+                tasks.append(task)
+            }
+            
             try await saveTasks()
         } catch {
             lastError = "Failed to add task: \(error.localizedDescription)"
@@ -103,11 +162,28 @@ class TaskService: ObservableObject {
         }
         
         var updatedTask = tasks[index]
+        let originalStatus = updatedTask.status
+        
+        // Update local state optimistically
         updatedTask.status = status
         updatedTask.updatedAt = Date()
-        
         tasks[index] = updatedTask
-        try await saveTasks()
+        
+        do {
+            // Try backend update
+            if let backendTask = try await updateTaskStatusOnBackend(taskId, status) {
+                // Backend success - use backend response
+                tasks[index] = backendTask
+            }
+            // If backend fails, keep optimistic local update
+            
+            try await saveTasks()
+        } catch {
+            // Revert optimistic update on error
+            updatedTask.status = originalStatus
+            tasks[index] = updatedTask
+            throw error
+        }
     }
     
     func updateTask(_ task: LeanVibeTask) async throws {
@@ -126,12 +202,18 @@ class TaskService: ObservableObject {
             var updatedTask = task
             updatedTask.updatedAt = Date()
             
-            tasks[index] = updatedTask
+            // Try backend update first
+            if let backendTask = try await updateTaskOnBackend(updatedTask) {
+                // Backend success - use backend response
+                tasks[index] = backendTask
+            } else {
+                // Backend unavailable - update locally
+                tasks[index] = updatedTask
+            }
+            
             try await saveTasks()
         } catch {
             lastError = "Failed to update task: \(error.localizedDescription)"
-            // Error handling will be managed by the global error system
-            // GlobalErrorManager.shared.showError(TaskServiceError.updateFailed, context: "Updating task: \(task.title)")
             throw error
         }
     }
@@ -144,8 +226,16 @@ class TaskService: ObservableObject {
                 throw TaskServiceError.taskNotFound
             }
             
-            tasks.remove(at: index)
-            try await saveTasks()
+            let taskToDelete = tasks[index]
+            
+            // Try backend deletion first
+            let backendSuccess = try await deleteTaskOnBackend(taskId)
+            
+            if backendSuccess || !backendSuccess {
+                // Delete locally regardless of backend result (optimistic)
+                tasks.remove(at: index)
+                try await saveTasks()
+            }
         } catch {
             lastError = "Failed to delete task: \(error.localizedDescription)"
             throw error
@@ -215,7 +305,8 @@ class TaskService: ObservableObject {
     
     @MainActor
     private func fetchTasksFromBackend(projectId: UUID) async throws -> [LeanVibeTask]? {
-        guard let url = URL(string: "\(baseURL)/api/projects/\(projectId)/tasks") else {
+        // Use the correct backend endpoint with query parameter
+        guard let url = URL(string: "\(baseURL)/api/tasks?project_id=\(projectId.uuidString)") else {
             throw TaskServiceError.invalidURL
         }
         
@@ -233,13 +324,13 @@ class TaskService: ObservableObject {
             
             switch httpResponse.statusCode {
             case 200...299:
-                // Success - decode tasks
-                let tasksResponse = try jsonDecoder.decode(TasksAPIResponse.self, from: data)
-                return tasksResponse.tasks
+                // Success - decode tasks directly (backend returns array)
+                let tasks = try jsonDecoder.decode([LeanVibeTask].self, from: data)
+                return tasks
                 
             case 404:
-                // No tasks endpoint available, use fallback
-                return nil
+                // No tasks found for project, return empty array
+                return []
                 
             case 500...599:
                 // Server error, use fallback
@@ -534,6 +625,226 @@ class TaskService: ObservableObject {
         
         tasks.append(contentsOf: sampleTasks)
     }
+    
+    // MARK: - Backend Connectivity Testing
+    
+    @MainActor
+    func testBackendConnectivity() async -> Bool {
+        guard let url = URL(string: "\(baseURL)/health") else {
+            return false
+        }
+        
+        do {
+            let (_, response) = try await session.data(from: url)
+            if let httpResponse = response as? HTTPURLResponse {
+                return 200...299 ~= httpResponse.statusCode
+            }
+            return false
+        } catch {
+            return false
+        }
+    }
+    
+    // MARK: - Backend API Methods
+    
+    @MainActor
+    private func createTaskOnBackend(_ task: LeanVibeTask) async throws -> LeanVibeTask? {
+        guard let url = URL(string: "\(baseURL)/api/tasks") else {
+            throw TaskServiceError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 10.0
+        
+        do {
+            // Create backend-compatible task data
+            let taskData = BackendTaskCreate(
+                title: task.title,
+                description: task.description,
+                priority: task.priority,
+                projectId: task.projectId,
+                clientId: task.clientId,
+                assignedTo: task.assignedTo,
+                estimatedEffort: task.estimatedEffort,
+                tags: task.tags,
+                dependencies: task.dependencies.map { $0.uuidString }
+            )
+            
+            let jsonData = try jsonEncoder.encode(taskData)
+            request.httpBody = jsonData
+            
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  200...299 ~= httpResponse.statusCode else {
+                return nil // Backend unavailable, return nil for fallback
+            }
+            
+            return try jsonDecoder.decode(LeanVibeTask.self, from: data)
+            
+        } catch {
+            return nil // Backend error, return nil for fallback
+        }
+    }
+    
+    @MainActor
+    private func updateTaskStatusOnBackend(_ taskId: UUID, _ status: TaskStatus) async throws -> LeanVibeTask? {
+        guard let url = URL(string: "\(baseURL)/api/tasks/\(taskId.uuidString)/status") else {
+            throw TaskServiceError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 10.0
+        
+        do {
+            let statusUpdate = BackendTaskStatusUpdate(status: status)
+            let jsonData = try jsonEncoder.encode(statusUpdate)
+            request.httpBody = jsonData
+            
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  200...299 ~= httpResponse.statusCode else {
+                return nil // Backend unavailable, return nil for fallback
+            }
+            
+            return try jsonDecoder.decode(LeanVibeTask.self, from: data)
+            
+        } catch {
+            return nil // Backend error, return nil for fallback
+        }
+    }
+    
+    @MainActor
+    private func updateTaskOnBackend(_ task: LeanVibeTask) async throws -> LeanVibeTask? {
+        guard let url = URL(string: "\(baseURL)/api/tasks/\(task.id.uuidString)") else {
+            throw TaskServiceError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 10.0
+        
+        do {
+            let taskUpdate = BackendTaskUpdate(
+                title: task.title,
+                description: task.description,
+                status: task.status,
+                priority: task.priority,
+                assignedTo: task.assignedTo,
+                estimatedEffort: task.estimatedEffort,
+                actualEffort: task.actualEffort,
+                confidence: task.confidence,
+                tags: task.tags,
+                dependencies: task.dependencies.map { $0.uuidString }
+            )
+            
+            let jsonData = try jsonEncoder.encode(taskUpdate)
+            request.httpBody = jsonData
+            
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  200...299 ~= httpResponse.statusCode else {
+                return nil // Backend unavailable, return nil for fallback
+            }
+            
+            return try jsonDecoder.decode(LeanVibeTask.self, from: data)
+            
+        } catch {
+            return nil // Backend error, return nil for fallback
+        }
+    }
+    
+    @MainActor
+    private func deleteTaskOnBackend(_ taskId: UUID) async throws -> Bool {
+        guard let url = URL(string: "\(baseURL)/api/tasks/\(taskId.uuidString)") else {
+            throw TaskServiceError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 10.0
+        
+        do {
+            let (_, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  200...299 ~= httpResponse.statusCode else {
+                return false // Backend unavailable, return false for fallback
+            }
+            
+            return true
+            
+        } catch {
+            return false // Backend error, return false for fallback
+        }
+    }
+}
+
+// MARK: - Backend API Types
+
+struct BackendTaskCreate: Codable {
+    let title: String
+    let description: String?
+    let priority: TaskPriority
+    let projectId: UUID
+    let clientId: String
+    let assignedTo: String?
+    let estimatedEffort: TimeInterval?
+    let tags: [String]
+    let dependencies: [String] // String UUIDs for backend
+    
+    enum CodingKeys: String, CodingKey {
+        case title
+        case description
+        case priority
+        case projectId = "project_id"
+        case clientId = "client_id"
+        case assignedTo = "assigned_to"
+        case estimatedEffort = "estimated_effort"
+        case tags
+        case dependencies
+    }
+}
+
+struct BackendTaskUpdate: Codable {
+    let title: String?
+    let description: String?
+    let status: TaskStatus?
+    let priority: TaskPriority?
+    let assignedTo: String?
+    let estimatedEffort: TimeInterval?
+    let actualEffort: TimeInterval?
+    let confidence: Double?
+    let tags: [String]?
+    let dependencies: [String]? // String UUIDs for backend
+    
+    enum CodingKeys: String, CodingKey {
+        case title
+        case description
+        case status
+        case priority
+        case assignedTo = "assigned_to"
+        case estimatedEffort = "estimated_effort"
+        case actualEffort = "actual_effort"
+        case confidence
+        case tags
+        case dependencies
+    }
+}
+
+struct BackendTaskStatusUpdate: Codable {
+    let status: TaskStatus
 }
 
 // MARK: - API Response Types

@@ -1,194 +1,140 @@
-# LeanVibe AI - Next Session Tasks (2025-07-01)
+# Next Session Priority Tasks - July 3, 2025
 
-## 🎯 Critical Path Priorities (Sprint 1 - Week 1)
+## 🎯 Immediate Action Items (Session Continuation)
 
-### Priority 1: iOS Build System Resolution
-**Owner**: ALPHA Agent  
-**Status**: Critical Blocker - App Store Submission Impossible  
-**Timeline**: Immediate (Sprint 1)
+### 1. CRITICAL: Complete iOS Hard-coded Metrics Integration
+**Priority**: HIGHEST  
+**Estimated Time**: 30-45 minutes  
+**Status**: Backend ready, iOS integration 50% complete  
 
-**Required Actions**:
-- [ ] **Fix iOS Build Configuration**: Complete Xcode project setup and build validation
-- [ ] **Resolve Swift Continuation Leaks**: Memory leaks in WebSocket connections
-- [ ] **Fix Missing Asset Resources**: Runtime crashes due to missing colors and system symbols
-- [ ] **Address Concurrency Violations**: Data races in speech recognition processing
-- [ ] **Fix NSMapTable NULL Pointer Issues**: Crashes during audio engine teardown
-- [ ] **Update Deprecated iOS APIs**: Compatibility issues with iOS 17+
+**Files to Modify:**
+- `ProjectManager.swift:128,228,236` - Replace random/hardcoded health scores with API calls
+- `Project.swift:143` - Remove hardcoded default health score (0.85)
 
-**Success Criteria**:
-- [ ] 100% build success rate across all platforms
-- [ ] Zero critical crashes in iOS application
-- [ ] All SwiftLint validation passing
-- [ ] Comprehensive test suite running successfully
+**Implementation Steps:**
+1. Update `fetchProjectsFromBackend()` to call `/api/projects/{id}/metrics`
+2. Parse returned metrics and update Project models
+3. Remove hardcoded random values in `loadSampleProjects()`
+4. Test end-to-end iOS ↔ Backend integration
 
-### Priority 2: Push Notification iOS Implementation Completion
-**Owner**: BETA + ALPHA Agent Coordination  
-**Status**: High Priority - Feature Gap (Backend 100% ready, iOS 40% complete)  
-**Timeline**: Sprint 1 (Week 1)
+**Acceptance Criteria:**
+- ✅ iOS app shows dynamic health scores from backend (92%, 87%)
+- ✅ No more hardcoded 90%, 85% values anywhere in codebase
+- ✅ Projects refresh with real-time calculated metrics
 
-**Required Actions**:
-- [ ] **Complete iOS Push Notification UI Integration**: Notification display and interaction
-- [ ] **Implement Notification Handling**: User interaction and response processing
-- [ ] **Add Notification Settings**: Privacy controls and user preferences
-- [ ] **Validate End-to-End Delivery**: Complete notification pipeline testing
-- [ ] **Performance Optimization**: Ensure notification processing meets performance targets
+### 2. HIGH: Fix Color Contrast Accessibility Issues
+**Priority**: HIGH  
+**Estimated Time**: 15-20 minutes  
+**Status**: Issues identified, fix pending  
 
-**Success Criteria**:
-- [ ] Complete push notification system operational (100%)
-- [ ] End-to-end notification delivery validated
-- [ ] User settings and privacy controls functional
-- [ ] Performance targets met (<500ms response times)
+**Files to Fix:**
+- `ProjectDetailView.swift:84,88,140,217,242` - Replace light gray backgrounds
 
-### Priority 3: CLI-iOS Bridge Integration Completion
-**Owner**: DELTA Agent  
-**Status**: Medium Priority - Unified Developer Experience (85% complete)  
-**Timeline**: Sprint 1-2 (Weeks 1-2)
+**Implementation Steps:**
+1. Replace `Color(red: 0.95, green: 0.95, blue: 0.97)` with accessible alternatives
+2. Ensure WCAG AA compliance (4.5:1 contrast ratio)
+3. Test with iOS Accessibility Inspector
+4. Validate color combinations across light/dark modes
 
-**Required Actions**:
-- [ ] **Complete iOS-CLI Communication Bridge**: Real-time synchronization between platforms
-- [ ] **Implement Cross-Platform Configuration Sync**: Unified settings and preferences
-- [ ] **Optimize CLI-Backend Performance**: Response time improvements and reliability
-- [ ] **Add Developer Workflow Integration**: Seamless tool switching and state management
-- [ ] **Comprehensive Integration Testing**: End-to-end workflow validation
+**Acceptance Criteria:**
+- ✅ All project cards meet WCAG AA standards
+- ✅ Text remains readable in all conditions
+- ✅ No user reports of poor visibility
 
-**Success Criteria**:
-- [ ] iOS-CLI bridge 100% operational
-- [ ] Cross-platform configuration synchronization working
-- [ ] Performance targets met (Backend ↔ CLI 80%+ operational)
-- [ ] Developer workflow seamlessly integrated
+### 3. MEDIUM: Implement Functional Quick Actions
+**Priority**: MEDIUM  
+**Estimated Time**: 20-30 minutes  
+**Status**: Empty implementations identified  
 
----
+**Files to Fix:**
+- `ProjectDashboardView.swift:228-248` - Implement navigation for empty quick actions
 
-## 🔄 Sprint 2 Priorities (Week 2 - User Experience Enhancement)
+**Implementation Steps:**
+1. Replace empty "Agent Chat" action with NavigationCoordinator tab switch
+2. Replace empty "Monitor" action with monitor tab navigation
+3. Replace empty "Settings" action with settings tab navigation
+4. Test all navigation flows work correctly
 
-### Performance Optimization Focus
-**Timeline**: Week 2  
-**Objective**: Optimize user experience and system performance
+**Acceptance Criteria:**
+- ✅ "Agent Chat" button navigates to Agent tab
+- ✅ "Monitor" button navigates to Monitor tab  
+- ✅ "Settings" button navigates to Settings tab
+- ✅ All actions provide user feedback
 
-**Key Tasks**:
-- [ ] **Architecture Visualization Optimization**: 3-5s → <1s load time for complex diagrams
-- [ ] **Memory Management Enhancement**: WebKit + Mermaid.js memory optimization
-- [ ] **Error Recovery Mechanisms**: Robust reconnection and retry capabilities across components
-- [ ] **Cross-Platform State Consistency**: Conflict resolution for concurrent edits
+## 🔧 Technical Preparation Notes
 
-### User Experience Polish
-**Timeline**: Week 2  
-**Objective**: Enhance user interface and interaction quality
+### Backend Status
+- ✅ All project APIs implemented and tested
+- ✅ Dynamic health score calculation working (92%, 87%)
+- ✅ Sample data includes realistic task and project information
+- ✅ Pydantic models with proper enum inheritance
 
-**Key Tasks**:
-- [ ] **Complete User Documentation**: 68% → 95% documentation coverage
-- [ ] **Enhanced Help System**: Context-sensitive guidance and troubleshooting
-- [ ] **Accessibility Improvements**: VoiceOver support and Dynamic Type compliance
-- [ ] **Advanced Voice Command Vocabulary**: Extended natural language processing
+### iOS Integration Points
+- **WebSocketService**: Already available as `.shared` singleton
+- **NavigationCoordinator**: Already handles tab switching logic
+- **Project Models**: Already compatible with backend schema
+- **Error Handling**: Consider network failure scenarios
 
----
+### Testing Strategy
+1. **Unit Testing**: Backend ProjectService already validated
+2. **Integration Testing**: iOS ↔ Backend API calls need verification
+3. **UI Testing**: Color contrast and navigation functionality
+4. **Accessibility Testing**: WCAG compliance validation
 
-## 🚀 Sprint 3 Priorities (Week 3 - Production Polish)
+## 📊 Expected Session Outcomes
 
-### Security & Compliance
-**Timeline**: Week 3  
-**Objective**: Production security hardening and compliance validation
+### Completion Metrics
+- **Hard-coded Metrics Fix**: 50% → 100% complete
+- **Color Contrast Issues**: 0% → 100% complete  
+- **Quick Actions Functionality**: 0% → 100% complete
+- **Overall Projects Section**: 60% → 95% complete
 
-**Key Tasks**:
-- [ ] **Production Security Configuration**: Environment setup and hardening
-- [ ] **Privacy Compliance Audit**: COPPA requirements and data handling validation
-- [ ] **Code Signing and App Store Preparation**: Distribution package creation
-- [ ] **Final Penetration Testing**: Security vulnerability assessment
+### Quality Gates
+- ✅ All iOS builds succeed
+- ✅ Backend APIs return dynamic data
+- ✅ Accessibility standards met
+- ✅ Navigation flows work correctly
+- ✅ No hardcoded values remain
 
-### Production Infrastructure
-**Timeline**: Week 3  
-**Objective**: Monitoring, deployment, and operational readiness
+### User Experience Impact
+- **Before**: Fake metrics, poor contrast, broken actions
+- **After**: Real-time data, accessible design, functional navigation
+- **Benefit**: Professional, production-ready Projects section
 
-**Key Tasks**:
-- [ ] **Monitoring and Observability Setup**: Production monitoring and alerting
-- [ ] **Automated Deployment Validation**: CI/CD pipeline and quality gates
-- [ ] **Backup and Recovery Procedures**: Data protection and system recovery
-- [ ] **Performance Monitoring and Alerting**: Real-time system health tracking
+## 🚀 Workflow Recommendations
 
----
+### Start Session Protocol
+1. **Wake Command**: Use `/wake` to restore context from memory
+2. **Backend Verification**: Ensure backend server running on port 8002
+3. **iOS Build Check**: Verify current build state before changes
+4. **Todo List Review**: Check current task status
 
-## 📋 Documentation Maintenance (Ongoing)
+### Implementation Order
+1. **Backend-First Validation**: Test new APIs work correctly
+2. **iOS Integration**: One file at a time with build verification
+3. **UI Polish**: Color contrast and accessibility improvements
+4. **Navigation Enhancement**: Quick actions implementation
+5. **End-to-end Testing**: Full user journey validation
 
-### Weekly Documentation Reviews
-**Schedule**: Weekly during production readiness sprints  
-**Responsibility**: Project team with agent coordination
+### Quality Assurance
+1. **Each Change**: Build validation before proceeding
+2. **Each File**: Individual testing of modified components
+3. **Each Feature**: User experience verification
+4. **Session End**: Comprehensive integration testing
 
-**Maintenance Tasks**:
-- [ ] **Link Validation**: Continuous verification of documentation cross-references
-- [ ] **Content Freshness**: Synchronization between implementation and documentation
-- [ ] **Usage Analytics**: Track documentation access patterns for optimization
-- [ ] **Quality Standards**: Maintain 95%+ link success rate and comprehensive coverage
+## 🧠 Context Optimization
 
-### Agent Documentation Updates
-**Schedule**: Real-time during development  
-**Process**: Agent-specific documentation updates with central coordination
+### Memory Usage Strategy
+- **Focused Approach**: Target specific files and line numbers
+- **Batch Operations**: Group related changes in single edits
+- **Progressive Building**: Each change builds on previous success
 
-**Update Requirements**:
-- [ ] **Progress Tracking**: Real-time status updates in agent documentation
-- [ ] **Implementation Sync**: Keep documentation current with code changes
-- [ ] **Cross-References**: Maintain accurate links and dependencies
-- [ ] **Knowledge Transfer**: Document decisions and architectural choices
+### Session Continuity
+- **Progress Tracking**: Update todos as tasks complete
+- **Decision Documentation**: Record rationale for choices
+- **Issue Resolution**: Mark problems solved with evidence
 
----
-
-## 🎯 Success Metrics Tracking
-
-### Production Readiness Targets
-- **Overall Readiness**: 79% → 95%+ (Target achievement)
-- **Build Success Rate**: Variable → 100% (Critical requirement)
-- **iOS Stability**: 60% → 95%+ (Critical stability fixes)
-- **Feature Completeness**: 99.8% → 100% (Final feature gaps closed)
-
-### Performance Benchmarks
-- **iOS Memory Usage**: Maintain <200MB (60% better than target)
-- **Voice Response Time**: Maintain <500ms (75% better than target)
-- **Backend Response**: Maintain <2s (Consistent target achievement)
-- **Integration Health**: 85% → 95%+ operational across all components
-
-### Quality Assurance Metrics
-- **Test Coverage**: Maintain 95%+ comprehensive testing
-- **Documentation Coverage**: 68% → 95%+ completeness
-- **Link Validation**: Maintain 95%+ success rate
-- **Error Rate**: Target <0.1% in production environment
-
----
-
-## 🔧 Development Workflow Integration
-
-### Agent Coordination Protocol
-**Communication**: STATUS.md updates with cross-agent dependencies  
-**Integration**: Weekly cycles with systematic validation  
-**Quality Gates**: Build validation, test coverage, performance benchmarks
-
-### Quality Validation Process
-**Pre-Commit**: SwiftLint, test suite, build validation  
-**Integration**: Cross-component compatibility testing  
-**Production**: End-to-end workflow validation and performance verification
-
-### Documentation Integration
-**Real-Time Updates**: Agent documentation synchronized with development  
-**Quality Maintenance**: Link validation and content freshness procedures  
-**Knowledge Management**: Decision documentation and architectural choice tracking
-
----
-
-## 📈 Risk Management & Contingency Planning
-
-### Critical Risk Mitigation
-- **iOS Build Issues**: Dedicated ALPHA agent focus with escalation procedures
-- **Integration Complexity**: Clear interface contracts and validation testing
-- **Performance Regression**: Continuous monitoring with automated alerts
-- **Timeline Pressure**: Prioritized task execution with quality gate enforcement
-
-### Escalation Procedures
-- **Technical Blockers**: Immediate escalation with expert consultation
-- **Integration Conflicts**: Cross-agent coordination with systematic resolution
-- **Quality Gate Failures**: Development halt until resolution with root cause analysis
-- **Timeline Concerns**: Resource reallocation with scope adjustment if necessary
-
----
-
-**Next Session Date**: TBD (Ready for immediate execution)  
-**Primary Focus**: Critical blocker resolution and iOS stability fixes  
-**Success Criteria**: 100% build success rate and critical stability issues resolved  
-**Documentation Status**: ✅ Complete preparation with clear action items
+### Knowledge Preservation
+- **Implementation Notes**: Document any unexpected findings
+- **Pattern Recognition**: Record successful approaches for future use
+- **Quality Standards**: Maintain build success and test coverage
