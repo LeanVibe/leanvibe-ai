@@ -83,7 +83,8 @@ struct DashboardTabView: View {
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     ProjectDashboardView(
                         projectManager: projectManager,
-                        webSocketService: webSocketService
+                        webSocketService: webSocketService,
+                        navigationCoordinator: navigationCoordinator
                     )
                     .navigationDestination(for: String.self) { destination in
                         if destination.hasPrefix("project-") {
@@ -128,6 +129,16 @@ struct DashboardTabView: View {
                           systemImage: NavigationCoordinator.Tab.monitor.systemImage)
                 }
                 .tag(NavigationCoordinator.Tab.monitor.rawValue)
+                .hapticFeedback(.navigation)
+                
+                NavigationStack(path: $navigationCoordinator.navigationPath) {
+                    ArchitectureTabView(webSocketService: webSocketService)
+                }
+                .tabItem {
+                    Label(NavigationCoordinator.Tab.architecture.title,
+                          systemImage: NavigationCoordinator.Tab.architecture.systemImage)
+                }
+                .tag(NavigationCoordinator.Tab.architecture.rawValue)
                 .hapticFeedback(.navigation)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {

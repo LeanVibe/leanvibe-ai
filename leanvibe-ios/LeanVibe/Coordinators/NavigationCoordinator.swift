@@ -13,6 +13,7 @@ class NavigationCoordinator: ObservableObject {
         case projects
         case agent
         case monitor
+        case architecture
         case settings
         case voice
         case project(String)
@@ -23,7 +24,7 @@ class NavigationCoordinator: ObservableObject {
         static func == (lhs: DeepLink, rhs: DeepLink) -> Bool {
             switch (lhs, rhs) {
             case (.dashboard, .dashboard), (.projects, .projects), (.agent, .agent),
-                 (.monitor, .monitor), (.settings, .settings), (.voice, .voice),
+                 (.monitor, .monitor), (.architecture, .architecture), (.settings, .settings), (.voice, .voice),
                  (.qrScanner, .qrScanner), (.voiceCommand, .voiceCommand):
                 return true
             case let (.project(lhsId), .project(rhsId)):
@@ -40,14 +41,16 @@ class NavigationCoordinator: ObservableObject {
         case projects = 0
         case agent = 1
         case monitor = 2
-        case settings = 3
-        case voice = 4
+        case architecture = 3
+        case settings = 4
+        case voice = 5
         
         var title: String {
             switch self {
             case .projects: return "Projects"
             case .agent: return "Agent"
             case .monitor: return "Monitor"
+            case .architecture: return "Architecture"
             case .settings: return "Settings"
             case .voice: return "Voice"
             }
@@ -58,6 +61,7 @@ class NavigationCoordinator: ObservableObject {
             case .projects: return "folder.fill"
             case .agent: return "brain.head.profile"
             case .monitor: return "chart.line.uptrend.xyaxis"
+            case .architecture: return "building.2.crop.circle"
             case .settings: return "gear"
             case .voice: return "mic.circle.fill"
             }
@@ -74,6 +78,8 @@ class NavigationCoordinator: ObservableObject {
             selectedTab = Tab.agent.rawValue
         case .monitor:
             selectedTab = Tab.monitor.rawValue
+        case .architecture:
+            selectedTab = Tab.architecture.rawValue
         case .settings:
             selectedTab = Tab.settings.rawValue
         case .voice, .voiceCommand:

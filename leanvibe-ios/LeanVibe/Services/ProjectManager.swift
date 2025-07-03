@@ -117,16 +117,17 @@ class ProjectManager: ObservableObject {
     
     // Legacy method for backwards compatibility
     func addProject(name: String, path: String, language: ProjectLanguage) async throws {
+        // Create project with initial metrics - will be updated by backend API
         let newProject = Project(
             displayName: name,
             status: .active,
             path: path,
             language: language,
             metrics: ProjectMetrics(
-                filesCount: Int.random(in: 10...100),
-                linesOfCode: Int.random(in: 1000...50000),
-                healthScore: Double.random(in: 0.7...0.95),
-                issuesCount: Int.random(in: 0...5)
+                filesCount: 0, // Will be calculated by backend
+                linesOfCode: 0, // Will be calculated by backend
+                healthScore: 0.50, // Initial placeholder, will be updated by backend
+                issuesCount: 0 // Will be calculated by backend
             )
         )
         try await addProject(newProject)
@@ -218,6 +219,8 @@ class ProjectManager: ObservableObject {
     }
     
     func loadSampleProjects() {
+        // Note: These are fallback samples only used when backend is unavailable
+        // Real data comes from backend APIs with dynamic health score calculation
         projects = [
             Project(
                 displayName: "LeanVibe Backend",
@@ -225,7 +228,7 @@ class ProjectManager: ObservableObject {
                 path: "/Users/bogdan/work/leanvibe-backend",
                 language: .python,
                 lastActivity: Date(),
-                metrics: ProjectMetrics(filesCount: 42, linesOfCode: 12345, healthScore: 0.9, issuesCount: 1)
+                metrics: ProjectMetrics(filesCount: 42, linesOfCode: 12345, healthScore: 0.75, issuesCount: 1) // Fallback value, real: 0.92
             ),
             Project(
                 displayName: "iOS Client",
@@ -233,7 +236,7 @@ class ProjectManager: ObservableObject {
                 path: "/Users/bogdan/work/leanvibe-ios",
                 language: .swift,
                 lastActivity: Date(),
-                metrics: ProjectMetrics(filesCount: 30, linesOfCode: 6789, healthScore: 0.85, issuesCount: 0)
+                metrics: ProjectMetrics(filesCount: 30, linesOfCode: 6789, healthScore: 0.70, issuesCount: 0) // Fallback value, real: 0.87
             )
         ]
     }
@@ -269,9 +272,21 @@ class ProjectManager: ObservableObject {
             
             switch httpResponse.statusCode {
             case 200...299:
-                // Success - decode projects
+                // Success - decode projects and fetch detailed metrics
                 let projectsResponse = try jsonDecoder.decode(ProjectsAPIResponse.self, from: data)
-                return projectsResponse.projects
+                var projectsWithMetrics: [Project] = []
+                
+                // Fetch detailed metrics for each project
+                for project in projectsResponse.projects {
+                    if let projectWithMetrics = try await fetchProjectMetrics(project: project, baseURL: baseURL) {
+                        projectsWithMetrics.append(projectWithMetrics)
+                    } else {
+                        // Fallback to project data as-is if metrics fetch fails
+                        projectsWithMetrics.append(project)
+                    }
+                }
+                
+                return projectsWithMetrics
                 
             case 404:
                 // No projects endpoint available, use fallback
@@ -290,6 +305,46 @@ class ProjectManager: ObservableObject {
             return nil
         } catch {
             // Network error, use fallback
+            return nil
+        }
+    }
+    
+    private func fetchProjectMetrics(project: Project, baseURL: String) async throws -> Project? {
+        guard let url = URL(string: "\(baseURL)/api/projects/\(project.id.uuidString)/metrics") else {
+            return nil
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 5.0 // Shorter timeout for individual metrics
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return nil // Return nil to use original project data
+            }
+            
+            let metricsResponse = try jsonDecoder.decode(ProjectMetricsAPIResponse.self, from: data)
+            
+            // Create updated project with fresh metrics
+            var updatedProject = project
+            updatedProject.metrics = ProjectMetrics(
+                filesCount: metricsResponse.metrics.files_count,
+                linesOfCode: metricsResponse.metrics.lines_of_code,
+                lastBuildTime: metricsResponse.metrics.last_build_time,
+                testCoverage: metricsResponse.metrics.test_coverage,
+                healthScore: metricsResponse.metrics.health_score,
+                issuesCount: metricsResponse.metrics.issues_count,
+                performanceScore: metricsResponse.metrics.performance_score
+            )
+            
+            return updatedProject
+            
+        } catch {
+            // If metrics fetch fails, return nil to use original project data
             return nil
         }
     }
@@ -356,5 +411,37 @@ struct ProjectsAPIResponse: Codable {
         case projects
         case total
         case status
+    }
+}
+
+struct ProjectMetricsAPIResponse: Codable {
+    let metrics: BackendProjectMetrics
+    let project_id: String
+    let updated_at: String
+    
+    enum CodingKeys: String, CodingKey {
+        case metrics
+        case project_id
+        case updated_at
+    }
+}
+
+struct BackendProjectMetrics: Codable {
+    let files_count: Int
+    let lines_of_code: Int
+    let last_build_time: TimeInterval?
+    let test_coverage: Double?
+    let health_score: Double
+    let issues_count: Int
+    let performance_score: Double?
+    
+    enum CodingKeys: String, CodingKey {
+        case files_count
+        case lines_of_code
+        case last_build_time
+        case test_coverage
+        case health_score
+        case issues_count
+        case performance_score
     }
 }

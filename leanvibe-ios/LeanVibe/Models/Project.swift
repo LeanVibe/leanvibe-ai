@@ -18,7 +18,7 @@ struct Project: Identifiable, Codable, Equatable {
     let path: String
     let language: ProjectLanguage
     let lastActivity: Date
-    let metrics: ProjectMetrics
+    var metrics: ProjectMetrics  // Made mutable to allow real-time updates
     let clientId: String?
     
     init(
@@ -32,7 +32,7 @@ struct Project: Identifiable, Codable, Equatable {
         path: String,
         language: ProjectLanguage,
         lastActivity: Date = Date(),
-        metrics: ProjectMetrics = ProjectMetrics(),
+        metrics: ProjectMetrics = ProjectMetrics(healthScore: 0.5), // Default placeholder until real metrics are fetched
         clientId: String? = nil
     ) {
         self.id = id
@@ -140,7 +140,7 @@ struct ProjectMetrics: Codable, Equatable {
     let issuesCount: Int
     let performanceScore: Double?
     
-    init(filesCount: Int = 0, linesOfCode: Int = 0, lastBuildTime: TimeInterval? = nil, testCoverage: Double? = nil, healthScore: Double = 0.85, issuesCount: Int = 0, performanceScore: Double? = nil) {
+    init(filesCount: Int = 0, linesOfCode: Int = 0, lastBuildTime: TimeInterval? = nil, testCoverage: Double? = nil, healthScore: Double, issuesCount: Int = 0, performanceScore: Double? = nil) {
         self.filesCount = filesCount
         self.linesOfCode = linesOfCode
         self.lastBuildTime = lastBuildTime

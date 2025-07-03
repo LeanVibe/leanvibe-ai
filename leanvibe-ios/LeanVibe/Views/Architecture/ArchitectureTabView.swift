@@ -3,7 +3,18 @@ import SwiftUI
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor
 struct ArchitectureTabView: View {
-    @StateObject private var service = ArchitectureVisualizationService(webSocketService: WebSocketService())
+    let webSocketService: WebSocketService
+    @StateObject private var service: ArchitectureVisualizationService
+    
+    init(webSocketService: WebSocketService) {
+        self.webSocketService = webSocketService
+        self._service = StateObject(wrappedValue: ArchitectureVisualizationService(webSocketService: webSocketService))
+    }
+    
+    init() {
+        self.webSocketService = WebSocketService()
+        self._service = StateObject(wrappedValue: ArchitectureVisualizationService(webSocketService: WebSocketService()))
+    }
     @State private var showComparison = false
     @State private var selectedProject: String = "default_project"
     @State private var showingExportSheet = false

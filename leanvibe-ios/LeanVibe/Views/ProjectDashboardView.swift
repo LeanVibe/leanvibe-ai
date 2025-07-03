@@ -4,6 +4,7 @@ import SwiftUI
 struct ProjectDashboardView: View {
     @ObservedObject var projectManager: ProjectManager
     @ObservedObject var webSocketService: WebSocketService
+    @ObservedObject var navigationCoordinator: NavigationCoordinator
     @State private var showingAddProject = false
     @State private var selectedProject: Project?
     
@@ -229,7 +230,7 @@ struct ProjectDashboardView: View {
                     icon: "brain.head.profile",
                     color: .purple
                 ) {
-                    // Navigate to chat tab
+                    navigationCoordinator.switchToTab(.agent)
                 }
                 
                 QuickActionCard(
@@ -237,7 +238,7 @@ struct ProjectDashboardView: View {
                     icon: "chart.line.uptrend.xyaxis",
                     color: .green
                 ) {
-                    // Navigate to monitoring tab
+                    navigationCoordinator.switchToTab(.monitor)
                 }
                 
                 QuickActionCard(
@@ -245,7 +246,7 @@ struct ProjectDashboardView: View {
                     icon: "gear",
                     color: .gray
                 ) {
-                    // Navigate to settings tab
+                    navigationCoordinator.switchToTab(.settings)
                 }
             }
         }
@@ -461,7 +462,8 @@ struct ProjectDashboardView_Previews: PreviewProvider {
     static var previews: some View {
         ProjectDashboardView(
             projectManager: ProjectManager(),
-            webSocketService: WebSocketService()
+            webSocketService: WebSocketService(),
+            navigationCoordinator: NavigationCoordinator()
         )
     }
 }

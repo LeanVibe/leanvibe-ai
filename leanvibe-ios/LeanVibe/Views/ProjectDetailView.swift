@@ -81,11 +81,11 @@ struct ProjectDetailView: View {
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color(red: 0.95, green: 0.95, blue: 0.97))
+                .background(Color(red: 0.88, green: 0.88, blue: 0.92))
                 .cornerRadius(8)
         }
         .padding()
-        .background(Color(red: 0.95, green: 0.95, blue: 0.97))
+        .background(Color(red: 0.88, green: 0.88, blue: 0.92))
         .cornerRadius(16)
     }
     
@@ -137,7 +137,7 @@ struct ProjectDetailView: View {
                 HealthScoreBar(score: project.metrics.healthScore)
             }
             .padding()
-            .background(Color(red: 0.95, green: 0.95, blue: 0.97))
+            .background(Color(red: 0.88, green: 0.88, blue: 0.92))
             .cornerRadius(12)
         }
     }
@@ -214,7 +214,7 @@ struct MetricDetailCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color(red: 0.95, green: 0.95, blue: 0.97))
+        .background(Color(red: 0.88, green: 0.88, blue: 0.92))
         .cornerRadius(12)
     }
 }
@@ -239,7 +239,7 @@ struct ProjectActionButton: View {
                 Spacer()
             }
             .padding()
-            .background(isEnabled ? color.opacity(0.1) : Color(red: 0.93, green: 0.93, blue: 0.95))
+            .background(isEnabled ? color.opacity(0.15) : Color(red: 0.85, green: 0.85, blue: 0.90))
             .foregroundColor(isEnabled ? color : .gray)
             .cornerRadius(12)
         }
