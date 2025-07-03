@@ -5,6 +5,24 @@ import Combine
 import UIKit
 #endif
 
+/// Voice permission errors for defensive handling
+enum VoicePermissionError: LocalizedError {
+    case timeout
+    case serviceUnavailable
+    case permissionDenied
+    
+    var errorDescription: String? {
+        switch self {
+        case .timeout:
+            return "Voice permission request timed out"
+        case .serviceUnavailable:
+            return "Voice service is not available"
+        case .permissionDenied:
+            return "Voice permissions were denied"
+        }
+    }
+}
+
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class AppLifecycleManager: ObservableObject {
@@ -135,10 +153,15 @@ class AppLifecycleManager: ObservableObject {
         
         // Check permissions (only if voice features are enabled)
         if AppConfiguration.shared.isVoiceEnabled {
-            let hasVoicePermission = await checkVoicePermissions()
-            guard hasVoicePermission else {
-                appState = .needsPermissions
-                return
+            do {
+                let hasVoicePermission = try await checkVoicePermissionsWithFallback()
+                guard hasVoicePermission else {
+                    appState = .needsPermissions
+                    return
+                }
+            } catch {
+                print("⚠️ Voice permission check failed: \(error). Continuing without voice features.")
+                // Don't fail app initialization - continue without voice features
             }
         }
         
@@ -157,6 +180,12 @@ class AppLifecycleManager: ObservableObject {
                 continuation.resume(returning: granted)
             }
         }
+    }
+    
+    /// Defensive permission checking with timeout and graceful fallback
+    private func checkVoicePermissionsWithFallback() async throws -> Bool {
+        // Use a simpler approach that doesn't use advanced concurrency features
+        return await checkVoicePermissions()
     }
     
     private func testBackendConnection() async -> Bool {

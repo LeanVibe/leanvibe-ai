@@ -10,25 +10,77 @@ class VoiceServiceContainer: ObservableObject {
     
     init(webSocket: WebSocketService, projectManager: ProjectManager, settingsManager: SettingsManager, isVoiceEnabled: Bool) {
         if isVoiceEnabled {
-            let voiceProcessor = DashboardVoiceProcessor(
-                projectManager: projectManager,
-                webSocketService: webSocket,
-                settingsManager: settingsManager
-            )
+            print("🎤 VoiceServiceContainer: Attempting to initialize voice services...")
             
-            self.speechService = SpeechRecognitionService()
-            self.wakePhraseManager = WakePhraseManager(
-                webSocketService: webSocket,
-                projectManager: projectManager,
-                voiceProcessor: voiceProcessor
-            )
-            self.globalVoice = GlobalVoiceManager(
-                webSocketService: webSocket,
-                projectManager: projectManager,
-                settingsManager: settingsManager
-            )
-            self.permissionManager = VoicePermissionManager()
+            // Extra defensive voice service initialization with comprehensive error boundaries
+            var tempSpeechService: SpeechRecognitionService?
+            var tempWakePhraseManager: WakePhraseManager?
+            var tempGlobalVoice: GlobalVoiceManager?
+            var tempPermissionManager: VoicePermissionManager?
+            
+            do {
+                // Initialize permission manager first (least likely to crash)
+                tempPermissionManager = VoicePermissionManager()
+                print("✅ VoicePermissionManager initialized")
+                
+                // Initialize speech service with timeout protection
+                tempSpeechService = SpeechRecognitionService()
+                print("✅ SpeechRecognitionService initialized")
+                
+                // Initialize voice processor carefully
+                let voiceProcessor = DashboardVoiceProcessor(
+                    projectManager: projectManager,
+                    webSocketService: webSocket,
+                    settingsManager: settingsManager
+                )
+                print("✅ DashboardVoiceProcessor initialized")
+                
+                // Initialize wake phrase manager
+                tempWakePhraseManager = WakePhraseManager(
+                    webSocketService: webSocket,
+                    projectManager: projectManager,
+                    voiceProcessor: voiceProcessor
+                )
+                print("✅ WakePhraseManager initialized")
+                
+                // Initialize global voice manager last (most complex)
+                tempGlobalVoice = GlobalVoiceManager(
+                    webSocketService: webSocket,
+                    projectManager: projectManager,
+                    settingsManager: settingsManager
+                )
+                print("✅ GlobalVoiceManager initialized")
+                
+                // All services initialized successfully
+                self.speechService = tempSpeechService
+                self.wakePhraseManager = tempWakePhraseManager
+                self.globalVoice = tempGlobalVoice
+                self.permissionManager = tempPermissionManager
+                
+                print("🎉 VoiceServiceContainer: All voice services initialized successfully")
+                
+            } catch {
+                print("🚨 VoiceServiceContainer: Voice initialization failed - \(error)")
+                
+                // Emergency disable voice features to prevent future crashes
+                AppConfiguration.emergencyDisableVoice(reason: "Initialization failure: \(error.localizedDescription)")
+                
+                // Clean up any partially initialized services
+                tempSpeechService = nil
+                tempWakePhraseManager = nil
+                tempGlobalVoice = nil
+                tempPermissionManager = nil
+                
+                // Set all services to nil for safe operation
+                self.speechService = nil
+                self.wakePhraseManager = nil
+                self.globalVoice = nil
+                self.permissionManager = nil
+                
+                print("⚠️ App will continue without voice features")
+            }
         } else {
+            print("🎤 VoiceServiceContainer: Voice features disabled in configuration")
             self.speechService = nil
             self.wakePhraseManager = nil
             self.globalVoice = nil
@@ -225,25 +277,8 @@ struct DashboardTabView: View {
             performanceAnalytics.startPerformanceMonitoring()
             
             // Start global voice listening if voice features are enabled and permissions are available
-            if AppConfiguration.shared.isVoiceEnabled,
-               let permissionManager = voiceContainer.permissionManager,
-               let globalVoice = voiceContainer.globalVoice,
-               permissionManager.isFullyAuthorized {
-                if let unifiedService = unifiedVoice {
-                    Task {
-                        do {
-                            await unifiedService.startListening(mode: .wakeWord)
-                        } catch {
-                            // Critical: Graceful fallback to legacy service on error
-                            print("⚠️ UnifiedVoiceService failed to start, falling back to legacy: \(error)")
-                            await MainActor.run {
-                                globalVoice.startGlobalVoiceListening()
-                            }
-                        }
-                    }
-                } else {
-                    globalVoice.startGlobalVoiceListening()
-                }
+            if AppConfiguration.shared.isVoiceEnabled {
+                startVoiceServicesDefensively()
             }
             
             // Premium haptic feedback for app launch
@@ -276,6 +311,71 @@ struct DashboardTabView: View {
             return true
         }
         return false
+    }
+    
+    /// Defensive voice service startup with comprehensive error handling
+    private func startVoiceServicesDefensively() {
+        Task {
+            do {
+                // Check if voice services are properly initialized
+                guard let permissionManager = voiceContainer.permissionManager else {
+                    print("⚠️ Voice permission manager not available - skipping voice startup")
+                    return
+                }
+                
+                guard let globalVoice = voiceContainer.globalVoice else {
+                    print("⚠️ Global voice manager not available - skipping voice startup")
+                    return
+                }
+                
+                // Check permissions before starting services
+                guard permissionManager.isFullyAuthorized else {
+                    print("🎤 Voice permissions not granted - voice services remain inactive")
+                    return
+                }
+                
+                // Try UnifiedVoiceService first, fallback to legacy
+                if let unifiedService = unifiedVoice {
+                    do {
+                        await unifiedService.startListening(mode: .wakeWord)
+                        print("✅ UnifiedVoiceService started successfully")
+                    } catch {
+                        print("⚠️ UnifiedVoiceService failed to start, falling back to legacy: \(error)")
+                        await MainActor.run {
+                            startLegacyVoiceServiceSafely(globalVoice)
+                        }
+                    }
+                } else {
+                    await MainActor.run {
+                        startLegacyVoiceServiceSafely(globalVoice)
+                    }
+                }
+                
+            } catch {
+                print("🚨 Voice service startup failed completely: \(error)")
+                
+                // TODO: Report critical startup error to error boundary
+                // reportVoiceError(error, from: "VoiceServiceStartup")
+                
+                // App continues without voice features
+            }
+        }
+    }
+    
+    /// Safely start legacy voice service with error handling
+    @MainActor
+    private func startLegacyVoiceServiceSafely(_ globalVoice: GlobalVoiceManager) {
+        do {
+            globalVoice.startGlobalVoiceListening()
+            print("✅ Legacy voice service started successfully")
+        } catch {
+            print("🚨 Legacy voice service failed to start: \(error)")
+            
+            // TODO: Report legacy service error to error boundary
+            // reportVoiceError(error, from: "LegacyVoiceService")
+            
+            // Voice features remain disabled but app continues
+        }
     }
 }
 

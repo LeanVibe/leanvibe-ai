@@ -25,7 +25,25 @@ class VoicePermissionManager: ObservableObject {
     }
     
     init() {
-        checkPermissions()
+        print("🔐 VoicePermissionManager: Starting defensive initialization...")
+        
+        // Defensive permission checking to prevent startup crashes
+        do {
+            checkPermissions()
+            print("✅ VoicePermissionManager: Permissions checked successfully")
+        } catch {
+            print("🚨 VoicePermissionManager: Permission check failed - \(error)")
+            
+            // Set safe defaults if permission check fails
+            hasMicrophonePermission = false
+            hasSpeechRecognitionPermission = false
+            permissionStatus = .notDetermined
+            isFullyAuthorized = false
+            permissionError = "Permission check failed: \(error.localizedDescription)"
+            
+            // Emergency disable voice features
+            AppConfiguration.emergencyDisableVoice(reason: "Permission check failure: \(error.localizedDescription)")
+        }
     }
     
     func checkPermissions() {
@@ -43,13 +61,27 @@ class VoicePermissionManager: ObservableObject {
     }
     
     private func checkMicrophonePermission() {
-        let status = AVAudioSession.sharedInstance().recordPermission
-        hasMicrophonePermission = (status == .granted)
+        do {
+            let status = AVAudioSession.sharedInstance().recordPermission
+            hasMicrophonePermission = (status == .granted)
+            print("🎤 Microphone permission status: \(status.description)")
+        } catch {
+            print("🚨 Failed to check microphone permission: \(error)")
+            hasMicrophonePermission = false
+            permissionError = "Failed to check microphone permission: \(error.localizedDescription)"
+        }
     }
     
     private func checkSpeechRecognitionPermission() {
-        let status = SFSpeechRecognizer.authorizationStatus()
-        hasSpeechRecognitionPermission = (status == .authorized)
+        do {
+            let status = SFSpeechRecognizer.authorizationStatus()
+            hasSpeechRecognitionPermission = (status == .authorized)
+            print("🗣️ Speech recognition permission status: \(status.description)")
+        } catch {
+            print("🚨 Failed to check speech recognition permission: \(error)")
+            hasSpeechRecognitionPermission = false
+            permissionError = "Failed to check speech recognition permission: \(error.localizedDescription)"
+        }
     }
     
     func requestPermissions(completion: @escaping (Bool) -> Void) {

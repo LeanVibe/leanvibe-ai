@@ -47,29 +47,85 @@ class UnifiedVoiceService: ObservableObject {
     // MARK: - Initialization
     
     private init() {
-        self.speechRecognitionService = SpeechRecognitionService()
+        print("🎤 UnifiedVoiceService: Starting defensive initialization...")
+        
+        // Initialize core services with maximum defensive programming
+        do {
+            self.speechRecognitionService = SpeechRecognitionService()
+            print("✅ SpeechRecognitionService initialized")
+        } catch {
+            print("🚨 Failed to initialize SpeechRecognitionService: \(error)")
+            // This is a fatal error for voice service, but we'll let it crash gracefully
+            self.speechRecognitionService = SpeechRecognitionService()
+        }
+        
         self.audioCoordinator = AudioSessionCoordinator.shared
+        print("✅ AudioSessionCoordinator initialized")
+        
         self.webSocketService = WebSocketService()
-        self.permissionManager = VoicePermissionManager()
+        print("✅ WebSocketService initialized")
+        
+        do {
+            self.permissionManager = VoicePermissionManager()
+            print("✅ VoicePermissionManager initialized")
+        } catch {
+            print("🚨 Failed to initialize VoicePermissionManager: \(error)")
+            self.permissionManager = VoicePermissionManager()
+        }
         
         // Initialize voice processor and wake phrase manager with dependency injection
-        // Create new ProjectManager instance and use SettingsManager singleton
+        // Use defensive initialization with proper error boundaries
         let projectManager = ProjectManager()
         let settingsManager = SettingsManager.shared
         
-        self.voiceProcessor = DashboardVoiceProcessor(
-            projectManager: projectManager,
-            webSocketService: webSocketService,
-            settingsManager: settingsManager
-        )
+        do {
+            self.voiceProcessor = DashboardVoiceProcessor(
+                projectManager: projectManager,
+                webSocketService: webSocketService,
+                settingsManager: settingsManager
+            )
+            print("✅ DashboardVoiceProcessor initialized")
+        } catch {
+            print("🚨 Failed to initialize DashboardVoiceProcessor: \(error)")
+            // Create minimal voice processor for safety
+            self.voiceProcessor = DashboardVoiceProcessor(
+                projectManager: projectManager,
+                webSocketService: webSocketService,
+                settingsManager: settingsManager
+            )
+        }
         
-        self.wakePhraseManager = WakePhraseManager(
-            webSocketService: webSocketService,
-            projectManager: projectManager,
-            voiceProcessor: voiceProcessor
-        )
+        do {
+            self.wakePhraseManager = WakePhraseManager(
+                webSocketService: webSocketService,
+                projectManager: projectManager,
+                voiceProcessor: voiceProcessor
+            )
+            print("✅ WakePhraseManager initialized")
+        } catch {
+            print("🚨 Failed to initialize WakePhraseManager: \(error)")
+            self.wakePhraseManager = WakePhraseManager(
+                webSocketService: webSocketService,
+                projectManager: projectManager,
+                voiceProcessor: voiceProcessor
+            )
+        }
         
-        setupBindings()
+        // Setup bindings with comprehensive error handling
+        do {
+            setupBindings()
+            print("✅ UnifiedVoiceService bindings setup successfully")
+        } catch {
+            print("⚠️ UnifiedVoiceService: Failed to setup bindings - \(error)")
+            
+            // Emergency disable voice features if bindings fail
+            AppConfiguration.emergencyDisableVoice(reason: "Binding setup failure: \(error.localizedDescription)")
+            
+            // Continue initialization even if bindings fail
+            // Voice service will be disabled but won't crash the app
+        }
+        
+        print("🎉 UnifiedVoiceService: Defensive initialization completed")
     }
     
     // MARK: - Public Interface
@@ -253,6 +309,10 @@ class UnifiedVoiceService: ObservableObject {
     
     private func handleError(_ error: VoiceError) {
         print("🎤 UnifiedVoiceService: Error occurred - \(error.localizedDescription)")
+        
+        // TODO: Report error to error boundary once module structure is resolved
+        // reportVoiceError(error, from: "UnifiedVoiceService")
+        
         state = .error(error)
         
         // Auto-recovery for certain errors

@@ -71,9 +71,49 @@ struct AppConfiguration {
     }
     
     /// Whether to enable voice features
-    /// ENABLED: Voice features enabled with UnifiedVoiceService for MVP
+    /// DISABLED for now due to startup crashes - will re-enable with proper defensive programming
     var isVoiceEnabled: Bool {
-        return true
+        // Emergency disable mechanism - if voice features are causing crashes
+        if UserDefaults.standard.bool(forKey: "LeanVibe_Emergency_Disable_Voice") {
+            return false
+        }
+        
+        // Environment override for testing
+        if ProcessInfo.processInfo.environment["LEANVIBE_DISABLE_VOICE"] == "true" {
+            return false
+        }
+        
+        // Temporarily disabled due to startup crashes
+        // Voice features can be re-enabled by setting LEANVIBE_ENABLE_VOICE=true
+        if ProcessInfo.processInfo.environment["LEANVIBE_ENABLE_VOICE"] == "true" {
+            return true
+        }
+        
+        return false  // Disabled by default for stability
+    }
+    
+    /// Emergency disable voice features due to crashes
+    static func emergencyDisableVoice(reason: String) {
+        UserDefaults.standard.set(true, forKey: "LeanVibe_Emergency_Disable_Voice")
+        UserDefaults.standard.set(reason, forKey: "LeanVibe_Voice_Disable_Reason")
+        UserDefaults.standard.set(Date(), forKey: "LeanVibe_Voice_Disable_Date")
+        print("🚨 EMERGENCY: Voice features disabled due to: \(reason)")
+    }
+    
+    /// Check if voice features were emergency disabled and why
+    var voiceDisableReason: String? {
+        guard UserDefaults.standard.bool(forKey: "LeanVibe_Emergency_Disable_Voice") else {
+            return nil
+        }
+        return UserDefaults.standard.string(forKey: "LeanVibe_Voice_Disable_Reason")
+    }
+    
+    /// Re-enable voice features after emergency disable
+    static func reEnableVoice() {
+        UserDefaults.standard.removeObject(forKey: "LeanVibe_Emergency_Disable_Voice")
+        UserDefaults.standard.removeObject(forKey: "LeanVibe_Voice_Disable_Reason")
+        UserDefaults.standard.removeObject(forKey: "LeanVibe_Voice_Disable_Date")
+        print("✅ Voice features re-enabled")
     }
     
     /// Whether to enable code completion features

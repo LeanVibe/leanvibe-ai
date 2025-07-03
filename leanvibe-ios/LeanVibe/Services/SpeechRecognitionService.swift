@@ -78,15 +78,20 @@ class SpeechRecognitionService: NSObject, ObservableObject {
                 return
             }
             Task {
-                let result = await self.audioCoordinator.registerSpeechClient(self.clientId)
-                switch result {
-                case .success:
-                    await self.setupRecognitionRequest()
-                    self.isListening = true
-                    self.startTimersCompat()
-                    self.setupAudioBufferSubscription()
-                case .failure(let error):
-                    self.recognitionState = .error(error.localizedDescription)
+                do {
+                    let result = await self.audioCoordinator.registerSpeechClient(self.clientId)
+                    switch result {
+                    case .success:
+                        try await self.setupRecognitionRequestSafely()
+                        self.isListening = true
+                        self.startTimersCompat()
+                        self.setupAudioBufferSubscription()
+                    case .failure(let error):
+                        self.recognitionState = .error(error.localizedDescription)
+                        self.lastError = error.localizedDescription
+                    }
+                } catch {
+                    self.recognitionState = .error("Failed to setup speech recognition: \(error.localizedDescription)")
                     self.lastError = error.localizedDescription
                 }
             }
@@ -191,6 +196,9 @@ class SpeechRecognitionService: NSObject, ObservableObject {
     
     private func handleRecognitionResult(result: SFSpeechRecognitionResult?, error: Error?) {
         if let error = error {
+            // TODO: Report error to error boundary once module structure is resolved
+            // reportVoiceError(error, from: "SpeechRecognitionService")
+            
             recognitionState = .error(error.localizedDescription)
             lastError = error.localizedDescription
             stopListening()
@@ -271,6 +279,35 @@ extension SpeechRecognitionService {
             Task { @MainActor [weak self] in
                 self?.handleRecognitionResult(result: result, error: error)
             }
+        }
+    }
+    
+    /// Defensive recognition setup with proper error handling
+    private func setupRecognitionRequestSafely() async throws {
+        guard let speechRecognizer = speechRecognizer else {
+            throw RecognitionError.recognitionFailed("Speech recognizer not available")
+        }
+        
+        guard speechRecognizer.isAvailable else {
+            throw RecognitionError.recognitionFailed("Speech recognizer is not available")
+        }
+        
+        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
+        guard let recognitionRequest = recognitionRequest else {
+            throw RecognitionError.recognitionFailed("Failed to create recognition request")
+        }
+        
+        recognitionRequest.shouldReportPartialResults = true
+        recognitionRequest.requiresOnDeviceRecognition = true
+        
+        recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
+            Task { @MainActor [weak self] in
+                self?.handleRecognitionResult(result: result, error: error)
+            }
+        }
+        
+        guard recognitionTask != nil else {
+            throw RecognitionError.recognitionFailed("Failed to create recognition task")
         }
     }
     
