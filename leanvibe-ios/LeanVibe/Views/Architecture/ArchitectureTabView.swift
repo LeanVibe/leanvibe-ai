@@ -19,6 +19,7 @@ struct ArchitectureTabView: View {
     @State private var selectedProject: String = "default_project"
     @State private var showingExportSheet = false
     @State private var exportedDiagram: String = ""
+    @State private var showingChangesAlert = false
 
     var body: some View {
         NavigationView {
@@ -58,7 +59,7 @@ struct ArchitectureTabView: View {
                         // In a real implementation, you'd store previous versions
                         DiagramComparisonView(
                             beforeDiagram: diagram,
-                            afterDiagram: diagram
+                            afterDiagram: service.lastKnownDiagram ?? diagram
                         )
                     } else {
                         ArchitectureWebView(
@@ -99,22 +100,66 @@ struct ArchitectureTabView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             
-            // Floating action button for refresh
-            Button(action: {
-                Task {
-                    await service.fetchInitialDiagram(for: selectedProject)
+            VStack(spacing: 12) {
+                // Changes notification banner
+                if service.hasChanges {
+                    Button(action: {
+                        showingChangesAlert = true
+                    }) {
+                        HStack {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .foregroundColor(.orange)
+                            Text("Architecture Updated")
+                                .font(.caption)
+                                .foregroundColor(.primary)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color.orange.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.orange, lineWidth: 1)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
-            }) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .frame(width: 44, height: 44)
-                    .background(Color.blue)
-                    .clipShape(Circle())
-                    .shadow(radius: 4)
+                
+                // Floating action button for refresh
+                Button(action: {
+                    Task {
+                        await service.fetchInitialDiagram(for: selectedProject)
+                    }
+                }) {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.title2)
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(Color.blue)
+                        .clipShape(Circle())
+                        .shadow(radius: 4)
+                }
+                .disabled(service.isLoading)
             }
             .padding()
-            .disabled(service.isLoading)
+        }
+        .alert("Architecture Changes Detected", isPresented: $showingChangesAlert) {
+            Button("Update") {
+                service.acceptChanges()
+            }
+            Button("Keep Current") {
+                service.rejectChanges()
+            }
+            Button("Compare") {
+                showComparison = true
+                showingChangesAlert = false
+            }
+        } message: {
+            if let lastUpdated = service.lastUpdated {
+                Text("The architecture was updated on \(lastUpdated, formatter: dateFormatter). Would you like to view the changes?")
+            } else {
+                Text("The architecture has been updated. Would you like to view the changes?")
+            }
         }
     }
     
@@ -197,6 +242,13 @@ struct ArchitectureTabView: View {
         Task {
             await service.requestDiagramUpdate(for: nodeId, in: selectedProject)
         }
+    }
+    
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter
     }
 }
 
