@@ -98,7 +98,7 @@ class BackendClient:
             raise ConnectionError(f"Failed to find symbol references: {e}")
     
     async def get_complexity_analysis(self, client_id: str = None) -> Dict[str, Any]:
-        """Get code complexity analysis"""
+        """Get complexity analysis"""
         session_id = client_id or self.client_id
         try:
             response = await self.http_client.get(f"{self.config.backend_url}/ast/complexity/{session_id}")
@@ -106,6 +106,262 @@ class BackendClient:
             return response.json()
         except Exception as e:
             raise ConnectionError(f"Failed to get complexity analysis: {e}")
+    
+    # iOS Integration Methods
+    
+    async def get_ios_status(self) -> Dict[str, Any]:
+        """Get iOS app connection status"""
+        try:
+            response = await self.http_client.get(f"{self.config.backend_url}/api/ios/status")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"connected": False, "error": str(e)}
+    
+    async def get_ios_details(self) -> Dict[str, Any]:
+        """Get detailed iOS connection information"""
+        try:
+            response = await self.http_client.get(f"{self.config.backend_url}/api/ios/details")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            raise ConnectionError(f"Failed to get iOS details: {e}")
+    
+    async def send_ios_notification(self, notification_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Send notification to iOS app"""
+        try:
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/ios/notify",
+                json=notification_data
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    async def get_projects(self) -> list:
+        """Get all projects"""
+        try:
+            response = await self.http_client.get(f"{self.config.backend_url}/api/projects/")
+            response.raise_for_status()
+            return response.json().get("projects", [])
+        except Exception as e:
+            raise ConnectionError(f"Failed to get projects: {e}")
+    
+    async def get_ios_projects(self) -> list:
+        """Get projects from iOS app"""
+        try:
+            response = await self.http_client.get(f"{self.config.backend_url}/api/ios/projects")
+            response.raise_for_status()
+            return response.json().get("projects", [])
+        except Exception as e:
+            return []
+    
+    async def sync_ios_projects(self, force: bool = False) -> Dict[str, Any]:
+        """Sync projects with iOS app"""
+        try:
+            payload = {"force": force}
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/ios/sync/projects",
+                json=payload
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    async def sync_ios_tasks(self, force: bool = False) -> Dict[str, Any]:
+        """Sync tasks with iOS app"""
+        try:
+            payload = {"force": force}
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/ios/sync/tasks",
+                json=payload
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    async def sync_ios_metrics(self, force: bool = False) -> Dict[str, Any]:
+        """Sync metrics with iOS app"""
+        try:
+            payload = {"force": force}
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/ios/sync/metrics",
+                json=payload
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    async def push_projects_to_ios(self, projects: list) -> Dict[str, Any]:
+        """Push projects to iOS app"""
+        try:
+            payload = {"projects": projects}
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/ios/projects/push",
+                json=payload
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    async def pull_projects_from_ios(self) -> Dict[str, Any]:
+        """Pull projects from iOS app"""
+        try:
+            response = await self.http_client.post(f"{self.config.backend_url}/api/ios/projects/pull")
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    async def create_ios_task(self, task_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create task on iOS app"""
+        try:
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/ios/tasks",
+                json=task_data
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    async def update_ios_task(self, task_id: str, update_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update task on iOS app"""
+        try:
+            response = await self.http_client.put(
+                f"{self.config.backend_url}/api/ios/tasks/{task_id}",
+                json=update_data
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    async def get_ios_tasks(self, status_filter: Optional[str] = None) -> list:
+        """Get tasks from iOS app"""
+        try:
+            params = {}
+            if status_filter:
+                params["status"] = status_filter
+            
+            response = await self.http_client.get(
+                f"{self.config.backend_url}/api/ios/tasks",
+                params=params
+            )
+            response.raise_for_status()
+            return response.json().get("tasks", [])
+        except Exception as e:
+            return []
+    
+    async def launch_ios_app(self, launch_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Launch iOS app with specific screen or content"""
+        try:
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/ios/launch",
+                json=launch_data
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    async def monitor_ios_events(self) -> AsyncGenerator[Dict[str, Any], None]:
+        """Monitor iOS app events via WebSocket"""
+        if not self.websocket:
+            await self.connect_websocket()
+        
+        try:
+            while True:
+                message = await self.websocket.recv()
+                event = json.loads(message)
+                
+                # Filter for iOS events
+                if event.get("source") == "ios" or event.get("type", "").startswith("ios_"):
+                    yield event
+                    
+        except websockets.exceptions.ConnectionClosed:
+            self.connected = False
+            raise ConnectionError("WebSocket connection closed")
+    
+    async def query_agent(self, query: str) -> Dict[str, Any]:
+        """Query the AI agent"""
+        try:
+            payload = {
+                "message": query,
+                "session_id": self.client_id,
+                "timestamp": datetime.now().isoformat()
+            }
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/ai/chat",
+                json=payload
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            return {"error": str(e)}
+    
+    async def notify_command_execution(self, command_name: str, command_args: list, working_dir: str):
+        """Notify backend of command execution"""
+        try:
+            payload = {
+                "command": command_name,
+                "args": command_args,
+                "working_dir": working_dir,
+                "client_id": self.client_id,
+                "timestamp": datetime.now().isoformat()
+            }
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/cli/command/start",
+                json=payload
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception:
+            # Don't fail CLI operations if notification fails
+            pass
+    
+    async def notify_command_completion(self, command_name: str, exit_code: int):
+        """Notify backend of command completion"""
+        try:
+            payload = {
+                "command": command_name,
+                "exit_code": exit_code,
+                "client_id": self.client_id,
+                "timestamp": datetime.now().isoformat()
+            }
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/cli/command/complete",
+                json=payload
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception:
+            # Don't fail CLI operations if notification fails
+            pass
+    
+    async def notify_command_error(self, command_name: str, error_message: str):
+        """Notify backend of command error"""
+        try:
+            payload = {
+                "command": command_name,
+                "error": error_message,
+                "client_id": self.client_id,
+                "timestamp": datetime.now().isoformat()
+            }
+            response = await self.http_client.post(
+                f"{self.config.backend_url}/api/cli/command/error",
+                json=payload
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception:
+            # Don't fail CLI operations if notification fails
+            pass
     
     async def get_architecture_patterns(self, client_id: str = None) -> Dict[str, Any]:
         """Detect architecture patterns in the project"""

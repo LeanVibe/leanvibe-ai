@@ -11,7 +11,14 @@ from ...services.task_service import task_service
 logger = logging.getLogger(__name__)
 
 # Create router for task endpoints
-router = APIRouter(prefix="/api/tasks", tags=["tasks"])
+router = APIRouter(
+    prefix="/api/tasks", 
+    tags=["tasks"],
+    responses={
+        404: {"description": "Task not found"},
+        500: {"description": "Internal server error"},
+    }
+)
 
 async def broadcast_task_update(action: str, task: Task, client_id: str = None):
     """Broadcast task updates to connected iOS clients"""

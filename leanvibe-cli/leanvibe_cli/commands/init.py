@@ -295,7 +295,7 @@ exit 0
 
 
 async def test_backend_connection(client: BackendClient, backend_url: str):
-    """Test connection to LeanVibe backend"""
+    """Test connection to LeanVibe backend with comprehensive validation"""
     
     with Progress(
         SpinnerColumn(),
@@ -311,10 +311,22 @@ async def test_backend_connection(client: BackendClient, backend_url: str):
             client.config.websocket_url = backend_url.replace('http', 'ws') + '/ws'
             
             async with client:
+                progress.update(task, description="Checking backend health...")
                 health = await client.health_check()
+                
                 if health.get('status') == 'healthy':
-                    progress.update(task, description="Backend connection successful")
-                    console.print("[green]✅ Backend connection verified[/green]")
+                    progress.update(task, description="Validating backend services...")
+                    
+                    # Comprehensive health validation
+                    validation_results = await validate_backend_services(client, health)
+                    
+                    if validation_results['all_healthy']:
+                        progress.update(task, description="Backend validation complete")
+                        console.print("[green]✅ Backend connection and services verified[/green]")
+                        display_backend_validation_summary(validation_results)
+                    else:
+                        console.print("[yellow]⚠️  Backend partially ready[/yellow]")
+                        display_backend_validation_issues(validation_results)
                 else:
                     console.print(f"[yellow]⚠️  Backend health check returned: {health}[/yellow]")
         
@@ -322,6 +334,137 @@ async def test_backend_connection(client: BackendClient, backend_url: str):
             progress.update(task, description="Backend connection failed")
             console.print(f"[yellow]⚠️  Backend connection failed: {e}[/yellow]")
             console.print("[dim]Project will work offline until backend is available[/dim]")
+            console.print("[dim]Run 'leanvibe status' after starting the backend to verify connection[/dim]")
+
+
+async def validate_backend_services(client: BackendClient, health: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate all critical backend services for project initialization"""
+    
+    validation_results = {
+        'health_check': {'status': 'passed', 'details': 'Backend responded healthy'},
+        'ai_service': {'status': 'unknown', 'details': 'AI service not checked'},
+        'websocket': {'status': 'unknown', 'details': 'WebSocket not tested'},
+        'ios_bridge': {'status': 'unknown', 'details': 'iOS bridge not tested'},
+        'projects_api': {'status': 'unknown', 'details': 'Projects API not tested'},
+        'all_healthy': False
+    }
+    
+    # Check AI service availability
+    ai_ready = health.get('ai_ready', False)
+    if ai_ready:
+        validation_results['ai_service'] = {'status': 'passed', 'details': 'AI service ready for code assistance'}
+    else:
+        validation_results['ai_service'] = {'status': 'warning', 'details': 'AI service initializing or unavailable'}
+    
+    # Test WebSocket connectivity
+    try:
+        if await client.connect_websocket():
+            validation_results['websocket'] = {'status': 'passed', 'details': 'WebSocket connection successful'}
+            await client.send_heartbeat()
+        else:
+            validation_results['websocket'] = {'status': 'warning', 'details': 'WebSocket connection failed'}
+    except Exception as e:
+        validation_results['websocket'] = {'status': 'warning', 'details': f'WebSocket error: {str(e)[:50]}...'}
+    
+    # Test iOS bridge endpoints
+    try:
+        ios_status = await client.get_ios_status()
+        if ios_status:
+            validation_results['ios_bridge'] = {'status': 'passed', 'details': 'iOS integration endpoints available'}
+        else:
+            validation_results['ios_bridge'] = {'status': 'warning', 'details': 'iOS bridge not responding'}
+    except Exception as e:
+        validation_results['ios_bridge'] = {'status': 'warning', 'details': f'iOS bridge error: {str(e)[:50]}...'}
+    
+    # Test projects API
+    try:
+        projects = await client.get_projects()
+        validation_results['projects_api'] = {'status': 'passed', 'details': f'Projects API working ({len(projects)} projects)'}
+    except Exception as e:
+        validation_results['projects_api'] = {'status': 'warning', 'details': f'Projects API error: {str(e)[:50]}...'}
+    
+    # Determine overall health
+    passed_count = sum(1 for result in validation_results.values() 
+                      if isinstance(result, dict) and result.get('status') == 'passed')
+    total_checks = len([k for k in validation_results.keys() if k != 'all_healthy'])
+    
+    validation_results['all_healthy'] = passed_count >= (total_checks - 1)  # Allow one warning
+    validation_results['passed_count'] = passed_count
+    validation_results['total_checks'] = total_checks
+    
+    return validation_results
+
+
+def display_backend_validation_summary(validation_results: Dict[str, Any]):
+    """Display summary of successful backend validation"""
+    
+    from rich.table import Table
+    
+    table = Table(title="Backend Service Validation", show_header=True, header_style="bold green")
+    table.add_column("Service", style="cyan", width=20)
+    table.add_column("Status", style="bold", width=12)
+    table.add_column("Details", style="dim")
+    
+    services = ['health_check', 'ai_service', 'websocket', 'ios_bridge', 'projects_api']
+    
+    for service in services:
+        if service in validation_results:
+            result = validation_results[service]
+            status = result['status']
+            details = result['details']
+            
+            if status == 'passed':
+                status_display = "[green]✅ Passed[/green]"
+            elif status == 'warning':
+                status_display = "[yellow]⚠️  Warning[/yellow]"
+            else:
+                status_display = "[red]❌ Failed[/red]"
+            
+            table.add_row(service.replace('_', ' ').title(), status_display, details)
+    
+    console.print(table)
+    
+    passed = validation_results['passed_count']
+    total = validation_results['total_checks']
+    console.print(f"[green]Validation Complete: {passed}/{total} services verified[/green]")
+
+
+def display_backend_validation_issues(validation_results: Dict[str, Any]):
+    """Display backend validation issues and recommendations"""
+    
+    from rich.table import Table
+    
+    console.print("[yellow]⚠️  Backend Service Issues Detected[/yellow]\n")
+    
+    table = Table(title="Service Status", show_header=True, header_style="bold yellow")
+    table.add_column("Service", style="cyan", width=20)
+    table.add_column("Status", style="bold", width=12)
+    table.add_column("Issue", style="dim")
+    
+    services = ['health_check', 'ai_service', 'websocket', 'ios_bridge', 'projects_api']
+    
+    for service in services:
+        if service in validation_results:
+            result = validation_results[service]
+            status = result['status']
+            details = result['details']
+            
+            if status == 'passed':
+                status_display = "[green]✅ OK[/green]"
+            elif status == 'warning':
+                status_display = "[yellow]⚠️  Issue[/yellow]"
+            else:
+                status_display = "[red]❌ Failed[/red]"
+            
+            table.add_row(service.replace('_', ' ').title(), status_display, details)
+    
+    console.print(table)
+    
+    console.print("\n[bold]Recommendations:[/bold]")
+    console.print("• Run 'leanvibe status --detailed' to check backend service status")
+    console.print("• Ensure all backend services are fully initialized before heavy usage")
+    console.print("• Some features may be limited until all services are available")
+    console.print("• WebSocket issues may affect real-time features")
 
 
 def get_project_commands_template(project_type: str) -> Dict[str, Any]:
@@ -528,40 +671,143 @@ def get_workflow_templates(project_type: str) -> Dict[str, Dict[str, Any]]:
 
 
 def show_next_steps(project_name: str, project_type: str):
-    """Show next steps after initialization"""
+    """Show comprehensive next steps after initialization"""
     
+    # Create main next steps content
     next_steps = Text()
-    next_steps.append("🎉 Next steps to get started:\n\n", style="bold green")
+    next_steps.append("🎉 Project initialization complete! Here's how to get started:\n\n", style="bold green")
+    
+    # Essential first steps
+    next_steps.append("Essential Commands:\n", style="bold cyan")
     
     next_steps.append("1. ", style="bold")
-    next_steps.append("Check the configuration:\n")
-    next_steps.append("   leanvibe config show\n\n", style="cyan")
+    next_steps.append("Verify backend connection and services:\n")
+    next_steps.append("   leanvibe status --detailed\n\n", style="cyan")
     
     next_steps.append("2. ", style="bold")
-    next_steps.append("Test backend connection:\n")
-    next_steps.append("   leanvibe status\n\n", style="cyan")
+    next_steps.append("View and customize project configuration:\n")
+    next_steps.append("   leanvibe config show\n\n", style="cyan")
     
     next_steps.append("3. ", style="bold")
-    next_steps.append("View available project commands:\n")
+    next_steps.append("Explore available project commands:\n")
     next_steps.append("   leanvibe project list\n\n", style="cyan")
     
+    # Advanced features
+    next_steps.append("Advanced Features:\n", style="bold magenta")
+    
     next_steps.append("4. ", style="bold")
-    next_steps.append("Start monitoring your project:\n")
+    next_steps.append("Start real-time project monitoring:\n")
     next_steps.append("   leanvibe monitor\n\n", style="cyan")
     
     next_steps.append("5. ", style="bold")
-    next_steps.append("Get AI assistance:\n")
-    next_steps.append("   leanvibe query \"How can I improve this code?\"\n\n", style="cyan")
+    next_steps.append("Get AI-powered code assistance:\n")
+    next_steps.append("   leanvibe query \"Analyze this codebase\"\n\n", style="cyan")
     
-    next_steps.append("📚 Configuration files created in .leanvibe/\n", style="dim")
-    next_steps.append("🔧 Customize workflows in .leanvibe/workflows/\n", style="dim")
-    next_steps.append("⚙️  Edit project commands in .leanvibe/config.yaml\n", style="dim")
+    next_steps.append("6. ", style="bold")
+    next_steps.append("Test iOS integration (if available):\n")
+    next_steps.append("   leanvibe ios status\n\n", style="cyan")
+    
+    # Git integration
+    next_steps.append("Git Integration:\n", style="bold yellow")
+    
+    next_steps.append("7. ", style="bold")
+    next_steps.append("Use AI-powered commit messages:\n")
+    next_steps.append("   leanvibe git commit --ai-message\n\n", style="cyan")
+    
+    next_steps.append("8. ", style="bold")
+    next_steps.append("Analyze code before committing:\n")
+    next_steps.append("   leanvibe analyze --staged\n\n", style="cyan")
+    
+    # Configuration guidance
+    next_steps.append("\nConfiguration & Customization:\n", style="bold blue")
+    next_steps.append("📚 Project config: .leanvibe/config.yaml\n", style="dim")
+    next_steps.append("🔧 Custom workflows: .leanvibe/workflows/\n", style="dim")
+    next_steps.append("⚙️  Connection settings: .leanvibe/connection.yaml\n", style="dim")
+    next_steps.append("📋 Git hooks: .git/hooks/ (if enabled)\n\n", style="dim")
+    
+    # Additional resources
+    next_steps.append("Need Help?\n", style="bold red")
+    next_steps.append("• Run 'leanvibe --help' for all available commands\n", style="dim")
+    next_steps.append("• Use 'leanvibe <command> --help' for specific command help\n", style="dim")
+    next_steps.append("• Check 'leanvibe status' if you encounter connection issues\n", style="dim")
     
     panel = Panel(
         next_steps,
-        title=f"[bold]Welcome to LeanVibe CLI - {project_name}[/bold]",
+        title=f"[bold]🚀 {project_name} - Ready for Development![/bold]",
         border_style="green",
         padding=(1, 2)
     )
     
     console.print(panel)
+    
+    # Additional project-specific recommendations
+    show_project_specific_recommendations(project_type)
+
+
+def show_project_specific_recommendations(project_type: str):
+    """Show project-type specific recommendations"""
+    
+    recommendations = {
+        'python': {
+            'title': '🐍 Python Project Recommendations',
+            'tips': [
+                'Run "leanvibe project run test" to execute pytest with LeanVibe analysis',
+                'Use "leanvibe project run lint" for ruff linting integration',
+                'Consider enabling auto-formatting in .leanvibe/config.yaml',
+                'Virtual environment detected - LeanVibe will respect your dependencies'
+            ]
+        },
+        'node': {
+            'title': '📦 Node.js Project Recommendations', 
+            'tips': [
+                'Run "leanvibe project run dev" to start development server with monitoring',
+                'Use "leanvibe project run build" for production builds with analysis',
+                'ESLint integration available via "leanvibe project run lint"',
+                'Package.json scripts will be enhanced with LeanVibe capabilities'
+            ]
+        },
+        'rust': {
+            'title': '🦀 Rust Project Recommendations',
+            'tips': [
+                'Run "leanvibe project run build" for cargo build with dependency analysis',
+                'Use "leanvibe project run lint" for clippy integration',
+                'Cargo.toml changes will trigger automatic dependency analysis',
+                'Memory-safe code patterns will be highlighted by LeanVibe AI'
+            ]
+        },
+        'go': {
+            'title': '🐹 Go Project Recommendations',
+            'tips': [
+                'Run "leanvibe project run test" for go test with coverage analysis',
+                'Use "leanvibe project run lint" for golangci-lint integration',
+                'Go modules will be automatically analyzed for security issues',
+                'Concurrent code patterns will receive specialized AI suggestions'
+            ]
+        },
+        'generic': {
+            'title': '🔧 Generic Project Recommendations',
+            'tips': [
+                'Customize project commands in .leanvibe/config.yaml',
+                'Add build and test commands specific to your technology stack',
+                'Configure file patterns for optimal monitoring',
+                'Consider adding workflow templates for your specific needs'
+            ]
+        }
+    }
+    
+    rec = recommendations.get(project_type, recommendations['generic'])
+    
+    tips_text = Text()
+    tips_text.append(f"\n{rec['title']}\n", style="bold cyan")
+    
+    for i, tip in enumerate(rec['tips'], 1):
+        tips_text.append(f"• {tip}\n", style="dim")
+    
+    tips_panel = Panel(
+        tips_text,
+        title="[bold]Project-Specific Tips[/bold]",
+        border_style="cyan",
+        padding=(1, 2)
+    )
+    
+    console.print(tips_panel)

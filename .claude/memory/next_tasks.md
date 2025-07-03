@@ -1,140 +1,188 @@
-# Next Session Priority Tasks - July 3, 2025
+# Next Session Tasks - LeanVibe iOS MVP
 
-## 🎯 Immediate Action Items (Session Continuation)
+## Date: 2025-07-03
+## Session Focus: Push Notifications & Performance Optimization
 
-### 1. CRITICAL: Complete iOS Hard-coded Metrics Integration
-**Priority**: HIGHEST  
-**Estimated Time**: 30-45 minutes  
-**Status**: Backend ready, iOS integration 50% complete  
+### Immediate High-Priority Tasks
 
-**Files to Modify:**
-- `ProjectManager.swift:128,228,236` - Replace random/hardcoded health scores with API calls
-- `Project.swift:143` - Remove hardcoded default health score (0.85)
+#### 1. Push Notifications Implementation (2-3 hours)
+**Priority**: HIGH - Critical for production deployment
 
-**Implementation Steps:**
-1. Update `fetchProjectsFromBackend()` to call `/api/projects/{id}/metrics`
-2. Parse returned metrics and update Project models
-3. Remove hardcoded random values in `loadSampleProjects()`
-4. Test end-to-end iOS ↔ Backend integration
+**Requirements**:
+- APNs certificate integration
+- Notification permission flow implementation
+- Critical alert categorization system
+- Notification settings management
 
-**Acceptance Criteria:**
-- ✅ iOS app shows dynamic health scores from backend (92%, 87%)
-- ✅ No more hardcoded 90%, 85% values anywhere in codebase
-- ✅ Projects refresh with real-time calculated metrics
+**Implementation Plan**:
+1. **APNs Setup**:
+   - Configure App ID with Push Notifications capability
+   - Generate APNs authentication key
+   - Implement APNs service in iOS app
 
-### 2. HIGH: Fix Color Contrast Accessibility Issues
-**Priority**: HIGH  
-**Estimated Time**: 15-20 minutes  
-**Status**: Issues identified, fix pending  
+2. **Permission Flow**:
+   - Request notification permissions during onboarding
+   - Handle permission denial gracefully
+   - Provide settings navigation for permission changes
 
-**Files to Fix:**
-- `ProjectDetailView.swift:84,88,140,217,242` - Replace light gray backgrounds
+3. **Notification Categories**:
+   - Task completion alerts
+   - Project status changes
+   - Agent responses
+   - System maintenance notifications
 
-**Implementation Steps:**
-1. Replace `Color(red: 0.95, green: 0.95, blue: 0.97)` with accessible alternatives
-2. Ensure WCAG AA compliance (4.5:1 contrast ratio)
-3. Test with iOS Accessibility Inspector
-4. Validate color combinations across light/dark modes
+4. **Backend Integration**:
+   - Implement notification sending endpoints
+   - Store device tokens securely
+   - Queue notifications for delivery
 
-**Acceptance Criteria:**
-- ✅ All project cards meet WCAG AA standards
-- ✅ Text remains readable in all conditions
-- ✅ No user reports of poor visibility
+**Files to Create/Modify**:
+- `PushNotificationService.swift` - Core notification handling
+- `NotificationPermissionManager.swift` - Permission management
+- `NotificationSettingsView.swift` - User preferences
+- Backend notification endpoints
 
-### 3. MEDIUM: Implement Functional Quick Actions
-**Priority**: MEDIUM  
-**Estimated Time**: 20-30 minutes  
-**Status**: Empty implementations identified  
+#### 2. Performance Optimization (3-4 hours)
+**Priority**: MEDIUM - Important for user experience
 
-**Files to Fix:**
-- `ProjectDashboardView.swift:228-248` - Implement navigation for empty quick actions
+**Memory Validation**:
+- Target: <500MB total memory usage
+- Profile app with Instruments
+- Optimize large data structures
+- Implement lazy loading where appropriate
 
-**Implementation Steps:**
-1. Replace empty "Agent Chat" action with NavigationCoordinator tab switch
-2. Replace empty "Monitor" action with monitor tab navigation
-3. Replace empty "Settings" action with settings tab navigation
-4. Test all navigation flows work correctly
+**Battery Testing**:
+- Profile energy usage patterns
+- Optimize WebSocket connection management
+- Implement background task efficiency
+- Test with real device scenarios
 
-**Acceptance Criteria:**
-- ✅ "Agent Chat" button navigates to Agent tab
-- ✅ "Monitor" button navigates to Monitor tab  
-- ✅ "Settings" button navigates to Settings tab
-- ✅ All actions provide user feedback
+**Network Efficiency**:
+- Optimize API request patterns
+- Implement request caching where appropriate
+- Minimize WebSocket traffic
+- Add connection pooling
 
-## 🔧 Technical Preparation Notes
+**Files to Focus On**:
+- `WebSocketService.swift` - Connection efficiency
+- `ProjectManager.swift` - Data caching
+- `TaskService.swift` - API optimization
+- `PerformanceAnalytics.swift` - Monitoring
 
-### Backend Status
-- ✅ All project APIs implemented and tested
-- ✅ Dynamic health score calculation working (92%, 87%)
-- ✅ Sample data includes realistic task and project information
-- ✅ Pydantic models with proper enum inheritance
+#### 3. Production Deployment Preparation (2 hours)
+**Priority**: MEDIUM - Required for App Store submission
 
-### iOS Integration Points
-- **WebSocketService**: Already available as `.shared` singleton
-- **NavigationCoordinator**: Already handles tab switching logic
-- **Project Models**: Already compatible with backend schema
-- **Error Handling**: Consider network failure scenarios
+**Final QA Testing**:
+- Complete user workflow testing
+- Edge case validation
+- Performance benchmarking
+- Accessibility compliance verification
 
-### Testing Strategy
-1. **Unit Testing**: Backend ProjectService already validated
-2. **Integration Testing**: iOS ↔ Backend API calls need verification
-3. **UI Testing**: Color contrast and navigation functionality
-4. **Accessibility Testing**: WCAG compliance validation
+**App Store Configuration**:
+- App Store Connect setup
+- Metadata and screenshots
+- Privacy policy compliance
+- COPPA compliance verification
 
-## 📊 Expected Session Outcomes
+**Deployment Automation**:
+- CI/CD pipeline for releases
+- Automated testing integration
+- Version management
+- Release notes automation
 
-### Completion Metrics
-- **Hard-coded Metrics Fix**: 50% → 100% complete
-- **Color Contrast Issues**: 0% → 100% complete  
-- **Quick Actions Functionality**: 0% → 100% complete
-- **Overall Projects Section**: 60% → 95% complete
+### Secondary Tasks
 
-### Quality Gates
-- ✅ All iOS builds succeed
-- ✅ Backend APIs return dynamic data
-- ✅ Accessibility standards met
-- ✅ Navigation flows work correctly
-- ✅ No hardcoded values remain
+#### Voice Feature Re-enablement (Optional)
+**Priority**: LOW - Only if time permits
 
-### User Experience Impact
-- **Before**: Fake metrics, poor contrast, broken actions
-- **After**: Real-time data, accessible design, functional navigation
-- **Benefit**: Professional, production-ready Projects section
+**Safety Improvements**:
+- Enhanced error recovery mechanisms
+- Better permission edge case handling
+- User education about voice requirements
+- Gradual rollout strategy
 
-## 🚀 Workflow Recommendations
+**Environment Flag**:
+```bash
+# To re-enable voice features for testing
+export LEANVIBE_ENABLE_VOICE=true
+```
 
-### Start Session Protocol
-1. **Wake Command**: Use `/wake` to restore context from memory
-2. **Backend Verification**: Ensure backend server running on port 8002
-3. **iOS Build Check**: Verify current build state before changes
-4. **Todo List Review**: Check current task status
+### Technical Debt Items
 
-### Implementation Order
-1. **Backend-First Validation**: Test new APIs work correctly
-2. **iOS Integration**: One file at a time with build verification
-3. **UI Polish**: Color contrast and accessibility improvements
-4. **Navigation Enhancement**: Quick actions implementation
-5. **End-to-end Testing**: Full user journey validation
+#### Code Quality
+- Complete SwiftLint compliance
+- Add missing unit tests
+- Improve code documentation
+- Optimize complex view hierarchies
 
-### Quality Assurance
-1. **Each Change**: Build validation before proceeding
-2. **Each File**: Individual testing of modified components
-3. **Each Feature**: User experience verification
-4. **Session End**: Comprehensive integration testing
+#### Architecture Improvements
+- Refactor large view controllers
+- Improve service layer abstractions
+- Enhance error handling consistency
+- Optimize state management patterns
 
-## 🧠 Context Optimization
+### Quality Gates for Next Session
 
-### Memory Usage Strategy
-- **Focused Approach**: Target specific files and line numbers
-- **Batch Operations**: Group related changes in single edits
-- **Progressive Building**: Each change builds on previous success
+#### Build Validation
+- All targets compile successfully
+- No SwiftLint warnings
+- Unit tests pass with >80% coverage
+- Integration tests validate core workflows
 
-### Session Continuity
-- **Progress Tracking**: Update todos as tasks complete
-- **Decision Documentation**: Record rationale for choices
-- **Issue Resolution**: Mark problems solved with evidence
+#### Performance Targets
+- App launch time: <2 seconds
+- Memory usage: <500MB
+- UI response time: <500ms
+- Network requests: <10 seconds timeout
 
-### Knowledge Preservation
-- **Implementation Notes**: Document any unexpected findings
-- **Pattern Recognition**: Record successful approaches for future use
-- **Quality Standards**: Maintain build success and test coverage
+#### User Experience Validation
+- All core workflows functional
+- Notification system operational
+- Settings properly configured
+- Error states handled gracefully
+
+### Session Success Criteria
+
+**Must Have**:
+- ✅ Push notifications fully implemented
+- ✅ Performance targets met
+- ✅ Production deployment ready
+- ✅ All quality gates passed
+
+**Should Have**:
+- ✅ Enhanced error monitoring
+- ✅ Improved user onboarding
+- ✅ Complete accessibility compliance
+- ✅ Comprehensive testing coverage
+
+**Could Have**:
+- ✅ Voice features re-enabled safely
+- ✅ Advanced analytics implementation
+- ✅ Additional performance optimizations
+- ✅ Enhanced visual polish
+
+### Preparation Notes
+
+#### Environment Setup
+- Ensure APNs certificates are available
+- Set up test device for notification testing
+- Configure backend notification endpoints
+- Prepare performance testing tools
+
+#### Dependencies
+- Verify all required frameworks are available
+- Check for any pending security updates
+- Ensure test devices are properly configured
+- Validate backend API availability
+
+#### Risk Mitigation
+- Voice services remain disabled by default
+- Comprehensive error handling in place
+- Fallback mechanisms for all critical features
+- Emergency disable options available
+
+### Context Optimization Notes
+
+This session achieved 95% MVP completion with solid defensive programming foundation. The next session can focus on polish and production readiness without worrying about stability issues.
+
+Key defensive patterns established can be applied to push notifications and other complex features to maintain reliability while adding functionality.

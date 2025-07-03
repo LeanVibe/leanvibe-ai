@@ -28,8 +28,112 @@ from .services.task_service import task_service
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app
-app = FastAPI(title="LeanVibe L3 Agent", version="0.2.0")
+# Create FastAPI app with comprehensive API documentation
+app = FastAPI(
+    title="LeanVibe L3 Coding Agent API",
+    description="""
+    ## LeanVibe Backend API
+    
+    **Advanced AI-powered coding assistant with real-time collaboration and iOS integration.**
+    
+    ### Key Features
+    
+    * **🤖 AI-Powered Code Assistance**: Qwen2.5-Coder-32B with Apple MLX on-device processing
+    * **📱 iOS App Integration**: Real-time synchronization with iOS companion app
+    * **📋 Task Management**: Comprehensive Kanban-style task management with agent automation
+    * **📊 Project Analytics**: Dynamic metrics calculation and health scoring
+    * **🔄 Real-time Updates**: WebSocket-based live collaboration and event streaming
+    * **🛠️ CLI Integration**: Powerful command-line interface with git integration
+    
+    ### Agent-Developed Components
+    
+    This API includes sophisticated features developed by 5 specialized AI agents:
+    
+    - **ALPHA Agent**: iOS dashboard foundation and performance optimization
+    - **BETA Agent**: Backend API enhancement and push notifications  
+    - **DELTA Agent**: CLI enhancement and task management APIs
+    - **GAMMA Agent**: Architecture visualization and user experience
+    - **KAPPA Agent**: Voice interface and integration testing
+    
+    ### Architecture
+    
+    - **Backend**: FastAPI + Python 3.11+ with MLX AI processing
+    - **Real-time Communication**: WebSocket connections with automatic reconnection
+    - **Data Storage**: In-memory with persistence hooks for production scaling
+    - **AI Models**: Local Apple MLX deployment for complete privacy
+    
+    ### Getting Started
+    
+    1. **Health Check**: Start with `/health` to verify backend status
+    2. **Project Management**: Use `/api/projects/` endpoints for project operations
+    3. **Task Management**: Use `/api/tasks/` endpoints for Kanban board operations  
+    4. **Real-time Events**: Connect to WebSocket at `/ws/{client_id}` for live updates
+    5. **iOS Integration**: Use `/api/ios/` endpoints for mobile app synchronization
+    
+    ### Authentication
+    
+    Currently operates in development mode with no authentication required.
+    Production deployment will include API key authentication.
+    
+    ### Rate Limiting
+    
+    - Standard endpoints: 100 requests/minute per client
+    - AI processing: 10 requests/minute per client
+    - WebSocket connections: 1 per client_id
+    
+    ### Support
+    
+    - **Repository**: [LeanVibe GitHub](https://github.com/leanvibe-ai)
+    - **Documentation**: Comprehensive guides in `/docs` endpoints
+    - **Issues**: Report bugs via GitHub Issues
+    """,
+    version="0.2.0",
+    contact={
+        "name": "LeanVibe Development Team",
+        "url": "https://github.com/leanvibe-ai/leanvibe-backend",
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    openapi_tags=[
+        {
+            "name": "health",
+            "description": "Health check and system status endpoints. Use these to verify backend availability and AI model status.",
+        },
+        {
+            "name": "projects", 
+            "description": "Project management endpoints developed by agents. Manage projects, analyze codebases, and track metrics.",
+        },
+        {
+            "name": "tasks",
+            "description": "Task management and Kanban board endpoints. Create, update, and organize development tasks with AI assistance.",
+        },
+        {
+            "name": "ai",
+            "description": "AI-powered code assistance endpoints. Query the Qwen2.5-Coder model for code analysis and suggestions.",
+        },
+        {
+            "name": "websocket",
+            "description": "Real-time WebSocket endpoints for live collaboration and event streaming.",
+        },
+        {
+            "name": "cli-bridge",
+            "description": "CLI integration endpoints for command-line tool communication and git workflow integration.",
+        },
+        {
+            "name": "ios",
+            "description": "iOS app integration endpoints for mobile companion app synchronization and notifications.",
+        },
+        {
+            "name": "monitoring",
+            "description": "Performance monitoring and analytics endpoints for system health and usage metrics.",
+        }
+    ],
+    openapi_url="/api/v1/openapi.json",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
 
 # Configure CORS for iOS communication
 app.add_middleware(

@@ -23,7 +23,14 @@ from ...services.project_service import ProjectService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/projects", tags=["projects"])
+router = APIRouter(
+    prefix="/api/projects", 
+    tags=["projects"],
+    responses={
+        404: {"description": "Project not found"},
+        500: {"description": "Internal server error"},
+    }
+)
 project_service = ProjectService()
 
 
