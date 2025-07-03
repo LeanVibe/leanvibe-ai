@@ -42,33 +42,55 @@ class TestProjectAPIEndpoints:
     @pytest.fixture
     def sample_project(self, sample_project_id):
         """Sample project data for testing"""
+        now = datetime.now()
         return Project(
             id=sample_project_id,
-            name="Test Project",
+            display_name="Test Project",
             description="A test project for API validation",
             path="/path/to/test/project",
             language=ProjectLanguage.PYTHON,
             status=ProjectStatus.ACTIVE,
-            health_score=0.85,
-            lines_of_code=1500,
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            tasks_count=5,
+            completed_tasks_count=3,
+            issues_count=2,
+            created_at=now,
+            updated_at=now,
+            last_activity=now,
+            metrics=ProjectMetrics(
+                files_count=50,
+                lines_of_code=1500,
+                health_score=0.85,
+                issues_count=2,
+                test_coverage=0.78
+            ),
+            client_id="test-client"
         )
 
     @pytest.fixture
     def sample_projects_list(self, sample_project):
         """Sample list of projects for testing"""
+        now = datetime.now()
         project2 = Project(
             id=uuid.uuid4(),
-            name="Another Project",
+            display_name="Another Project",
             description="Second test project",
             path="/path/to/another/project",
             language=ProjectLanguage.JAVASCRIPT,
             status=ProjectStatus.ACTIVE,
-            health_score=0.92,
-            lines_of_code=2300,
-            created_at=datetime.now(),
-            updated_at=datetime.now()
+            tasks_count=8,
+            completed_tasks_count=6,
+            issues_count=1,
+            created_at=now,
+            updated_at=now,
+            last_activity=now,
+            metrics=ProjectMetrics(
+                files_count=80,
+                lines_of_code=2300,
+                health_score=0.92,
+                issues_count=1,
+                test_coverage=0.85
+            ),
+            client_id="test-client-2"
         )
         return [sample_project, project2]
 
@@ -76,19 +98,19 @@ class TestProjectAPIEndpoints:
     def sample_metrics(self, sample_project_id):
         """Sample project metrics for testing"""
         return ProjectMetrics(
-            project_id=sample_project_id,
+            files_count=50,
             lines_of_code=1500,
             test_coverage=0.78,
-            code_quality_score=0.85,
-            technical_debt_ratio=0.15,
-            complexity_average=2.3,
-            duplication_percentage=0.05,
-            last_analyzed=datetime.now()
+            health_score=0.85,
+            issues_count=2,
+            last_build_time=45.2,
+            performance_score=0.92
         )
 
     @pytest.fixture
     def sample_tasks(self, sample_project_id):
         """Sample project tasks for testing"""
+        now = datetime.now()
         return [
             ProjectTask(
                 id=uuid.uuid4(),
@@ -97,7 +119,8 @@ class TestProjectAPIEndpoints:
                 description="Fix authentication issue",
                 status="in_progress",
                 priority="high",
-                created_at=datetime.now()
+                created_at=now,
+                updated_at=now
             ),
             ProjectTask(
                 id=uuid.uuid4(),
@@ -106,7 +129,8 @@ class TestProjectAPIEndpoints:
                 description="Implement new dashboard",
                 status="todo",
                 priority="medium",
-                created_at=datetime.now()
+                created_at=now,
+                updated_at=now
             )
         ]
 
@@ -127,8 +151,8 @@ class TestProjectAPIEndpoints:
         assert "total" in data
         assert data["total"] == 2
         assert len(data["projects"]) == 2
-        assert data["projects"][0]["name"] == "Test Project"
-        assert data["projects"][1]["language"] == "javascript"
+        assert data["projects"][0]["display_name"] == "Test Project"
+        assert data["projects"][1]["language"] == "JavaScript"
 
     @patch('app.services.project_service.ProjectService.get_all_projects')
     def test_list_projects_empty(self, mock_get_all):
