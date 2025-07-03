@@ -550,7 +550,9 @@ async def get_complexity_analysis(client_id: str):
 @app.get("/graph/architecture/{client_id}")
 async def get_architecture_patterns(client_id: str):
     """Detect architecture patterns in the project"""
-    agent = await session_manager.get_session(client_id)
+    # Auto-create session if needed for iOS clients
+    workspace_path = "."
+    agent = await session_manager.get_or_create_session(client_id, workspace_path)
     if not agent or not hasattr(agent, "_detect_architecture_tool"):
         return {"error": "Enhanced agent not available", "client_id": client_id}
 
@@ -561,7 +563,9 @@ async def get_architecture_patterns(client_id: str):
 @app.get("/graph/circular-deps/{client_id}")
 async def get_circular_dependencies(client_id: str):
     """Find circular dependencies in the project"""
-    agent = await session_manager.get_session(client_id)
+    # Auto-create session if needed for iOS clients
+    workspace_path = "."
+    agent = await session_manager.get_or_create_session(client_id, workspace_path)
     if not agent or not hasattr(agent, "_find_circular_dependencies_tool"):
         return {"error": "Enhanced agent not available", "client_id": client_id}
 
@@ -572,7 +576,9 @@ async def get_circular_dependencies(client_id: str):
 @app.get("/graph/coupling/{client_id}")
 async def get_coupling_analysis(client_id: str):
     """Analyze coupling between components"""
-    agent = await session_manager.get_session(client_id)
+    # Auto-create session if needed for iOS clients
+    workspace_path = "."
+    agent = await session_manager.get_or_create_session(client_id, workspace_path)
     if not agent or not hasattr(agent, "_analyze_coupling_tool"):
         return {"error": "Enhanced agent not available", "client_id": client_id}
 
@@ -583,7 +589,9 @@ async def get_coupling_analysis(client_id: str):
 @app.get("/graph/hotspots/{client_id}")
 async def get_code_hotspots(client_id: str):
     """Find code hotspots (critical, highly connected code)"""
-    agent = await session_manager.get_session(client_id)
+    # Auto-create session if needed for iOS clients
+    workspace_path = "."
+    agent = await session_manager.get_or_create_session(client_id, workspace_path)
     if not agent or not hasattr(agent, "_find_hotspots_tool"):
         return {"error": "Enhanced agent not available", "client_id": client_id}
 
@@ -594,7 +602,9 @@ async def get_code_hotspots(client_id: str):
 @app.get("/graph/visualization/{client_id}")
 async def get_graph_visualization(client_id: str):
     """Generate graph visualization data"""
-    agent = await session_manager.get_session(client_id)
+    # Auto-create session if needed for iOS clients
+    workspace_path = "."
+    agent = await session_manager.get_or_create_session(client_id, workspace_path)
     if not agent or not hasattr(agent, "_visualize_graph_tool"):
         return {"error": "Enhanced agent not available", "client_id": client_id}
 
