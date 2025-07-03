@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Voice Command Models
 
 struct VoiceCommand: Identifiable, Codable, Sendable {
-    let id = UUID()
+    let id: UUID
     let originalText: String
     let processedCommand: String
     let confidence: Double
@@ -20,6 +20,7 @@ struct VoiceCommand: Identifiable, Codable, Sendable {
         parameters: [String: String] = [:],
         processingTime: TimeInterval = 0.0
     ) {
+        self.id = UUID()
         self.originalText = originalText
         self.processedCommand = processedCommand
         self.confidence = confidence
@@ -126,7 +127,7 @@ enum CommandIntent: String, CaseIterable, Codable, Sendable {
 // MARK: - Speech Recognition Results
 
 struct SpeechRecognitionResult: Identifiable, Sendable {
-    let id = UUID()
+    let id: UUID
     let transcription: String
     let confidence: Double
     let isFinal: Bool
@@ -139,6 +140,7 @@ struct SpeechRecognitionResult: Identifiable, Sendable {
         isFinal: Bool,
         processingTime: TimeInterval = 0.0
     ) {
+        self.id = UUID()
         self.transcription = transcription
         self.confidence = confidence
         self.isFinal = isFinal
@@ -150,13 +152,14 @@ struct SpeechRecognitionResult: Identifiable, Sendable {
 // MARK: - Wake Phrase Detection
 
 struct WakePhraseDetection: Identifiable, Sendable {
-    let id = UUID()
+    let id: UUID
     let detectedPhrase: String
     let confidence: Double
     let timestamp: Date
     let audioLevel: Float
     
     init(detectedPhrase: String, confidence: Double, audioLevel: Float = 0.0) {
+        self.id = UUID()
         self.detectedPhrase = detectedPhrase
         self.confidence = confidence
         self.audioLevel = audioLevel
