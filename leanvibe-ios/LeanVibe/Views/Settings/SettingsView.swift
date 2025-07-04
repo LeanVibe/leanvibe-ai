@@ -66,41 +66,32 @@ struct SettingsView: View {
                 )
             }
             
-            // TODO: Implement WakePhraseSettingsView - currently placeholder
-            /*
             NavigationLink(destination: WakePhraseSettingsView()) {
                 SettingsRow(
                     icon: "waveform",
-                    iconColor: .green,
+                    iconColor: Color(.systemGreen),
                     title: "Wake Phrase Configuration",
                     subtitle: "\"\(settingsManager.voice.wakeWord)\""
                 )
             }
-            */
             
-            // TODO: Implement SpeechSettingsView - currently placeholder
-            /*
             NavigationLink(destination: SpeechSettingsView()) {
                 SettingsRow(
                     icon: "bubble.left.and.bubble.right",
-                    iconColor: .orange,
+                    iconColor: Color(.systemOrange),
                     title: "Speech Recognition",
                     subtitle: "Default"
                 )
             }
-            */
             
-            // TODO: Implement VoiceTestView - currently placeholder
-            /*
             NavigationLink(destination: VoiceTestView()) {
                 SettingsRow(
                     icon: "testtube.2",
-                    iconColor: .purple,
+                    iconColor: Color(.systemPurple),
                     title: "Voice Testing",
                     subtitle: "Test voice recognition"
                 )
             }
-            */
         }
     }
     
@@ -115,17 +106,14 @@ struct SettingsView: View {
                 )
             }
             
-            // TODO: Implement TaskNotificationSettingsView - currently placeholder
-            /*
             NavigationLink(destination: TaskNotificationSettingsView()) {
                 SettingsRow(
                     icon: "bell.badge",
-                    iconColor: .red,
+                    iconColor: Color(.systemRed),
                     title: "Task Notifications",
                     subtitle: "Enabled"
                 )
             }
-            */
             
             // TODO: Implement MetricsSettingsView - currently placeholder
             /*
@@ -164,17 +152,14 @@ struct SettingsView: View {
                 )
             }
             
-            // TODO: Implement SyncSettingsView - currently placeholder
-            /*
             NavigationLink(destination: SyncSettingsView()) {
                 SettingsRow(
                     icon: "arrow.triangle.2.circlepath",
-                    iconColor: .blue,
+                    iconColor: Color(.systemBlue),
                     title: "Sync Preferences",
                     subtitle: "Background sync on"
                 )
             }
-            */
             
             // TODO: Implement OfflineSettingsView - currently placeholder
             /*
@@ -188,17 +173,14 @@ struct SettingsView: View {
             }
             */
             
-            // TODO: Implement NetworkDiagnosticsView - currently placeholder
-            /*
             NavigationLink(destination: NetworkDiagnosticsView()) {
                 SettingsRow(
                     icon: "network",
-                    iconColor: .green,
+                    iconColor: Color(.systemGreen),
                     title: "Network Diagnostics",
                     subtitle: "Connection testing & troubleshooting"
                 )
             }
-            */
         }
     }
     
