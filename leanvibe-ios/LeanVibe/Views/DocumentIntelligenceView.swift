@@ -14,6 +14,7 @@ struct DocumentIntelligenceView: View {
     @State private var showingTaskPreview = false
     @State private var showingSettings = false
     @State private var autoProcessingEnabled = true
+    @State private var autoBacklogPopulationEnabled = true
     @State private var selectedDocumentType: DocumentType = .plan
     
     // MARK: - Initialization
@@ -59,7 +60,10 @@ struct DocumentIntelligenceView: View {
             )
         }
         .sheet(isPresented: $showingSettings) {
-            DocumentIntelligenceSettingsView(autoProcessingEnabled: $autoProcessingEnabled)
+            DocumentIntelligenceSettingsView(
+                autoProcessingEnabled: $autoProcessingEnabled,
+                autoBacklogPopulationEnabled: $autoBacklogPopulationEnabled
+            )
         }
         .onAppear {
             Task {
@@ -87,9 +91,13 @@ struct DocumentIntelligenceView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .onChange(of: selectedProject) { _, _ in
-                        if autoProcessingEnabled {
-                            processCurrentProject()
+                    .onChange(of: selectedProject) { _, newProject in
+                        if let project = newProject {
+                            if autoBacklogPopulationEnabled {
+                                autoPopulateBacklog(for: project)
+                            } else if autoProcessingEnabled {
+                                processCurrentProject()
+                            }
                         }
                     }
                 }
@@ -98,11 +106,28 @@ struct DocumentIntelligenceView: View {
             // Action Buttons
             HStack(spacing: 12) {
                 Button(action: {
+                    guard let project = selectedProject else { return }
+                    autoPopulateBacklog(for: project)
+                }) {
+                    HStack {
+                        Image(systemName: "tray.and.arrow.down")
+                        Text("Auto-Populate Backlog")
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.green)
+                    .cornerRadius(8)
+                }
+                .disabled(selectedProject == nil || documentService.isProcessing)
+                
+                Button(action: {
                     processCurrentProject()
                 }) {
                     HStack {
                         Image(systemName: "doc.text.magnifyingglass")
-                        Text("Analyze Documents")
+                        Text("Analyze All Docs")
                     }
                     .font(.subheadline)
                     .foregroundColor(.white)
@@ -228,6 +253,16 @@ struct DocumentIntelligenceView: View {
     
     // MARK: - Helper Methods
     
+    private func autoPopulateBacklog(for project: Project) {
+        Task {
+            do {
+                try await documentService.autoPopulateBacklogFromPlan(for: project)
+            } catch {
+                print("Failed to auto-populate Backlog: \(error)")
+            }
+        }
+    }
+    
     private func processCurrentProject() {
         guard let project = selectedProject else { return }
         
@@ -263,7 +298,7 @@ struct DocumentIntelligenceView: View {
                 attachments: []
             )
             
-            try? await taskService.createTask(leanVibeTask)
+            try? await taskService.addTask(leanVibeTask)
         }
     }
     
@@ -411,6 +446,7 @@ struct TaskPreviewSheet: View {
 @available(iOS 18.0, macOS 14.0, *)
 struct DocumentIntelligenceSettingsView: View {
     @Binding var autoProcessingEnabled: Bool
+    @Binding var autoBacklogPopulationEnabled: Bool
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -418,6 +454,17 @@ struct DocumentIntelligenceSettingsView: View {
             Form {
                 Section("Processing Options") {
                     Toggle("Auto-process on project change", isOn: $autoProcessingEnabled)
+                    Toggle("Auto-populate Backlog from Plan.md", isOn: $autoBacklogPopulationEnabled)
+                }
+                
+                Section("Auto-Backlog Population") {
+                    Text("When enabled, automatically extracts high-confidence tasks from Plan.md and creates them in the Backlog column.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Text("Only tasks with ≥80% confidence are auto-created. Lower confidence tasks are shown for manual review.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
                 
                 Section("Document Types") {

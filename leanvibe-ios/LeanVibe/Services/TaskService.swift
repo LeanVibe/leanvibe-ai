@@ -15,20 +15,27 @@ class TaskService: ObservableObject {
     @Published var isLoading = false
     @Published var lastError: String?
     
-    private let baseURL: String
     private var cancellables = Set<AnyCancellable>()
     private let session = URLSession.shared
     private let userDefaultsKey = "leanvibe_tasks"
     private let jsonEncoder = JSONEncoder()
     private let jsonDecoder = JSONDecoder()
+    private let config = AppConfiguration.shared
     
     // Backend availability tracking
     @Published var isBackendAvailable = false
     private var lastBackendCheck = Date.distantPast
     private let backendCheckInterval: TimeInterval = 60 // Check every minute
     
-    init(baseURL: String = "http://localhost:8002") {
-        self.baseURL = baseURL
+    // Dynamic backend URL from configuration
+    private var baseURL: String {
+        guard config.isBackendConfigured else {
+            return ""
+        }
+        return config.apiBaseURL
+    }
+    
+    init() {
         setupDateFormatting()
         loadPersistedTasks()
         setupPerformanceMonitoring()
@@ -705,6 +712,14 @@ class TaskService: ObservableObject {
     
     @MainActor
     private func checkBackendAvailability() async -> Bool {
+        // Check if backend is configured first
+        guard config.isBackendConfigured else {
+            await MainActor.run {
+                isBackendAvailable = false
+            }
+            return false
+        }
+        
         // Only check if enough time has passed since last check
         let now = Date()
         guard now.timeIntervalSince(lastBackendCheck) > backendCheckInterval else {
@@ -714,7 +729,9 @@ class TaskService: ObservableObject {
         lastBackendCheck = now
         
         guard let url = URL(string: "\(baseURL)/health") else {
-            isBackendAvailable = false
+            await MainActor.run {
+                isBackendAvailable = false
+            }
             return false
         }
         
@@ -737,6 +754,12 @@ class TaskService: ObservableObject {
     
     @MainActor
     private func createTaskOnBackend(_ task: LeanVibeTask) async throws -> LeanVibeTask? {
+        // Check if backend is configured
+        guard config.isBackendConfigured else {
+            print("⚠️ Backend not configured - task will be stored locally only")
+            return nil
+        }
+        
         guard let url = URL(string: "\(baseURL)/api/tasks") else {
             throw TaskServiceError.invalidURL
         }

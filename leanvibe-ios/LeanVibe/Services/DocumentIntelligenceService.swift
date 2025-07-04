@@ -25,6 +25,46 @@ class DocumentIntelligenceService: ObservableObject {
     
     // MARK: - Public Methods
     
+    /// Auto-populate Backlog from Plan.md when project is selected
+    func autoPopulateBacklogFromPlan(for project: Project) async throws {
+        isProcessing = true
+        processingStatus = "Auto-populating Backlog from Plan.md..."
+        defer { 
+            isProcessing = false
+            processingStatus = "Idle"
+        }
+        
+        // Focus specifically on Plan.md for Backlog population
+        let planFilePath = "\(project.path)/PLAN.md"
+        
+        guard FileManager.default.fileExists(atPath: planFilePath) else {
+            print("📄 No PLAN.md found for project: \(project.displayName)")
+            return
+        }
+        
+        do {
+            let planContent = try String(contentsOfFile: planFilePath, encoding: .utf8)
+            let backlogTasks = await extractBacklogTasksFromPlan(content: planContent, projectId: project.id)
+            
+            if !backlogTasks.isEmpty {
+                // Auto-create high-confidence Backlog tasks
+                let autoCreateTasks = backlogTasks.filter { $0.confidence >= 0.8 && $0.suggestedStatus == .backlog }
+                
+                if !autoCreateTasks.isEmpty {
+                    try await createTasksInBackend(autoCreateTasks)
+                    print("✅ Auto-created \(autoCreateTasks.count) Backlog tasks from Plan.md")
+                }
+                
+                // Store all discovered tasks for manual review
+                discoveredTasks = backlogTasks
+                lastProcessedDate = Date()
+            }
+        } catch {
+            print("❌ Failed to process Plan.md: \(error)")
+            throw error
+        }
+    }
+    
     /// Process project documents and create Kanban tasks automatically
     func processProjectDocuments(for project: Project) async throws {
         isProcessing = true
@@ -74,6 +114,177 @@ class DocumentIntelligenceService: ObservableObject {
     }
     
     // MARK: - Private Methods
+    
+    /// Extract Backlog tasks specifically from Plan.md content
+    private func extractBacklogTasksFromPlan(content: String, projectId: UUID) async -> [DocumentTask] {
+        let lines = content.components(separatedBy: .newlines)
+        var backlogTasks: [DocumentTask] = []
+        var currentSection = ""
+        
+        for (index, line) in lines.enumerated() {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Track current section for context
+            if trimmedLine.hasPrefix("#") {
+                currentSection = extractSectionTitle(from: trimmedLine)
+                continue
+            }
+            
+            // Focus on extracting pending tasks, TODO items, and planned features
+            if let backlogTask = parseLineAsBacklogTask(
+                line: trimmedLine,
+                lineNumber: index + 1,
+                section: currentSection,
+                projectId: projectId
+            ) {
+                backlogTasks.append(backlogTask)
+            }
+        }
+        
+        // Sort by confidence and priority
+        return backlogTasks.sorted { 
+            if $0.confidence != $1.confidence {
+                return $0.confidence > $1.confidence
+            }
+            return $0.suggestedPriority.rawValue > $1.suggestedPriority.rawValue
+        }
+    }
+    
+    /// Parse individual line as potential Backlog task with high precision
+    private func parseLineAsBacklogTask(line: String, lineNumber: Int, section: String, projectId: UUID) -> DocumentTask? {
+        guard !line.isEmpty && !line.hasPrefix("#") else { return nil }
+        
+        var taskText = line
+        var priority = TaskPriority.medium
+        var confidence: Double = 0.7
+        
+        // Skip completed tasks for Backlog
+        if line.contains("✅") || line.localizedCaseInsensitiveContains("completed") || line.localizedCaseInsensitiveContains("done") {
+            return nil
+        }
+        
+        // High priority indicators for Backlog tasks
+        let backlogIndicators = [
+            "TODO:", "- [ ]", "* [ ]", "FIXME:", "PLANNED:", "NEXT:", "PHASE", "MILESTONE",
+            "PRIORITY", "ENHANCEMENT", "FEATURE", "IMPLEMENT", "ADD", "CREATE", "BUILD"
+        ]
+        
+        let containsBacklogIndicator = backlogIndicators.contains { indicator in
+            line.localizedCaseInsensitiveContains(indicator)
+        }
+        
+        if containsBacklogIndicator {
+            confidence += 0.2
+            
+            // Clean up task text
+            taskText = line
+                .replacingOccurrences(of: "TODO:", with: "")
+                .replacingOccurrences(of: "FIXME:", with: "")
+                .replacingOccurrences(of: "PLANNED:", with: "")
+                .replacingOccurrences(of: "- [ ]", with: "")
+                .replacingOccurrences(of: "* [ ]", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        } else if line.hasPrefix("- ") || line.hasPrefix("* ") {
+            // Regular bullet points get lower confidence unless in specific sections
+            if section.localizedCaseInsensitiveContains("backlog") || 
+               section.localizedCaseInsensitiveContains("todo") ||
+               section.localizedCaseInsensitiveContains("planned") ||
+               section.localizedCaseInsensitiveContains("next") {
+                confidence += 0.1
+            }
+            taskText = String(line.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
+        } else {
+            // Non-bullet items get lower confidence unless they contain action words
+            let actionWords = ["implement", "add", "create", "build", "develop", "design", "integrate"]
+            if actionWords.contains(where: { line.localizedCaseInsensitiveContains($0) }) {
+                confidence += 0.1
+            } else {
+                return nil // Skip non-actionable items
+            }
+        }
+        
+        // Priority assessment based on keywords
+        if line.localizedCaseInsensitiveContains("urgent") || line.localizedCaseInsensitiveContains("critical") || line.contains("🔥") {
+            priority = .urgent
+            confidence += 0.2
+        } else if line.localizedCaseInsensitiveContains("high") || line.localizedCaseInsensitiveContains("important") {
+            priority = .high
+            confidence += 0.1
+        }
+        
+        // Section-based priority boosts
+        if section.localizedCaseInsensitiveContains("phase 1") || section.localizedCaseInsensitiveContains("mvp") {
+            priority = enhancePriority(priority)
+            confidence += 0.15
+        }
+        
+        // Ensure meaningful task text
+        guard taskText.count > 10 && !taskText.localizedCaseInsensitiveContains("example") else {
+            return nil
+        }
+        
+        let description = generateBacklogTaskDescription(originalText: line, section: section, confidence: confidence)
+        
+        return DocumentTask(
+            id: UUID(),
+            title: taskText,
+            description: description,
+            suggestedStatus: .backlog, // Always Backlog for Plan.md tasks
+            suggestedPriority: priority,
+            projectId: projectId,
+            confidence: min(confidence, 1.0),
+            sourceType: .plan,
+            documentSource: "PLAN.md",
+            originalLine: line,
+            lineNumber: lineNumber,
+            section: section,
+            tags: generateBacklogTags(from: taskText, section: section)
+        )
+    }
+    
+    /// Generate enhanced description for Backlog tasks
+    private func generateBacklogTaskDescription(originalText: String, section: String, confidence: Double) -> String {
+        var description = "Auto-extracted from PLAN.md for Backlog population"
+        
+        if !section.isEmpty {
+            description += " (Section: \(section))"
+        }
+        
+        description += "\n\nOriginal: \(originalText)"
+        description += "\nConfidence: \(Int(confidence * 100))%"
+        description += "\nStatus: Ready for Backlog → To-Do transition"
+        
+        return description
+    }
+    
+    /// Generate specialized tags for Backlog tasks
+    private func generateBacklogTags(from text: String, section: String) -> [String] {
+        var tags = ["auto-backlog", "plan-md", "pending"]
+        
+        if !section.isEmpty {
+            tags.append(section.lowercased().replacingOccurrences(of: " ", with: "-"))
+        }
+        
+        // Add feature-specific tags
+        let featureKeywords = [
+            "ui": "ui-ux",
+            "backend": "backend",
+            "api": "api",
+            "database": "database",
+            "test": "testing",
+            "security": "security",
+            "performance": "performance"
+        ]
+        
+        for (keyword, tag) in featureKeywords {
+            if text.localizedCaseInsensitiveContains(keyword) {
+                tags.append(tag)
+                break
+            }
+        }
+        
+        return tags
+    }
     
     private func parseProjectDocumentation(projectPath: String) async -> DocumentData {
         let projectURL = URL(fileURLWithPath: projectPath)
@@ -327,7 +538,7 @@ class DocumentIntelligenceService: ObservableObject {
                 attachments: []
             )
             
-            try await taskService.createTask(leanVibeTask)
+            try await taskService.addTask(leanVibeTask)
         }
     }
 }
