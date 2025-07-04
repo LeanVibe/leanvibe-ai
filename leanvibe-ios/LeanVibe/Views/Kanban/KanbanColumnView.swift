@@ -10,7 +10,7 @@ struct KanbanColumnView: View {
     let onDragError: (String) -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.md) {
             // Column header
             HStack {
                 Text(status.displayName)
@@ -21,18 +21,18 @@ struct KanbanColumnView: View {
                 
                 Text("\(tasks.count)")
                     .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.blue.opacity(0.1))
-                    .foregroundColor(.blue)
+                    .padding(.horizontal, PremiumDesignSystem.Spacing.sm)
+                    .padding(.vertical, PremiumDesignSystem.Spacing.xs)
+                    .background(PremiumDesignSystem.Colors.buttonPrimary.opacity(0.1))
+                    .foregroundColor(PremiumDesignSystem.Colors.buttonPrimary)
                     .clipShape(Capsule())
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
+            .padding(.horizontal, PremiumDesignSystem.Spacing.lg)
+            .padding(.top, PremiumDesignSystem.Spacing.lg)
             
             // Task cards
             ScrollView {
-                LazyVStack(spacing: 12) {
+                LazyVStack(spacing: PremiumDesignSystem.Spacing.md) {
                     ForEach(tasks) { task in
                         TaskCardView(
                             task: task,
@@ -49,15 +49,15 @@ struct KanbanColumnView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, PremiumDesignSystem.Spacing.lg)
             }
             .frame(minHeight: 400)
             
             Spacer()
         }
         .frame(width: 280)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(PremiumDesignSystem.Colors.secondaryBackground)
+        .clipShape(RoundedRectangle(cornerRadius: PremiumDesignSystem.CornerRadius.card))
         .dropDestination(for: String.self) { items, location in
             guard let draggedTask = draggedTask,
                   draggedTask.status != status else { return false }
@@ -83,7 +83,7 @@ struct TaskCardView: View {
     let onTap: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.sm) {
             HStack {
                 Text(task.title)
                     .font(.headline)
@@ -112,9 +112,9 @@ struct TaskCardView: View {
                     .foregroundColor(.secondary)
             }
         }
-        .padding(12)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(PremiumDesignSystem.Spacing.md)
+        .background(PremiumDesignSystem.Colors.background)
+        .clipShape(RoundedRectangle(cornerRadius: PremiumDesignSystem.CornerRadius.sm))
         .onTapGesture {
             onTap()
         }
@@ -123,31 +123,31 @@ struct TaskCardView: View {
     private var priorityIndicator: some View {
         Circle()
             .fill(priorityColor)
-            .frame(width: 8, height: 8)
+            .frame(width: PremiumDesignSystem.Spacing.sm, height: PremiumDesignSystem.Spacing.sm)
     }
     
     private var priorityColor: Color {
         switch task.priority {
         case .urgent:
-            return .red
+            return PremiumDesignSystem.Colors.error
         case .high:
-            return .orange
+            return PremiumDesignSystem.Colors.warning
         case .medium:
-            return .yellow
+            return Color(.systemYellow)
         case .low:
-            return .green
+            return PremiumDesignSystem.Colors.success
         }
     }
     
     private var confidenceIndicator: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: PremiumDesignSystem.Spacing.xs) {
             Image(systemName: "brain")
                 .font(.caption2)
-                .foregroundColor(.blue)
+                .foregroundColor(PremiumDesignSystem.Colors.buttonPrimary)
             
             Text("\(Int(task.confidence * 100))%")
                 .font(.caption2)
-                .foregroundColor(.blue)
+                .foregroundColor(PremiumDesignSystem.Colors.buttonPrimary)
         }
     }
     
@@ -179,5 +179,5 @@ struct TaskCardView: View {
         onDragError: { _ in }
     )
     .frame(height: 600)
-    .padding()
+    .padding(PremiumDesignSystem.Spacing.containerPadding)
 }

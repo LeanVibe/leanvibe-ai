@@ -9,14 +9,14 @@ struct ProjectDashboardView: View {
     @State private var selectedProject: Project?
     
     private let columns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16)
+        GridItem(.flexible(), spacing: PremiumDesignSystem.Spacing.lg),
+        GridItem(.flexible(), spacing: PremiumDesignSystem.Spacing.lg)
     ]
     
     var body: some View {
         NavigationView {
             ScrollView {
-                LazyVStack(spacing: 20) {
+                LazyVStack(spacing: PremiumDesignSystem.Spacing.xl) {
                     // Header Section
                     headerSection
                     
@@ -29,7 +29,7 @@ struct ProjectDashboardView: View {
                     // Quick Actions
                     quickActionsSection
                 }
-                .padding()
+                .padding(PremiumDesignSystem.Spacing.containerPadding)
             }
             .navigationTitle("Projects")
             .navigationBarTitleDisplayMode(.large)
@@ -66,9 +66,9 @@ struct ProjectDashboardView: View {
     }
     
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.md) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.xs) {
                     Text("Dashboard")
                         .font(.title)
                         .fontWeight(.bold)
@@ -80,7 +80,7 @@ struct ProjectDashboardView: View {
                 
                 Spacer()
                 
-                VStack(alignment: .trailing, spacing: 4) {
+                VStack(alignment: .trailing, spacing: PremiumDesignSystem.Spacing.xs) {
                     Text("\(projectManager.projects.count)")
                         .font(.title2)
                         .fontWeight(.semibold)
@@ -96,8 +96,8 @@ struct ProjectDashboardView: View {
             if !projectManager.projects.filter({ $0.status == .active }).isEmpty {
                 HStack {
                     Circle()
-                        .fill(Color.green)
-                        .frame(width: 8, height: 8)
+                        .fill(PremiumDesignSystem.Colors.success)
+                        .frame(width: PremiumDesignSystem.Spacing.sm, height: PremiumDesignSystem.Spacing.sm)
                     
                     Text("\(projectManager.projects.filter({ $0.status == .active }).count) active project(s)")
                         .font(.caption)
@@ -107,21 +107,21 @@ struct ProjectDashboardView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(16)
+        .padding(PremiumDesignSystem.Spacing.containerPadding)
+        .background(PremiumDesignSystem.Colors.secondaryBackground)
+        .cornerRadius(PremiumDesignSystem.CornerRadius.card)
     }
     
     private var connectionStatusCard: some View {
         HStack {
-            Image(systemName: webSocketService.isConnected ? "wifi" : "wifi.slash")
-                .foregroundColor(webSocketService.isConnected ? .green : .red)
+            Image(systemName: webSocketService.isConnected ? PremiumDesignSystem.Icons.online : PremiumDesignSystem.Icons.offline)
+                .foregroundColor(webSocketService.isConnected ? PremiumDesignSystem.Colors.success : PremiumDesignSystem.Colors.error)
                 .font(.title2)
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.xs) {
                 Text(webSocketService.isConnected ? "Connected" : "Disconnected")
                     .font(.headline)
-                    .foregroundColor(webSocketService.isConnected ? .green : .red)
+                    .foregroundColor(webSocketService.isConnected ? PremiumDesignSystem.Colors.success : PremiumDesignSystem.Colors.error)
                 
                 Text(webSocketService.connectionStatus)
                     .font(.caption)
@@ -135,17 +135,17 @@ struct ProjectDashboardView: View {
                     .scaleEffect(0.8)
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .padding(PremiumDesignSystem.Spacing.containerPadding)
+        .background(PremiumDesignSystem.Colors.background)
+        .cornerRadius(PremiumDesignSystem.CornerRadius.card)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(webSocketService.isConnected ? Color.green.opacity(0.3) : Color.red.opacity(0.3), lineWidth: 1)
+            RoundedRectangle(cornerRadius: PremiumDesignSystem.CornerRadius.card)
+                .stroke(webSocketService.isConnected ? PremiumDesignSystem.Colors.success.opacity(0.3) : PremiumDesignSystem.Colors.error.opacity(0.3), lineWidth: 1)
         )
     }
     
     private var projectsGridSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.lg) {
             HStack {
                 Text("Projects")
                     .font(.title2)
@@ -162,7 +162,7 @@ struct ProjectDashboardView: View {
             if projectManager.projects.isEmpty {
                 emptyProjectsView
             } else {
-                LazyVGrid(columns: columns, spacing: 16) {
+                LazyVGrid(columns: columns, spacing: PremiumDesignSystem.Spacing.lg) {
                     ForEach(projectManager.projects) { project in
                         ProjectCard(project: project) {
                             selectedProject = project
@@ -174,7 +174,7 @@ struct ProjectDashboardView: View {
     }
     
     private var emptyProjectsView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: PremiumDesignSystem.Spacing.lg) {
             Image(systemName: "folder.badge.plus")
                 .font(.system(size: 48))
                 .foregroundColor(.secondary)
@@ -193,28 +193,28 @@ struct ProjectDashboardView: View {
                     Image(systemName: "plus")
                     Text("Add Your First Project")
                 }
-                .padding()
-                .background(Color.blue)
+                .padding(PremiumDesignSystem.Spacing.containerPadding)
+                .background(PremiumDesignSystem.Colors.buttonPrimary)
                 .foregroundColor(.white)
-                .cornerRadius(12)
+                .cornerRadius(PremiumDesignSystem.CornerRadius.button)
             }
         }
-        .padding(40)
-        .background(Color(.systemGray6))
-        .cornerRadius(16)
+        .padding(PremiumDesignSystem.Spacing.xxxl)
+        .background(PremiumDesignSystem.Colors.secondaryBackground)
+        .cornerRadius(PremiumDesignSystem.CornerRadius.card)
     }
     
     private var quickActionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.md) {
             Text("Quick Actions")
                 .font(.headline)
                 .fontWeight(.semibold)
             
-            LazyVGrid(columns: columns, spacing: 12) {
+            LazyVGrid(columns: columns, spacing: PremiumDesignSystem.Spacing.md) {
                 QuickActionCard(
                     title: "Refresh All",
                     icon: "arrow.clockwise",
-                    color: .blue
+                    color: PremiumDesignSystem.Colors.buttonPrimary
                 ) {
                     Task {
                         do {
@@ -228,7 +228,7 @@ struct ProjectDashboardView: View {
                 QuickActionCard(
                     title: "Agent Chat",
                     icon: "brain.head.profile",
-                    color: .purple
+                    color: PremiumDesignSystem.Colors.debugBadge
                 ) {
                     navigationCoordinator.switchToTab(.agent)
                 }
@@ -236,7 +236,7 @@ struct ProjectDashboardView: View {
                 QuickActionCard(
                     title: "Monitor",
                     icon: "chart.line.uptrend.xyaxis",
-                    color: .green
+                    color: PremiumDesignSystem.Colors.success
                 ) {
                     navigationCoordinator.switchToTab(.monitor)
                 }
@@ -244,7 +244,7 @@ struct ProjectDashboardView: View {
                 QuickActionCard(
                     title: "Settings",
                     icon: "gear",
-                    color: .gray
+                    color: PremiumDesignSystem.Colors.iconSecondary
                 ) {
                     navigationCoordinator.switchToTab(.settings)
                 }
@@ -259,15 +259,15 @@ struct ProjectCard: View {
     
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.md) {
                 // Header with language icon and status
                 HStack {
-                    HStack(spacing: 8) {
+                    HStack(spacing: PremiumDesignSystem.Spacing.sm) {
                         Image(systemName: project.language.icon)
                             .foregroundColor(Color(project.language.color))
                             .font(.title2)
                         
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.xs) {
                             Text(project.displayName)
                                 .font(.headline)
                                 .fontWeight(.semibold)
@@ -286,7 +286,7 @@ struct ProjectCard: View {
                 }
                 
                 // Metrics row
-                HStack(spacing: 16) {
+                HStack(spacing: PremiumDesignSystem.Spacing.lg) {
                     MetricItem(
                         icon: "doc.text",
                         value: "\(project.metrics.filesCount)",
@@ -304,7 +304,7 @@ struct ProjectCard: View {
                             icon: "exclamationmark.triangle",
                             value: "\(project.metrics.issuesCount)",
                             label: "Issues",
-                            color: .red
+                            color: PremiumDesignSystem.Colors.error
                         )
                     }
                 }
@@ -325,14 +325,14 @@ struct ProjectCard: View {
                     Spacer()
                 }
             }
-            .padding()
-            .background(Color(.systemBackground))
-            .cornerRadius(16)
+            .padding(PremiumDesignSystem.Spacing.containerPadding)
+            .background(PremiumDesignSystem.Colors.background)
+            .cornerRadius(PremiumDesignSystem.CornerRadius.card)
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color(.systemGray4), lineWidth: 1)
+                RoundedRectangle(cornerRadius: PremiumDesignSystem.CornerRadius.card)
+                    .stroke(PremiumDesignSystem.Colors.tertiaryBackground, lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+            .premiumShadow(PremiumDesignSystem.Shadows.card)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -342,7 +342,7 @@ struct ProjectStatusBadge: View {
     let status: ProjectStatus
     
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: PremiumDesignSystem.Spacing.xs) {
             Image(systemName: status.icon)
                 .font(.caption)
             
@@ -350,11 +350,11 @@ struct ProjectStatusBadge: View {
                 .font(.caption)
                 .fontWeight(.medium)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, PremiumDesignSystem.Spacing.sm)
+        .padding(.vertical, PremiumDesignSystem.Spacing.xs)
         .background(Color(status.color).opacity(0.2))
         .foregroundColor(Color(status.color))
-        .cornerRadius(8)
+        .cornerRadius(PremiumDesignSystem.CornerRadius.sm)
     }
 }
 
@@ -366,8 +366,8 @@ struct MetricItem: View {
     var color: Color = .primary
     
     var body: some View {
-        VStack(spacing: 2) {
-            HStack(spacing: 4) {
+        VStack(spacing: PremiumDesignSystem.Spacing.xs) {
+            HStack(spacing: PremiumDesignSystem.Spacing.xs) {
                 Image(systemName: icon)
                     .font(.caption)
                     .foregroundColor(color)
@@ -390,7 +390,7 @@ struct HealthScoreBar: View {
     let score: Double
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.xs) {
             HStack {
                 Text("Health")
                     .font(.caption)
@@ -422,10 +422,10 @@ struct HealthScoreBar: View {
     }
     
     private var healthColor: String {
-        if score >= 0.8 { return "green" }
-        if score >= 0.6 { return "yellow" }
-        if score >= 0.4 { return "orange" }
-        return "red"
+        if score >= 0.8 { return "systemGreen" }
+        if score >= 0.6 { return "systemYellow" }
+        if score >= 0.4 { return "systemOrange" }
+        return "systemRed"
     }
 }
 
@@ -438,7 +438,7 @@ struct QuickActionCard: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: PremiumDesignSystem.Spacing.sm) {
                 Image(systemName: icon)
                     .font(.title2)
                     .foregroundColor(color)
@@ -449,9 +449,9 @@ struct QuickActionCard: View {
                     .foregroundColor(.primary)
             }
             .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(12)
+            .padding(PremiumDesignSystem.Spacing.containerPadding)
+            .background(PremiumDesignSystem.Colors.secondaryBackground)
+            .cornerRadius(PremiumDesignSystem.CornerRadius.card)
         }
         .buttonStyle(PlainButtonStyle())
     }
