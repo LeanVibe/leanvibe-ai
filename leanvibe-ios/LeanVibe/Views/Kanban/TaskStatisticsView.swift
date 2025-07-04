@@ -9,30 +9,28 @@ struct TaskStatisticsView: View {
     @State private var isLoading = true
     
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    if isLoading {
-                        ProgressView("Loading statistics...")
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    } else {
-                        statisticsContent
-                    }
-                }
-                .padding()
-            }
-            .navigationTitle("Task Statistics")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                if isLoading {
+                    ProgressView("Loading statistics...")
+                        .frame(maxWidth: .infinity, alignment: .center)
+                } else {
+                    statisticsContent
                 }
             }
-            .task {
-                await loadStatistics()
+            .padding()
+        }
+        .navigationTitle("Task Statistics")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") {
+                    dismiss()
+                }
             }
+        }
+        .task {
+            await loadStatistics()
         }
     }
     

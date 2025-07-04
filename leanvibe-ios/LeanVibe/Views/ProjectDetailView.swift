@@ -24,7 +24,6 @@ struct ProjectDetailView: View {
                 .padding()
             }
             .navigationTitle(project.displayName)
-            #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -33,15 +32,6 @@ struct ProjectDetailView: View {
                     }
                 }
             }
-            #else
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-            #endif
             .onAppear {
                 Task {
                     do {

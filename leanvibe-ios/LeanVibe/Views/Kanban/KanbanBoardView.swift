@@ -117,7 +117,9 @@ struct KanbanBoardView: View {
                 }
             }
             .sheet(isPresented: $showingStatistics) {
-                TaskStatisticsView(taskService: taskService)
+                NavigationView {
+                    TaskStatisticsView(taskService: taskService)
+                }
             }
             .sheet(isPresented: $showingDependencies) {
                 NavigationView {
