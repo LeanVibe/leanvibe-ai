@@ -471,8 +471,7 @@ struct QRCodeScannerView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
-            VStack {
+        VStack {
                 Text("Scan QR Code from Mac Agent")
                     .font(.headline)
                     .padding()
@@ -519,14 +518,13 @@ struct QRCodeScannerView: View {
                 .buttonStyle(.bordered)
                 
                 Spacer()
-            }
-            .navigationTitle("QR Scanner")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+        }
+        .navigationTitle("QR Scanner")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Cancel") {
+                    dismiss()
                 }
             }
         }
@@ -541,8 +539,7 @@ struct ManualServerEntryView: View {
     @State private var manualURL = ""
     
     var body: some View {
-        NavigationView {
-            Form {
+        Form {
                 Section("Server Configuration") {
                     TextField("Backend URL", text: $manualURL)
                         .textInputAutocapitalization(.never)
@@ -563,22 +560,21 @@ struct ManualServerEntryView: View {
                         manualURL = "http://192.168.1.100:8000"
                     }
                 }
+        }
+        .navigationTitle("Manual Entry")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") {
+                    dismiss()
+                }
             }
-            .navigationTitle("Manual Entry")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Connect") {
+                    onURLEntered(manualURL)
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Connect") {
-                        onURLEntered(manualURL)
-                    }
-                    .disabled(manualURL.isEmpty)
-                }
+                .disabled(manualURL.isEmpty)
             }
         }
         .onAppear {

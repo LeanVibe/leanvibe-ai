@@ -23,21 +23,19 @@ struct ArchitectureTabView: View {
     @State private var showingChangesAlert = false
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
                 mainContentArea
                 
                 // Controls
                 controlsSection
-            }
-            .navigationTitle("Architecture")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Export") {
-                        exportCurrentDiagram()
-                    }
-                    .disabled(service.diagram == nil)
+        }
+        .navigationTitle("Architecture")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Export") {
+                    exportCurrentDiagram()
                 }
+                .disabled(service.diagram == nil)
             }
         }
         .sheet(isPresented: $showingExportSheet) {
@@ -291,18 +289,16 @@ struct DiagramExportView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
-            ScrollView {
+        ScrollView {
                 Text(diagramCode)
                     .font(.system(.caption, design: .monospaced))
                     .padding()
-            }
-            .navigationTitle("Export Diagram")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
+        }
+        .navigationTitle("Export Diagram")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") {
+                    dismiss()
                 }
             }
         }
@@ -382,8 +378,7 @@ struct ExportDiagramSheet: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
-            VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
                 Text("Export Architecture Diagram")
                     .font(.title2)
                     .fontWeight(.semibold)
@@ -412,11 +407,10 @@ struct ExportDiagramSheet: View {
                     }
                     .buttonStyle(.bordered)
                 }
-            }
-            .padding()
-            .navigationTitle("Export")
-            .navigationBarTitleDisplayMode(.inline)
         }
+        .padding()
+        .navigationTitle("Export")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

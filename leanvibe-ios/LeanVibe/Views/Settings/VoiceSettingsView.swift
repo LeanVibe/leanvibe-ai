@@ -331,8 +331,7 @@ struct VoiceTestView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 24) {
+        VStack(spacing: 24) {
                 // Test Type Picker
                 Picker("Test Type", selection: $currentTest) {
                     ForEach(VoiceTestType.allCases, id: \.self) { testType in
@@ -412,15 +411,14 @@ struct VoiceTestView: View {
                 }
                 
                 Spacer()
-            }
-            .padding()
-            .navigationTitle("Voice Test")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
+        }
+        .padding()
+        .navigationTitle("Voice Test")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") {
+                    dismiss()
                 }
             }
         }
@@ -517,17 +515,15 @@ struct AdvancedVoiceSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
-            Text("Advanced Voice Configuration")
-                .navigationTitle("Advanced Settings")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") {
-                            dismiss()
-                        }
+        Text("Advanced Voice Configuration")
+            .navigationTitle("Advanced Settings")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
                     }
                 }
-        }
+            }
     }
 }
 

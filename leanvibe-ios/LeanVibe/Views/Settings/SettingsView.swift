@@ -18,8 +18,7 @@ struct SettingsView: View {
     // MARK: - Body
     
     var body: some View {
-        NavigationView {
-            List {
+        List {
                 // Voice & Speech Section
                 voiceSettingsSection
                 
@@ -40,12 +39,11 @@ struct SettingsView: View {
                 
                 // Beta Testing Section
                 betaTestingSection
-            }
-            .navigationTitle("Settings")
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    toolbarMenu
-                }
+        }
+        .navigationTitle("Settings")
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                toolbarMenu
             }
         }
         .sheet(isPresented: $showingAbout) {
