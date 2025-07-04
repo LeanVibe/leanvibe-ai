@@ -147,6 +147,9 @@ struct AccessibilitySettings: SettingsProtocol {
     var highContrastMode: Bool = false
     var voiceOverOptimizations: Bool = false
     var extendedTouchTargets: Bool = false
+    var speechRateAdjustment: Double = 1.0
+    var largeFontSize: Double = 1.0
+    var extendedVoiceCommands: Bool = false
     
     init() {}
 }
@@ -170,6 +173,7 @@ struct ArchitectureSettings: SettingsProtocol {
     var compareMode: String = ""
     var syncConflictResolution: String = ""
     var sharePermissionLevel: String = ""
+    var enableAnimations: Bool = true
     
     init() {}
 }
