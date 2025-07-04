@@ -117,6 +117,7 @@ struct ArchitectureSettings: SettingsProtocol {
     var enableInteraction: Bool = true
     var compareMode: Bool = false
     var maxCacheSize: Int = 50
+    var defaultExportFormat: String = "svg"
     
     init() {}
 }
@@ -132,6 +133,12 @@ struct MetricsSettings: SettingsProtocol {
     var detailedLoggingEnabled: Bool = false
     var dataRetentionDays: Int = 30
     var maxStorageSize: Int = 100
+    var aggregationInterval: TimeInterval = 300.0
+    var exportFormat: String = "json"
+    var autoExportEnabled: Bool = false
+    var shareMetricsEnabled: Bool = false
+    var alertsEnabled: Bool = true
+    var privacyMode: Bool = false
     
     init() {}
 }
@@ -147,6 +154,13 @@ struct TaskCreationSettings: SettingsProtocol {
     var requireDescription: Bool = false
     var enableQuickActions: Bool = true
     var voiceTaskCreationEnabled: Bool = false
+    var autoSaveEnabled: Bool = true
+    var taskValidationEnabled: Bool = true
+    var duplicateTaskWarning: Bool = true
+    var customFieldsEnabled: Bool = false
+    var bulkCreationEnabled: Bool = false
+    var taskHistoryEnabled: Bool = true
+    var taskNotificationsEnabled: Bool = true
     
     init() {}
 }
@@ -161,6 +175,14 @@ struct OfflineSettings: SettingsProtocol {
     var autoCleanupEnabled: Bool = true
     var compressionEnabled: Bool = true
     var encryptionEnabled: Bool = false
+    var preloadData: Bool = false
+    var conflictResolutionStrategy: String = "manual"
+    var maxOfflineActions: Int = 1000
+    var syncRetryAttempts: Int = 3
+    var queuedActionsPersistence: Bool = true
+    var smartSyncEnabled: Bool = true
+    var prioritySyncEnabled: Bool = true
+    var deltaSyncEnabled: Bool = true
     
     init() {}
 }
@@ -175,6 +197,14 @@ struct InterfaceSettings: SettingsProtocol {
     var sidebarPosition: String = "left"
     var navigationStyle: String = "tab"
     var tabBarStyle: String = "default"
+    var showToolbar: Bool = true
+    var toolbarPosition: String = "top"
+    var showPreviewPane: Bool = true
+    var gridSize: String = "medium"
+    var iconStyle: String = "filled"
+    var animationsEnabled: Bool = true
+    var reducedMotion: Bool = false
+    var highContrast: Bool = false
     
     init() {}
 }
@@ -189,6 +219,16 @@ struct PerformanceSettings: SettingsProtocol {
     var threadPoolSize: Int = 4
     var networkOptimizationEnabled: Bool = true
     var networkRequestTimeout: TimeInterval = 30.0
+    var maxConcurrentRequests: Int = 10
+    var cacheOptimizationEnabled: Bool = true
+    var diskCacheEnabled: Bool = true
+    var maxCacheSize: Int = 256
+    var renderingOptimizationEnabled: Bool = true
+    var imageCompressionEnabled: Bool = true
+    var lazyLoadingEnabled: Bool = true
+    var prefetchingEnabled: Bool = true
+    var batteryOptimizationEnabled: Bool = true
+    var lowPowerModeEnabled: Bool = false
     
     init() {}
 }
