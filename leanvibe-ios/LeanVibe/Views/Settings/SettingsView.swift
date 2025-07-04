@@ -1,5 +1,49 @@
 import SwiftUI
 
+// Simple Beta Feedback View placeholder
+struct BetaFeedbackView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "star.bubble")
+                .font(.system(size: 48))
+                .foregroundColor(.yellow)
+            
+            Text("Beta Feedback")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            
+            Text("This feature is under development")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .navigationTitle("Beta Feedback")
+    }
+}
+
+// Simple Beta Analytics Dashboard View placeholder
+struct BetaAnalyticsDashboardView: View {
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "chart.line.uptrend.xyaxis")
+                .font(.system(size: 48))
+                .foregroundColor(.purple)
+            
+            Text("Beta Analytics")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            
+            Text("Analytics dashboard coming soon")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+        .navigationTitle("Beta Analytics")
+    }
+}
+
 // Ensure ArchitectureViewerSettingsView is available
 // (The implementation is in ArchitectureViewerSettingsView.swift)
 
@@ -358,7 +402,7 @@ struct SettingsView: View {
                     icon: "chart.line.uptrend.xyaxis",
                     iconColor: Color(.systemPurple),
                     title: "Beta Analytics",
-                    subtitle: BetaAnalyticsService.shared.isEnabled ? "Active" : "Disabled"
+                    subtitle: "Disabled"
                 )
             }
         }

@@ -1,4 +1,27 @@
 import SwiftUI
+import Foundation
+
+// Simple Beta Analytics Service for tracking basic usage metrics
+@MainActor
+final class BetaAnalyticsService: Sendable {
+    static let shared = BetaAnalyticsService()
+    
+    var isEnabled: Bool = false
+    
+    private init() {}
+    
+    func recordUsageMetric(event: UsageEventType, screen: String, metadata: [String: Any]? = nil) {
+        // Simple implementation - in production this would store/send metrics
+        if isEnabled {
+            print("📊 Beta Analytics: \(event.rawValue) on \(screen)")
+        }
+    }
+}
+
+enum UsageEventType: String {
+    case screenView = "screen_view"
+    case featureUsed = "feature_used"
+}
 
 // Voice service wrapper to handle optional initialization
 @MainActor
@@ -265,12 +288,12 @@ struct DashboardTabView: View {
             }
             .premiumShadow(PremiumDesignSystem.Shadows.elevated)
             .animation(PremiumTransitions.easeInOut, value: navigationCoordinator.selectedTab)
-            .onChange(of: navigationCoordinator.selectedTab) { oldTab, newTab in
+            .onChange(of: navigationCoordinator.selectedTab) { newTab in
                 // Track tab navigation for beta analytics
                 BetaAnalyticsService.shared.recordUsageMetric(
                     event: .screenView,
-                    screen: newTab,
-                    metadata: ["previous_tab": oldTab]
+                    screen: "tab_\(newTab)",
+                    metadata: ["tab_changed": true]
                 )
             }
             
