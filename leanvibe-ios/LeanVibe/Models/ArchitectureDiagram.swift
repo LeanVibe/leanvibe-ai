@@ -45,21 +45,39 @@ struct ArchitectureDiagram: Identifiable, Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
-        self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
-        self.name = try container.decode(String.self, forKey: .name)
-        self.mermaidDefinition = try container.decode(String.self, forKey: .mermaidDefinition)
+        // Handle ID with fallback
+        if let idString = try? container.decode(String.self, forKey: .id) {
+            self.id = UUID(uuidString: idString) ?? UUID()
+        } else {
+            self.id = (try? container.decode(UUID.self, forKey: .id)) ?? UUID()
+        }
+        
+        // Required fields with validation
+        let decodedName = try container.decode(String.self, forKey: .name)
+        self.name = decodedName.isEmpty ? "Unnamed Architecture" : decodedName
+        
+        let decodedMermaid = try container.decode(String.self, forKey: .mermaidDefinition)
+        self.mermaidDefinition = decodedMermaid.isEmpty ? "graph TD\n    A[Empty Diagram]" : decodedMermaid
+        
+        // Optional fields
         self.description = try? container.decode(String.self, forKey: .description)
         self.diagramType = try? container.decode(String.self, forKey: .diagramType)
         
-        // Handle date decoding with fallback
+        // Handle date decoding with multiple formats
         if let createdString = try? container.decode(String.self, forKey: .createdAt) {
-            self.createdAt = ISO8601DateFormatter().date(from: createdString)
+            let formatter = ISO8601DateFormatter()
+            self.createdAt = formatter.date(from: createdString) ?? Date()
+        } else if let createdTimestamp = try? container.decode(Double.self, forKey: .createdAt) {
+            self.createdAt = Date(timeIntervalSince1970: createdTimestamp)
         } else {
             self.createdAt = Date()
         }
         
         if let updatedString = try? container.decode(String.self, forKey: .updatedAt) {
-            self.updatedAt = ISO8601DateFormatter().date(from: updatedString)
+            let formatter = ISO8601DateFormatter()
+            self.updatedAt = formatter.date(from: updatedString) ?? Date()
+        } else if let updatedTimestamp = try? container.decode(Double.self, forKey: .updatedAt) {
+            self.updatedAt = Date(timeIntervalSince1970: updatedTimestamp)
         } else {
             self.updatedAt = Date()
         }

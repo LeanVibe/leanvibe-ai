@@ -75,24 +75,53 @@ class ArchitectureVisualizationService: ObservableObject {
             
             let (archData, archResponse) = try await URLSession.shared.data(for: archRequest)
             
+            #if DEBUG
+            print("ArchitectureVisualizationService: Primary endpoint response status: \((archResponse as? HTTPURLResponse)?.statusCode ?? 0)")
+            if let responseString = String(data: archData, encoding: .utf8) {
+                print("ArchitectureVisualizationService: Response data: \(responseString.prefix(500))")
+            }
+            #endif
+            
             if let httpResponse = archResponse as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 // Parse standardized architecture response
-                if let jsonObject = try JSONSerialization.jsonObject(with: archData) as? [String: Any] {
-                    
-                    // Try to parse as a complete ArchitectureDiagram first
-                    if let diagramData = try? JSONDecoder().decode(ArchitectureDiagram.self, from: archData) {
-                        self.diagram = diagramData
+                do {
+                    if let jsonObject = try JSONSerialization.jsonObject(with: archData) as? [String: Any] {
+                        
+                        // Try to parse as a complete ArchitectureDiagram first
+                        let decoder = JSONDecoder()
+                        decoder.dateDecodingStrategy = .iso8601
+                        if let diagramData = try? decoder.decode(ArchitectureDiagram.self, from: archData) {
+                            self.diagram = diagramData
+                            isLoading = false
+                            return
+                        }
+                        
+                        // Check if response has a nested diagram structure
+                        if let diagramObj = jsonObject["diagram"] as? [String: Any] {
+                            let diagram = parseDiagramFromResponse(diagramObj)
+                            self.diagram = diagram
+                            isLoading = false
+                            return
+                        }
+                        
+                        // Check if response has data wrapper
+                        if let dataObj = jsonObject["data"] as? [String: Any] {
+                            let diagram = parseDiagramFromResponse(dataObj)
+                            self.diagram = diagram
+                            isLoading = false
+                            return
+                        }
+                        
+                        // Fallback: Parse architecture data and convert to Mermaid
+                        let diagram = parseDiagramFromResponse(jsonObject)
+                        self.diagram = diagram
                         isLoading = false
                         return
+                    } else {
+                        print("Warning: Primary architecture endpoint returned success but invalid JSON format")
                     }
-                    
-                    // Fallback: Parse architecture data and convert to Mermaid
-                    let diagram = parseDiagramFromResponse(jsonObject)
-                    self.diagram = diagram
-                    isLoading = false
-                    return
-                } else {
-                    print("Warning: Primary architecture endpoint returned success but invalid JSON format")
+                } catch {
+                    print("Warning: Failed to parse primary architecture response: \(error)")
                 }
             } else if let httpResponse = archResponse as? HTTPURLResponse, httpResponse.statusCode == 404 {
                 print("Primary architecture endpoint not found, trying fallback")
@@ -118,6 +147,13 @@ class ArchitectureVisualizationService: ObservableObject {
             
             let (vizData, vizResponse) = try await URLSession.shared.data(for: vizRequest)
             
+            #if DEBUG
+            print("ArchitectureVisualizationService: Fallback endpoint response status: \((vizResponse as? HTTPURLResponse)?.statusCode ?? 0)")
+            if let responseString = String(data: vizData, encoding: .utf8) {
+                print("ArchitectureVisualizationService: Fallback response data: \(responseString.prefix(500))")
+            }
+            #endif
+            
             guard let httpResponse = vizResponse as? HTTPURLResponse else {
                 errorMessage = "Invalid response from server"
                 isLoading = false
@@ -127,20 +163,46 @@ class ArchitectureVisualizationService: ObservableObject {
             switch httpResponse.statusCode {
             case 200:
                 // Parse visualization response
-                if let jsonObject = try JSONSerialization.jsonObject(with: vizData) as? [String: Any] {
-                    let diagram: ArchitectureDiagram
-                    
-                    // Check if response has diagram field
-                    if let diagramData = jsonObject["diagram"] as? [String: Any] {
-                        diagram = parseDiagramFromResponse(diagramData)
+                do {
+                    if let jsonObject = try JSONSerialization.jsonObject(with: vizData) as? [String: Any] {
+                        let diagram: ArchitectureDiagram
+                        
+                        // Check if response has success status
+                        if let status = jsonObject["status"] as? String, status != "success" {
+                            if let message = jsonObject["message"] as? String {
+                                errorMessage = "Backend error: \(message)"
+                            } else {
+                                errorMessage = "Backend returned error status: \(status)"
+                            }
+                            break
+                        }
+                        
+                        // Check if response has diagram field
+                        if let diagramData = jsonObject["diagram"] as? [String: Any] {
+                            diagram = parseDiagramFromResponse(diagramData)
+                        } else if let dataWrapper = jsonObject["data"] as? [String: Any] {
+                            // Check if data has diagram field
+                            if let diagramData = dataWrapper["diagram"] as? [String: Any] {
+                                diagram = parseDiagramFromResponse(diagramData)
+                            } else {
+                                diagram = parseDiagramFromResponse(dataWrapper)
+                            }
+                        } else {
+                            // Try to parse the entire response as diagram data
+                            diagram = parseDiagramFromResponse(jsonObject)
+                        }
+                        
+                        // Validate diagram has content
+                        if diagram.mermaidDefinition.isEmpty || diagram.mermaidDefinition == "graph TD\n" {
+                            errorMessage = "Backend returned empty architecture diagram"
+                        } else {
+                            self.diagram = diagram
+                        }
                     } else {
-                        // Try to parse the entire response as diagram data
-                        diagram = parseDiagramFromResponse(jsonObject)
+                        errorMessage = "Invalid diagram data format from visualization endpoint"
                     }
-                    
-                    self.diagram = diagram
-                } else {
-                    errorMessage = "Invalid diagram data format from visualization endpoint"
+                } catch {
+                    errorMessage = "Failed to parse visualization response: \(error.localizedDescription)"
                 }
             case 404:
                 errorMessage = "Project not found or architecture endpoint not available"
@@ -177,7 +239,7 @@ class ArchitectureVisualizationService: ObservableObject {
                 errorMessage = "Network error: \(error.localizedDescription)"
             }
         } catch let error as DecodingError {
-            errorMessage = "Data format error: Unable to parse server response. The API format may be incompatible."
+            errorMessage = "Data format error: Unable to parse server response. The API format may be incompatible. \(error.localizedDescription)"
         } catch {
             errorMessage = "Unexpected error: \(error.localizedDescription)"
         }
@@ -218,7 +280,7 @@ class ArchitectureVisualizationService: ObservableObject {
         // Parse backend diagram response into iOS model
         let title = diagramData["name"] as? String ?? diagramData["title"] as? String ?? "Architecture Diagram"
         
-        // Check if it's a direct Mermaid diagram
+        // Check if it's a direct Mermaid diagram (snake_case)
         if let mermaidDefinition = diagramData["mermaid_definition"] as? String {
             return ArchitectureDiagram(
                 name: title,
@@ -228,13 +290,23 @@ class ArchitectureVisualizationService: ObservableObject {
             )
         }
         
+        // Check if it's a direct Mermaid diagram (camelCase)
+        if let mermaidDefinition = diagramData["mermaidDefinition"] as? String {
+            return ArchitectureDiagram(
+                name: title,
+                mermaidDefinition: mermaidDefinition,
+                description: diagramData["description"] as? String,
+                diagramType: diagramData["diagramType"] as? String ?? "architecture"
+            )
+        }
+        
         // Check if it's legacy content field
         if let content = diagramData["content"] as? String {
             return ArchitectureDiagram(
                 name: title,
                 mermaidDefinition: content,
                 description: diagramData["description"] as? String,
-                diagramType: diagramData["diagram_type"] as? String ?? "architecture"
+                diagramType: diagramData["diagram_type"] as? String ?? diagramData["diagramType"] as? String ?? "architecture"
             )
         }
         
@@ -249,28 +321,58 @@ class ArchitectureVisualizationService: ObservableObject {
             )
         }
         
+        // Check for components structure (alternative format)
+        if let components = diagramData["components"] as? [[String: Any]] {
+            var mermaid = "graph TD\n"
+            
+            for component in components {
+                let componentId = component["id"] as? String ?? "unknown"
+                let componentName = component["name"] as? String ?? componentId
+                let sanitizedId = componentId.replacingOccurrences(of: ".", with: "_")
+                mermaid += "    \(sanitizedId)[\(componentName)]\n"
+                
+                // Add dependencies
+                if let dependencies = component["dependencies"] as? [String] {
+                    for dep in dependencies {
+                        let sanitizedDep = dep.replacingOccurrences(of: ".", with: "_")
+                        mermaid += "    \(sanitizedId) --> \(sanitizedDep)\n"
+                    }
+                }
+            }
+            
+            return ArchitectureDiagram(
+                name: title,
+                mermaidDefinition: mermaid,
+                description: "Generated from components structure",
+                diagramType: "architecture"
+            )
+        }
+        
         // Generate Mermaid from nodes/edges structure
         var mermaid = "graph TD\n"
+        var hasNodes = false
         
         if let nodes = diagramData["nodes"] as? [[String: Any]] {
             for node in nodes {
                 let nodeId = node["id"] as? String ?? "unknown"
-                let label = node["label"] as? String ?? nodeId
+                let label = node["label"] as? String ?? node["name"] as? String ?? nodeId
                 let sanitizedNodeId = nodeId.replacingOccurrences(of: ".", with: "_")
                 mermaid += "    \(sanitizedNodeId)[\(label)]\n"
+                hasNodes = true
             }
         }
         
         if let edges = diagramData["edges"] as? [[String: Any]] {
             for edge in edges {
-                let source = (edge["source_id"] as? String ?? edge["source"] as? String ?? "unknown").replacingOccurrences(of: ".", with: "_")
-                let target = (edge["target_id"] as? String ?? edge["target"] as? String ?? "unknown").replacingOccurrences(of: ".", with: "_")
+                let source = (edge["source_id"] as? String ?? edge["source"] as? String ?? edge["from"] as? String ?? "unknown").replacingOccurrences(of: ".", with: "_")
+                let target = (edge["target_id"] as? String ?? edge["target"] as? String ?? edge["to"] as? String ?? "unknown").replacingOccurrences(of: ".", with: "_")
                 mermaid += "    \(source) --> \(target)\n"
+                hasNodes = true
             }
         }
         
         // Fallback if no structure found
-        if mermaid == "graph TD\n" {
+        if !hasNodes {
             mermaid += "    A[No Architecture Data]\n"
             mermaid += "    A --> B[Please check backend connection]\n"
         }
@@ -279,7 +381,7 @@ class ArchitectureVisualizationService: ObservableObject {
             name: title,
             mermaidDefinition: mermaid,
             description: diagramData["description"] as? String ?? "Auto-generated architecture diagram",
-            diagramType: diagramData["diagram_type"] as? String ?? "architecture"
+            diagramType: diagramData["diagram_type"] as? String ?? diagramData["diagramType"] as? String ?? "architecture"
         )
     }
     
@@ -400,17 +502,33 @@ class ArchitectureVisualizationService: ObservableObject {
                 return
             }
             
-            let agentResponse = try JSONDecoder().decode(AgentResponse.self, from: messageData)
-
-            if let responseData = agentResponse.data, 
-               let fileInfo = responseData.files?.first {
-                let diagramDataString = fileInfo.name
-                if let diagramData = diagramDataString.data(using: .utf8),
-                   let newDiagram = try? JSONDecoder().decode(ArchitectureDiagram.self, from: diagramData) {
-                    self.diagram = newDiagram
+            // Try to parse as AgentResponse first
+            if let agentResponse = try? JSONDecoder().decode(AgentResponse.self, from: messageData) {
+                if let responseData = agentResponse.data, 
+                   let fileInfo = responseData.files?.first {
+                    // Fix: The diagram data should be in the file content, not name
+                    let diagramDataString = fileInfo.type == "architecture_diagram" ? fileInfo.name : message.content
+                    if let diagramData = diagramDataString.data(using: .utf8),
+                       let newDiagram = try? JSONDecoder().decode(ArchitectureDiagram.self, from: diagramData) {
+                        self.diagram = newDiagram
+                    } else {
+                        // Try to parse as raw JSON object
+                        if let jsonObject = try? JSONSerialization.jsonObject(with: diagramDataString.data(using: .utf8) ?? Data()) as? [String: Any] {
+                            self.diagram = parseDiagramFromResponse(jsonObject)
+                        } else {
+                            self.errorMessage = "Invalid diagram data format in WebSocket response"
+                        }
+                    }
+                } else if !agentResponse.message.isEmpty {
+                     self.errorMessage = agentResponse.message
                 }
-            } else if !agentResponse.message.isEmpty {
-                 self.errorMessage = agentResponse.message
+            } else {
+                // Fallback: Try to parse the entire message content as diagram data
+                if let jsonObject = try? JSONSerialization.jsonObject(with: messageData) as? [String: Any] {
+                    self.diagram = parseDiagramFromResponse(jsonObject)
+                } else {
+                    self.errorMessage = "Unable to parse WebSocket message format"
+                }
             }
             self.isLoading = false
         } catch {
