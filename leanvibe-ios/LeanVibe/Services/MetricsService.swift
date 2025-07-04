@@ -180,8 +180,8 @@ class MetricsService: ObservableObject {
         let totalTasks = max(tasks.count, 1)
         
         // Calculate predictability based on task completion consistency
-        let completedTasks = tasks.filter { $0.status == .done }
-        let predictabilityScore = calculatePredictability(from: completedTasks)
+        let completedTasksForPredictability = tasks.filter { $0.status == .done }
+        let predictabilityScore = calculatePredictability(from: completedTasksForPredictability)
         
         // Calculate quality score based on task confidence levels
         let qualityScore = calculateQualityScore(from: tasks)

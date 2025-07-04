@@ -2060,28 +2060,7 @@ struct TemplateRow: View {
     }
 }
 
-@available(iOS 18.0, macOS 14.0, *)
-struct CustomFieldsView: View {
-    var body: some View {
-        List {
-            Section("Available Fields") {
-                Text("Estimated Hours")
-                Text("Tags")
-                Text("Department")
-                Text("Sprint")
-            }
-            
-            Section {
-                Button("Add Custom Field") {
-                    // TODO: Navigate to field creation
-                }
-                .foregroundColor(.blue)
-            }
-        }
-        .navigationTitle("Custom Fields")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
+// CustomFieldsView is defined in KanbanSettingsView.swift to avoid duplication
 
 // SyncSettingsView is implemented in its separate file: SyncSettingsView.swift
 

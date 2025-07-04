@@ -9,11 +9,13 @@ struct ProductionReadinessView: View {
     @State private var currentReport: ProductionReadinessReport?
     
     init(
-        performanceValidator: PerformanceValidationSuite,
+        // TODO: Fix PerformanceValidationSuite import issue
+        // performanceValidator: PerformanceValidationSuite,
         integratedManager: IntegratedPerformanceManager
     ) {
         self._validator = StateObject(wrappedValue: ProductionReadinessValidator(
-            performanceValidator: performanceValidator,
+            // TODO: Fix PerformanceValidationSuite import issue
+            // performanceValidator: performanceValidator,
             integratedManager: integratedManager
         ))
     }

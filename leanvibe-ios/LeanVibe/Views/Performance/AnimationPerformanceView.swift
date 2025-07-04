@@ -244,7 +244,7 @@ struct TaskPriorityIndicator: View {
     
     var body: some View {
         Circle()
-            .fill(priority.color)
+            .fill(Color(priority.color))
             .frame(width: 8, height: 8)
     }
 }

@@ -1,6 +1,33 @@
 import SwiftUI
 import Foundation
 
+// Temporary minimal BetaAnalyticsService until import issue is resolved
+@MainActor
+final class BetaAnalyticsService {
+    static let shared = BetaAnalyticsService()
+    var isEnabled: Bool = false
+    
+    private init() {}
+    
+    func recordUsageMetric(event: UsageEventType, screen: String, metadata: [String: Any]? = nil) {
+        if isEnabled {
+            print("📊 Beta Analytics: \(event.rawValue) on \(screen)")
+        }
+    }
+}
+
+enum UsageEventType: String, CaseIterable {
+    case screenView = "screen_view"
+    case buttonTap = "button_tap"
+    case voiceCommand = "voice_command"
+    case projectCreate = "project_create"
+    case projectOpen = "project_open"
+    case taskCreate = "task_create"
+    case taskComplete = "task_complete"
+    case settingsChange = "settings_change"
+    case errorOccurred = "error_occurred"
+}
+
 
 // Voice service wrapper to handle optional initialization
 @MainActor

@@ -1,5 +1,28 @@
 import Foundation
 
+/// Temporary FeatureFlag enum until circular dependency is resolved
+enum FeatureFlag: String, CaseIterable {
+    case performanceMonitoring = "performance_monitoring"
+    case voiceFeatures = "voice_features"
+    case codeCompletion = "code_completion"
+    case betaAnalytics = "beta_analytics"
+    case advancedArchitectureFeatures = "advanced_architecture_features"
+    case advancedKanbanFeatures = "advanced_kanban_features"
+    case debugSettings = "debug_settings"
+    case experimentalUI = "experimental_ui"
+}
+
+/// Temporary FeatureFlagManager until circular dependency is resolved
+final class FeatureFlagManager: Sendable {
+    static let shared = FeatureFlagManager()
+    private init() {}
+    
+    func isFeatureEnabled(_ flag: FeatureFlag) -> Bool {
+        // Simple implementation - all features enabled for now
+        return true
+    }
+}
+
 /// Global application configuration for LeanVibe iOS app
 /// Handles dynamic backend configuration and environment-specific settings
 /// NO HARDCODED VALUES - Everything comes from user configuration or auto-discovery

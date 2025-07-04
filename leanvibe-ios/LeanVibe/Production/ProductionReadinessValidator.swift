@@ -13,7 +13,8 @@ class ProductionReadinessValidator: ObservableObject {
     @Published var currentCheck: String = ""
     
     // Dependencies
-    nonisolated(unsafe) private let performanceValidator: PerformanceValidationSuite
+    // TODO: Fix PerformanceValidationSuite import issue
+    // nonisolated(unsafe) private let performanceValidator: PerformanceValidationSuite
     private let integratedManager: IntegratedPerformanceManager
     
     // Production readiness criteria
@@ -26,10 +27,12 @@ class ProductionReadinessValidator: ObservableObject {
     }
     
     init(
-        performanceValidator: PerformanceValidationSuite,
+        // TODO: Fix PerformanceValidationSuite import issue
+        // performanceValidator: PerformanceValidationSuite,
         integratedManager: IntegratedPerformanceManager
     ) {
-        self.performanceValidator = performanceValidator
+        // TODO: Fix PerformanceValidationSuite import issue
+        // self.performanceValidator = performanceValidator
         self.integratedManager = integratedManager
     }
     
