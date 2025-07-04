@@ -722,18 +722,31 @@ struct SettingsExportImportView: View {
     @State private var exportStatus: ExportStatus = .idle
     @State private var selectedBackups: Set<String> = []
     
-    enum ImportStatus {
+    enum ImportStatus: Equatable {
         case idle
         case importing
         case success(String)
         case failed(String)
     }
     
-    enum ExportStatus {
+    enum ExportStatus: Equatable {
         case idle
         case exporting
         case success(URL)
         case failed(String)
+        
+        static func == (lhs: ExportStatus, rhs: ExportStatus) -> Bool {
+            switch (lhs, rhs) {
+            case (.idle, .idle), (.exporting, .exporting):
+                return true
+            case (.success(let lhsURL), .success(let rhsURL)):
+                return lhsURL == rhsURL
+            case (.failed(let lhsString), .failed(let rhsString)):
+                return lhsString == rhsString
+            default:
+                return false
+            }
+        }
     }
     
     var body: some View {
@@ -944,7 +957,7 @@ struct SettingsExportImportView: View {
     private func exportAllSettings() {
         exportStatus = .exporting
         
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
             do {
                 let allSettings = AllSettings(
                     connection: settingsManager.connection,
@@ -966,13 +979,9 @@ struct SettingsExportImportView: View {
                 
                 let url = try saveToTemporaryFile(data: data, filename: "LeanVibe_AllSettings_\(dateString()).json")
                 
-                DispatchQueue.main.async {
-                    exportStatus = .success(url)
-                }
+                exportStatus = .success(url)
             } catch {
-                DispatchQueue.main.async {
-                    exportStatus = .failed(error.localizedDescription)
-                }
+                exportStatus = .failed(error.localizedDescription)
             }
         }
     }
@@ -980,7 +989,7 @@ struct SettingsExportImportView: View {
     private func exportVoiceSettings() {
         exportStatus = .exporting
         
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
             do {
                 let encoder = JSONEncoder()
                 encoder.outputFormatting = .prettyPrinted
@@ -988,13 +997,9 @@ struct SettingsExportImportView: View {
                 
                 let url = try saveToTemporaryFile(data: data, filename: "LeanVibe_VoiceSettings_\(dateString()).json")
                 
-                DispatchQueue.main.async {
-                    exportStatus = .success(url)
-                }
+                exportStatus = .success(url)
             } catch {
-                DispatchQueue.main.async {
-                    exportStatus = .failed(error.localizedDescription)
-                }
+                exportStatus = .failed(error.localizedDescription)
             }
         }
     }
@@ -1002,7 +1007,7 @@ struct SettingsExportImportView: View {
     private func exportKanbanSettings() {
         exportStatus = .exporting
         
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
             do {
                 let encoder = JSONEncoder()
                 encoder.outputFormatting = .prettyPrinted
@@ -1010,13 +1015,9 @@ struct SettingsExportImportView: View {
                 
                 let url = try saveToTemporaryFile(data: data, filename: "LeanVibe_KanbanSettings_\(dateString()).json")
                 
-                DispatchQueue.main.async {
-                    exportStatus = .success(url)
-                }
+                exportStatus = .success(url)
             } catch {
-                DispatchQueue.main.async {
-                    exportStatus = .failed(error.localizedDescription)
-                }
+                exportStatus = .failed(error.localizedDescription)
             }
         }
     }
@@ -1024,7 +1025,7 @@ struct SettingsExportImportView: View {
     private func exportDefaultTemplate() {
         exportStatus = .exporting
         
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
             do {
                 let defaultSettings = AllSettings(
                     connection: ConnectionPreferences(),
@@ -1046,13 +1047,9 @@ struct SettingsExportImportView: View {
                 
                 let url = try saveToTemporaryFile(data: data, filename: "LeanVibe_DefaultTemplate.json")
                 
-                DispatchQueue.main.async {
-                    exportStatus = .success(url)
-                }
+                exportStatus = .success(url)
             } catch {
-                DispatchQueue.main.async {
-                    exportStatus = .failed(error.localizedDescription)
-                }
+                exportStatus = .failed(error.localizedDescription)
             }
         }
     }
@@ -1060,7 +1057,7 @@ struct SettingsExportImportView: View {
     private func exportProductivityTemplate() {
         exportStatus = .exporting
         
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
             do {
                 var productivitySettings = AllSettings(
                     connection: ConnectionPreferences(),
@@ -1076,7 +1073,7 @@ struct SettingsExportImportView: View {
                     performance: PerformanceSettings()
                 )
                 
-                // Customize for productivity
+                // Customize for productivity  
                 productivitySettings.voice.isEnabled = true
                 productivitySettings.voice.autoStopListening = true
                 productivitySettings.notifications.taskCompletionNotifications = true
@@ -1089,13 +1086,9 @@ struct SettingsExportImportView: View {
                 
                 let url = try saveToTemporaryFile(data: data, filename: "LeanVibe_ProductivityTemplate.json")
                 
-                DispatchQueue.main.async {
-                    exportStatus = .success(url)
-                }
+                exportStatus = .success(url)
             } catch {
-                DispatchQueue.main.async {
-                    exportStatus = .failed(error.localizedDescription)
-                }
+                exportStatus = .failed(error.localizedDescription)
             }
         }
     }
@@ -1103,7 +1096,7 @@ struct SettingsExportImportView: View {
     private func exportDeveloperTemplate() {
         exportStatus = .exporting
         
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
             do {
                 var developerSettings = AllSettings(
                     connection: ConnectionPreferences(),
@@ -1131,13 +1124,9 @@ struct SettingsExportImportView: View {
                 
                 let url = try saveToTemporaryFile(data: data, filename: "LeanVibe_DeveloperTemplate.json")
                 
-                DispatchQueue.main.async {
-                    exportStatus = .success(url)
-                }
+                exportStatus = .success(url)
             } catch {
-                DispatchQueue.main.async {
-                    exportStatus = .failed(error.localizedDescription)
-                }
+                exportStatus = .failed(error.localizedDescription)
             }
         }
     }
@@ -2095,6 +2084,22 @@ struct SyncSettingsView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
+struct FeatureFlagSettingsView: View {
+    var body: some View {
+        Text("Feature Flag Settings")
+            .navigationTitle("Feature Flags")
+    }
+}
+
+@available(iOS 18.0, macOS 14.0, *)
+struct FeatureFlagDebugView: View {
+    var body: some View {
+        Text("Feature Flag Debug")
+            .navigationTitle("Feature Debug")
+    }
+}
+
 // Additional temporary view implementations
 
 @available(iOS 18.0, macOS 14.0, *)
@@ -2160,8 +2165,8 @@ struct OfflineSettingsView: View {
                     
                     Slider(
                         value: Binding(
-                            get: { Double(settingsManager.offline.cacheExpiration) },
-                            set: { bindableSettingsManager.offline.cacheExpiration = Int($0) }
+                            get: { settingsManager.offline.cacheExpiration },
+                            set: { bindableSettingsManager.offline.cacheExpiration = $0 }
                         ),
                         in: 1...168,
                         step: 1
@@ -2915,8 +2920,8 @@ struct PerformanceSettingsView: View {
                         
                         Slider(
                             value: Binding(
-                                get: { Double(settingsManager.performance.networkRequestTimeout) },
-                                set: { bindableSettingsManager.performance.networkRequestTimeout = Int($0) }
+                                get: { settingsManager.performance.networkRequestTimeout },
+                                set: { bindableSettingsManager.performance.networkRequestTimeout = $0 }
                             ),
                             in: 5...120,
                             step: 5

@@ -8,6 +8,7 @@ enum FeatureFlag: String {
     case wakePhraseDetection = "wake_phrase_detection"
     case voiceRecognition = "voice_recognition"
     case betaAnalytics = "beta_analytics"
+    case betaFeedback = "beta_feedback"
     case advancedArchitectureFeatures = "advanced_architecture_features"
     case advancedKanbanFeatures = "advanced_kanban_features"
     case debugSettings = "debug_settings"
@@ -33,7 +34,7 @@ struct AppConfiguration {
     
     // MARK: - Environment Detection
     
-    private var isDebugBuild: Bool {
+    var isDebugBuild: Bool {
         #if DEBUG
         return true
         #else
@@ -41,7 +42,7 @@ struct AppConfiguration {
         #endif
     }
     
-    private var isTestFlightBuild: Bool {
+    var isTestFlightBuild: Bool {
         guard let path = Bundle.main.appStoreReceiptURL?.path else { return false }
         return path.contains("sandboxReceipt")
     }
@@ -197,6 +198,11 @@ struct AppConfiguration {
     /// Whether to enable experimental UI features
     var isExperimentalUIEnabled: Bool {
         return featureFlags.isFeatureEnabled(.experimentalUI)
+    }
+    
+    /// Check if this is a production build
+    var isProductionBuild: Bool {
+        return !isDebugBuild && !isTestFlightBuild
     }
     
     // MARK: - Voice System Configuration

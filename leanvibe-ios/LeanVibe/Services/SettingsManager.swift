@@ -55,6 +55,7 @@ struct NotificationSettings: SettingsProtocol {
     var taskUpdates: Bool = false
     var taskNotificationsEnabled: Bool = false
     var taskOverdueNotifications: Bool = true
+    var taskCompletionNotifications: Bool = true
     var voiceNotificationsEnabled: Bool = false
     var voiceCommandResultNotifications: Bool = false
     var systemNotificationsEnabled: Bool = false
@@ -109,52 +110,101 @@ struct ArchitectureSettings: SettingsProtocol {
     var zoomLevel: Double = 1.0
     var panLock: Bool = false
     var includePrivateElements: Bool = false
+    var diagramLayout: String = "hierarchical"
+    var enableAnimations: Bool = true
+    var showLegend: Bool = true
+    var refreshInterval: TimeInterval = 30.0
+    var enableInteraction: Bool = true
+    var compareMode: Bool = false
+    var maxCacheSize: Int = 50
     
     init() {}
 }
 
 struct MetricsSettings: SettingsProtocol {
     var isEnabled: Bool = true
+    var performanceMonitoringEnabled: Bool = false
+    var memoryUsageTrackingEnabled: Bool = false
+    var networkMetricsEnabled: Bool = false
+    var voiceMetricsEnabled: Bool = false
+    var taskCompletionMetricsEnabled: Bool = false
+    var realTimeMonitoringEnabled: Bool = false
+    var detailedLoggingEnabled: Bool = false
+    var dataRetentionDays: Int = 30
+    var maxStorageSize: Int = 100
     
     init() {}
 }
 
 struct TaskCreationSettings: SettingsProtocol {
     var defaultPriority: String = "medium"
+    var defaultAssignee: String = ""
+    var defaultDueDate: String = ""
+    var autoAssignToSelf: Bool = false
+    var useTemplates: Bool = true
+    var defaultTemplate: String = ""
+    var templateSharingEnabled: Bool = false
+    var requireDescription: Bool = false
+    var enableQuickActions: Bool = true
+    var voiceTaskCreationEnabled: Bool = false
     
     init() {}
 }
 
 struct OfflineSettings: SettingsProtocol {
     var isEnabled: Bool = false
+    var backgroundSyncEnabled: Bool = true
+    var syncOnWifiOnly: Bool = true
+    var offlineIndicatorEnabled: Bool = true
+    var offlineStorageLimit: Int = 100
+    var cacheExpiration: TimeInterval = 3600
+    var autoCleanupEnabled: Bool = true
+    var compressionEnabled: Bool = true
+    var encryptionEnabled: Bool = false
     
     init() {}
 }
 
 struct InterfaceSettings: SettingsProtocol {
     var theme: String = "system"
+    var accentColor: String = "blue"
+    var fontSize: String = "medium"
+    var layoutDensity: String = "comfortable"
+    var compactMode: Bool = false
+    var showSidebar: Bool = true
+    var sidebarPosition: String = "left"
+    var navigationStyle: String = "tab"
+    var tabBarStyle: String = "default"
     
     init() {}
 }
 
 struct PerformanceSettings: SettingsProtocol {
     var optimizationLevel: String = "balanced"
+    var performanceMonitoringEnabled: Bool = false
+    var memoryLimitEnabled: Bool = false
+    var maxMemoryUsage: Int = 512
+    var memoryWarningHandlingEnabled: Bool = true
+    var backgroundProcessingEnabled: Bool = true
+    var threadPoolSize: Int = 4
+    var networkOptimizationEnabled: Bool = true
+    var networkRequestTimeout: TimeInterval = 30.0
     
     init() {}
 }
 
 struct AllSettings: Codable {
-    let connection: ConnectionPreferences
-    let voice: VoiceSettings
-    let notifications: NotificationSettings
-    let kanban: KanbanSettings
-    let accessibility: AccessibilitySettings
-    let architecture: ArchitectureSettings
-    let metrics: MetricsSettings
-    let taskCreation: TaskCreationSettings
-    let offline: OfflineSettings
-    let interface: InterfaceSettings
-    let performance: PerformanceSettings
+    var connection: ConnectionPreferences
+    var voice: VoiceSettings
+    var notifications: NotificationSettings
+    var kanban: KanbanSettings
+    var accessibility: AccessibilitySettings
+    var architecture: ArchitectureSettings
+    var metrics: MetricsSettings
+    var taskCreation: TaskCreationSettings
+    var offline: OfflineSettings
+    var interface: InterfaceSettings
+    var performance: PerformanceSettings
     
     init() {
         connection = ConnectionPreferences()
