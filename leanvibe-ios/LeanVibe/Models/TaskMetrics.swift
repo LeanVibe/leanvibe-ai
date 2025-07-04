@@ -56,14 +56,50 @@ struct TaskPriorityCount: Codable {
     let low: Int
     let medium: Int
     let high: Int
-    let critical: Int
+    let urgent: Int // Changed from 'critical' to 'urgent' to match TaskPriority enum
     
     var total: Int {
-        return low + medium + high + critical
+        return low + medium + high + urgent
     }
     
     var urgentCount: Int {
-        return high + critical
+        return high + urgent // Now correctly references 'urgent' instead of 'critical'
+    }
+    
+    // Backward compatibility for API responses that still use 'critical'
+    enum CodingKeys: String, CodingKey {
+        case low
+        case medium
+        case high
+        case urgent = "urgent" // Maps to 'urgent' in API
+    }
+    
+    // Custom initializer to handle both 'urgent' and 'critical' from API
+    init(low: Int, medium: Int, high: Int, urgent: Int) {
+        self.low = low
+        self.medium = medium
+        self.high = high
+        self.urgent = urgent
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        low = try container.decode(Int.self, forKey: .low)
+        medium = try container.decode(Int.self, forKey: .medium)
+        high = try container.decode(Int.self, forKey: .high)
+        
+        // Try 'urgent' first, then fallback to 'critical' for backward compatibility
+        if let urgentValue = try? container.decode(Int.self, forKey: .urgent) {
+            urgent = urgentValue
+        } else {
+            // Fallback to check for 'critical' key in API response
+            let criticalContainer = try decoder.container(keyedBy: FallbackCodingKeys.self)
+            urgent = try criticalContainer.decodeIfPresent(Int.self, forKey: .critical) ?? 0
+        }
+    }
+    
+    private enum FallbackCodingKeys: String, CodingKey {
+        case critical
     }
 }
 
@@ -235,7 +271,7 @@ struct TaskStatsAPIResponse: Codable {
             low: byPriority["low"] ?? 0,
             medium: byPriority["medium"] ?? 0,
             high: byPriority["high"] ?? 0,
-            critical: byPriority["critical"] ?? 0
+            urgent: byPriority["urgent"] ?? byPriority["critical"] ?? 0 // Handle both 'urgent' and 'critical' for backward compatibility
         )
         
         return TaskMetrics(
