@@ -200,7 +200,7 @@ struct ArchitectureTabView: View {
             } else {
                 Picker("Project", selection: $selectedProjectId) {
                     ForEach(projectManager.projects, id: \.id) { project in
-                        Text(project.displayName).tag(project.id)
+                        Text(project.displayName).tag(project.id.uuidString)
                     }
                 }
                 .pickerStyle(SegmentedPickerStyle())
