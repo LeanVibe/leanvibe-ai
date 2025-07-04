@@ -80,6 +80,13 @@ struct NotificationSettings: SettingsProtocol {
     var notificationsEnabled: Bool = true
     var soundEnabled: Bool = true
     var taskUpdates: Bool = true
+    var voiceNotificationsEnabled: Bool = true
+    var bannerNotificationsEnabled: Bool = true
+    var taskOverdueNotifications: Bool = true
+    var systemNotificationsEnabled: Bool = true
+    var voiceCommandResultNotifications: Bool = true
+    var taskNotificationsEnabled: Bool = true
+    var serverConnectionNotifications: Bool = true
     
     init() {}
 }

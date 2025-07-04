@@ -411,6 +411,7 @@ enum AudioCoordinatorError: LocalizedError {
     case audioSessionStartFailed(Error)
     case clientNotRegistered(String)
     case invalidAudioMode
+    case configurationFailed(Error)
     
     var errorDescription: String? {
         switch self {
@@ -422,6 +423,8 @@ enum AudioCoordinatorError: LocalizedError {
             return "Client '\(clientId)' is not registered"
         case .invalidAudioMode:
             return "Invalid audio mode requested"
+        case .configurationFailed(let error):
+            return "Audio configuration failed: \(error.localizedDescription)"
         }
     }
 }
