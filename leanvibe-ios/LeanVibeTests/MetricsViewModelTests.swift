@@ -15,20 +15,17 @@ final class MetricsViewModelTests: XCTestCase {
     
     // MARK: - Setup & Teardown
     
-    @MainActor
-    override func setUpWithError() throws {
+    nonisolated override func setUpWithError() throws {
         try super.setUpWithError()
         
         mockMetricsService = MockMetricsService()
         viewModel = MetricsViewModel(
-            clientId: "test-client-123",
-            metricsService: mockMetricsService
+            clientId: "test-client-123"
         )
         cancellables = Set<AnyCancellable>()
     }
     
-    @MainActor
-    override func tearDownWithError() throws {
+    nonisolated override func tearDownWithError() throws {
         cancellables?.removeAll()
         cancellables = nil
         viewModel = nil
