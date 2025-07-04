@@ -1,23 +1,6 @@
 import SwiftUI
 import Foundation
 
-// Simple Beta Analytics Service for tracking basic usage metrics
-@MainActor
-final class BetaAnalyticsService: Sendable {
-    static let shared = BetaAnalyticsService()
-    
-    var isEnabled: Bool = false
-    
-    private init() {}
-    
-    func recordUsageMetric(event: UsageEventType, screen: String, metadata: [String: Any]? = nil) {
-        // Simple implementation - in production this would store/send metrics
-        if isEnabled {
-            print("📊 Beta Analytics: \(event.rawValue) on \(screen)")
-        }
-    }
-}
-
 
 // Voice service wrapper to handle optional initialization
 @MainActor

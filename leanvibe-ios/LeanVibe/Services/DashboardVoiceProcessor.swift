@@ -15,7 +15,8 @@ class DashboardVoiceProcessor: ObservableObject {
         self.projectManager = projectManager
         self.webSocketService = webSocketService
         self.settingsManager = settingsManager
-        self.commandProcessor = VoiceCommandProcessor(settings: settingsManager.voice)
+        // TODO: Fix VoiceSettings import issue
+        self.commandProcessor = VoiceCommandProcessor() // (settings: settingsManager.voice)
     }
     
     func processVoiceCommand(_ transcription: String) async {

@@ -170,10 +170,11 @@ struct WakePhraseDetection: Identifiable, Sendable {
 // MARK: - Voice Command Processor
 
 class VoiceCommandProcessor {
-    private let settings: VoiceSettings
+    // TODO: Fix VoiceSettings import issue
+    // private let settings: VoiceSettings
     
-    init(settings: VoiceSettings) {
-        self.settings = settings
+    init() {
+        // self.settings = settings
     }
     
     func processVoiceInput(_ text: String) -> VoiceCommand {

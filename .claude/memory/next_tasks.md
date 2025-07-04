@@ -1,94 +1,68 @@
-# Next Session Tasks - LeanVibe iOS MVP
+# Next Session Priority Tasks
+**Updated**: July 4, 2025  
+**Context**: Post-Mobile MCP Testing Validation  
+**Current Status**: Production readiness implementation phase
 
-## Date: 2025-07-03
-## Session Focus: Push Notifications & Performance Optimization
+## 🔥 **Immediate Critical Tasks (Start Next Session)**
 
-### Immediate High-Priority Tasks
+### **1. UI Architecture Fixes (High Priority - 4-6 hours)**
+**Status**: Ready to implement  
+**Impact**: Production blocking issues
 
-#### 1. Push Notifications Implementation (2-3 hours)
-**Priority**: HIGH - Critical for production deployment
+#### **Task 1.1: Fix Double Navigation Bars**
+- **Files**: `SettingsView.swift`, `VoiceSettingsView.swift`, `ServerSettingsView.swift`, `ArchitectureTabView.swift`
+- **Action**: Remove all nested `NavigationView` wrappers, ensure only `NavigationStack` usage
+- **Evidence**: Agent Chat screen showing duplicate "Connect LeanVibe... Code Test Settings" headers
+- **Validation**: Mobile MCP testing to verify single navigation bar
+- **Agent**: UI_ARCHITECTURE_AGENT
 
-**Requirements**:
-- APNs certificate integration
-- Notification permission flow implementation
-- Critical alert categorization system
-- Notification settings management
+#### **Task 1.2: Remove Duplicate UI Elements**
+- **Files**: Task statistics views, modal presentation code
+- **Action**: Fix modal hierarchy causing multiple "Done" buttons
+- **Evidence**: Task Statistics view showing both top-left and center-right "Done" buttons
+- **Validation**: Visual verification no duplicate elements exist
+- **Agent**: UI_CONSISTENCY_AGENT
 
-**Implementation Plan**:
-1. **APNs Setup**:
-   - Configure App ID with Push Notifications capability
-   - Generate APNs authentication key
-   - Implement APNs service in iOS app
+#### **Task 1.3: Standardize Touch Interactions**
+- **Files**: All settings navigation, modal presentations
+- **Action**: Replace long-press requirements with standard iOS tap patterns
+- **Evidence**: User confirmation that settings require long-press instead of tap
+- **Validation**: Mobile MCP interaction testing, accessibility compliance
+- **Agent**: INTERACTION_AGENT
 
-2. **Permission Flow**:
-   - Request notification permissions during onboarding
-   - Handle permission denial gracefully
-   - Provide settings navigation for permission changes
+### **2. Backend Integration Fixes (High Priority - 2-4 hours)**
+**Status**: API issues identified, ready to resolve
 
-3. **Notification Categories**:
-   - Task completion alerts
-   - Project status changes
-   - Agent responses
-   - System maintenance notifications
+#### **Task 2.1: Architecture Viewer API Fix**
+- **Problem**: "Failed to load architecture - Network error: The data couldn't be read because it isn't in the correct format"
+- **Root Cause**: Backend API format mismatch, expects Mermaid.js format
+- **Files**: Architecture visualization endpoints, `ArchitectureVisualizationService.swift`
+- **Action**: Align API response format with iOS parsing expectations
+- **Validation**: Mobile MCP testing - architecture diagrams load successfully
+- **Agent**: BACKEND_INTEGRATION_AGENT
 
-4. **Backend Integration**:
-   - Implement notification sending endpoints
-   - Store device tokens securely
-   - Queue notifications for delivery
+#### **Task 2.2: Statistics API Implementation**
+- **Problem**: "No statistics available" placeholder instead of real metrics
+- **Files**: `TaskService.swift`, `MetricsViewModel.swift`, statistics endpoints
+- **Action**: Connect statistics displays to real backend data
+- **Validation**: All statistics show real data, no placeholder messages
+- **Agent**: DATA_INTEGRATION_AGENT
 
-**Files to Create/Modify**:
-- `PushNotificationService.swift` - Core notification handling
-- `NotificationPermissionManager.swift` - Permission management
-- `NotificationSettingsView.swift` - User preferences
-- Backend notification endpoints
+### **3. Settings Completeness Audit (Medium Priority - 6-8 hours)**
+**Status**: 70% incomplete implementations identified
 
-#### 2. Performance Optimization (3-4 hours)
-**Priority**: MEDIUM - Important for user experience
+#### **Task 3.1: Hide Incomplete Settings**
+- **Files**: All settings views with placeholder implementations
+- **Action**: Implement feature flags to hide non-functional settings
+- **Evidence**: Task notifications, metrics, performance settings lead to blank screens
+- **Validation**: Only functional settings visible to users
+- **Agent**: FEATURE_MANAGEMENT_AGENT
 
-**Memory Validation**:
-- Target: <500MB total memory usage
-- Profile app with Instruments
-- Optimize large data structures
-- Implement lazy loading where appropriate
-
-**Battery Testing**:
-- Profile energy usage patterns
-- Optimize WebSocket connection management
-- Implement background task efficiency
-- Test with real device scenarios
-
-**Network Efficiency**:
-- Optimize API request patterns
-- Implement request caching where appropriate
-- Minimize WebSocket traffic
-- Add connection pooling
-
-**Files to Focus On**:
-- `WebSocketService.swift` - Connection efficiency
-- `ProjectManager.swift` - Data caching
-- `TaskService.swift` - API optimization
-- `PerformanceAnalytics.swift` - Monitoring
-
-#### 3. Production Deployment Preparation (2 hours)
-**Priority**: MEDIUM - Required for App Store submission
-
-**Final QA Testing**:
-- Complete user workflow testing
-- Edge case validation
-- Performance benchmarking
-- Accessibility compliance verification
-
-**App Store Configuration**:
-- App Store Connect setup
-- Metadata and screenshots
-- Privacy policy compliance
-- COPPA compliance verification
-
-**Deployment Automation**:
-- CI/CD pipeline for releases
-- Automated testing integration
-- Version management
-- Release notes automation
+#### **Task 3.2: Complete Critical Settings**
+- **Files**: Backend service dependencies, compilation targets
+- **Action**: Fix `BackendSettingsService` targeting issues, implement core settings
+- **Validation**: All visible settings fully functional
+- **Agent**: SETTINGS_IMPLEMENTATION_AGENT
 
 ### Secondary Tasks
 

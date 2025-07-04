@@ -312,32 +312,6 @@ struct PerformanceValidationReport {
     }
 }
 
-class PerformanceValidationSuite: ObservableObject {
-    @Published var isRunning = false
-    @Published var currentTest = ""
-    @Published var validationResults: [ValidationResult] = []
-    @Published var overallScore: Double = 0
-    
-    init(
-        performanceAnalytics: PerformanceAnalytics,
-        batteryManager: BatteryOptimizedManager,
-        memoryManager: OptimizedArchitectureService,
-        voiceManager: OptimizedVoiceManager,
-        networkManager: OptimizedWebSocketService,
-        integratedManager: IntegratedPerformanceManager
-    ) {
-        // Initialization would connect to actual services
-    }
-    
-    func runFullValidation() async {
-        // Mock implementation
-    }
-    
-    func generateValidationReport() -> PerformanceValidationReport {
-        return PerformanceValidationReport()
-    }
-}
-
 extension ValidationResult {
     var statusText: String {
         passed ? "Passed" : "Failed"

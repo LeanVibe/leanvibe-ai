@@ -1,6 +1,28 @@
 import SwiftUI
 import Foundation
 
+/// Temporary enum until BackendSettingsError import issue is resolved
+@available(iOS 18.0, macOS 14.0, *)
+enum BackendSettingsError: Error, LocalizedError {
+    case backendNotConfigured
+    case networkError(Error)
+    case invalidResponse
+    case httpError(Int)
+    
+    var errorDescription: String? {
+        switch self {
+        case .backendNotConfigured:
+            return "Backend is not configured"
+        case .networkError(let error):
+            return "Network error: \(error.localizedDescription)"
+        case .invalidResponse:
+            return "Invalid response from backend"
+        case .httpError(let statusCode):
+            return "HTTP error: \(statusCode)"
+        }
+    }
+}
+
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class GlobalErrorManager: ObservableObject {
@@ -379,7 +401,9 @@ struct ErrorAction: Identifiable, Equatable {
                     // Default retry action
                 },
                 ErrorAction(title: "Go Offline", systemImage: "wifi.slash") {
-                    GlobalErrorManager.shared.enableOfflineMode()
+                    Task { @MainActor in
+                        GlobalErrorManager.shared.enableOfflineMode()
+                    }
                 }
             ]
         case .service:
@@ -400,13 +424,17 @@ struct ErrorAction: Identifiable, Equatable {
         case .ui:
             return [
                 ErrorAction(title: "Dismiss", systemImage: "xmark", isPrimary: true) {
-                    GlobalErrorManager.shared.hideError()
+                    Task { @MainActor in
+                        GlobalErrorManager.shared.hideError()
+                    }
                 }
             ]
         case .system, .permission, .validation:
             return [
                 ErrorAction(title: "OK", systemImage: "checkmark", isPrimary: true) {
-                    GlobalErrorManager.shared.hideError()
+                    Task { @MainActor in
+                        GlobalErrorManager.shared.hideError()
+                    }
                 }
             ]
         }

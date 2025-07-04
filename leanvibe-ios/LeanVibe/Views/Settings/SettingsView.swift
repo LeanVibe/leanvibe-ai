@@ -121,8 +121,9 @@ struct SettingsView: View {
                         icon: "waveform",
                         iconColor: Color(.systemGreen),
                         title: "Wake Phrase Configuration",
-                    subtitle: "\"\(settingsManager.voice.wakeWord)\""
-                )
+                        subtitle: "\"\(settingsManager.voice.wakeWord)\""
+                    )
+                }
             }
             
             // Only show speech settings if voice recognition is enabled
