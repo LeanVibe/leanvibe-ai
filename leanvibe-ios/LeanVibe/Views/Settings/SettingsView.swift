@@ -782,15 +782,15 @@ struct ArchitectureViewerSettingsView: View {
                 }
                 
                 Toggle("Enable Animations", isOn: $bindableSettingsManager.architecture.enableAnimations)
-                Toggle("Show Node Labels", isOn: $bindableSettingsManager.architecture.showNodeLabels)
-                Toggle("Show Edge Labels", isOn: $bindableSettingsManager.architecture.showEdgeLabels)
+                Toggle("Show Legend", isOn: $bindableSettingsManager.architecture.showLegend)
+                Toggle("Show Metadata", isOn: $bindableSettingsManager.architecture.showMetadata)
             }
             
             // Change Detection Section
             Section("Change Detection") {
-                Toggle("Auto-Refresh", isOn: $bindableSettingsManager.architecture.autoRefreshEnabled)
+                Toggle("Auto-Update", isOn: $bindableSettingsManager.architecture.autoUpdate)
                 
-                if settingsManager.architecture.autoRefreshEnabled {
+                if settingsManager.architecture.autoUpdate {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("Refresh Interval")
@@ -808,8 +808,8 @@ struct ArchitectureViewerSettingsView: View {
                     .padding(.vertical, 4)
                 }
                 
-                Toggle("Change Notifications", isOn: $bindableSettingsManager.architecture.changeNotificationsEnabled)
-                Toggle("Highlight Changes", isOn: $bindableSettingsManager.architecture.highlightChanges)
+                Toggle("Include Private Elements", isOn: $bindableSettingsManager.architecture.includePrivateElements)
+                Toggle("Enable Interaction", isOn: $bindableSettingsManager.architecture.enableInteraction)
                 
                 HStack {
                     Text("Compare Mode")
@@ -825,7 +825,7 @@ struct ArchitectureViewerSettingsView: View {
             
             // Performance Section
             Section("Performance") {
-                Toggle("Memory Optimization", isOn: $bindableSettingsManager.architecture.enableMemoryOptimization)
+                Toggle("Pan Lock", isOn: $bindableSettingsManager.architecture.panLock)
                 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {

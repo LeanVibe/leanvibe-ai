@@ -65,7 +65,7 @@ class VoiceManager: ObservableObject {
         currentCommand = ""
         lastError = nil
         
-        await speechService.startListening()
+        speechService.startListening()
     }
     
     func stopListening() {

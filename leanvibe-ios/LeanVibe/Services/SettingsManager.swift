@@ -190,7 +190,9 @@ struct AllSettings: Codable {
 
 /// Represents user-configurable settings for the application.
 /// NO HARDCODED VALUES - All settings come from backend or user configuration
+@available(iOS 17.0, macOS 14.0, *)
 @Observable
+
 class SettingsManager: ObservableObject, @unchecked Sendable {
     static let shared: SettingsManager = {
         let instance = SettingsManager()
