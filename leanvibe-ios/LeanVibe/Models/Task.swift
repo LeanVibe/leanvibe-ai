@@ -104,10 +104,14 @@ struct LeanVibeTask: Identifiable, Codable, Sendable, Transferable {
     
     var statusColor: String {
         switch status {
+        case .backlog:
+            return "orange"
         case .todo:
             return "gray"
         case .inProgress:
             return "blue"
+        case .testing:
+            return "purple"
         case .done:
             return "green"
         }
@@ -138,16 +142,22 @@ extension UTType {
 }
 
 enum TaskStatus: String, CaseIterable, Codable, Sendable {
+    case backlog = "backlog"
     case todo = "todo"
     case inProgress = "in_progress"  // Backend compatibility
+    case testing = "testing"
     case done = "done"
     
     var displayName: String {
         switch self {
+        case .backlog:
+            return "Backlog"
         case .todo:
             return "To Do"
         case .inProgress:
             return "In Progress"
+        case .testing:
+            return "Testing"
         case .done:
             return "Done"
         }
@@ -155,10 +165,14 @@ enum TaskStatus: String, CaseIterable, Codable, Sendable {
     
     var systemIcon: String {
         switch self {
+        case .backlog:
+            return "archivebox"
         case .todo:
             return "tray"
         case .inProgress:
             return "gear"
+        case .testing:
+            return "testtube.2"
         case .done:
             return "checkmark.circle.fill"
         }
@@ -382,12 +396,13 @@ enum AttachmentType: String, Codable, Sendable {
 // MARK: - WebSocket Task Messages
 
 struct TaskUpdateMessage: Codable, Sendable {
-    let type: String = "task_update"
+    let type: String
     let task: LeanVibeTask
     let clientId: String
     let timestamp: String
     
     init(task: LeanVibeTask, clientId: String) {
+        self.type = "task_update"
         self.task = task
         self.clientId = clientId
         self.timestamp = ISO8601DateFormatter().string(from: Date())
@@ -395,7 +410,7 @@ struct TaskUpdateMessage: Codable, Sendable {
 }
 
 struct TaskCreationMessage: Codable, Sendable {
-    let type: String = "create_task"
+    let type: String
     let title: String
     let description: String
     let priority: TaskPriority
@@ -412,6 +427,7 @@ struct TaskCreationMessage: Codable, Sendable {
         tags: [String] = [],
         clientId: String
     ) {
+        self.type = "create_task"
         self.title = title
         self.description = description
         self.priority = priority
@@ -423,12 +439,13 @@ struct TaskCreationMessage: Codable, Sendable {
 }
 
 struct AgentDecisionMessage: Codable, Sendable {
-    let type: String = "agent_decision"
+    let type: String
     let decision: AgentDecision
     let clientId: String
     let timestamp: String
     
     init(decision: AgentDecision, clientId: String) {
+        self.type = "agent_decision"
         self.decision = decision
         self.clientId = clientId
         self.timestamp = ISO8601DateFormatter().string(from: Date())

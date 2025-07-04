@@ -85,9 +85,12 @@ class ProjectManager: ObservableObject {
             // Fallback to persistent storage if backend unavailable
             loadPersistedProjects()
             
-            // If no projects exist locally, load sample data
+            // If no projects exist locally, try auto-discovery from file system
             if projects.isEmpty {
-                loadSampleProjects()
+                await discoverProjectsFromFileSystem()
+                if projects.isEmpty {
+                    loadSampleProjects() // Final fallback to sample data
+                }
                 try await saveProjects()
             }
         }
@@ -215,6 +218,206 @@ class ProjectManager: ObservableObject {
             }
         } catch {
             lastError = "Failed to send analysis request: \(error.localizedDescription)"
+        }
+    }
+    
+    // MARK: - Project Auto-Discovery
+    
+    func discoverProjectsFromFileSystem() async {
+        lastError = nil
+        
+        do {
+            let fileManager = FileManager.default
+            
+            // Get the user's home directory (iOS-compatible approach)
+            #if os(iOS)
+            // For iOS, we'll use the app's documents directory as a fallback
+            // since we can't access the actual ~/work folder on iOS due to sandboxing
+            guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+                print("Could not access documents directory")
+                return
+            }
+            let workDirectory = documentsDirectory.appendingPathComponent("work")
+            #else
+            // For macOS, use the actual home directory
+            let homeDirectory = fileManager.homeDirectoryForCurrentUser
+            let workDirectory = homeDirectory.appendingPathComponent("work")
+            #endif
+            
+            // Check if ~/work directory exists
+            guard fileManager.fileExists(atPath: workDirectory.path) else {
+                print("~/work directory not found, skipping auto-discovery")
+                return
+            }
+            
+            let contents = try fileManager.contentsOfDirectory(at: workDirectory, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
+            
+            for item in contents {
+                let resourceValues = try item.resourceValues(forKeys: [.isDirectoryKey])
+                
+                // Only scan directories
+                if resourceValues.isDirectory == true {
+                    await checkDirectoryForProject(item)
+                }
+            }
+            
+            print("Auto-discovery completed. Found \(projects.count) projects.")
+            
+        } catch {
+            lastError = "Project auto-discovery failed: \(error.localizedDescription)"
+            print("Error during project discovery: \(error)")
+        }
+    }
+    
+    private func checkDirectoryForProject(_ directory: URL) async {
+        let fileManager = FileManager.default
+        
+        do {
+            let contents = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+            
+            // Check for agent.md, claude.md, CLAUDE.md, or PLAN.md files
+            let projectIndicatorFiles = ["agent.md", "claude.md", "CLAUDE.md", "PLAN.md"]
+            let hasProjectIndicator = contents.contains { url in
+                projectIndicatorFiles.contains(url.lastPathComponent)
+            }
+            
+            if hasProjectIndicator {
+                // Determine project language from directory contents
+                let language = detectProjectLanguage(from: contents)
+                
+                // Parse project documentation for additional info
+                let projectInfo = await parseProjectDocumentation(directory: directory)
+                
+                let project = Project(
+                    displayName: projectInfo.name ?? directory.lastPathComponent,
+                    status: .active,
+                    path: directory.path,
+                    language: language,
+                    lastActivity: getLastModificationDate(for: directory),
+                    metrics: ProjectMetrics(
+                        filesCount: countProjectFiles(in: directory),
+                        linesOfCode: 0, // Will be calculated by backend
+                        healthScore: 0.50, // Initial placeholder
+                        issuesCount: 0 // Will be calculated by backend
+                    )
+                )
+                
+                projects.append(project)
+                print("Discovered project: \(project.displayName) at \(project.path)")
+            }
+            
+        } catch {
+            print("Error scanning directory \(directory.path): \(error)")
+        }
+    }
+    
+    private func detectProjectLanguage(from contents: [URL]) -> ProjectLanguage {
+        let fileExtensions = contents.map { $0.pathExtension.lowercased() }
+        
+        // Priority-based language detection
+        if fileExtensions.contains("swift") || contents.contains(where: { $0.lastPathComponent == "Package.swift" }) {
+            return .swift
+        } else if fileExtensions.contains("py") || contents.contains(where: { $0.lastPathComponent == "requirements.txt" }) {
+            return .python
+        } else if fileExtensions.contains("js") || contents.contains(where: { $0.lastPathComponent == "package.json" }) {
+            return .javascript
+        } else if fileExtensions.contains("ts") || contents.contains(where: { $0.lastPathComponent == "tsconfig.json" }) {
+            return .typescript
+        } else if fileExtensions.contains("java") || contents.contains(where: { $0.lastPathComponent == "pom.xml" }) {
+            return .java
+        } else if fileExtensions.contains("go") || contents.contains(where: { $0.lastPathComponent == "go.mod" }) {
+            return .go
+        } else {
+            return .unknown // Default fallback
+        }
+    }
+    
+    private func parseProjectDocumentation(directory: URL) async -> (name: String?, description: String?, mvpSpecs: [String]) {
+        var projectName: String?
+        let description: String? = nil // Not currently used but kept for future implementation
+        var mvpSpecs: [String] = []
+        
+        let documentFiles = ["PLAN.md", "README.md", "claude.md", "CLAUDE.md", "agent.md"]
+        
+        for fileName in documentFiles {
+            let fileURL = directory.appendingPathComponent(fileName)
+            
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                do {
+                    let content = try String(contentsOf: fileURL, encoding: .utf8)
+                    
+                    // Extract project name from first heading
+                    if projectName == nil {
+                        let lines = content.components(separatedBy: .newlines)
+                        for line in lines {
+                            if line.hasPrefix("# ") {
+                                projectName = String(line.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
+                                break
+                            }
+                        }
+                    }
+                    
+                    // Look for MVP specifications or features
+                    if fileName.contains("PLAN") || content.localizedCaseInsensitiveContains("mvp") {
+                        let mvpFeatures = extractMVPFeatures(from: content)
+                        mvpSpecs.append(contentsOf: mvpFeatures)
+                    }
+                    
+                } catch {
+                    print("Error reading \(fileName): \(error)")
+                }
+            }
+        }
+        
+        return (projectName, description, mvpSpecs)
+    }
+    
+    private func extractMVPFeatures(from content: String) -> [String] {
+        var features: [String] = []
+        let lines = content.components(separatedBy: .newlines)
+        
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Look for bullet points, numbered lists, or TODO items
+            if trimmedLine.hasPrefix("- ") || trimmedLine.hasPrefix("* ") || 
+               trimmedLine.hasPrefix("+ ") || trimmedLine.contains("TODO") ||
+               trimmedLine.hasPrefix("✅") || trimmedLine.hasPrefix("❌") ||
+               trimmedLine.hasPrefix("⚠️") {
+                features.append(trimmedLine)
+            }
+        }
+        
+        return features
+    }
+    
+    private func getLastModificationDate(for directory: URL) -> Date {
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: directory.path)
+            return attributes[.modificationDate] as? Date ?? Date()
+        } catch {
+            return Date()
+        }
+    }
+    
+    private func countProjectFiles(in directory: URL) -> Int {
+        do {
+            let enumerator = FileManager.default.enumerator(at: directory, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles, .skipsPackageDescendants])
+            
+            var count = 0
+            while let url = enumerator?.nextObject() as? URL {
+                let resourceValues = try url.resourceValues(forKeys: [.isRegularFileKey])
+                if resourceValues.isRegularFile == true {
+                    // Only count relevant project files (not .git, node_modules, etc.)
+                    let pathExtensions = ["swift", "py", "js", "ts", "java", "go", "md", "txt", "json", "yml", "yaml"]
+                    if pathExtensions.contains(url.pathExtension.lowercased()) {
+                        count += 1
+                    }
+                }
+            }
+            return count
+        } catch {
+            return 0
         }
     }
     

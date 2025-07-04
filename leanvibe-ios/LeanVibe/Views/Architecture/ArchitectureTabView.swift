@@ -5,6 +5,7 @@ import SwiftUI
 struct ArchitectureTabView: View {
     let webSocketService: WebSocketService
     @StateObject private var service: ArchitectureVisualizationService
+    @StateObject private var projectManager = ProjectManager()
     
     init(webSocketService: WebSocketService) {
         self.webSocketService = webSocketService
@@ -16,7 +17,7 @@ struct ArchitectureTabView: View {
         self._service = StateObject(wrappedValue: ArchitectureVisualizationService(webSocketService: WebSocketService()))
     }
     @State private var showComparison = false
-    @State private var selectedProject: String = "default_project"
+    @State private var selectedProjectId: String = ""
     @State private var showingExportSheet = false
     @State private var exportedDiagram: String = ""
     @State private var showingChangesAlert = false
@@ -43,7 +44,20 @@ struct ArchitectureTabView: View {
             DiagramExportView(diagramCode: exportedDiagram)
         }
         .onAppear {
-            loadDiagramForProject()
+            // Configure project manager and load projects
+            projectManager.configure(with: webSocketService)
+            Task {
+                do {
+                    try await projectManager.refreshProjects()
+                    // Set first project as selected if none selected
+                    if selectedProjectId.isEmpty && !projectManager.projects.isEmpty {
+                        selectedProjectId = projectManager.projects.first!.id
+                    }
+                    loadDiagramForProject()
+                } catch {
+                    print("Failed to load projects for architecture view: \(error)")
+                }
+            }
         }
     }
     
@@ -128,7 +142,7 @@ struct ArchitectureTabView: View {
                 // Floating action button for refresh
                 Button(action: {
                     Task {
-                        await service.fetchInitialDiagram(for: selectedProject)
+                        await service.fetchInitialDiagram(for: selectedProjectId)
                     }
                 }) {
                     Image(systemName: "arrow.clockwise")
@@ -167,14 +181,20 @@ struct ArchitectureTabView: View {
     private var controlsSection: some View {
         HStack {
             // Project selector
-            Picker("Project", selection: $selectedProject) {
-                Text("Default Project").tag("default_project")
-                Text("Mobile App").tag("mobile_app")
-                Text("Backend API").tag("backend_api")
-            }
-            .pickerStyle(SegmentedPickerStyle())
-            .onChange(of: selectedProject) { _ in
-                loadDiagramForProject()
+            if projectManager.projects.isEmpty {
+                Text("No projects available")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            } else {
+                Picker("Project", selection: $selectedProjectId) {
+                    ForEach(projectManager.projects, id: \.id) { project in
+                        Text(project.displayName).tag(project.id)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .onChange(of: selectedProjectId) {
+                    loadDiagramForProject()
+                }
             }
             
             Spacer()
@@ -203,7 +223,7 @@ struct ArchitectureTabView: View {
             // Auto-refresh toggle
             Button(action: {
                 Task {
-                    await service.fetchInitialDiagram(for: selectedProject)
+                    await service.fetchInitialDiagram(for: selectedProjectId)
                 }
             }) {
                 HStack {
@@ -227,7 +247,7 @@ struct ArchitectureTabView: View {
     
     private func loadDiagramForProject() {
         Task {
-            await service.fetchInitialDiagram(for: selectedProject)
+            await service.fetchInitialDiagram(for: selectedProjectId)
         }
     }
     
@@ -240,7 +260,7 @@ struct ArchitectureTabView: View {
     
     private func handleNodeTap(_ nodeId: String) {
         Task {
-            await service.requestDiagramUpdate(for: nodeId, in: selectedProject)
+            await service.requestDiagramUpdate(for: nodeId, in: selectedProjectId)
         }
     }
     

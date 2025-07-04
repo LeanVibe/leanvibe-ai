@@ -74,8 +74,8 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             // For simulator, try multiple common development ports
             if isSimulator {
                 host = "localhost"
-                // Try port 8002 first (since 8001 might be used by OrbStack), then 8001
-                port = 8002
+                // Try port 8000 first (current backend), then 8001, then 8002
+                port = 8000
                 print("🤖 Simulator detected - auto-connecting to \(host):\(port)")
             }
             

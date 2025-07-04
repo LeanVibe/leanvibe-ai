@@ -43,20 +43,20 @@ struct PremiumDesignSystem {
     
     // MARK: - Premium Color Palette
     struct Colors {
-        // Primary Colors
-        static let primary = Color.blue
-        static let primaryLight = Color.blue.opacity(0.7)
-        static let primaryDark = Color.blue.opacity(0.9)
+        // Primary Colors - Theme Aware
+        static let primary = Color.accentColor
+        static let primaryLight = Color.accentColor.opacity(0.7)
+        static let primaryDark = Color.accentColor.opacity(0.9)
         
-        // Secondary Colors
-        static let secondary = Color.indigo
-        static let accent = Color.cyan
+        // Secondary Colors - Theme Aware
+        static let secondary = Color(.systemBlue)
+        static let accent = Color(.systemTeal)
         
-        // Status Colors
-        static let success = Color.green
-        static let warning = Color.orange
-        static let error = Color.red
-        static let info = Color.blue
+        // Status Colors - Theme Aware
+        static let success = Color(.systemGreen)
+        static let warning = Color(.systemOrange)
+        static let error = Color(.systemRed)
+        static let info = Color(.systemBlue)
         
         // Neutral Colors
         #if canImport(UIKit)
@@ -79,9 +79,14 @@ struct PremiumDesignSystem {
         static let tertiaryText = Color.secondary.opacity(0.7)
         #endif
         
-        // Glassmorphism Colors
-        static let glassBackground = Color.white.opacity(0.1)
-        static let glassStroke = Color.white.opacity(0.2)
+        // Glassmorphism Colors - Theme Aware
+        #if canImport(UIKit)
+        static let glassBackground = Color(UIColor.systemBackground).opacity(0.1)
+        static let glassStroke = Color(UIColor.separator).opacity(0.3)
+        #else
+        static let glassBackground = Color.primary.opacity(0.1)
+        static let glassStroke = Color.primary.opacity(0.2)
+        #endif
     }
     
     // MARK: - Enhanced Typography

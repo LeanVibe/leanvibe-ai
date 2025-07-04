@@ -60,7 +60,7 @@ struct SettingsView: View {
             NavigationLink(destination: VoiceSettingsView()) {
                 SettingsRow(
                     icon: "mic.fill",
-                    iconColor: .blue,
+                    iconColor: Color(.systemBlue),
                     title: "Voice Commands",
                     subtitle: settingsManager.voice.autoStopListening ? "Hey LeanVibe enabled" : "Disabled"
                 )
@@ -109,7 +109,7 @@ struct SettingsView: View {
             NavigationLink(destination: KanbanSettingsView()) {
                 SettingsRow(
                     icon: "rectangle.3.offgrid",
-                    iconColor: .indigo,
+                    iconColor: Color(.systemIndigo),
                     title: "Kanban Preferences",
                     subtitle: "Auto-refresh enabled"
                 )
@@ -158,7 +158,7 @@ struct SettingsView: View {
             NavigationLink(destination: ServerSettingsView()) {
                 SettingsRow(
                     icon: "server.rack",
-                    iconColor: .cyan,
+                    iconColor: Color(.systemTeal),
                     title: "Server Configuration",
                     subtitle: connectionStatusText
                 )
@@ -219,7 +219,7 @@ struct SettingsView: View {
             NavigationLink(destination: AccessibilitySettingsView()) {
                 SettingsRow(
                     icon: "accessibility",
-                    iconColor: .blue,
+                    iconColor: Color(.systemBlue),
                     title: "Accessibility",
                     subtitle: "Default"
                 )
@@ -228,7 +228,7 @@ struct SettingsView: View {
             NavigationLink(destination: NotificationSettingsView()) {
                 SettingsRow(
                     icon: "bell.fill",
-                    iconColor: .red,
+                    iconColor: Color(.systemRed),
                     title: "Notifications",
                     subtitle: "Push enabled"
                 )
@@ -285,7 +285,7 @@ struct SettingsView: View {
             NavigationLink(destination: ArchitectureViewerSettingsView()) {
                 SettingsRow(
                     icon: "network",
-                    iconColor: .purple,
+                    iconColor: Color(.systemPurple),
                     title: "Architecture Viewer",
                     subtitle: architectureStatusText
                 )
@@ -336,7 +336,7 @@ struct SettingsView: View {
             }) {
                 SettingsRow(
                     icon: "info.circle.fill",
-                    iconColor: .blue,
+                    iconColor: Color(.systemBlue),
                     title: "About LeanVibe",
                     subtitle: "Version \(Bundle.main.appVersion)"
                 )

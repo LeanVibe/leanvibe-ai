@@ -10,7 +10,16 @@ class ArchitectureVisualizationService: ObservableObject {
     @Published var lastUpdated: Date?
     @Published var hasChanges = false
 
-    private let baseURL = URL(string: "http://localhost:8000")!
+    private var baseURL: URL {
+        // Use the same configuration as the rest of the app
+        let config = AppConfiguration.shared
+        if let url = URL(string: config.apiBaseURL) {
+            return url
+        } else {
+            // Fallback to localhost:8000 for architecture service
+            return URL(string: "http://localhost:8000")!
+        }
+    }
     private var webSocketService: WebSocketService
     private var cancellables = Set<AnyCancellable>()
     private var architectureChangeTimer: Timer?

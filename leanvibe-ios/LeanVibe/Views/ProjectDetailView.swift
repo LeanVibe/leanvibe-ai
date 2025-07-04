@@ -81,11 +81,11 @@ struct ProjectDetailView: View {
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color(red: 0.88, green: 0.88, blue: 0.92))
+                .background(Color(.secondarySystemGroupedBackground))
                 .cornerRadius(8)
         }
         .padding()
-        .background(Color(red: 0.88, green: 0.88, blue: 0.92))
+        .background(Color(.secondarySystemGroupedBackground))
         .cornerRadius(16)
     }
     
@@ -137,7 +137,7 @@ struct ProjectDetailView: View {
                 HealthScoreBar(score: project.metrics.healthScore)
             }
             .padding()
-            .background(Color(red: 0.88, green: 0.88, blue: 0.92))
+            .background(Color(.secondarySystemGroupedBackground))
             .cornerRadius(12)
         }
     }
@@ -214,7 +214,7 @@ struct MetricDetailCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color(red: 0.88, green: 0.88, blue: 0.92))
+        .background(Color(.secondarySystemGroupedBackground))
         .cornerRadius(12)
     }
 }
