@@ -349,6 +349,7 @@ extension View {
 
 // MARK: - Gesture-Based Transitions
 
+@available(iOS 18.0, macOS 14.0, *)
 struct PremiumSwipeTransition: ViewModifier {
     @State private var dragOffset = CGSize.zero
     @State private var isDragging = false
@@ -402,6 +403,7 @@ struct PremiumSwipeTransition: ViewModifier {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 extension View {
     func premiumSwipeGesture(
         threshold: CGFloat = 100,
@@ -416,6 +418,7 @@ extension View {
 
 // MARK: - Performance-Optimized Transitions
 
+@available(iOS 18.0, macOS 14.0, *)
 struct PerformanceOptimizedTransition: ViewModifier {
     let isPresented: Bool
     let shouldOptimize: Bool
@@ -435,6 +438,7 @@ struct PerformanceOptimizedTransition: ViewModifier {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 extension View {
     func performanceAwareTransition(
         isPresented: Bool,

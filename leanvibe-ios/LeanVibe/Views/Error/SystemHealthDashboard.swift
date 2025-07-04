@@ -256,8 +256,10 @@ struct SystemHealthDashboard: View {
                 }
             }
             
-            ForEach(Array(serviceHandler.getAllServiceHealth().sorted(by: { $0.key < $1.key })), id: \.key) { serviceName, healthInfo in
-                ServiceHealthRow(serviceName: serviceName, healthInfo: healthInfo)
+            ForEach(Array(serviceHandler.getAllServiceHealth().keys.sorted()), id: \.self) { serviceName in
+                if let healthInfo = serviceHandler.getServiceHealth(serviceName) {
+                    ServiceHealthRow(serviceName: serviceName, healthInfo: healthInfo)
+                }
             }
         }
         .padding()

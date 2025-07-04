@@ -144,10 +144,12 @@ final class ArchitectureAPIIntegrationTest: XCTestCase {
         // Test behavior when backend is not configured
         await service.fetchInitialDiagram(for: "test-project")
         
-        XCTAssertNotNil(service.errorMessage)
-        XCTAssertTrue(service.errorMessage?.contains("Backend not configured") == true)
-        XCTAssertFalse(service.isLoading)
-        XCTAssertNil(service.diagram)
+        await MainActor.run {
+            XCTAssertNotNil(service.errorMessage)
+            XCTAssertTrue(service.errorMessage?.contains("Backend not configured") == true)
+            XCTAssertFalse(service.isLoading)
+            XCTAssertNil(service.diagram)
+        }
     }
 }
 
