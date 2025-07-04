@@ -194,10 +194,30 @@ struct DashboardTabView: View {
                 .hapticFeedback(.navigation)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
-                    // TODO: Fix DocumentIntelligenceView compilation issue
-                    Text("Document Intelligence")
-                        .font(.largeTitle)
-                        .foregroundColor(.secondary)
+                    // TODO: Fix DocumentIntelligenceView target membership and compilation
+                    VStack(spacing: 16) {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        
+                        Text("Document Intelligence")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                        
+                        Text("AI-powered document analysis and task generation")
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Coming Soon")
+                            .font(.caption)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.blue.opacity(0.1))
+                            .foregroundColor(.blue)
+                            .cornerRadius(16)
+                    }
+                    .padding()
                 }
                 .tabItem {
                     Label(NavigationCoordinator.Tab.documents.title,
