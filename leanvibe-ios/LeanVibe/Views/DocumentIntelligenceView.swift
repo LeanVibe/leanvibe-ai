@@ -94,7 +94,7 @@ struct DocumentIntelligenceView: View {
                     .onChange(of: selectedProject) { _, newProject in
                         if let project = newProject {
                             if autoBacklogPopulationEnabled {
-                                autoPopulateBacklog(for: project)
+                                autoPopulateCompleteBacklog(for: project)
                             } else if autoProcessingEnabled {
                                 processCurrentProject()
                             }
@@ -104,39 +104,78 @@ struct DocumentIntelligenceView: View {
             }
             
             // Action Buttons
-            HStack(spacing: 12) {
-                Button(action: {
-                    guard let project = selectedProject else { return }
-                    autoPopulateBacklog(for: project)
-                }) {
-                    HStack {
-                        Image(systemName: "tray.and.arrow.down")
-                        Text("Auto-Populate Backlog")
+            VStack(spacing: 8) {
+                HStack(spacing: 12) {
+                    Button(action: {
+                        guard let project = selectedProject else { return }
+                        autoPopulateBacklog(for: project)
+                    }) {
+                        HStack {
+                            Image(systemName: "tray.and.arrow.down")
+                            Text("Plan.md")
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.green)
+                        .cornerRadius(8)
                     }
-                    .font(.subheadline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.green)
-                    .cornerRadius(8)
+                    .disabled(selectedProject == nil || documentService.isProcessing)
+                    
+                    Button(action: {
+                        guard let project = selectedProject else { return }
+                        autoPopulateFromSpecs(for: project)
+                    }) {
+                        HStack {
+                            Image(systemName: "doc.badge.plus")
+                            Text("PRD/MVP")
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.orange)
+                        .cornerRadius(8)
+                    }
+                    .disabled(selectedProject == nil || documentService.isProcessing)
                 }
-                .disabled(selectedProject == nil || documentService.isProcessing)
                 
-                Button(action: {
-                    processCurrentProject()
-                }) {
-                    HStack {
-                        Image(systemName: "doc.text.magnifyingglass")
-                        Text("Analyze All Docs")
+                HStack(spacing: 12) {
+                    Button(action: {
+                        guard let project = selectedProject else { return }
+                        autoPopulateCompleteBacklog(for: project)
+                    }) {
+                        HStack {
+                            Image(systemName: "tray.2.fill")
+                            Text("Complete Backlog")
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.purple)
+                        .cornerRadius(8)
                     }
-                    .font(.subheadline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.blue)
-                    .cornerRadius(8)
+                    .disabled(selectedProject == nil || documentService.isProcessing)
+                    
+                    Button(action: {
+                        processCurrentProject()
+                    }) {
+                        HStack {
+                            Image(systemName: "doc.text.magnifyingglass")
+                            Text("Analyze All")
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.blue)
+                        .cornerRadius(8)
+                    }
+                    .disabled(selectedProject == nil || documentService.isProcessing)
                 }
-                .disabled(selectedProject == nil || documentService.isProcessing)
+            }
                 
                 if !documentService.discoveredTasks.isEmpty {
                     Button(action: {
@@ -258,7 +297,27 @@ struct DocumentIntelligenceView: View {
             do {
                 try await documentService.autoPopulateBacklogFromPlan(for: project)
             } catch {
-                print("Failed to auto-populate Backlog: \(error)")
+                print("Failed to auto-populate Backlog from Plan.md: \(error)")
+            }
+        }
+    }
+    
+    private func autoPopulateFromSpecs(for project: Project) {
+        Task {
+            do {
+                try await documentService.autoPopulateBacklogFromSpecs(for: project)
+            } catch {
+                print("Failed to auto-populate Backlog from PRD/MVP: \(error)")
+            }
+        }
+    }
+    
+    private func autoPopulateCompleteBacklog(for project: Project) {
+        Task {
+            do {
+                try await documentService.autoPopulateCompleteBacklog(for: project)
+            } catch {
+                print("Failed to perform complete Backlog population: \(error)")
             }
         }
     }
@@ -458,7 +517,11 @@ struct DocumentIntelligenceSettingsView: View {
                 }
                 
                 Section("Auto-Backlog Population") {
-                    Text("When enabled, automatically extracts high-confidence tasks from Plan.md and creates them in the Backlog column.")
+                    Text("When enabled, automatically extracts high-confidence tasks from Plan.md, PRD.md, MVP.md, and docs folder specifications.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Text("Comprehensive processing includes: Product Requirements, MVP features, planning documents, and specification files.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     

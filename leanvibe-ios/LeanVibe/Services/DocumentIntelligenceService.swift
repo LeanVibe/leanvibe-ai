@@ -65,6 +65,89 @@ class DocumentIntelligenceService: ObservableObject {
         }
     }
     
+    /// Auto-populate Backlog from PRD/MVP specs in docs folder
+    func autoPopulateBacklogFromSpecs(for project: Project) async throws {
+        isProcessing = true
+        processingStatus = "Auto-populating Backlog from PRD/MVP specs..."
+        defer { 
+            isProcessing = false
+            processingStatus = "Idle"
+        }
+        
+        var allBacklogTasks: [DocumentTask] = []
+        
+        // Process PRD.md
+        let prdFilePath = "\(project.path)/PRD.md"
+        if FileManager.default.fileExists(atPath: prdFilePath) {
+            do {
+                let prdContent = try String(contentsOfFile: prdFilePath, encoding: .utf8)
+                let prdTasks = await extractBacklogTasksFromPRD(content: prdContent, projectId: project.id)
+                allBacklogTasks.append(contentsOf: prdTasks)
+                print("📋 Extracted \(prdTasks.count) tasks from PRD.md")
+            } catch {
+                print("❌ Failed to process PRD.md: \(error)")
+            }
+        }
+        
+        // Process MVP.md
+        let mvpFilePath = "\(project.path)/MVP.md"
+        if FileManager.default.fileExists(atPath: mvpFilePath) {
+            do {
+                let mvpContent = try String(contentsOfFile: mvpFilePath, encoding: .utf8)
+                let mvpTasks = await extractBacklogTasksFromMVP(content: mvpContent, projectId: project.id)
+                allBacklogTasks.append(contentsOf: mvpTasks)
+                print("🎯 Extracted \(mvpTasks.count) tasks from MVP.md")
+            } catch {
+                print("❌ Failed to process MVP.md: \(error)")
+            }
+        }
+        
+        // Process docs folder if it exists
+        let docsPath = "\(project.path)/docs"
+        if FileManager.default.fileExists(atPath: docsPath) {
+            let docsTasks = await extractBacklogTasksFromDocsFolder(docsPath: docsPath, projectId: project.id)
+            allBacklogTasks.append(contentsOf: docsTasks)
+            print("📁 Extracted \(docsTasks.count) tasks from docs folder")
+        }
+        
+        if !allBacklogTasks.isEmpty {
+            // Auto-create high-confidence Backlog tasks
+            let autoCreateTasks = allBacklogTasks.filter { $0.confidence >= 0.8 && $0.suggestedStatus == .backlog }
+            
+            if !autoCreateTasks.isEmpty {
+                try await createTasksInBackend(autoCreateTasks)
+                print("✅ Auto-created \(autoCreateTasks.count) Backlog tasks from PRD/MVP specs")
+            }
+            
+            // Merge with existing discovered tasks
+            let existingTasks = discoveredTasks
+            let allTasks = existingTasks + allBacklogTasks
+            discoveredTasks = Array(Set(allTasks)) // Remove duplicates
+            lastProcessedDate = Date()
+        }
+    }
+    
+    /// Comprehensive Backlog population from all specification documents
+    func autoPopulateCompleteBacklog(for project: Project) async throws {
+        isProcessing = true
+        processingStatus = "Comprehensive Backlog population from all specs..."
+        defer { 
+            isProcessing = false
+            processingStatus = "Idle"
+        }
+        
+        // Clear previous discoveries for fresh comprehensive analysis
+        discoveredTasks.removeAll()
+        
+        // Process Plan.md first (highest priority)
+        try await autoPopulateBacklogFromPlan(for: project)
+        
+        // Then process PRD/MVP specs
+        try await autoPopulateBacklogFromSpecs(for: project)
+        
+        print("🎉 Comprehensive Backlog population completed")
+    }
+    
     /// Process project documents and create Kanban tasks automatically
     func processProjectDocuments(for project: Project) async throws {
         isProcessing = true
@@ -114,6 +197,392 @@ class DocumentIntelligenceService: ObservableObject {
     }
     
     // MARK: - Private Methods
+    
+    /// Extract Backlog tasks specifically from PRD content with requirements focus
+    private func extractBacklogTasksFromPRD(content: String, projectId: UUID) async -> [DocumentTask] {
+        let lines = content.components(separatedBy: .newlines)
+        var backlogTasks: [DocumentTask] = []
+        var currentSection = ""
+        
+        for (index, line) in lines.enumerated() {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Track current section for context
+            if trimmedLine.hasPrefix("#") {
+                currentSection = extractSectionTitle(from: trimmedLine)
+                continue
+            }
+            
+            // Focus on requirements, features, and specifications
+            if let backlogTask = parseLineAsPRDTask(
+                line: trimmedLine,
+                lineNumber: index + 1,
+                section: currentSection,
+                projectId: projectId
+            ) {
+                backlogTasks.append(backlogTask)
+            }
+        }
+        
+        return backlogTasks.sorted { $0.confidence > $1.confidence }
+    }
+    
+    /// Extract Backlog tasks specifically from MVP content with feature focus
+    private func extractBacklogTasksFromMVP(content: String, projectId: UUID) async -> [DocumentTask] {
+        let lines = content.components(separatedBy: .newlines)
+        var backlogTasks: [DocumentTask] = []
+        var currentSection = ""
+        
+        for (index, line) in lines.enumerated() {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Track current section for context
+            if trimmedLine.hasPrefix("#") {
+                currentSection = extractSectionTitle(from: trimmedLine)
+                continue
+            }
+            
+            // Focus on MVP features and core functionality
+            if let backlogTask = parseLineAsMVPTask(
+                line: trimmedLine,
+                lineNumber: index + 1,
+                section: currentSection,
+                projectId: projectId
+            ) {
+                backlogTasks.append(backlogTask)
+            }
+        }
+        
+        return backlogTasks.sorted { $0.confidence > $1.confidence }
+    }
+    
+    /// Extract tasks from docs folder files
+    private func extractBacklogTasksFromDocsFolder(docsPath: String, projectId: UUID) async -> [DocumentTask] {
+        var allTasks: [DocumentTask] = []
+        
+        do {
+            let fileManager = FileManager.default
+            let docFiles = try fileManager.contentsOfDirectory(atPath: docsPath)
+            
+            for fileName in docFiles {
+                // Process relevant documentation files
+                if fileName.hasSuffix(".md") && 
+                   (fileName.localizedCaseInsensitiveContains("spec") ||
+                    fileName.localizedCaseInsensitiveContains("requirement") ||
+                    fileName.localizedCaseInsensitiveContains("feature") ||
+                    fileName.localizedCaseInsensitiveContains("backlog")) {
+                    
+                    let filePath = "\(docsPath)/\(fileName)"
+                    
+                    do {
+                        let content = try String(contentsOfFile: filePath, encoding: .utf8)
+                        let docTasks = await extractBacklogTasksFromSpecDocument(
+                            content: content,
+                            fileName: fileName,
+                            projectId: projectId
+                        )
+                        allTasks.append(contentsOf: docTasks)
+                    } catch {
+                        print("❌ Failed to process \(fileName): \(error)")
+                    }
+                }
+            }
+        } catch {
+            print("❌ Failed to read docs folder: \(error)")
+        }
+        
+        return allTasks
+    }
+    
+    /// Parse line as PRD requirement task
+    private func parseLineAsPRDTask(line: String, lineNumber: Int, section: String, projectId: UUID) -> DocumentTask? {
+        guard !line.isEmpty && !line.hasPrefix("#") else { return nil }
+        
+        var taskText = line
+        var priority = TaskPriority.high // PRD items get higher default priority
+        var confidence: Double = 0.8 // PRD items get higher confidence
+        
+        // Skip completed items
+        if line.contains("✅") || line.localizedCaseInsensitiveContains("implemented") {
+            return nil
+        }
+        
+        // PRD-specific indicators
+        let prdIndicators = [
+            "requirement", "must", "shall", "should", "feature", "capability",
+            "functionality", "specification", "criteria", "acceptance", "user story"
+        ]
+        
+        let containsPRDIndicator = prdIndicators.contains { indicator in
+            line.localizedCaseInsensitiveContains(indicator)
+        }
+        
+        if containsPRDIndicator {
+            confidence += 0.15
+        }
+        
+        // Priority assessment for requirements
+        if line.localizedCaseInsensitiveContains("critical") || line.localizedCaseInsensitiveContains("mandatory") {
+            priority = .urgent
+            confidence += 0.2
+        } else if line.localizedCaseInsensitiveContains("core") || line.localizedCaseInsensitiveContains("essential") {
+            priority = .high
+            confidence += 0.1
+        }
+        
+        // Clean up task text
+        if line.hasPrefix("- ") || line.hasPrefix("* ") {
+            taskText = String(line.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        // Section-based priority
+        if section.localizedCaseInsensitiveContains("functional") || 
+           section.localizedCaseInsensitiveContains("core") {
+            priority = enhancePriority(priority)
+            confidence += 0.1
+        }
+        
+        guard taskText.count > 8 else { return nil }
+        
+        let description = generatePRDTaskDescription(originalText: line, section: section, confidence: confidence)
+        
+        return DocumentTask(
+            id: UUID(),
+            title: taskText,
+            description: description,
+            suggestedStatus: .backlog,
+            suggestedPriority: priority,
+            projectId: projectId,
+            confidence: min(confidence, 1.0),
+            sourceType: .prd,
+            documentSource: "PRD.md",
+            originalLine: line,
+            lineNumber: lineNumber,
+            section: section,
+            tags: generatePRDTags(from: taskText, section: section)
+        )
+    }
+    
+    /// Parse line as MVP feature task
+    private func parseLineAsMVPTask(line: String, lineNumber: Int, section: String, projectId: UUID) -> DocumentTask? {
+        guard !line.isEmpty && !line.hasPrefix("#") else { return nil }
+        
+        var taskText = line
+        var priority = TaskPriority.high // MVP items get high priority by default
+        var confidence: Double = 0.85 // MVP items get higher confidence
+        
+        // Skip completed items
+        if line.contains("✅") || line.localizedCaseInsensitiveContains("completed") {
+            return nil
+        }
+        
+        // MVP-specific indicators
+        let mvpIndicators = [
+            "mvp", "minimum", "viable", "core feature", "essential", "basic",
+            "launch", "v1", "version 1", "initial", "foundation"
+        ]
+        
+        let containsMVPIndicator = mvpIndicators.contains { indicator in
+            line.localizedCaseInsensitiveContains(indicator)
+        }
+        
+        if containsMVPIndicator {
+            confidence += 0.1
+            priority = .urgent // MVP features are urgent
+        }
+        
+        // Clean up task text
+        if line.hasPrefix("- ") || line.hasPrefix("* ") {
+            taskText = String(line.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        // Section-based priority for MVP
+        if section.localizedCaseInsensitiveContains("core") || 
+           section.localizedCaseInsensitiveContains("essential") ||
+           section.localizedCaseInsensitiveContains("critical") {
+            priority = .urgent
+            confidence += 0.1
+        }
+        
+        guard taskText.count > 8 else { return nil }
+        
+        let description = generateMVPTaskDescription(originalText: line, section: section, confidence: confidence)
+        
+        return DocumentTask(
+            id: UUID(),
+            title: taskText,
+            description: description,
+            suggestedStatus: .backlog,
+            suggestedPriority: priority,
+            projectId: projectId,
+            confidence: min(confidence, 1.0),
+            sourceType: .mvp,
+            documentSource: "MVP.md",
+            originalLine: line,
+            lineNumber: lineNumber,
+            section: section,
+            tags: generateMVPTags(from: taskText, section: section)
+        )
+    }
+    
+    /// Extract tasks from generic specification documents
+    private func extractBacklogTasksFromSpecDocument(content: String, fileName: String, projectId: UUID) async -> [DocumentTask] {
+        let lines = content.components(separatedBy: .newlines)
+        var backlogTasks: [DocumentTask] = []
+        var currentSection = ""
+        
+        for (index, line) in lines.enumerated() {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            if trimmedLine.hasPrefix("#") {
+                currentSection = extractSectionTitle(from: trimmedLine)
+                continue
+            }
+            
+            if let backlogTask = parseLineAsSpecTask(
+                line: trimmedLine,
+                lineNumber: index + 1,
+                section: currentSection,
+                fileName: fileName,
+                projectId: projectId
+            ) {
+                backlogTasks.append(backlogTask)
+            }
+        }
+        
+        return backlogTasks
+    }
+    
+    /// Parse line as generic specification task
+    private func parseLineAsSpecTask(line: String, lineNumber: Int, section: String, fileName: String, projectId: UUID) -> DocumentTask? {
+        guard !line.isEmpty && !line.hasPrefix("#") else { return nil }
+        
+        var taskText = line
+        var priority = TaskPriority.medium
+        var confidence: Double = 0.7
+        
+        // Skip completed items
+        if line.contains("✅") || line.localizedCaseInsensitiveContains("done") {
+            return nil
+        }
+        
+        // Generic specification indicators
+        if line.hasPrefix("- ") || line.hasPrefix("* ") {
+            taskText = String(line.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
+            confidence += 0.1
+        }
+        
+        // File type based priority
+        if fileName.localizedCaseInsensitiveContains("spec") {
+            confidence += 0.1
+        }
+        
+        guard taskText.count > 8 else { return nil }
+        
+        let description = generateSpecTaskDescription(originalText: line, section: section, fileName: fileName, confidence: confidence)
+        
+        return DocumentTask(
+            id: UUID(),
+            title: taskText,
+            description: description,
+            suggestedStatus: .backlog,
+            suggestedPriority: priority,
+            projectId: projectId,
+            confidence: min(confidence, 1.0),
+            sourceType: .readme, // Generic type for now
+            documentSource: fileName,
+            originalLine: line,
+            lineNumber: lineNumber,
+            section: section,
+            tags: generateSpecTags(from: taskText, fileName: fileName)
+        )
+    }
+    
+    /// Generate enhanced description for PRD tasks
+    private func generatePRDTaskDescription(originalText: String, section: String, confidence: Double) -> String {
+        var description = "Auto-extracted from PRD.md - Product Requirement"
+        
+        if !section.isEmpty {
+            description += " (Section: \(section))"
+        }
+        
+        description += "\n\nRequirement: \(originalText)"
+        description += "\nConfidence: \(Int(confidence * 100))%"
+        description += "\nType: Product Requirement Document"
+        description += "\nStatus: Ready for analysis and implementation planning"
+        
+        return description
+    }
+    
+    /// Generate enhanced description for MVP tasks
+    private func generateMVPTaskDescription(originalText: String, section: String, confidence: Double) -> String {
+        var description = "Auto-extracted from MVP.md - Core Feature"
+        
+        if !section.isEmpty {
+            description += " (Section: \(section))"
+        }
+        
+        description += "\n\nFeature: \(originalText)"
+        description += "\nConfidence: \(Int(confidence * 100))%"
+        description += "\nType: Minimum Viable Product Feature"
+        description += "\nPriority: Essential for launch"
+        
+        return description
+    }
+    
+    /// Generate enhanced description for specification tasks
+    private func generateSpecTaskDescription(originalText: String, section: String, fileName: String, confidence: Double) -> String {
+        var description = "Auto-extracted from \(fileName)"
+        
+        if !section.isEmpty {
+            description += " (Section: \(section))"
+        }
+        
+        description += "\n\nSpecification: \(originalText)"
+        description += "\nConfidence: \(Int(confidence * 100))%"
+        description += "\nSource: Documentation Specification"
+        
+        return description
+    }
+    
+    /// Generate specialized tags for PRD tasks
+    private func generatePRDTags(from text: String, section: String) -> [String] {
+        var tags = ["auto-backlog", "prd", "requirement"]
+        
+        if !section.isEmpty {
+            tags.append(section.lowercased().replacingOccurrences(of: " ", with: "-"))
+        }
+        
+        // Add requirement-specific tags
+        if text.localizedCaseInsensitiveContains("functional") {
+            tags.append("functional-requirement")
+        } else if text.localizedCaseInsensitiveContains("non-functional") {
+            tags.append("non-functional-requirement")
+        }
+        
+        return tags
+    }
+    
+    /// Generate specialized tags for MVP tasks
+    private func generateMVPTags(from text: String, section: String) -> [String] {
+        var tags = ["auto-backlog", "mvp", "core-feature", "launch-critical"]
+        
+        if !section.isEmpty {
+            tags.append(section.lowercased().replacingOccurrences(of: " ", with: "-"))
+        }
+        
+        return tags
+    }
+    
+    /// Generate specialized tags for specification tasks
+    private func generateSpecTags(from text: String, fileName: String) -> [String] {
+        var tags = ["auto-backlog", "specification"]
+        
+        let baseFileName = fileName.replacingOccurrences(of: ".md", with: "").lowercased()
+        tags.append(baseFileName)
+        
+        return tags
+    }
     
     /// Extract Backlog tasks specifically from Plan.md content
     private func extractBacklogTasksFromPlan(content: String, projectId: UUID) async -> [DocumentTask] {
@@ -565,7 +1034,7 @@ struct DocumentItem {
     let fileName: String
 }
 
-struct DocumentTask: Identifiable {
+struct DocumentTask: Identifiable, Hashable {
     let id: UUID
     let title: String
     let description: String
@@ -579,6 +1048,16 @@ struct DocumentTask: Identifiable {
     let lineNumber: Int
     let section: String
     let tags: [String]
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(title)
+        hasher.combine(projectId)
+    }
+    
+    static func == (lhs: DocumentTask, rhs: DocumentTask) -> Bool {
+        return lhs.id == rhs.id || (lhs.title == rhs.title && lhs.projectId == rhs.projectId)
+    }
 }
 
 enum DocumentType: String, CaseIterable {
