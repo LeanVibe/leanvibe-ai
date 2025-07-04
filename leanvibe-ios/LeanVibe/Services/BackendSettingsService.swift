@@ -234,44 +234,4 @@ class BackendSettingsService: ObservableObject {
     }
 }
 
-// MARK: - Backend Models
-
-struct BackendSettingsResponse: Codable {
-    let connection: ConnectionPreferences?
-    let voice: VoiceSettings?
-    let notifications: NotificationSettings?
-    let kanban: KanbanSettings?
-    let accessibility: AccessibilitySettings?
-    let architecture: ArchitectureSettings?
-}
-
-struct BackendSettingsRequest: Codable {
-    let connection: ConnectionPreferences
-    let voice: VoiceSettings
-    let notifications: NotificationSettings
-    let kanban: KanbanSettings
-    let accessibility: AccessibilitySettings
-    let architecture: ArchitectureSettings
-}
-
-// MARK: - Errors
-
-enum BackendSettingsError: LocalizedError {
-    case backendNotConfigured
-    case invalidResponse
-    case httpError(Int)
-    case networkError(Error)
-    
-    var errorDescription: String? {
-        switch self {
-        case .backendNotConfigured:
-            return "Backend is not configured. Please scan QR code or configure backend URL."
-        case .invalidResponse:
-            return "Invalid response from backend"
-        case .httpError(let code):
-            return "Backend returned error code: \(code)"
-        case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
-        }
-    }
-}
+// Models are now imported from SettingsModels.swift
