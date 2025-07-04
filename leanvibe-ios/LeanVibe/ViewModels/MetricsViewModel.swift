@@ -1,7 +1,8 @@
 import Foundation
 import Combine
 
-@available(macOS 10.15, iOS 13.0, *)
+@available(iOS 18.0, macOS 14.0, *)
+@MainActor
 class MetricsViewModel: ObservableObject {
     @Published var metricHistory: [MetricHistory] = []
     @Published var decisionLog: [DecisionLog] = []
@@ -12,12 +13,11 @@ class MetricsViewModel: ObservableObject {
     private let metricsService: MetricsService
     private let clientId: String
 
-    init(clientId: String, metricsService: MetricsService = MetricsService()) {
+    init(clientId: String) {
         self.clientId = clientId
-        self.metricsService = metricsService
+        self.metricsService = MetricsService()
     }
 
-    @MainActor
     func fetchMetrics() async {
         isLoadingMetrics = true
         errorMessage = nil
@@ -29,7 +29,6 @@ class MetricsViewModel: ObservableObject {
         isLoadingMetrics = false
     }
 
-    @MainActor
     func fetchDecisions() async {
         isLoadingDecisions = true
         errorMessage = nil

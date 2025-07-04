@@ -16,6 +16,7 @@ struct KanbanBoardView: View {
     @State private var draggedTask: LeanVibeTask?
     @State private var isOfflineMode = false
     @State private var showingOfflineAlert = false
+    @State private var showingDependencies = false
 
     var body: some View {
         NavigationView {
@@ -45,6 +46,10 @@ struct KanbanBoardView: View {
                     HStack {
                         Button(action: { showingStatistics = true }) {
                             Image(systemName: "chart.bar.xaxis")
+                        }
+                        
+                        Button(action: { showingDependencies = true }) {
+                            Image(systemName: "arrow.triangle.branch")
                         }
                         
                         // Offline mode indicator
@@ -113,6 +118,12 @@ struct KanbanBoardView: View {
             }
             .sheet(isPresented: $showingStatistics) {
                 TaskStatisticsView(taskService: taskService)
+            }
+            .sheet(isPresented: $showingDependencies) {
+                // TODO: Re-enable TaskDependencyView after fixing compilation order
+                Text("Task Dependencies")
+                    .font(.largeTitle)
+                    .foregroundColor(.secondary)
             }
             .sheet(isPresented: $showingCreateTask) {
                 TaskCreationView(taskService: taskService, projectId: projectId)

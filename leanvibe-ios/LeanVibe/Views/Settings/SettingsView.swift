@@ -457,10 +457,13 @@ struct TaskCreationSettingsView: View {
 @available(iOS 18.0, macOS 14.0, *)
 struct SyncSettingsView: View {
     @StateObject private var settingsManager = SettingsManager.shared
-    @StateObject private var backendService = BackendSettingsService.shared
+    // TODO: Re-enable BackendSettingsService after dependency resolution
+    // @StateObject private var backendService = BackendSettingsService.shared
     @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
     @State private var isSyncing = false
     @State private var showingResetConfirmation = false
+    @State private var isBackendAvailable = false
+    @State private var lastBackendError: String?
     
     var body: some View {
         List {
@@ -473,10 +476,10 @@ struct SyncSettingsView: View {
                         
                         HStack {
                             Circle()
-                                .fill(backendService.isAvailable ? .green : .red)
+                                .fill(isBackendAvailable ? .green : .red)
                                 .frame(width: 8, height: 8)
                             
-                            Text(backendService.isAvailable ? "Connected" : "Disconnected")
+                            Text(isBackendAvailable ? "Connected" : "Disconnected")
                                 .foregroundColor(.secondary)
                                 .font(.caption)
                         }
@@ -484,7 +487,7 @@ struct SyncSettingsView: View {
                     
                     Spacer()
                     
-                    Button(backendService.isAvailable ? "Sync Now" : "Retry") {
+                    Button(isBackendAvailable ? "Sync Now" : "Retry") {
                         Task {
                             await syncWithBackend()
                         }
@@ -500,7 +503,7 @@ struct SyncSettingsView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                if let error = backendService.lastError {
+                if let error = lastBackendError {
                     Text("Error: \(error)")
                         .font(.caption)
                         .foregroundColor(.red)
@@ -565,7 +568,7 @@ struct SyncSettingsView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .disabled(isSyncing || !backendService.isAvailable)
+                .disabled(isSyncing || !isBackendAvailable)
                 
                 Button(action: {
                     Task {
@@ -580,7 +583,7 @@ struct SyncSettingsView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .disabled(isSyncing || !backendService.isAvailable)
+                .disabled(isSyncing || !isBackendAvailable)
                 
                 Button(action: {
                     showingResetConfirmation = true
@@ -593,7 +596,7 @@ struct SyncSettingsView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .disabled(isSyncing || !backendService.isAvailable)
+                .disabled(isSyncing || !isBackendAvailable)
             }
         }
         .navigationTitle("Sync Settings")
@@ -649,10 +652,12 @@ struct SyncSettingsView: View {
     private func forceSyncFromBackend() async {
         isSyncing = true
         do {
-            _ = try await backendService.refreshSettings()
+            // TODO: Re-implement with BackendSettingsService
+            // _ = try await backendService.refreshSettings()
             await settingsManager.syncWithBackendIfAvailable()
         } catch {
             print("Failed to force sync: \(error)")
+            lastBackendError = error.localizedDescription
         }
         isSyncing = false
     }

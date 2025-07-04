@@ -261,38 +261,83 @@ Complete comprehensive enhancement of LeanVibe iOS app with dark/light theme com
 **Status**: 🚧 IN PROGRESS  
 **Impact**: Complete end-to-end workflow with Mac agent integration
 
-#### 🚧 Phase 6.1: Fix Architecture Screen Backend Connectivity
-- **IN PROGRESS**: Architecture screen not working on device
-- **Files**: TBD
-- **Issues**: 
-  - Screen fails to load on physical device
-  - Backend connectivity issues with resource loading
-  - Need to remove hardcoded URLs and fix dynamic loading
+#### ✅ Phase 6.1: Fix Architecture Screen Backend Connectivity
+- **COMPLETED**: Architecture screen now works on device
+- **Files**: `LeanVibe/Services/ArchitectureVisualizationService.swift`, `LeanVibe/Views/Architecture/ArchitectureTabView.swift`
+- **Changes**: 
+  - Removed hardcoded localhost:8000 fallback that failed on devices
+  - Enhanced error handling for backend not configured scenarios
+  - Added user-friendly navigation to Settings when backend missing
+  - Improved error messages and visual indicators
+  - All architecture endpoints now validate backend configuration properly
 
-#### 🚧 Phase 6.2: Mac Background Agent Implementation
-- **PENDING**: Create Mac background agent for project discovery
-- **Features Needed**:
-  - Scan ~/work folder for projects with agent.md/claude.md
-  - Auto-populate Kanban board from Plan.md docs
-  - Create Backlog column from PRD/MVP specs
-  - Real-time project synchronization with iOS app
-  - QR code generation for iOS setup
+#### ✅ Phase 6.2: Mac Background Agent Assessment
+- **COMPLETED**: Investigation revealed leanvibe-backend already provides 70-80% of Mac agent functionality
+- **Existing Features**: 
+  - ✅ Project discovery and filesystem scanning
+  - ✅ Real-time file monitoring with change detection
+  - ✅ QR code generation for iOS setup
+  - ✅ Comprehensive Task/Kanban API with real-time sync
+  - ✅ WebSocket integration for collaborative features
+  - ✅ iOS-compatible data models and endpoints
 
-#### 🚧 Phase 6.3: Enhanced Kanban Workflow
-- **PENDING**: Implement document-driven task population
+#### 🚧 Phase 6.3: Enhanced iOS-Backend Integration
+- **IN PROGRESS**: Optimize iOS app integration with existing backend capabilities
+- **Priority Order Based on Investigation**:
+
+**Phase 6.3a: Document Intelligence Integration** (HIGH PRIORITY)
+- Enhance backend's document parsing for Plan.md → Kanban task creation
+- Implement automatic Backlog population from planning documents
+- Add PRD/MVP specification parsing and task extraction
+- Real-time document-to-task synchronization
+
+**Phase 6.3b: Advanced Kanban Features** (MEDIUM PRIORITY)  
+- Task dependency visualization and management
+- Enhanced project analytics and metrics integration
+- Sprint management and velocity tracking
+- Custom filtering and task organization
+
+**Phase 6.3c: Performance and User Experience** (MEDIUM PRIORITY)
+- Large project optimization (10,000+ files)
+- Enhanced error handling and offline capabilities  
+- Native Mac notifications integration
+- Advanced search and discovery features
+
+#### 🚧 Phase 6.4: Backend Enhancement for Document Intelligence
+- **PENDING**: Extend leanvibe-backend document parsing capabilities
 - **Features**:
-  - Parse Plan.md files for todo items
-  - Extract tasks from PRD/MVP documentation
-  - Smart categorization into Backlog/Todo/Progress/Testing/Done
-  - Real-time sync between filesystem and Kanban board
+  - Structured Plan.md parsing with task extraction
+  - PRD/MVP specification analysis and categorization
+  - Smart priority assignment based on document context
+  - Bidirectional sync: Kanban changes update document status
 
-## 📈 Current Priorities
+## 📈 Optimized Development Strategy
 
-### Next Actions (Priority Order):
-1. **HIGH**: Fix Architecture screen device compatibility issues
-2. **HIGH**: Implement Mac background agent for project discovery  
-3. **MEDIUM**: Auto-populate Kanban from Plan.md documentation
-4. **MEDIUM**: Add Backlog column with PRD/MVP task extraction
+### **Strategic Priority Order** (Based on Investigation):
+
+#### **IMMEDIATE (Phase 6.3a): Document Intelligence Integration**
+1. **Enhance Backend Document Parsing** - Extend existing parsers for structured task extraction
+2. **iOS Document Sync** - Connect iOS app to backend document intelligence
+3. **Automatic Backlog Population** - Plan.md → Kanban Backlog automation
+4. **PRD/MVP Task Extraction** - Requirements → Tasks transformation
+
+#### **SHORT-TERM (Phase 6.3b): Advanced Kanban Features**
+1. **Task Dependencies** - Visual dependency mapping in iOS UI
+2. **Enhanced Analytics** - Project health and velocity metrics
+3. **Advanced Filtering** - Custom views and saved filters
+4. **Sprint Management** - Iteration planning and tracking
+
+#### **MEDIUM-TERM (Phase 6.3c): Performance & UX**
+1. **Large Project Optimization** - Handle 10K+ file projects efficiently
+2. **Advanced Search** - Spotlight integration and smart discovery
+3. **Notification Enhancement** - Native Mac notification bridge
+4. **Offline Optimization** - Enhanced offline capabilities
+
+### **Dependencies and Parallel Work Opportunities**:
+- ✅ **Backend Foundation**: Already solid - can build immediately
+- 🔄 **Document Parsing**: Backend enhancement needed (can be done in parallel)
+- 🔄 **iOS UI Enhancement**: Can proceed with existing APIs while backend is enhanced
+- 🔄 **Testing & Integration**: Continuous validation with real leanvibe-backend
 
 ## 🎯 COMPLETION STATUS
 

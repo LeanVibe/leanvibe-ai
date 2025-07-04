@@ -2,8 +2,8 @@ import Foundation
 
 /// Service for syncing settings with the backend
 /// NO HARDCODED VALUES - All settings come from backend dynamically
-@available(iOS 18.0, macOS 14.0, *)
 @MainActor
+@available(iOS 18.0, macOS 14.0, *)
 class BackendSettingsService: ObservableObject {
     static let shared = BackendSettingsService()
     

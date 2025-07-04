@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import Foundation
 
 /// Server Configuration Settings view for managing backend connection
 /// NO HARDCODED VALUES - Everything comes from dynamic configuration
@@ -9,7 +10,9 @@ struct ServerSettingsView: View {
     // MARK: - Properties
     
     @StateObject private var webSocketService = WebSocketService.shared
-    @StateObject private var backendService = BackendSettingsService.shared
+    // TODO: Re-enable BackendSettingsService after dependency resolution
+    // @StateObject private var backendService = BackendSettingsService.shared
+    @State private var isBackendAvailable = false
     @State private var config = AppConfiguration.shared
     @State private var showingQRScanner = false
     @State private var showingManualEntry = false
@@ -162,10 +165,10 @@ struct ServerSettingsView: View {
                     
                     HStack {
                         Circle()
-                            .fill(backendService.isAvailable ? .green : .red)
+                            .fill(isBackendAvailable ? .green : .red)
                             .frame(width: 8, height: 8)
                         
-                        Text(backendService.isAvailable ? "Available" : "Unavailable")
+                        Text(isBackendAvailable ? "Available" : "Unavailable")
                             .foregroundColor(.secondary)
                             .font(.caption)
                     }
@@ -375,13 +378,16 @@ struct ServerSettingsView: View {
     private func testBackendConnection() async {
         isTestingConnection = true
         
-        let isAvailable = await backendService.pingBackend()
+        // TODO: Re-implement with BackendSettingsService after dependency resolution
+        let isAvailable = await pingBackendDirectly()
         
         await MainActor.run {
             if isAvailable {
                 testResult = .success("Backend API is reachable")
+                isBackendAvailable = true
             } else {
                 testResult = .failure("Backend API is not reachable")
+                isBackendAvailable = false
             }
             isTestingConnection = false
         }
@@ -392,7 +398,7 @@ struct ServerSettingsView: View {
         testResult = nil
         
         // Test API availability
-        let apiAvailable = await backendService.pingBackend()
+        let apiAvailable = await pingBackendDirectly()
         
         if !apiAvailable {
             await MainActor.run {
@@ -429,6 +435,32 @@ struct ServerSettingsView: View {
         
         // Update local reference
         config = AppConfiguration.shared
+    }
+    
+    // MARK: - Temporary Direct Backend Methods (until dependency resolution)
+    
+    private func pingBackendDirectly() async -> Bool {
+        guard config.isBackendConfigured else {
+            return false
+        }
+        
+        do {
+            let url = URL(string: "\(config.apiBaseURL)/api/health")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.timeoutInterval = 5.0 // Quick ping
+            
+            let (_, response) = try await URLSession.shared.data(for: request)
+            
+            if let httpResponse = response as? HTTPURLResponse {
+                return httpResponse.statusCode == 200
+            }
+            
+            return false
+            
+        } catch {
+            return false
+        }
     }
 }
 
