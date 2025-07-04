@@ -265,6 +265,14 @@ struct DashboardTabView: View {
             }
             .premiumShadow(PremiumDesignSystem.Shadows.elevated)
             .animation(PremiumTransitions.easeInOut, value: navigationCoordinator.selectedTab)
+            .onChange(of: navigationCoordinator.selectedTab) { oldTab, newTab in
+                // Track tab navigation for beta analytics
+                BetaAnalyticsService.shared.recordUsageMetric(
+                    event: .screenView,
+                    screen: newTab,
+                    metadata: ["previous_tab": oldTab]
+                )
+            }
             
             // Floating voice indicator (appears on all tabs except Voice tab)
             if AppConfiguration.shared.isVoiceEnabled,
@@ -313,6 +321,13 @@ struct DashboardTabView: View {
             if AppConfiguration.shared.isVoiceEnabled {
                 startVoiceServicesDefensively()
             }
+            
+            // Track app launch and initial screen view for beta analytics
+            BetaAnalyticsService.shared.recordUsageMetric(
+                event: .screenView,
+                screen: "app_launch",
+                metadata: ["initial_tab": navigationCoordinator.selectedTab]
+            )
             
             // Premium haptic feedback for app launch
             PremiumHaptics.contextualFeedback(for: .buttonTap)

@@ -37,6 +37,9 @@ struct SettingsView: View {
                 
                 // Support & About Section
                 supportSection
+                
+                // Beta Testing Section
+                betaTestingSection
             }
             .navigationTitle("Settings")
             .toolbar {
@@ -338,6 +341,28 @@ struct SettingsView: View {
                 )
             }
             */
+        }
+    }
+    
+    private var betaTestingSection: some View {
+        Section("Beta Testing") {
+            NavigationLink(destination: BetaFeedbackView()) {
+                SettingsRow(
+                    icon: "star.bubble",
+                    iconColor: Color(.systemYellow),
+                    title: "Send Feedback",
+                    subtitle: "Help improve LeanVibe"
+                )
+            }
+            
+            NavigationLink(destination: BetaAnalyticsDashboardView()) {
+                SettingsRow(
+                    icon: "chart.line.uptrend.xyaxis",
+                    iconColor: Color(.systemPurple),
+                    title: "Beta Analytics",
+                    subtitle: BetaAnalyticsService.shared.isEnabled ? "Active" : "Disabled"
+                )
+            }
         }
     }
     
