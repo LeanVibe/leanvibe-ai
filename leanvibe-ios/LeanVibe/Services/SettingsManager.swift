@@ -13,7 +13,8 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
     }()
     
     // MARK: - Backend Integration
-    private let backendService = BackendSettingsService.shared
+    // TODO: Re-enable BackendSettingsService integration after dependency resolution
+    // private lazy var backendService = BackendSettingsService.shared
     var isBackendSyncEnabled = true
     var lastSyncDate: Date?
     var syncStatus: SyncStatus = .idle
@@ -105,7 +106,16 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         syncStatus = .syncing
         
         do {
-            let backendSettings = try await backendService.fetchSettings()
+            // TODO: Re-enable backend integration
+            // let backendSettings = try await backendService.fetchSettings()
+            let backendSettings = AllSettings(
+                connection: connection,
+                voice: voice,
+                notifications: notifications,
+                kanban: kanban,
+                accessibility: accessibility,
+                architecture: architecture
+            ) // Temporary fallback using current settings
             
             await MainActor.run {
                 // Update settings from backend while preserving user overrides
@@ -134,7 +144,8 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
             architecture: architecture
         )
         
-        try await backendService.pushSettings(allSettings)
+        // TODO: Re-enable backend integration
+        // try await backendService.pushSettings(allSettings)
         await MainActor.run {
             lastSyncDate = Date()
             syncStatus = .synced(Date())

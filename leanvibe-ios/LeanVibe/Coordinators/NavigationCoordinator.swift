@@ -16,6 +16,7 @@ class NavigationCoordinator: ObservableObject {
         case architecture
         case settings
         case voice
+        case documents
         case project(String)
         case task(String)
         case qrScanner
@@ -25,7 +26,7 @@ class NavigationCoordinator: ObservableObject {
             switch (lhs, rhs) {
             case (.dashboard, .dashboard), (.projects, .projects), (.agent, .agent),
                  (.monitor, .monitor), (.architecture, .architecture), (.settings, .settings), (.voice, .voice),
-                 (.qrScanner, .qrScanner), (.voiceCommand, .voiceCommand):
+                 (.documents, .documents), (.qrScanner, .qrScanner), (.voiceCommand, .voiceCommand):
                 return true
             case let (.project(lhsId), .project(rhsId)):
                 return lhsId == rhsId
@@ -42,8 +43,9 @@ class NavigationCoordinator: ObservableObject {
         case agent = 1
         case monitor = 2
         case architecture = 3
-        case settings = 4
-        case voice = 5
+        case documents = 4
+        case settings = 5
+        case voice = 6
         
         var title: String {
             switch self {
@@ -51,6 +53,7 @@ class NavigationCoordinator: ObservableObject {
             case .agent: return "Agent"
             case .monitor: return "Monitor"
             case .architecture: return "Architecture"
+            case .documents: return "Documents"
             case .settings: return "Settings"
             case .voice: return "Voice"
             }
@@ -62,6 +65,7 @@ class NavigationCoordinator: ObservableObject {
             case .agent: return "brain.head.profile"
             case .monitor: return "chart.line.uptrend.xyaxis"
             case .architecture: return "building.2.crop.circle"
+            case .documents: return "doc.text.magnifyingglass"
             case .settings: return "gear"
             case .voice: return "mic.circle.fill"
             }
@@ -80,6 +84,8 @@ class NavigationCoordinator: ObservableObject {
             selectedTab = Tab.monitor.rawValue
         case .architecture:
             selectedTab = Tab.architecture.rawValue
+        case .documents:
+            selectedTab = Tab.documents.rawValue
         case .settings:
             selectedTab = Tab.settings.rawValue
         case .voice, .voiceCommand:
@@ -154,6 +160,8 @@ class NavigationCoordinator: ObservableObject {
             handle(deepLink: .agent)
         case "monitor":
             handle(deepLink: .monitor)
+        case "documents":
+            handle(deepLink: .documents)
         case "settings":
             handle(deepLink: .settings)
         case "voice":
@@ -182,6 +190,8 @@ class NavigationCoordinator: ObservableObject {
             handle(deepLink: .agent)
         } else if lowercased.contains("monitor") || lowercased.contains("status") {
             handle(deepLink: .monitor)
+        } else if lowercased.contains("document") || lowercased.contains("plan") || lowercased.contains("task") {
+            handle(deepLink: .documents)
         } else if lowercased.contains("settings") || lowercased.contains("config") {
             handle(deepLink: .settings)
         } else if lowercased.contains("voice") {

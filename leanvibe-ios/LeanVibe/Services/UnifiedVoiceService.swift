@@ -494,6 +494,7 @@ enum VoiceError: Error, LocalizedError, Equatable {
 
 // MARK: - Public Extensions
 
+@available(iOS 18.0, macOS 14.0, *)
 extension UnifiedVoiceService {
     
     /// Convenience computed properties for UI bindings

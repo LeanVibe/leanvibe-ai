@@ -194,6 +194,16 @@ struct DashboardTabView: View {
                 .hapticFeedback(.navigation)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
+                    DocumentIntelligenceView()
+                }
+                .tabItem {
+                    Label(NavigationCoordinator.Tab.documents.title,
+                          systemImage: NavigationCoordinator.Tab.documents.systemImage)
+                }
+                .tag(NavigationCoordinator.Tab.documents.rawValue)
+                .hapticFeedback(.navigation)
+                
+                NavigationStack(path: $navigationCoordinator.navigationPath) {
                     SettingsTabView(webSocketService: webSocketService)
                 }
                 .tabItem {
