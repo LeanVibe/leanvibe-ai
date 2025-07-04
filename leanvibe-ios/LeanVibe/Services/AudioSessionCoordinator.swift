@@ -137,7 +137,7 @@ class AudioSessionCoordinator: ObservableObject {
         let inputFormat = inputNode.outputFormat(forBus: 0)
         
         // Install tap for faster startup when actually needed
-        if !inputNode.isOutputConnected(forBus: 0) {
+        if inputNode.outputFormat(forBus: 0).sampleRate > 0 {
             // Only install if not already connected
             print("🎤 AudioCoordinator: Pre-configuring input node")
         }

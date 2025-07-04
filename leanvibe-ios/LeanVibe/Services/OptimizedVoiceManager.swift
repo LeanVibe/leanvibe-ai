@@ -10,7 +10,20 @@ class OptimizedVoiceManager: ObservableObject {
     @Published var isOptimized = false
     @Published var responseTime: TimeInterval = 0
     @Published var currentLatency: TimeInterval = 0
-    @Published var performanceMetrics = VoicePerformanceMetrics()
+    // Simplified performance tracking for deprecated OptimizedVoiceManager
+    @Published var performanceMetrics = VoicePerformanceMetrics(
+        currentResponseTime: 0.0,
+        averageResponseTime: 0.0,
+        performanceStatus: .optimal,
+        totalMeasurements: 0,
+        targetResponseTime: 0.5,
+        isWithinTarget: true
+    )
+    
+    // Legacy performance tracking properties for backwards compatibility
+    private var buffersProcessed: Int = 0
+    private var recognitionAccuracy: Double = 0.95
+    private var errorRate: Double = 0.02
     @Published var isLowLatencyMode = false
     
     private let audioEngine = AVAudioEngine()
@@ -158,7 +171,7 @@ class OptimizedVoiceManager: ObservableObject {
         guard energy > 0.01 else { return }
         
         DispatchQueue.main.async {
-            self.performanceMetrics.buffersProcessed += 1
+            self.buffersProcessed += 1
         }
     }
     
@@ -208,7 +221,18 @@ class OptimizedVoiceManager: ObservableObject {
         let responseTime = endTime.timeIntervalSince(startTime)
         self.responseTime = responseTime
         
-        performanceMetrics.averageResponseTime = updateAverageResponseTime(responseTime)
+        // Update legacy performance tracking (deprecated)
+        let newAverageResponseTime = updateAverageResponseTime(responseTime)
+        
+        // Update the immutable performanceMetrics with new values
+        performanceMetrics = VoicePerformanceMetrics(
+            currentResponseTime: responseTime,
+            averageResponseTime: newAverageResponseTime,
+            performanceStatus: newAverageResponseTime < 0.5 ? .optimal : .warning,
+            totalMeasurements: buffersProcessed,
+            targetResponseTime: 0.5,
+            isWithinTarget: newAverageResponseTime < 0.5
+        )
         
         return responseTime
     }
@@ -240,15 +264,15 @@ class OptimizedVoiceManager: ObservableObject {
     var isPerformanceOptimal: Bool {
         return responseTime < 0.5 && // Target: <500ms response
                performanceMetrics.averageResponseTime < 0.3 && // Average <300ms
-               performanceMetrics.errorRate < 0.05 // <5% error rate
+               errorRate < 0.05 // <5% error rate
     }
     
     func getPerformanceReport() -> VoicePerformanceReport {
         return VoicePerformanceReport(
             averageResponseTime: performanceMetrics.averageResponseTime,
-            buffersProcessed: performanceMetrics.buffersProcessed,
-            recognitionAccuracy: performanceMetrics.recognitionAccuracy,
-            errorRate: performanceMetrics.errorRate,
+            buffersProcessed: buffersProcessed,
+            recognitionAccuracy: recognitionAccuracy,
+            errorRate: errorRate,
             isOptimized: isOptimized,
             isLowLatencyMode: isLowLatencyMode
         )
@@ -357,12 +381,7 @@ class AudioData {
     }
 }
 
-struct VoicePerformanceMetrics {
-    var averageResponseTime: TimeInterval = 0
-    var buffersProcessed: Int = 0
-    var recognitionAccuracy: Double = 0.95
-    var errorRate: Double = 0.02
-}
+// VoicePerformanceMetrics moved to UnifiedVoiceService.swift to avoid duplication
 
 struct VoicePerformanceReport {
     let averageResponseTime: TimeInterval

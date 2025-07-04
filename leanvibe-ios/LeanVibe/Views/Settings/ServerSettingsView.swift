@@ -9,7 +9,8 @@ struct ServerSettingsView: View {
     // MARK: - Properties
     
     @StateObject private var webSocketService = WebSocketService.shared
-    @StateObject private var backendService = BackendSettingsService.shared
+    // TODO: Fix BackendSettingsService target membership
+    // @StateObject private var backendService = BackendSettingsService.shared
     @State private var config = AppConfiguration.shared
     @State private var showingQRScanner = false
     @State private var showingManualEntry = false
@@ -162,10 +163,10 @@ struct ServerSettingsView: View {
                     
                     HStack {
                         Circle()
-                            .fill(backendService.isAvailable ? .green : .red)
+                            .fill(.gray) // TODO: backendService.isAvailable ? .green : .red
                             .frame(width: 8, height: 8)
                         
-                        Text(backendService.isAvailable ? "Available" : "Unavailable")
+                        Text("Unknown") // TODO: backendService.isAvailable ? "Available" : "Unavailable"
                             .foregroundColor(.secondary)
                             .font(.caption)
                     }
@@ -375,7 +376,7 @@ struct ServerSettingsView: View {
     private func testBackendConnection() async {
         isTestingConnection = true
         
-        let isAvailable = await backendService.pingBackend()
+        let isAvailable = false // TODO: await backendService.pingBackend()
         
         await MainActor.run {
             if isAvailable {
@@ -392,7 +393,7 @@ struct ServerSettingsView: View {
         testResult = nil
         
         // Test API availability
-        let apiAvailable = await backendService.pingBackend()
+        let apiAvailable = false // TODO: await backendService.pingBackend()
         
         if !apiAvailable {
             await MainActor.run {
