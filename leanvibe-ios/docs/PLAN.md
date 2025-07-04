@@ -203,7 +203,7 @@ Complete comprehensive enhancement of LeanVibe iOS app with dark/light theme com
 
 **Plan Created**: 2025-07-04  
 **Last Updated**: 2025-07-04  
-**Status**: ALL PHASES COMPLETE ✅ - LeanVibe iOS Enhancement Successfully Finished
+**Status**: PHASE 6 IN PROGRESS 🚧 - Core Architecture and Mac Agent Integration
 
 ### ✅ PHASE 5: Remove All Hardcoded Values (COMPLETED)
 **Status**: ✅ COMPLETED  
@@ -257,10 +257,48 @@ Complete comprehensive enhancement of LeanVibe iOS app with dark/light theme com
   - No localhost hardcoding - respects user-configured backend
   - Proper simulator vs device detection with dynamic host resolution
 
-## 🎉 COMPLETION SUMMARY
+### 🚧 PHASE 6: Core Architecture and Mac Agent Integration (IN PROGRESS)
+**Status**: 🚧 IN PROGRESS  
+**Impact**: Complete end-to-end workflow with Mac agent integration
 
-**Total Duration**: Single comprehensive development session  
-**Phases Completed**: 4 major phases (1-4) with all sub-phases  
+#### 🚧 Phase 6.1: Fix Architecture Screen Backend Connectivity
+- **IN PROGRESS**: Architecture screen not working on device
+- **Files**: TBD
+- **Issues**: 
+  - Screen fails to load on physical device
+  - Backend connectivity issues with resource loading
+  - Need to remove hardcoded URLs and fix dynamic loading
+
+#### 🚧 Phase 6.2: Mac Background Agent Implementation
+- **PENDING**: Create Mac background agent for project discovery
+- **Features Needed**:
+  - Scan ~/work folder for projects with agent.md/claude.md
+  - Auto-populate Kanban board from Plan.md docs
+  - Create Backlog column from PRD/MVP specs
+  - Real-time project synchronization with iOS app
+  - QR code generation for iOS setup
+
+#### 🚧 Phase 6.3: Enhanced Kanban Workflow
+- **PENDING**: Implement document-driven task population
+- **Features**:
+  - Parse Plan.md files for todo items
+  - Extract tasks from PRD/MVP documentation
+  - Smart categorization into Backlog/Todo/Progress/Testing/Done
+  - Real-time sync between filesystem and Kanban board
+
+## 📈 Current Priorities
+
+### Next Actions (Priority Order):
+1. **HIGH**: Fix Architecture screen device compatibility issues
+2. **HIGH**: Implement Mac background agent for project discovery  
+3. **MEDIUM**: Auto-populate Kanban from Plan.md documentation
+4. **MEDIUM**: Add Backlog column with PRD/MVP task extraction
+
+## 🎯 COMPLETION STATUS
+
+**Total Duration**: Extended comprehensive development session  
+**Phases Completed**: 5 major phases (1-5) with all sub-phases  
+**Current Phase**: Phase 6 - Core Architecture and Mac Agent Integration
 **Build Status**: ✅ Clean compilation, zero errors  
 **Quality Assurance**: ✅ All validation gates passed  
 

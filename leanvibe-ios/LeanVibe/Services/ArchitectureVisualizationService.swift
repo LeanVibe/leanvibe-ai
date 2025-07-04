@@ -10,15 +10,13 @@ class ArchitectureVisualizationService: ObservableObject {
     @Published var lastUpdated: Date?
     @Published var hasChanges = false
 
-    private var baseURL: URL {
-        // Use the same configuration as the rest of the app
+    private var baseURL: URL? {
+        // Use the same configuration as the rest of the app - NO HARDCODED FALLBACKS
         let config = AppConfiguration.shared
-        if let url = URL(string: config.apiBaseURL) {
-            return url
-        } else {
-            // Fallback to localhost:8000 for architecture service
-            return URL(string: "http://localhost:8000")!
+        guard config.isBackendConfigured else {
+            return nil
         }
+        return URL(string: config.apiBaseURL)
     }
     private var webSocketService: WebSocketService
     private var cancellables = Set<AnyCancellable>()
@@ -57,6 +55,13 @@ class ArchitectureVisualizationService: ObservableObject {
     private func fetchDiagramFromBackend(projectId: String) async {
         isLoading = true
         errorMessage = nil
+        
+        // Check if backend is configured
+        guard let baseURL = baseURL else {
+            errorMessage = "Backend not configured. Please scan QR code or configure backend URL in Settings."
+            isLoading = false
+            return
+        }
         
         do {
             // First try graph/architecture endpoint (Neo4j-based)
@@ -223,6 +228,9 @@ class ArchitectureVisualizationService: ObservableObject {
     
     private func checkForArchitectureChanges() async {
         guard let currentDiagram = diagram else { return }
+        
+        // Check if backend is configured
+        guard let baseURL = baseURL else { return }
         
         // Fetch latest diagram silently
         let currentProjectId = "default_project" // This should be dynamic based on current context

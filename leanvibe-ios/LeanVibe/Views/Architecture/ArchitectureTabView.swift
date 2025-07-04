@@ -85,16 +85,28 @@ struct ArchitectureTabView: View {
                     }
                 } else if let error = service.errorMessage {
                     VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.triangle")
+                        Image(systemName: error.contains("Backend not configured") ? "qrcode.viewfinder" : "exclamationmark.triangle")
                             .font(.largeTitle)
-                            .foregroundColor(.orange)
-                        Text("Failed to load architecture")
+                            .foregroundColor(error.contains("Backend not configured") ? .blue : .orange)
+                        
+                        Text(error.contains("Backend not configured") ? "Backend Not Configured" : "Failed to load architecture")
                             .font(.headline)
+                        
                         Text(error)
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Button("Retry") {
-                            loadDiagramForProject()
+                            .multilineTextAlignment(.center)
+                        
+                        if error.contains("Backend not configured") {
+                            NavigationLink("Configure Backend") {
+                                ServerSettingsView()
+                            }
+                            .buttonStyle(.borderedProminent)
+                        } else {
+                            Button("Retry") {
+                                loadDiagramForProject()
+                            }
+                            .buttonStyle(.bordered)
                         }
                     }
                     .padding()
