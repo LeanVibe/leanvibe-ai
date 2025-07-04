@@ -10,7 +10,7 @@ struct ServerSettingsView: View {
     // MARK: - Properties
     
     @StateObject private var webSocketService = WebSocketService.shared
-    // TODO: Re-enable BackendSettingsService after dependency resolution
+    // TODO: Fix BackendSettingsService target membership
     // @StateObject private var backendService = BackendSettingsService.shared
     @State private var isBackendAvailable = false
     @State private var config = AppConfiguration.shared
@@ -165,10 +165,10 @@ struct ServerSettingsView: View {
                     
                     HStack {
                         Circle()
-                            .fill(isBackendAvailable ? .green : .red)
+                            .fill(.gray) // TODO: backendService.isAvailable ? .green : .red
                             .frame(width: 8, height: 8)
                         
-                        Text(isBackendAvailable ? "Available" : "Unavailable")
+                        Text("Unknown") // TODO: backendService.isAvailable ? "Available" : "Unavailable"
                             .foregroundColor(.secondary)
                             .font(.caption)
                     }
@@ -378,8 +378,7 @@ struct ServerSettingsView: View {
     private func testBackendConnection() async {
         isTestingConnection = true
         
-        // TODO: Re-implement with BackendSettingsService after dependency resolution
-        let isAvailable = await pingBackendDirectly()
+        let isAvailable = false // TODO: await backendService.pingBackend()
         
         await MainActor.run {
             if isAvailable {
@@ -398,7 +397,7 @@ struct ServerSettingsView: View {
         testResult = nil
         
         // Test API availability
-        let apiAvailable = await pingBackendDirectly()
+        let apiAvailable = false // TODO: await backendService.pingBackend()
         
         if !apiAvailable {
             await MainActor.run {

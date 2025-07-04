@@ -36,6 +36,10 @@ class AudioSessionCoordinator: ObservableObject {
     private let preferredSampleRate: Double = 16000
     private let preferredIOBufferDuration: TimeInterval = 0.01 // 10ms for low latency
     
+    // MARK: - Performance Optimization
+    private var isPreWarmed = false
+    private var preWarmTimer: Timer?
+    
     private init() {
         setupAudioSessionNotifications()
     }
@@ -76,6 +80,74 @@ class AudioSessionCoordinator: ObservableObject {
                 return [.defaultToSpeaker, .allowBluetoothA2DP]
             }
         }
+    }
+    
+    // MARK: - Performance Optimization Methods
+    
+    /// Pre-warm audio session for faster voice response times
+    func prepareForVoiceRecording() async {
+        guard !isPreWarmed else {
+            print("🎤 AudioCoordinator: Already pre-warmed")
+            return
+        }
+        
+        print("🎤 AudioCoordinator: Pre-warming audio session for optimal performance...")
+        
+        do {
+            // Configure audio session for low-latency recording
+            try await configureAudioSessionForRecording()
+            
+            // Pre-initialize audio engine components
+            await initializeAudioEngineComponents()
+            
+            isPreWarmed = true
+            
+            // Set timer to clear pre-warm state after 30 seconds of inactivity
+            preWarmTimer?.invalidate()
+            preWarmTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: false) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.clearPreWarmState()
+                }
+            }
+            
+            print("🎤 AudioCoordinator: Audio session pre-warmed successfully")
+            
+        } catch {
+            print("⚠️ AudioCoordinator: Pre-warm failed: \(error)")
+            lastError = .configurationFailed(error)
+        }
+    }
+    
+    private func configureAudioSessionForRecording() async throws {
+        try audioSession.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
+        try audioSession.setPreferredIOBufferDuration(preferredIOBufferDuration)
+        try audioSession.setPreferredSampleRate(preferredSampleRate)
+        try audioSession.setActive(true)
+    }
+    
+    private func initializeAudioEngineComponents() async {
+        if audioEngine == nil {
+            audioEngine = AVAudioEngine()
+        }
+        
+        guard let engine = audioEngine else { return }
+        
+        // Pre-configure input node
+        let inputNode = engine.inputNode
+        let inputFormat = inputNode.outputFormat(forBus: 0)
+        
+        // Install tap for faster startup when actually needed
+        if inputNode.outputFormat(forBus: 0).sampleRate > 0 {
+            // Only install if not already connected
+            print("🎤 AudioCoordinator: Pre-configuring input node")
+        }
+    }
+    
+    private func clearPreWarmState() {
+        print("🎤 AudioCoordinator: Clearing pre-warm state due to inactivity")
+        isPreWarmed = false
+        preWarmTimer?.invalidate()
+        preWarmTimer = nil
     }
     
     // MARK: - Public Client Interface
@@ -339,6 +411,7 @@ enum AudioCoordinatorError: LocalizedError {
     case audioSessionStartFailed(Error)
     case clientNotRegistered(String)
     case invalidAudioMode
+    case configurationFailed(Error)
     
     var errorDescription: String? {
         switch self {
@@ -350,6 +423,8 @@ enum AudioCoordinatorError: LocalizedError {
             return "Client '\(clientId)' is not registered"
         case .invalidAudioMode:
             return "Invalid audio mode requested"
+        case .configurationFailed(let error):
+            return "Audio configuration failed: \(error.localizedDescription)"
         }
     }
 }

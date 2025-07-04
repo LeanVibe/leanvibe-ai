@@ -56,6 +56,9 @@ class ProductionMLXStrategy(MLXServiceInterface):
     def __init__(self):
         self.is_initialized = False
         self._transformers_service = None
+        self._model_warmed_up = False
+        self._response_times = []
+        self._target_response_time = 2.0  # 2 second target
         
     async def initialize(self) -> bool:
         """Initialize production MLX service with transformers"""
@@ -69,6 +72,10 @@ class ProductionMLXStrategy(MLXServiceInterface):
             if success:
                 self.is_initialized = True
                 logger.info("Production MLX strategy (transformers) initialized successfully")
+                
+                # Start model warm-up for faster response times
+                await self._warm_up_model()
+                
                 return True
             else:
                 logger.error("Failed to initialize transformers service")
@@ -90,16 +97,28 @@ class ProductionMLXStrategy(MLXServiceInterface):
                 "confidence": 0.0
             }
         
+        # Start performance timing
+        start_time = time.time()
+        
         try:
+            # Ensure model is warmed up for optimal performance
+            if not self._model_warmed_up:
+                await self._warm_up_model()
+            
             # Create a prompt from context and intent
             prompt = self._create_prompt_from_context(context, intent)
             
-            # Use the transformers service's generate_text method
+            # Use the transformers service's generate_text method with optimizations
             result = await self._transformers_service.generate_text(
                 prompt,
-                max_new_tokens=150,
+                max_new_tokens=100,  # Reduced from 150 for faster response
                 temperature=0.7
             )
+            
+            # Calculate response time
+            end_time = time.time()
+            response_time = end_time - start_time
+            self._track_response_time(response_time)
             
             if result["status"] == "success":
                 return {
@@ -112,42 +131,61 @@ class ProductionMLXStrategy(MLXServiceInterface):
                     "model": f"phi3-transformers-{result.get('model_name', 'unknown')}",
                     "context_used": True,
                     "using_pretrained": result.get("using_pretrained", True),
-                    "generation_time": result.get("generation_time", 0),
-                    "tokens_per_second": result.get("tokens_per_second", 0)
+                    "generation_time": result.get("generation_time", response_time),
+                    "tokens_per_second": result.get("tokens_per_second", 0),
+                    "response_time": response_time,
+                    "performance_status": self._get_performance_status(response_time)
                 }
             else:
                 return {
                     "status": "error",
                     "error": result.get("error", "Unknown transformers error"),
                     "response": "",
-                    "confidence": 0.0
+                    "confidence": 0.0,
+                    "response_time": response_time
                 }
             
         except Exception as e:
+            # Calculate response time even for errors
+            end_time = time.time()
+            response_time = end_time - start_time
+            self._track_response_time(response_time)
+            
             logger.error(f"Production MLX completion failed: {e}")
             return {
                 "status": "error",
                 "error": str(e),
                 "response": "",
-                "confidence": 0.0
+                "confidence": 0.0,
+                "response_time": response_time
             }
     
     def get_model_health(self) -> Dict[str, Any]:
         """Get production model health"""
+        avg_response_time = sum(self._response_times) / len(self._response_times) if self._response_times else 0
+        
         if self._transformers_service:
             service_health = self._transformers_service.get_health_status()
             return {
                 "strategy": "production-transformers",
                 "initialized": self.is_initialized,
                 "model_loaded": service_health.get("model_loaded", False),
+                "model_warmed_up": self._model_warmed_up,
                 "status": "healthy" if self.is_initialized else "unavailable",
-                "service_details": service_health
+                "service_details": service_health,
+                "performance": {
+                    "avg_response_time": avg_response_time,
+                    "target_response_time": self._target_response_time,
+                    "within_target": avg_response_time <= self._target_response_time,
+                    "total_requests": len(self._response_times)
+                }
             }
         else:
             return {
                 "strategy": "production-transformers",
                 "initialized": self.is_initialized,
                 "model_loaded": False,
+                "model_warmed_up": False,
                 "status": "unavailable"
             }
     
@@ -186,6 +224,65 @@ class ProductionMLXStrategy(MLXServiceInterface):
         }
         
         return intent_prompts.get(intent, f"Analyze this code: {surrounding_code}")
+    
+    async def _warm_up_model(self):
+        """Pre-warm the model for faster response times"""
+        if self._model_warmed_up:
+            return
+            
+        logger.info("Starting model warm-up for optimal performance...")
+        
+        try:
+            # Execute a small warm-up request to initialize model caches
+            warmup_context = {
+                "file_path": "warmup.py",
+                "cursor_position": 0,
+                "surrounding_code": "# Warm-up request\nprint('hello world')"
+            }
+            
+            start_time = time.time()
+            result = await self._transformers_service.generate_text(
+                "Complete this Python code: print('hello",
+                max_new_tokens=10,
+                temperature=0.1
+            )
+            warmup_time = time.time() - start_time
+            
+            if result.get("status") == "success":
+                self._model_warmed_up = True
+                logger.info(f"Model warm-up completed successfully in {warmup_time:.2f}s")
+            else:
+                logger.warning(f"Model warm-up completed with warnings: {result.get('error', 'Unknown')}")
+                
+        except Exception as e:
+            logger.error(f"Model warm-up failed: {e}")
+    
+    def _track_response_time(self, response_time: float):
+        """Track response times for performance monitoring"""
+        self._response_times.append(response_time)
+        
+        # Keep only last 100 response times for memory efficiency
+        if len(self._response_times) > 100:
+            self._response_times = self._response_times[-100:]
+        
+        # Log performance warnings
+        if response_time > self._target_response_time:
+            logger.warning(f"AI response time {response_time:.2f}s exceeds target of {self._target_response_time}s")
+        
+        # Log performance info for monitoring
+        avg_time = sum(self._response_times) / len(self._response_times)
+        logger.info(f"AI Response: {response_time:.2f}s (avg: {avg_time:.2f}s, target: {self._target_response_time}s)")
+    
+    def _get_performance_status(self, response_time: float) -> str:
+        """Get performance status based on response time"""
+        if response_time <= 1.0:
+            return "excellent"
+        elif response_time <= 2.0:
+            return "good"
+        elif response_time <= 3.0:
+            return "acceptable"
+        else:
+            return "slow"
 
 
 class PragmaticMLXStrategy(MLXServiceInterface):
@@ -406,6 +503,11 @@ class UnifiedMLXService:
         self.available_strategies: Dict[MLXInferenceStrategy, MLXServiceInterface] = {}
         self.is_initialized = False
         
+        # Performance monitoring
+        self._response_times = []
+        self._target_response_time = 2.0
+        self._performance_cache = {}
+        
         # Initialize strategy instances
         self._initialize_strategies()
     
@@ -599,9 +701,17 @@ class UnifiedMLXService:
                 "confidence": 0.0
             }
         
-        # Generate request correlation ID
+        # Generate request correlation ID and start performance timing
         request_id = f"mlx_comp_{int(time.time())}_{id(context):x}"
         start_time = time.time()
+        
+        # Check performance cache for similar requests
+        cache_key = self._generate_cache_key(context, intent)
+        cached_result = self._get_cached_result(cache_key)
+        if cached_result:
+            cached_result["from_cache"] = True
+            cached_result["response_time"] = time.time() - start_time
+            return cached_result
         
         # Enhanced context analysis and logging
         context_analysis = self._analyze_context(context)
@@ -628,11 +738,20 @@ class UnifiedMLXService:
             result = await self.current_strategy.generate_code_completion(context, intent)
             completion_time = time.time() - completion_start
             
+            # Calculate total response time and track performance
+            total_response_time = time.time() - start_time
+            self._track_response_time(total_response_time)
+            
             # Enhanced result analysis and logging
             if "status" in result and result["status"] == "success":
                 result["strategy_used"] = current_strategy_name
                 result["request_id"] = request_id
                 result["completion_time"] = round(completion_time, 3)
+                result["total_response_time"] = round(total_response_time, 3)
+                result["performance_status"] = self._get_performance_status(total_response_time)
+                
+                # Cache successful results for performance
+                self._cache_result(cache_key, result)
                 
                 confidence = result.get("confidence", 0.0)
                 response_length = len(result.get("response", ""))
@@ -640,10 +759,10 @@ class UnifiedMLXService:
                 logger.info(
                     f"[{request_id}] Completion SUCCESS | "
                     f"strategy={current_strategy_name} | "
-                    f"time={completion_time:.3f}s | "
+                    f"time={total_response_time:.3f}s | "
                     f"confidence={confidence:.2f} | "
                     f"response_length={response_length} | "
-                    f"requires_review={result.get('requires_human_review', False)}"
+                    f"target_met={total_response_time <= self._target_response_time}"
                 )
                 
                 # Log quality indicators
@@ -980,6 +1099,102 @@ class UnifiedMLXService:
             for strategy, impl in self.available_strategies.items() 
             if impl.is_available()
         ]
+    
+    # MARK: - Performance Optimization Methods
+    
+    def _track_response_time(self, response_time: float):
+        """Track response times for performance monitoring"""
+        self._response_times.append(response_time)
+        
+        # Keep only last 100 response times for memory efficiency
+        if len(self._response_times) > 100:
+            self._response_times = self._response_times[-100:]
+        
+        # Log performance warnings
+        if response_time > self._target_response_time:
+            logger.warning(f"AI response time {response_time:.2f}s exceeds target of {self._target_response_time}s")
+    
+    def _get_performance_status(self, response_time: float) -> str:
+        """Get performance status based on response time"""
+        if response_time <= 1.0:
+            return "excellent"
+        elif response_time <= 2.0:
+            return "good"
+        elif response_time <= 3.0:
+            return "acceptable"
+        else:
+            return "slow"
+    
+    def _generate_cache_key(self, context: Dict[str, Any], intent: str) -> str:
+        """Generate cache key for performance optimization"""
+        import hashlib
+        
+        # Create a hash of the key components for caching
+        key_components = [
+            context.get("file_path", ""),
+            str(context.get("cursor_position", 0)),
+            context.get("surrounding_code", "")[:200],  # Limit context for caching
+            intent
+        ]
+        
+        key_string = "|".join(key_components)
+        return hashlib.md5(key_string.encode()).hexdigest()
+    
+    def _get_cached_result(self, cache_key: str) -> Optional[Dict[str, Any]]:
+        """Get cached result if available and fresh"""
+        cached_entry = self._performance_cache.get(cache_key)
+        if cached_entry:
+            # Check if cache entry is still fresh (5 minutes)
+            if time.time() - cached_entry["timestamp"] < 300:
+                return cached_entry["result"]
+            else:
+                # Remove stale cache entry
+                del self._performance_cache[cache_key]
+        return None
+    
+    def _cache_result(self, cache_key: str, result: Dict[str, Any]):
+        """Cache successful results for performance"""
+        # Only cache successful results with good confidence
+        if (result.get("status") == "success" and 
+            result.get("confidence", 0) > 0.7 and
+            len(self._performance_cache) < 50):  # Limit cache size
+            
+            cache_entry = {
+                "result": result.copy(),
+                "timestamp": time.time()
+            }
+            
+            # Remove response time fields for caching
+            if "response_time" in cache_entry["result"]:
+                del cache_entry["result"]["response_time"]
+            if "total_response_time" in cache_entry["result"]:
+                del cache_entry["result"]["total_response_time"]
+            
+            self._performance_cache[cache_key] = cache_entry
+    
+    def get_performance_metrics(self) -> Dict[str, Any]:
+        """Get performance metrics for monitoring"""
+        if not self._response_times:
+            return {
+                "avg_response_time": 0,
+                "target_response_time": self._target_response_time,
+                "within_target_percentage": 0,
+                "total_requests": 0,
+                "cache_hit_ratio": 0
+            }
+        
+        avg_response_time = sum(self._response_times) / len(self._response_times)
+        within_target_count = sum(1 for t in self._response_times if t <= self._target_response_time)
+        within_target_percentage = (within_target_count / len(self._response_times)) * 100
+        
+        return {
+            "avg_response_time": round(avg_response_time, 3),
+            "target_response_time": self._target_response_time,
+            "within_target_percentage": round(within_target_percentage, 1),
+            "total_requests": len(self._response_times),
+            "cache_entries": len(self._performance_cache),
+            "performance_status": self._get_performance_status(avg_response_time)
+        }
 
 
 # Global instance configured from environment settings

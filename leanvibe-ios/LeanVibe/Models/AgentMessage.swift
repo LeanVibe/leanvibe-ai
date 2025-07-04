@@ -29,10 +29,27 @@ struct WebSocketMessage: Codable, Sendable {
     let timestamp: String
     let clientId: String
     let priority: MessagePriority
+    let messageId: String?
+    let sessionId: String?
+    let version: Int?
     
     enum CodingKeys: String, CodingKey {
         case type, content, timestamp, priority
         case clientId = "client_id"
+        case messageId = "message_id"
+        case sessionId = "session_id"
+        case version
+    }
+    
+    init(type: String, content: String, timestamp: String, clientId: String, priority: MessagePriority, messageId: String? = nil, sessionId: String? = nil, version: Int? = nil) {
+        self.type = type
+        self.content = content
+        self.timestamp = timestamp
+        self.clientId = clientId
+        self.priority = priority
+        self.messageId = messageId ?? UUID().uuidString
+        self.sessionId = sessionId
+        self.version = version ?? 1
     }
 }
 
@@ -109,5 +126,56 @@ struct AgentStatusInfo: Codable, Sendable {
         case model, ready, version
         case supportedCommands = "supported_commands"
         case sessionActive = "session_active"
+    }
+}
+
+// MARK: - Conflict Resolution Models
+
+struct ConflictResolutionMessage: Codable, Sendable {
+    let type: String = "conflict_resolution"
+    let conflictId: String
+    let strategy: ConflictStrategy
+    let originalMessage: WebSocketMessage
+    let conflictingMessage: WebSocketMessage
+    let resolvedMessage: WebSocketMessage
+    let timestamp: String
+    let clientId: String
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case conflictId = "conflict_id"
+        case strategy
+        case originalMessage = "original_message"
+        case conflictingMessage = "conflicting_message"
+        case resolvedMessage = "resolved_message"
+        case timestamp
+        case clientId = "client_id"
+    }
+}
+
+enum ConflictStrategy: String, Codable, Sendable {
+    case lastWriteWins = "last_write_wins"
+    case firstWriteWins = "first_write_wins"
+    case merge = "merge"
+    case userChoice = "user_choice"
+}
+
+struct ConflictNotification: Codable, Sendable {
+    let type: String = "conflict_detected"
+    let conflictId: String
+    let description: String
+    let affectedMessages: [String] // message IDs
+    let suggestedResolution: ConflictStrategy
+    let userActionRequired: Bool
+    let timestamp: String
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case conflictId = "conflict_id"
+        case description
+        case affectedMessages = "affected_messages"
+        case suggestedResolution = "suggested_resolution"
+        case userActionRequired = "user_action_required"
+        case timestamp
     }
 }

@@ -33,8 +33,11 @@ class SpeechRecognitionService: NSObject, ObservableObject {
     
     // Configuration
     private let maxRecordingDuration: TimeInterval = 30.0
-    private let silenceTimeout: TimeInterval = 3.0
-    private let audioLevelUpdateInterval: TimeInterval = 0.1
+    private let silenceTimeout: TimeInterval = 2.0  // Reduced from 3.0s for faster response
+    private let audioLevelUpdateInterval: TimeInterval = 0.05  // Increased from 0.1s for better responsiveness
+    
+    // Performance optimization
+    private var isOptimizedForSpeed = false
     
     override init() {
         super.init()
@@ -55,9 +58,41 @@ class SpeechRecognitionService: NSObject, ObservableObject {
         // @MainActor ensures we're always on main thread - no need for dispatch checks
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
         speechRecognizer?.delegate = self
+        
+        // Pre-warm speech recognizer for faster startup
+        Task {
+            await optimizeForPerformance()
+        }
 #else
         speechRecognizer = nil
 #endif
+    }
+    
+    /// Optimize speech recognition for faster response times
+    func optimizeForPerformance() async {
+        guard !isOptimizedForSpeed else { return }
+        
+        print("🎤 SpeechRecognitionService: Optimizing for performance...")
+        
+        #if os(iOS)
+        // Pre-warm speech recognition by creating and immediately cancelling a request
+        do {
+            let dummyRequest = SFSpeechAudioBufferRecognitionRequest()
+            dummyRequest.taskHint = .search  // Optimize for short commands
+            dummyRequest.shouldReportPartialResults = true
+            dummyRequest.requiresOnDeviceRecognition = true  // Faster local processing
+            
+            // Create and immediately cancel to warm up the recognition system
+            let warmupTask = speechRecognizer?.recognitionTask(with: dummyRequest) { _, _ in }
+            warmupTask?.cancel()
+            
+            isOptimizedForSpeed = true
+            print("✅ SpeechRecognitionService: Performance optimization complete")
+            
+        } catch {
+            print("⚠️ SpeechRecognitionService: Performance optimization failed: \(error)")
+        }
+        #endif
     }
     
     #if os(iOS)
@@ -275,6 +310,8 @@ extension SpeechRecognitionService {
         guard let recognitionRequest = recognitionRequest else { return }
         recognitionRequest.shouldReportPartialResults = true
         recognitionRequest.requiresOnDeviceRecognition = true
+        recognitionRequest.taskHint = .search  // Optimize for short voice commands
+        recognitionRequest.taskHint = .search  // Optimize for short voice commands
         recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { [weak self] result, error in
             Task { @MainActor [weak self] in
                 self?.handleRecognitionResult(result: result, error: error)
@@ -299,6 +336,7 @@ extension SpeechRecognitionService {
         
         recognitionRequest.shouldReportPartialResults = true
         recognitionRequest.requiresOnDeviceRecognition = true
+        recognitionRequest.taskHint = .search  // Optimize for short voice commands
         
         recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
             Task { @MainActor [weak self] in

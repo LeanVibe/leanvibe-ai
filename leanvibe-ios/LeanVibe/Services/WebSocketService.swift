@@ -8,6 +8,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     @Published var messages: [AgentMessage] = []
     @Published var connectionStatus = "Disconnected"
     @Published var lastError: String?
+    @Published var conflictNotifications: [ConflictNotification] = []
     
     // MARK: - Singleton Pattern
     static let shared = WebSocketService()
@@ -16,6 +17,12 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     private let clientId = "ios-client-\(UUID().uuidString.prefix(8))"
     private let storageManager = ConnectionStorageManager()
     private var qrConnectionTask: Task<Void, Error>?
+    
+    // MARK: - Conflict Resolution Properties
+    private var pendingMessages: [String: WebSocketMessage] = [:]
+    private var messageVersions: [String: Int] = [:]
+    private var sessionId: String = UUID().uuidString
+    private var conflictResolver = ConflictResolver()
     
     init() {
         // Try to auto-connect with stored settings on init
@@ -128,13 +135,23 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             return
         }
         
+        let messageId = UUID().uuidString
+        let currentVersion = (messageVersions[content] ?? 0) + 1
+        messageVersions[content] = currentVersion
+        
         let message = WebSocketMessage(
             type: type,
             content: content,
             timestamp: ISO8601DateFormatter().string(from: Date()),
             clientId: clientId,
-            priority: .normal
+            priority: .normal,
+            messageId: messageId,
+            sessionId: sessionId,
+            version: currentVersion
         )
+        
+        // Store message for conflict resolution
+        pendingMessages[messageId] = message
         
         do {
             let data = try JSONEncoder().encode(message)
@@ -142,7 +159,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             
             socket.write(string: string)
             
-            // Add user message to UI
+            // Add user message to UI (optimistic update)
             let userMessage = AgentMessage(
                 content: content,
                 isFromUser: true,
@@ -150,8 +167,13 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             )
             messages.append(userMessage)
             
+            // Schedule optimistic UI timeout (rollback if no confirmation)
+            scheduleOptimisticTimeout(for: messageId, userMessage: userMessage)
+            
         } catch {
             lastError = "Encoding error: \(error.localizedDescription)"
+            // Remove from pending on error
+            pendingMessages.removeValue(forKey: messageId)
         }
     }
     
@@ -377,6 +399,23 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             return
         }
         
+        // Check for conflict resolution messages first
+        if text.contains("\"type\":\"conflict_resolution\"") {
+            handleConflictResolutionMessage(data)
+            return
+        }
+        
+        if text.contains("\"type\":\"conflict_detected\"") {
+            handleConflictNotificationMessage(data)
+            return
+        }
+        
+        // Check if this is a WebSocket message that might conflict
+        if text.contains("\"message_id\"") && text.contains("\"version\"") {
+            handlePotentialConflictMessage(data)
+            return
+        }
+        
         // Check if this might be a task update message
         if text.contains("\"type\":\"task_update\"") {
             handleTaskUpdateMessage(data)
@@ -526,6 +565,312 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         formatter.countStyle = .file
         return "(\(formatter.string(fromByteCount: Int64(bytes))))"
     }
+    
+    // MARK: - Conflict Resolution Methods
+    
+    private func scheduleOptimisticTimeout(for messageId: String, userMessage: AgentMessage) {
+        Task { [weak self] in
+            // Wait 5 seconds for server confirmation
+            try await Task.sleep(nanoseconds: 5_000_000_000)
+            
+            await MainActor.run { [weak self] in
+                guard let self = self else { return }
+                
+                // If message is still pending, consider it failed and remove from UI
+                if self.pendingMessages[messageId] != nil {
+                    self.pendingMessages.removeValue(forKey: messageId)
+                    
+                    // Remove optimistic message from UI
+                    if let index = self.messages.firstIndex(where: { 
+                        $0.id == userMessage.id 
+                    }) {
+                        self.messages.remove(at: index)
+                        
+                        // Add error message
+                        let errorMessage = AgentMessage(
+                            content: "⚠️ Message failed to send: \(userMessage.content)",
+                            isFromUser: false,
+                            type: .error
+                        )
+                        self.messages.append(errorMessage)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func handleConflictResolutionMessage(_ data: Data) {
+        do {
+            let conflictResolution = try JSONDecoder().decode(ConflictResolutionMessage.self, from: data)
+            
+            // Remove original conflicting messages from pending
+            if let originalId = conflictResolution.originalMessage.messageId {
+                pendingMessages.removeValue(forKey: originalId)
+            }
+            if let conflictingId = conflictResolution.conflictingMessage.messageId {
+                pendingMessages.removeValue(forKey: conflictingId)
+            }
+            
+            // Apply resolved message
+            let resolvedContent = conflictResolution.resolvedMessage.content
+            let agentMessage = AgentMessage(
+                content: "🔄 Conflict resolved (\(conflictResolution.strategy.rawValue)): \(resolvedContent)",
+                isFromUser: false,
+                type: .status
+            )
+            
+            messages.append(agentMessage)
+            
+            print("✅ Conflict resolved using \(conflictResolution.strategy.rawValue) strategy")
+            
+        } catch {
+            print("❌ Failed to decode conflict resolution message: \(error)")
+        }
+    }
+    
+    private func handleConflictNotificationMessage(_ data: Data) {
+        do {
+            let notification = try JSONDecoder().decode(ConflictNotification.self, from: data)
+            
+            // Add to notifications list
+            conflictNotifications.append(notification)
+            
+            // Add visual indicator to message list
+            let conflictMessage = AgentMessage(
+                content: "⚠️ Conflict detected: \(notification.description)",
+                isFromUser: false,
+                type: .error
+            )
+            
+            messages.append(conflictMessage)
+            
+            print("⚠️ Conflict detected: \(notification.description)")
+            
+        } catch {
+            print("❌ Failed to decode conflict notification: \(error)")
+        }
+    }
+    
+    private func handlePotentialConflictMessage(_ data: Data) {
+        do {
+            let incomingMessage = try JSONDecoder().decode(WebSocketMessage.self, from: data)
+            
+            // Check for conflicts with pending messages
+            if let messageId = incomingMessage.messageId,
+               let version = incomingMessage.version {
+                
+                let conflicts = conflictResolver.detectConflicts(
+                    incomingMessage: incomingMessage,
+                    pendingMessages: Array(pendingMessages.values)
+                )
+                
+                if !conflicts.isEmpty {
+                    handleDetectedConflicts(conflicts, incomingMessage: incomingMessage)
+                } else {
+                    // No conflict, confirm message receipt
+                    if let pendingMessage = pendingMessages[messageId] {
+                        pendingMessages.removeValue(forKey: messageId)
+                        print("✅ Message confirmed: \(pendingMessage.content)")
+                    }
+                }
+            }
+            
+        } catch {
+            print("❌ Failed to decode potential conflict message: \(error)")
+            handleFallbackMessage(String(data: data, encoding: .utf8) ?? "")
+        }
+    }
+    
+    private func handleDetectedConflicts(_ conflicts: [ConflictInfo], incomingMessage: WebSocketMessage) {
+        for conflict in conflicts {
+            // Apply last-write-wins strategy
+            let resolution = conflictResolver.resolveConflict(
+                conflict: conflict,
+                strategy: .lastWriteWins
+            )
+            
+            // Update local state based on resolution
+            applyConflictResolution(resolution)
+            
+            // Send resolution back to server
+            sendConflictResolution(resolution)
+        }
+    }
+    
+    private func applyConflictResolution(_ resolution: ConflictResolution) {
+        // Remove conflicting messages from UI
+        messages.removeAll { message in
+            resolution.conflictingMessageIds.contains(message.id.uuidString)
+        }
+        
+        // Add resolved message
+        let resolvedMessage = AgentMessage(
+            content: resolution.resolvedContent,
+            isFromUser: resolution.isFromUser,
+            type: .message
+        )
+        
+        messages.append(resolvedMessage)
+        
+        // Clean up pending messages
+        for messageId in resolution.conflictingMessageIds {
+            pendingMessages.removeValue(forKey: messageId)
+        }
+    }
+    
+    private func sendConflictResolution(_ resolution: ConflictResolution) {
+        // Implementation would send resolution back to server
+        // For now, just log the resolution
+        print("📤 Sending conflict resolution: \(resolution.strategy.rawValue)")
+    }
+    
+    // MARK: - Conflict Resolution Public Methods
+    
+    func dismissConflictNotification(_ notificationId: String) {
+        conflictNotifications.removeAll { $0.conflictId == notificationId }
+    }
+    
+    func retryFailedMessage(_ content: String) {
+        sendMessage(content)
+    }
+}
+
+// MARK: - Conflict Resolution Support Classes
+
+class ConflictResolver {
+    func detectConflicts(incomingMessage: WebSocketMessage, pendingMessages: [WebSocketMessage]) -> [ConflictInfo] {
+        var conflicts: [ConflictInfo] = []
+        
+        for pendingMessage in pendingMessages {
+            // Check for content conflicts (same content, different versions)
+            if pendingMessage.content == incomingMessage.content &&
+               pendingMessage.version != incomingMessage.version {
+                
+                let conflict = ConflictInfo(
+                    id: UUID().uuidString,
+                    originalMessage: pendingMessage,
+                    conflictingMessage: incomingMessage,
+                    conflictType: .versionMismatch,
+                    detectedAt: Date()
+                )
+                
+                conflicts.append(conflict)
+            }
+            
+            // Check for timing conflicts (similar timestamps)
+            if let pendingTime = ISO8601DateFormatter().date(from: pendingMessage.timestamp),
+               let incomingTime = ISO8601DateFormatter().date(from: incomingMessage.timestamp) {
+                
+                let timeDifference = abs(pendingTime.timeIntervalSince(incomingTime))
+                
+                if timeDifference < 2.0 { // Within 2 seconds
+                    let conflict = ConflictInfo(
+                        id: UUID().uuidString,
+                        originalMessage: pendingMessage,
+                        conflictingMessage: incomingMessage,
+                        conflictType: .timingConflict,
+                        detectedAt: Date()
+                    )
+                    
+                    conflicts.append(conflict)
+                }
+            }
+        }
+        
+        return conflicts
+    }
+    
+    func resolveConflict(conflict: ConflictInfo, strategy: ConflictStrategy) -> ConflictResolution {
+        switch strategy {
+        case .lastWriteWins:
+            return resolveLastWriteWins(conflict: conflict)
+        case .firstWriteWins:
+            return resolveFirstWriteWins(conflict: conflict)
+        case .merge:
+            return resolveMerge(conflict: conflict)
+        case .userChoice:
+            return resolveUserChoice(conflict: conflict)
+        }
+    }
+    
+    private func resolveLastWriteWins(conflict: ConflictInfo) -> ConflictResolution {
+        let originalTime = ISO8601DateFormatter().date(from: conflict.originalMessage.timestamp) ?? Date.distantPast
+        let conflictingTime = ISO8601DateFormatter().date(from: conflict.conflictingMessage.timestamp) ?? Date.distantPast
+        
+        let winningMessage = conflictingTime > originalTime ? conflict.conflictingMessage : conflict.originalMessage
+        
+        return ConflictResolution(
+            conflictId: conflict.id,
+            strategy: .lastWriteWins,
+            resolvedContent: winningMessage.content,
+            isFromUser: winningMessage.clientId.hasPrefix("ios-client"),
+            conflictingMessageIds: [
+                conflict.originalMessage.messageId ?? "",
+                conflict.conflictingMessage.messageId ?? ""
+            ]
+        )
+    }
+    
+    private func resolveFirstWriteWins(conflict: ConflictInfo) -> ConflictResolution {
+        let originalTime = ISO8601DateFormatter().date(from: conflict.originalMessage.timestamp) ?? Date.distantFuture
+        let conflictingTime = ISO8601DateFormatter().date(from: conflict.conflictingMessage.timestamp) ?? Date.distantFuture
+        
+        let winningMessage = originalTime < conflictingTime ? conflict.originalMessage : conflict.conflictingMessage
+        
+        return ConflictResolution(
+            conflictId: conflict.id,
+            strategy: .firstWriteWins,
+            resolvedContent: winningMessage.content,
+            isFromUser: winningMessage.clientId.hasPrefix("ios-client"),
+            conflictingMessageIds: [
+                conflict.originalMessage.messageId ?? "",
+                conflict.conflictingMessage.messageId ?? ""
+            ]
+        )
+    }
+    
+    private func resolveMerge(conflict: ConflictInfo) -> ConflictResolution {
+        // Simple merge strategy: combine both messages
+        let mergedContent = "\(conflict.originalMessage.content) | \(conflict.conflictingMessage.content)"
+        
+        return ConflictResolution(
+            conflictId: conflict.id,
+            strategy: .merge,
+            resolvedContent: mergedContent,
+            isFromUser: true, // Mark as user since it's a merge
+            conflictingMessageIds: [
+                conflict.originalMessage.messageId ?? "",
+                conflict.conflictingMessage.messageId ?? ""
+            ]
+        )
+    }
+    
+    private func resolveUserChoice(conflict: ConflictInfo) -> ConflictResolution {
+        // For now, default to last write wins, but this would show UI for user choice
+        return resolveLastWriteWins(conflict: conflict)
+    }
+}
+
+struct ConflictInfo {
+    let id: String
+    let originalMessage: WebSocketMessage
+    let conflictingMessage: WebSocketMessage
+    let conflictType: ConflictType
+    let detectedAt: Date
+}
+
+enum ConflictType {
+    case versionMismatch
+    case timingConflict
+    case contentDivergence
+}
+
+struct ConflictResolution {
+    let conflictId: String
+    let strategy: ConflictStrategy
+    let resolvedContent: String
+    let isFromUser: Bool
+    let conflictingMessageIds: [String]
 }
 
 // MARK: - Task WebSocket Message Models

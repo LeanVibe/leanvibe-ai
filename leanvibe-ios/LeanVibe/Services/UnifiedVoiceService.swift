@@ -18,6 +18,13 @@ class UnifiedVoiceService: ObservableObject {
     @Published private(set) var audioLevel: Float = 0.0
     @Published private(set) var confidenceScore: Float = 0.0
     
+    // MARK: - Performance Monitoring
+    @Published private(set) var responseTime: TimeInterval = 0.0
+    @Published private(set) var averageResponseTime: TimeInterval = 0.0
+    @Published private(set) var performanceStatus: PerformanceStatus = .optimal
+    private var responseTimes: [TimeInterval] = []
+    private var lastVoiceStartTime: Date?
+    
     // MARK: - Dependencies
     private let speechRecognitionService: SpeechRecognitionService
     private let audioCoordinator: AudioSessionCoordinator
@@ -148,9 +155,15 @@ class UnifiedVoiceService: ObservableObject {
             return
         }
         
+        // Start performance monitoring
+        lastVoiceStartTime = Date()
+        
         state = .starting
         
         do {
+            // Pre-warm audio session for faster response
+            await audioCoordinator.prepareForVoiceRecording()
+            
             switch mode {
             case .pushToTalk:
                 try await startPushToTalkListening()
@@ -176,6 +189,8 @@ class UnifiedVoiceService: ObservableObject {
                 await self?.processVoiceCommand(textToProcess)
             }
         } else {
+            // Calculate response time even for empty results
+            calculateResponseTime()
             state = .idle
         }
     }
@@ -329,10 +344,10 @@ class UnifiedVoiceService: ObservableObject {
     private func processVoiceCommand(_ command: String) async {
         let processedCommand = preprocessCommand(command)
         
-        // Send to voice processor for advanced processing
+        // Send to voice processor for advanced processing (async for performance)
         await voiceProcessor.processVoiceCommand(processedCommand)
         
-        // Send to WebSocket service
+        // Send to WebSocket service (non-blocking)
         webSocketService.sendCommand(processedCommand)
         
         // Create voice message for history
@@ -345,6 +360,9 @@ class UnifiedVoiceService: ObservableObject {
         await MainActor.run {
             webSocketService.messages.append(voiceMessage)
         }
+        
+        // Calculate and log response time
+        calculateResponseTime()
         
         // Reset and return to appropriate listening mode
         speechRecognitionService.resetRecognition()
@@ -375,6 +393,89 @@ class UnifiedVoiceService: ObservableObject {
         
         // Return as natural language if no mapping found
         return lowercased
+    }
+    
+    // MARK: - Performance Monitoring Methods
+    
+    private func calculateResponseTime() {
+        guard let startTime = lastVoiceStartTime else { return }
+        
+        let endTime = Date()
+        let responseTime = endTime.timeIntervalSince(startTime)
+        
+        // Update current response time
+        self.responseTime = responseTime
+        
+        // Add to response times array (keep last 50 for average)
+        responseTimes.append(responseTime)
+        if responseTimes.count > 50 {
+            responseTimes.removeFirst()
+        }
+        
+        // Calculate rolling average
+        averageResponseTime = responseTimes.reduce(0, +) / Double(responseTimes.count)
+        
+        // Update performance status
+        updatePerformanceStatus(responseTime)
+        
+        // Log performance metrics
+        print("🎤 Voice Response Time: \(String(format: "%.3f", responseTime))s (avg: \(String(format: "%.3f", averageResponseTime))s)")
+        
+        // Reset timer
+        lastVoiceStartTime = nil
+    }
+    
+    private func updatePerformanceStatus(_ currentResponseTime: TimeInterval) {
+        switch currentResponseTime {
+        case 0.0..<0.5:
+            performanceStatus = .optimal
+        case 0.5..<1.0:
+            performanceStatus = .good
+        case 1.0..<2.0:
+            performanceStatus = .warning
+        default:
+            performanceStatus = .critical
+        }
+        
+        // Log performance warnings
+        if currentResponseTime > 0.5 {
+            print("⚠️ Voice response time \(String(format: "%.3f", currentResponseTime))s exceeds target of 500ms")
+        }
+        
+        if currentResponseTime > 1.0 {
+            print("🚨 Voice response time \(String(format: "%.3f", currentResponseTime))s is critically slow")
+        }
+    }
+    
+    /// Get performance metrics for monitoring
+    func getPerformanceMetrics() -> VoicePerformanceMetrics {
+        return VoicePerformanceMetrics(
+            currentResponseTime: responseTime,
+            averageResponseTime: averageResponseTime,
+            performanceStatus: performanceStatus,
+            totalMeasurements: responseTimes.count,
+            targetResponseTime: 0.5,
+            isWithinTarget: averageResponseTime <= 0.5
+        )
+    }
+    
+    /// Optimize voice service for better performance
+    func optimizePerformance() async {
+        print("🎤 Optimizing voice service performance...")
+        
+        // Pre-warm audio session
+        await audioCoordinator.prepareForVoiceRecording()
+        
+        // Reset speech recognition for clean state
+        speechRecognitionService.resetRecognition()
+        
+        // Clear performance history if degraded
+        if performanceStatus == .critical {
+            responseTimes.removeAll()
+            averageResponseTime = 0.0
+            performanceStatus = .optimal
+            print("🎤 Performance history cleared due to critical status")
+        }
     }
 }
 
@@ -437,6 +538,55 @@ enum VoiceState: Equatable {
 enum ListeningMode: Equatable {
     case pushToTalk
     case wakeWord
+}
+
+// MARK: - Performance Models
+
+enum PerformanceStatus: String, CaseIterable {
+    case optimal = "optimal"      // < 500ms
+    case good = "good"           // 500ms - 1s
+    case warning = "warning"     // 1s - 2s  
+    case critical = "critical"   // > 2s
+    
+    var emoji: String {
+        switch self {
+        case .optimal: return "🟢"
+        case .good: return "🟡"
+        case .warning: return "🟠"
+        case .critical: return "🔴"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .optimal: return "Voice response time is optimal (<500ms)"
+        case .good: return "Voice response time is good (500ms-1s)"
+        case .warning: return "Voice response time needs improvement (1s-2s)"
+        case .critical: return "Voice response time is critically slow (>2s)"
+        }
+    }
+}
+
+struct VoicePerformanceMetrics {
+    let currentResponseTime: TimeInterval
+    let averageResponseTime: TimeInterval
+    let performanceStatus: PerformanceStatus
+    let totalMeasurements: Int
+    let targetResponseTime: TimeInterval
+    let isWithinTarget: Bool
+    
+    var formattedCurrentTime: String {
+        return String(format: "%.3f", currentResponseTime)
+    }
+    
+    var formattedAverageTime: String {
+        return String(format: "%.3f", averageResponseTime)
+    }
+    
+    var targetPercentage: Double {
+        guard targetResponseTime > 0 else { return 0 }
+        return min(100, (targetResponseTime / averageResponseTime) * 100)
+    }
 }
 
 // MARK: - Voice Error Types

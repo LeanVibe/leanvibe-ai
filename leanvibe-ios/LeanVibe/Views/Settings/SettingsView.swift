@@ -152,6 +152,8 @@ struct SettingsView: View {
                 )
             }
             
+            // TODO: Re-enable SyncSettingsView after fixing BackendSettingsService
+            /*
             NavigationLink(destination: SyncSettingsView()) {
                 SettingsRow(
                     icon: "arrow.triangle.2.circlepath",
@@ -160,6 +162,7 @@ struct SettingsView: View {
                     subtitle: "Background sync on"
                 )
             }
+            */
             
             // TODO: Implement OfflineSettingsView - currently placeholder
             /*
@@ -454,10 +457,12 @@ struct TaskCreationSettingsView: View {
     }
 }
 
+// TODO: Re-enable after fixing BackendSettingsService target membership
+/*
 @available(iOS 18.0, macOS 14.0, *)
 struct SyncSettingsView: View {
     @StateObject private var settingsManager = SettingsManager.shared
-    // TODO: Re-enable BackendSettingsService after dependency resolution
+    // TODO: Fix BackendSettingsService target membership
     // @StateObject private var backendService = BackendSettingsService.shared
     @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
     @State private var isSyncing = false
@@ -691,6 +696,7 @@ struct SyncSettingsView: View {
         return formatter.string(from: date)
     }
 }
+*/
 
 @available(iOS 18.0, macOS 14.0, *)
 struct OfflineSettingsView: View {
