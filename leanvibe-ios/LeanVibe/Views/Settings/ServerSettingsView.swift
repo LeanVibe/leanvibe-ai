@@ -48,14 +48,14 @@ struct ServerSettingsView: View {
         .navigationTitle("Server Settings")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingQRScanner) {
-            NavigationView {
+            NavigationStack {
                 QRCodeScannerView { qrCode in
                     handleQRCodeScanned(qrCode)
                 }
             }
         }
         .sheet(isPresented: $showingManualEntry) {
-            NavigationView {
+            NavigationStack {
                 ManualServerEntryView(url: $manualURL) { url in
                     handleManualURLEntry(url)
                 }
@@ -590,7 +590,7 @@ struct ManualServerEntryView: View {
 }
 
 #Preview {
-    NavigationView {
+    NavigationStack {
         ServerSettingsView()
     }
 }

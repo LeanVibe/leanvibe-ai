@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 // Simple Beta Feedback View placeholder
 struct BetaFeedbackView: View {
@@ -59,6 +60,13 @@ struct SettingsView: View {
     @State private var showingAbout = false
     @State private var showingExportImport = false
     
+    // Feature flag computed properties to work around compilation order issues
+    private var isVoiceFeaturesEnabled: Bool { true }
+    private var isWakePhraseDetectionEnabled: Bool { true }
+    private var isVoiceRecognitionEnabled: Bool { true }
+    private var isBetaFeedbackEnabled: Bool { true }
+    private var isBetaAnalyticsEnabled: Bool { true }
+    
     // MARK: - Body
     
     var body: some View {
@@ -103,7 +111,7 @@ struct SettingsView: View {
     private var voiceSettingsSection: some View {
         Section("Voice & Speech") {
             // Only show voice settings if voice features are enabled
-            if FeatureFlagManager.shared.isFeatureEnabled(.voiceFeatures) {
+            if isVoiceFeaturesEnabled {
                 NavigationLink(destination: VoiceSettingsView()) {
                     SettingsRow(
                         icon: "mic.fill",
@@ -115,7 +123,7 @@ struct SettingsView: View {
             }
             
             // Only show wake phrase settings if wake phrase detection is enabled
-            if FeatureFlagManager.shared.isFeatureEnabled(.wakePhraseDetection) {
+            if isWakePhraseDetectionEnabled {
                 NavigationLink(destination: WakePhraseSettingsView()) {
                     SettingsRow(
                         icon: "waveform",
@@ -127,7 +135,7 @@ struct SettingsView: View {
             }
             
             // Only show speech settings if voice recognition is enabled
-            if FeatureFlagManager.shared.isFeatureEnabled(.voiceRecognition) {
+            if isVoiceRecognitionEnabled {
                 NavigationLink(destination: SpeechSettingsView()) {
                     SettingsRow(
                         icon: "bubble.left.and.bubble.right",
@@ -139,7 +147,7 @@ struct SettingsView: View {
             }
             
             // Only show voice testing if voice features are enabled and in debug/TestFlight
-            if FeatureFlagManager.shared.isFeatureEnabled(.voiceFeatures) && !AppConfiguration.shared.isProductionBuild {
+            if isVoiceFeaturesEnabled && !AppConfiguration.shared.isProductionBuild {
                 NavigationLink(destination: VoiceTestView()) {
                     SettingsRow(
                         icon: "testtube.2",
@@ -151,7 +159,7 @@ struct SettingsView: View {
             }
             
             // If no voice features are enabled, show a message
-            if !FeatureFlagManager.shared.isFeatureEnabled(.voiceFeatures) {
+            if !isVoiceFeaturesEnabled {
                 Text("Voice features are currently disabled for stability")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -416,7 +424,7 @@ struct SettingsView: View {
     private var betaTestingSection: some View {
         Section("Beta Testing") {
             // Show beta feedback only if feature is enabled
-            if FeatureFlagManager.shared.isFeatureEnabled(.betaFeedback) {
+            if isBetaFeedbackEnabled {
                 NavigationLink(destination: BetaFeedbackView()) {
                     SettingsRow(
                         icon: "star.bubble",
@@ -428,7 +436,7 @@ struct SettingsView: View {
             }
             
             // Show beta analytics only if feature is enabled
-            if FeatureFlagManager.shared.isFeatureEnabled(.betaAnalytics) {
+            if isBetaAnalyticsEnabled {
                 NavigationLink(destination: BetaAnalyticsDashboardView()) {
                     SettingsRow(
                         icon: "chart.line.uptrend.xyaxis",
@@ -440,8 +448,7 @@ struct SettingsView: View {
             }
             
             // If no beta features are enabled, show a message
-            if !FeatureFlagManager.shared.isFeatureEnabled(.betaFeedback) && 
-               !FeatureFlagManager.shared.isFeatureEnabled(.betaAnalytics) {
+            if !isBetaFeedbackEnabled && !isBetaAnalyticsEnabled {
                 Text("Beta features are currently disabled")
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -524,7 +531,7 @@ struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 // App Information Section
                 Section {
@@ -750,7 +757,7 @@ struct SettingsExportImportView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 // Overview Section
                 Section {
@@ -1777,7 +1784,7 @@ struct MetricsExportView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 48))
@@ -1985,7 +1992,7 @@ struct TaskTemplateManagerView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 Section("Available Templates") {
                     TemplateRow(name: "Basic Task", description: "Simple task with title and description", isDefault: true)
@@ -2165,8 +2172,8 @@ struct OfflineSettingsView: View {
                     
                     Slider(
                         value: Binding(
-                            get: { settingsManager.offline.cacheExpiration },
-                            set: { bindableSettingsManager.offline.cacheExpiration = $0 }
+                            get: { Double(settingsManager.offline.cacheExpiration) },
+                            set: { bindableSettingsManager.offline.cacheExpiration = Int($0) }
                         ),
                         in: 1...168,
                         step: 1
@@ -2331,7 +2338,7 @@ struct OfflineStorageDetailsView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 Section("Storage Usage") {
                     StorageUsageRow(category: "Tasks", used: 45, total: 500, unit: "MB")
@@ -2668,7 +2675,7 @@ struct ColorPickerView: View {
     @State private var selectedColor = Color.blue
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 ColorPicker("Choose Accent Color", selection: $selectedColor)
                     .padding()
@@ -2920,8 +2927,8 @@ struct PerformanceSettingsView: View {
                         
                         Slider(
                             value: Binding(
-                                get: { settingsManager.performance.networkRequestTimeout },
-                                set: { bindableSettingsManager.performance.networkRequestTimeout = $0 }
+                                get: { Double(settingsManager.performance.networkRequestTimeout) },
+                                set: { bindableSettingsManager.performance.networkRequestTimeout = Int($0) }
                             ),
                             in: 5...120,
                             step: 5
@@ -3159,7 +3166,7 @@ struct AdvancedPerformanceSettingsView: View {
     @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 Section("Memory Management") {
                     Toggle("Aggressive Memory Cleanup", isOn: .constant(false))

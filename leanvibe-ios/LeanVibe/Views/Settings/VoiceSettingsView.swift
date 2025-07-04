@@ -47,12 +47,12 @@ struct VoiceSettingsView: View {
         .navigationTitle("Voice Settings")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingVoiceTest) {
-            NavigationView {
+            NavigationStack {
                 VoiceTestView()
             }
         }
         .sheet(isPresented: $showingAdvancedSettings) {
-            NavigationView {
+            NavigationStack {
                 AdvancedVoiceSettingsView()
             }
         }
@@ -363,7 +363,7 @@ struct AdvancedVoiceSettingsView: View {
 // MARK: - Preview
 
 #Preview {
-    NavigationView {
+    NavigationStack {
         VoiceSettingsView()
     }
 }
