@@ -687,6 +687,163 @@ extension View {
     func backdrop(_ material: Material) -> some View {
         self.background(material)
     }
+    
+    // MARK: - Standardized Button Styles
+    func standardButton(
+        style: StandardButtonStyle = .primary,
+        size: StandardButtonSize = .medium,
+        action: @escaping () -> Void = {}
+    ) -> some View {
+        self.modifier(StandardButtonModifier(style: style, size: size, action: action))
+    }
+    
+    func primaryButton() -> some View {
+        self.standardButton(style: .primary)
+    }
+    
+    func secondaryButton() -> some View {
+        self.standardButton(style: .secondary)
+    }
+    
+    func outlineButton() -> some View {
+        self.standardButton(style: .outline)
+    }
+    
+    func destructiveButton() -> some View {
+        self.standardButton(style: .destructive)
+    }
+    
+    func ghostButton() -> some View {
+        self.standardButton(style: .ghost)
+    }
+}
+
+// MARK: - Standardized Button System
+
+@available(iOS 18.0, macOS 14.0, *)
+enum StandardButtonStyle {
+    case primary
+    case secondary
+    case outline
+    case destructive
+    case ghost
+    case success
+    
+    var backgroundColor: Color {
+        switch self {
+        case .primary:
+            return PremiumDesignSystem.Colors.buttonPrimary
+        case .secondary:
+            return PremiumDesignSystem.Colors.buttonSecondary
+        case .outline, .ghost:
+            return Color.clear
+        case .destructive:
+            return PremiumDesignSystem.Colors.buttonDestructive
+        case .success:
+            return PremiumDesignSystem.Colors.buttonSuccess
+        }
+    }
+    
+    var foregroundColor: Color {
+        switch self {
+        case .primary, .secondary, .destructive, .success:
+            return .white
+        case .outline:
+            return PremiumDesignSystem.Colors.buttonPrimary
+        case .ghost:
+            return PremiumDesignSystem.Colors.primaryText
+        }
+    }
+    
+    var borderColor: Color? {
+        switch self {
+        case .outline:
+            return PremiumDesignSystem.Colors.buttonPrimary
+        default:
+            return nil
+        }
+    }
+}
+
+@available(iOS 18.0, macOS 14.0, *)
+enum StandardButtonSize {
+    case small
+    case medium
+    case large
+    
+    var horizontalPadding: CGFloat {
+        switch self {
+        case .small:
+            return PremiumDesignSystem.Spacing.md
+        case .medium:
+            return PremiumDesignSystem.Spacing.xl
+        case .large:
+            return PremiumDesignSystem.Spacing.xxl
+        }
+    }
+    
+    var verticalPadding: CGFloat {
+        switch self {
+        case .small:
+            return PremiumDesignSystem.Spacing.sm
+        case .medium:
+            return PremiumDesignSystem.Spacing.md
+        case .large:
+            return PremiumDesignSystem.Spacing.lg
+        }
+    }
+    
+    var fontSize: Font {
+        switch self {
+        case .small:
+            return .caption
+        case .medium:
+            return PremiumDesignSystem.Typography.buttonTitle
+        case .large:
+            return .title3
+        }
+    }
+}
+
+@available(iOS 18.0, macOS 14.0, *)
+struct StandardButtonModifier: ViewModifier {
+    let style: StandardButtonStyle
+    let size: StandardButtonSize
+    let action: () -> Void
+    
+    @State private var isPressed = false
+    
+    func body(content: Content) -> some View {
+        content
+            .font(size.fontSize)
+            .fontWeight(.medium)
+            .foregroundColor(style.foregroundColor)
+            .padding(.horizontal, size.horizontalPadding)
+            .padding(.vertical, size.verticalPadding)
+            .background(
+                RoundedRectangle(cornerRadius: PremiumDesignSystem.Components.Button.cornerRadius)
+                    .fill(style.backgroundColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: PremiumDesignSystem.Components.Button.cornerRadius)
+                    .stroke(style.borderColor ?? Color.clear, lineWidth: style.borderColor != nil ? 1 : 0)
+            )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .opacity(isPressed ? 0.8 : 1.0)
+            .animation(.easeInOut(duration: PremiumDesignSystem.microInteractionDuration), value: isPressed)
+            .onTapGesture {
+                withAnimation {
+                    isPressed = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation {
+                        isPressed = false
+                    }
+                }
+                PremiumHaptics.lightImpact()
+                action()
+            }
+    }
 }
 
 // MARK: - Standardized Components

@@ -11,16 +11,16 @@ struct AddProjectView: View {
     
     private func colorFromString(_ colorName: String) -> Color {
         switch colorName {
-        case "orange": return .orange
-        case "yellow": return .yellow
-        case "blue": return .blue
-        case "purple": return .purple
-        case "red": return .red
-        case "green": return .green
-        case "cyan": return .cyan
-        case "brown": return .brown
-        case "gray": return .gray
-        default: return .gray
+        case "orange": return PremiumDesignSystem.Colors.warning
+        case "yellow": return Color(.systemYellow)
+        case "blue": return PremiumDesignSystem.Colors.buttonPrimary
+        case "purple": return PremiumDesignSystem.Colors.debugBadge
+        case "red": return PremiumDesignSystem.Colors.error
+        case "green": return PremiumDesignSystem.Colors.success
+        case "cyan": return Color(.systemCyan)
+        case "brown": return Color(.systemBrown)
+        case "gray": return PremiumDesignSystem.Colors.iconSecondary
+        default: return PremiumDesignSystem.Colors.iconSecondary
         }
     }
     
