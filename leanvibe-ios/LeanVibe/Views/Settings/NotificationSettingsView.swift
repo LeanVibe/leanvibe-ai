@@ -83,6 +83,8 @@ struct NotificationSettingsView: View {
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+                        .accessibilityLabel(notificationAuthStatus == .denied ? "Open Settings" : "Request Permission")
+                        .accessibilityHint(notificationAuthStatus == .denied ? "Opens iOS Settings to enable notifications" : "Requests notification permission from system")
                     }
                 }
             }
@@ -311,6 +313,8 @@ struct NotificationSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Advanced Quiet Hours")
+            .accessibilityHint("Opens advanced quiet hours configuration")
         }
     }
     
@@ -326,6 +330,8 @@ struct NotificationSettingsView: View {
             }
             .buttonStyle(.plain)
             .disabled(notificationAuthStatus != .authorized)
+            .accessibilityLabel("Send Test Notification")
+            .accessibilityHint("Sends a test notification to verify settings")
             
             Button(action: { clearNotificationHistory() }) {
                 SettingsRow(
@@ -336,6 +342,8 @@ struct NotificationSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Clear Notification History")
+            .accessibilityHint("Removes all delivered notifications from system")
             
             NavigationLink("Notification History") {
                 NotificationHistoryView(pushService: PushNotificationService.shared)
@@ -350,6 +358,8 @@ struct NotificationSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Reset Notification Settings")
+            .accessibilityHint("Restores all notification settings to defaults")
         }
     }
     

@@ -209,6 +209,8 @@ struct VoiceSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Voice Recognition Test")
+            .accessibilityHint("Opens voice testing interface")
             
             Button(action: { runVoiceCalibration() }) {
                 SettingsRow(
@@ -220,6 +222,8 @@ struct VoiceSettingsView: View {
             }
             .buttonStyle(.plain)
             .disabled(isTestingVoice)
+            .accessibilityLabel("Audio Calibration")
+            .accessibilityHint("Optimizes microphone settings for better voice recognition")
             
             NavigationLink("Voice Command History") {
                 VoiceHistoryView()
@@ -239,6 +243,8 @@ struct VoiceSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Advanced Voice Settings")
+            .accessibilityHint("Opens advanced voice configuration options")
             
             Button(action: { exportVoiceSettings() }) {
                 SettingsRow(
@@ -249,6 +255,8 @@ struct VoiceSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Export Voice Profile")
+            .accessibilityHint("Saves current voice settings for backup")
             
             Button(action: { resetVoiceSettings() }) {
                 SettingsRow(
@@ -259,6 +267,8 @@ struct VoiceSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Reset to Defaults")
+            .accessibilityHint("Restores all voice settings to factory defaults")
         }
     }
     
@@ -360,6 +370,10 @@ struct VoiceTestView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+                    .accessibilityLabel(isListening ? "Stop Testing" : "Start Test")
+                    .accessibilityHint(isListening ? "Stops voice recognition testing" : "Starts voice recognition testing")
                     
                     if isListening {
                         LeanVibeVoiceWaveformView()

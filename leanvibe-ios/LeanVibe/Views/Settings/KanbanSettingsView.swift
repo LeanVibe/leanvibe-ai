@@ -103,6 +103,8 @@ struct KanbanSettingsView: View {
             }
             .buttonStyle(.plain)
             .disabled(!settingsManager.kanban.enableColumnCustomization)
+            .accessibilityLabel("Customize Columns")
+            .accessibilityHint("Opens column customization interface")
             
             VStack(alignment: .leading, spacing: 8) {
                 Text("Current Column Order")
@@ -169,6 +171,8 @@ struct KanbanSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Default Task Settings")
+            .accessibilityHint("Opens task default configuration")
         }
     }
     
@@ -212,6 +216,8 @@ struct KanbanSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Advanced Performance")
+            .accessibilityHint("Opens performance optimization settings")
         }
     }
     
@@ -257,6 +263,8 @@ struct KanbanSettingsView: View {
                         .font(.caption)
                         .buttonStyle(.bordered)
                         .controlSize(.mini)
+                        .accessibilityLabel("Sync Now")
+                        .accessibilityHint("Forces immediate sync with backend server")
                     }
                 }
             }
@@ -283,6 +291,8 @@ struct KanbanSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Export Board Configuration")
+            .accessibilityHint("Saves current board settings for backup")
             
             Button(action: { clearKanbanCache() }) {
                 SettingsRow(
@@ -293,6 +303,8 @@ struct KanbanSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Clear Cache")
+            .accessibilityHint("Clears cached tasks and refreshes from server")
             
             Button(action: { resetKanbanSettings() }) {
                 SettingsRow(
@@ -303,6 +315,8 @@ struct KanbanSettingsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Reset to Defaults")
+            .accessibilityHint("Restores all Kanban settings to factory defaults")
         }
     }
     
