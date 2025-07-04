@@ -56,6 +56,15 @@ struct VoiceSettings: SettingsProtocol {
     var enableAudioFeedback: Bool = true
     var maxHistoryItems: Int = 50
     var voiceCommandCategories: [String] = []
+    var enableVoiceCommands: Bool = true
+    var echoCanselation: Bool = true  // Note: typo in original VoiceSettingsView
+    var commandHistoryEnabled: Bool = true
+    var voiceFeedbackEnabled: Bool = true
+    var enableCustomCommands: Bool = true
+    var backgroundListening: Bool = false
+    var autoStopListening: Bool = true
+    var wakePhraseEnabled: Bool = true
+    var wakePhraseSensitivity: Double = 0.7
     
     init() {} // Default initialization
 }
@@ -79,6 +88,16 @@ struct NotificationSettings: SettingsProtocol {
     var criticalAlertsEnabled: Bool = false
     var summarizationEnabled: Bool = true
     var categories: [String] = []
+    var notificationsEnabled: Bool = true
+    var soundEnabled: Bool = true
+    var taskUpdates: Bool = true
+    var voiceNotificationsEnabled: Bool = true
+    var bannerNotificationsEnabled: Bool = true
+    var taskOverdueNotifications: Bool = true
+    var systemNotificationsEnabled: Bool = true
+    var voiceCommandResultNotifications: Bool = true
+    var taskNotificationsEnabled: Bool = true
+    var serverConnectionNotifications: Bool = true
     
     init() {} // Default initialization
 }
@@ -104,6 +123,19 @@ struct KanbanSettings: SettingsProtocol {
     var conflictResolution: String = ""
     var swimlanesEnabled: Bool = false
     var wIPLimitsEnabled: Bool = false
+    var showStatistics: Bool = true
+    var showColumnTaskCounts: Bool = true
+    var enableVoiceTaskCreation: Bool = true
+    var enableInfiniteScroll: Bool = false
+    var syncWithBackend: Bool = true
+    var compactMode: Bool = false
+    var enableColumnCustomization: Bool = true
+    var showTaskIds: Bool = false
+    var prefetchTaskDetails: Bool = true
+    var offlineModeEnabled: Bool = false
+    var enableAnimations: Bool = true
+    var autoAssignTasks: Bool = false
+    var enableTaskNotifications: Bool = true
     
     init() {} // Default initialization
 }
@@ -125,6 +157,12 @@ struct AccessibilitySettings: SettingsProtocol {
     var focusIndicatorStyle: String = "default"
     var colorBlindAssist: Bool = false
     var colorTheme: String = "auto"
+    var highContrastMode: Bool = false
+    var voiceOverOptimizations: Bool = false
+    var extendedTouchTargets: Bool = false
+    var speechRateAdjustment: Double = 1.0
+    var largeFontSize: Double = 1.0
+    var extendedVoiceCommands: Bool = false
     
     init() {} // Default initialization
 }
@@ -149,6 +187,7 @@ struct ArchitectureSettings: SettingsProtocol {
     var compareMode: String = ""
     var syncConflictResolution: String = ""
     var sharePermissionLevel: String = ""
+    var enableAnimations: Bool = true
     
     init() {} // Default initialization
 }

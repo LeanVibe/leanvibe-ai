@@ -297,40 +297,54 @@ class PremiumHaptics {
     // MARK: - Basic Haptics
     
     static func lightImpact() {
+        #if canImport(UIKit) && !os(macOS)
         lightImpactGenerator.prepare()
         lightImpactGenerator.impactOccurred()
+        #endif
     }
     
     static func mediumImpact() {
+        #if canImport(UIKit) && !os(macOS)
         mediumImpactGenerator.prepare()
         mediumImpactGenerator.impactOccurred()
+        #endif
     }
     
     static func heavyImpact() {
+        #if canImport(UIKit) && !os(macOS)
         heavyImpactGenerator.prepare()
         heavyImpactGenerator.impactOccurred()
+        #endif
     }
     
     static func selection() {
+        #if canImport(UIKit) && !os(macOS)
         selectionGenerator.prepare()
         selectionGenerator.selectionChanged()
+        #endif
     }
     
     // MARK: - Notification Haptics
     
     static func successNotification() {
+        #if canImport(UIKit) && !os(macOS)
         notificationGenerator.prepare()
         notificationGenerator.notificationOccurred(.success)
+        #endif
     }
     
     static func errorNotification() {
+        #if canImport(UIKit) && !os(macOS)
         notificationGenerator.prepare()
         notificationGenerator.notificationOccurred(.error)
+        #endif
     }
     
     static func warningNotification() {
+        #if canImport(UIKit) && !os(macOS)
         notificationGenerator.prepare()
         notificationGenerator.notificationOccurred(.warning)
+        #endif
     }
     
     // MARK: - Custom Haptic Patterns
@@ -516,6 +530,7 @@ extension View {
 
 // MARK: - Supporting Types
 
+@available(iOS 15.0, macOS 12.0, *)
 struct Shadow {
     let color: Color
     let radius: CGFloat
