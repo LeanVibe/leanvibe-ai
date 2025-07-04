@@ -1,5 +1,16 @@
 import SwiftUI
 
+// Temporary VoiceSettings until circular dependency is resolved
+struct VoiceSettings: Codable {
+    var isEnabled: Bool = true
+    var wakeWord: String = ""
+    var confidenceThreshold: Double = 0.7
+    var recognitionLanguage: String = ""
+    var autoStopListening: Bool = true
+    
+    init() {}
+}
+
 @available(iOS 18.0, *)
 struct CodeCompletionTestView: View {
     let webSocketService: WebSocketService
@@ -315,7 +326,8 @@ struct CodeCompletionTestView: View {
     }
     
     private func simulateVoiceCommand() {
-        let processor = VoiceCommandProcessor(settings: VoiceSettings())
+        // TODO: Fix VoiceSettings import issue  
+        let processor = VoiceCommandProcessor() // (settings: VoiceSettings())
         let sampleCommands = [
             "suggest improvements to this code",
             "explain what this function does",

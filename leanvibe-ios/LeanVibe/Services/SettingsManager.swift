@@ -5,6 +5,86 @@ import Observation
 // Import settings models from SettingsModels.swift to avoid duplication
 // Note: Models are imported implicitly from the same module
 
+// Temporary settings structs until circular dependency is resolved
+struct VoiceSettings: Codable {
+    var isEnabled: Bool = true
+    var wakeWord: String = ""
+    var confidenceThreshold: Double = 0.7
+    var recognitionLanguage: String = ""
+    var autoStopListening: Bool = true
+    
+    init() {}
+}
+
+struct NotificationSettings: Codable {
+    var notificationsEnabled: Bool = true
+    var taskUpdates: Bool = false
+    var voiceNotificationsEnabled: Bool = false
+    var emailNotifications: Bool = false
+    var frequency: String = "immediate"
+    var quietHoursEnabled: Bool = false
+    var quietHoursStart: String = "22:00"
+    var quietHoursEnd: String = "08:00"
+    
+    init() {}
+}
+
+struct KanbanSettings: Codable {
+    var autoRefresh: Bool = true
+    var refreshInterval: TimeInterval = 30.0
+    
+    init() {}
+}
+
+struct AccessibilitySettings: Codable {
+    var fontSize: Double = 16.0
+    var highContrast: Bool = false
+    
+    init() {}
+}
+
+struct ArchitectureSettings: Codable {
+    var diagramTheme: String = "default"
+    var renderQuality: String = "high"
+    var showMetadata: Bool = true
+    var autoUpdate: Bool = true
+    var zoomLevel: Double = 1.0
+    var panLock: Bool = false
+    var includePrivateElements: Bool = false
+    
+    init() {}
+}
+
+struct MetricsSettings: Codable {
+    var isEnabled: Bool = true
+    
+    init() {}
+}
+
+struct TaskCreationSettings: Codable {
+    var defaultPriority: String = "medium"
+    
+    init() {}
+}
+
+struct OfflineSettings: Codable {
+    var isEnabled: Bool = false
+    
+    init() {}
+}
+
+struct InterfaceSettings: Codable {
+    var theme: String = "system"
+    
+    init() {}
+}
+
+struct PerformanceSettings: Codable {
+    var optimizationLevel: String = "balanced"
+    
+    init() {}
+}
+
 /// Represents user-configurable settings for the application.
 /// NO HARDCODED VALUES - All settings come from backend or user configuration
 @available(iOS 17.0, macOS 14.0, *)
