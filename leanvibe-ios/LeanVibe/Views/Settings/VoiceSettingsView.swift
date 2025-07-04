@@ -38,10 +38,14 @@ struct VoiceSettingsView: View {
         .navigationTitle("Voice Settings")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingVoiceTest) {
-            VoiceTestView()
+            NavigationView {
+                VoiceTestView()
+            }
         }
         .sheet(isPresented: $showingAdvancedSettings) {
-            AdvancedVoiceSettingsView()
+            NavigationView {
+                AdvancedVoiceSettingsView()
+            }
         }
     }
     
@@ -315,200 +319,6 @@ struct VoiceSettingsView: View {
 }
 
 // MARK: - Supporting Views
-
-struct VoiceTestView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var isListening = false
-    @State private var recognizedText = ""
-    @State private var testResults: [VoiceTestResult] = []
-    @State private var currentTest: VoiceTestType = .wakePhrase
-    
-    enum VoiceTestType: String, CaseIterable {
-        case wakePhrase = "Wake Phrase"
-        case speechRecognition = "Speech Recognition"
-        case noiseTest = "Noise Tolerance"
-        
-        var instructions: String {
-            switch self {
-            case .wakePhrase:
-                return "Say 'Hey LeanVibe' to test wake phrase detection"
-            case .speechRecognition:
-                return "Speak clearly to test speech recognition accuracy"
-            case .noiseTest:
-                return "Test recognition in noisy environments"
-            }
-        }
-    }
-    
-    var body: some View {
-        VStack(spacing: 24) {
-                // Test Type Picker
-                Picker("Test Type", selection: $currentTest) {
-                    ForEach(VoiceTestType.allCases, id: \.self) { testType in
-                        Text(testType.rawValue).tag(testType)
-                    }
-                }
-                .pickerStyle(.segmented)
-                
-                // Instructions
-                Text(currentTest.instructions)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-                
-                // Voice Test Interface
-                VStack(spacing: 16) {
-                    Button(action: toggleListening) {
-                        VStack {
-                            Image(systemName: isListening ? "stop.circle.fill" : "mic.circle.fill")
-                                .font(.system(size: 64))
-                                .foregroundColor(isListening ? .red : .blue)
-                            
-                            Text(isListening ? "Stop Testing" : "Start Test")
-                                .font(.headline)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
-                    .accessibilityLabel(isListening ? "Stop Testing" : "Start Test")
-                    .accessibilityHint(isListening ? "Stops voice recognition testing" : "Starts voice recognition testing")
-                    
-                    if isListening {
-                        LeanVibeVoiceWaveformView()
-                            .frame(height: 60)
-                    }
-                }
-                
-                // Recognition Results
-                if !recognizedText.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Recognized:")
-                            .font(.headline)
-                        
-                        Text(recognizedText)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                }
-                
-                // Test Results
-                if !testResults.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Recent Tests")
-                            .font(.headline)
-                        
-                        ForEach(testResults.prefix(3)) { result in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(result.input)
-                                        .fontWeight(.medium)
-                                    Text("\(result.confidence, specifier: "%.1f")% confidence")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
-                                
-                                Spacer()
-                                
-                                Image(systemName: result.confidence > 70 ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                    .foregroundColor(result.confidence > 70 ? .green : .red)
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal)
-                }
-                
-                Spacer()
-        }
-        .padding()
-        .navigationTitle("Voice Test")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Done") {
-                    dismiss()
-                }
-            }
-        }
-    }
-    
-    private func toggleListening() {
-        if isListening {
-            stopVoiceTest()
-        } else {
-            startVoiceTest()
-        }
-    }
-    
-    private func startVoiceTest() {
-        isListening = true
-        recognizedText = ""
-        
-        // Simulate voice recognition
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            simulateVoiceRecognition()
-        }
-    }
-    
-    private func stopVoiceTest() {
-        isListening = false
-    }
-    
-    private func simulateVoiceRecognition() {
-        let testPhrases = ["Hey LeanVibe", "Create task", "Show dashboard", "Test recognition"]
-        let randomPhrase = testPhrases.randomElement() ?? "Test phrase"
-        let confidence = Double.random(in: 60...95)
-        
-        recognizedText = randomPhrase
-        
-        let result = VoiceTestResult(
-            input: randomPhrase,
-            confidence: confidence,
-            timestamp: Date(),
-            testType: currentTest
-        )
-        
-        testResults.insert(result, at: 0)
-        stopVoiceTest()
-    }
-}
-
-struct VoiceTestResult: Identifiable {
-    let id = UUID()
-    let input: String
-    let confidence: Double
-    let timestamp: Date
-    let testType: VoiceTestView.VoiceTestType
-}
-
-struct LeanVibeVoiceWaveformView: View {
-    @State private var animationOffset: CGFloat = 0
-    
-    var body: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<20, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.blue)
-                    .frame(width: 3)
-                    .frame(height: CGFloat.random(in: 10...50))
-                    .animation(
-                        Animation.easeInOut(duration: Double.random(in: 0.3...0.8))
-                            .repeatForever(autoreverses: true),
-                        value: animationOffset
-                    )
-            }
-        }
-        .onAppear {
-            animationOffset = 1
-        }
-    }
-}
 
 struct CustomCommandsView: View {
     var body: some View {

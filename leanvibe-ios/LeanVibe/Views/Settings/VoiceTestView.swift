@@ -22,8 +22,7 @@ struct VoiceTestView: View {
     }
     
     var body: some View {
-        NavigationView {
-            List {
+        List {
                 Section {
                     Text("Test voice recognition and speech synthesis to ensure optimal performance.")
                         .font(.caption)
@@ -67,18 +66,17 @@ struct VoiceTestView: View {
                     .foregroundColor(Color(.systemBlue))
                 }
             }
-            .navigationTitle("Voice Testing")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
+        .navigationTitle("Voice Testing")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") {
+                    dismiss()
                 }
             }
-            .onAppear {
-                speechPermissionStatus = SFSpeechRecognizer.authorizationStatus()
-            }
+        }
+        .onAppear {
+            speechPermissionStatus = SFSpeechRecognizer.authorizationStatus()
         }
     }
     

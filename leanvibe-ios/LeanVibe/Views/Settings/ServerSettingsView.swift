@@ -10,8 +10,7 @@ struct ServerSettingsView: View {
     // MARK: - Properties
     
     @StateObject private var webSocketService = WebSocketService.shared
-    // TODO: Fix BackendSettingsService target membership
-    // @StateObject private var backendService = BackendSettingsService.shared
+    @StateObject private var backendService = BackendSettingsService.shared
     @State private var isBackendAvailable = false
     @State private var config = AppConfiguration.shared
     @State private var showingQRScanner = false
@@ -48,13 +47,17 @@ struct ServerSettingsView: View {
         .navigationTitle("Server Settings")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showingQRScanner) {
-            QRCodeScannerView { qrCode in
-                handleQRCodeScanned(qrCode)
+            NavigationView {
+                QRCodeScannerView { qrCode in
+                    handleQRCodeScanned(qrCode)
+                }
             }
         }
         .sheet(isPresented: $showingManualEntry) {
-            ManualServerEntryView(url: $manualURL) { url in
-                handleManualURLEntry(url)
+            NavigationView {
+                ManualServerEntryView(url: $manualURL) { url in
+                    handleManualURLEntry(url)
+                }
             }
         }
         .confirmationDialog(
@@ -165,10 +168,10 @@ struct ServerSettingsView: View {
                     
                     HStack {
                         Circle()
-                            .fill(.gray) // TODO: backendService.isAvailable ? .green : .red
+                            .fill(backendService.isAvailable ? .green : .red)
                             .frame(width: 8, height: 8)
                         
-                        Text("Unknown") // TODO: backendService.isAvailable ? "Available" : "Unavailable"
+                        Text(backendService.isAvailable ? "Available" : "Unavailable")
                             .foregroundColor(.secondary)
                             .font(.caption)
                     }
@@ -378,7 +381,7 @@ struct ServerSettingsView: View {
     private func testBackendConnection() async {
         isTestingConnection = true
         
-        let isAvailable = false // TODO: await backendService.pingBackend()
+        let isAvailable = await backendService.pingBackend()
         
         await MainActor.run {
             if isAvailable {
@@ -397,7 +400,7 @@ struct ServerSettingsView: View {
         testResult = nil
         
         // Test API availability
-        let apiAvailable = false // TODO: await backendService.pingBackend()
+        let apiAvailable = await backendService.pingBackend()
         
         if !apiAvailable {
             await MainActor.run {
@@ -523,7 +526,7 @@ struct QRCodeScannerView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Cancel") {
+                Button("Done") {
                     dismiss()
                 }
             }
@@ -565,7 +568,7 @@ struct ManualServerEntryView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Cancel") {
+                Button("Done") {
                     dismiss()
                 }
             }
