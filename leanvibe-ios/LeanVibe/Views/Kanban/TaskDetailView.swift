@@ -353,10 +353,14 @@ struct StatusBadge: View {
     
     private func statusIcon(for status: TaskStatus) -> String {
         switch status {
+        case .backlog:
+            return "archivebox"
         case .todo:
             return "tray.full"
         case .inProgress:
             return "play.circle"
+        case .testing:
+            return "testtube.2"
         case .done:
             return "checkmark.circle.fill"
         }
@@ -364,10 +368,14 @@ struct StatusBadge: View {
     
     private func statusColor(for status: TaskStatus) -> Color {
         switch status {
+        case .backlog:
+            return .orange
         case .todo:
             return .gray
         case .inProgress:
             return .blue
+        case .testing:
+            return .purple
         case .done:
             return .green
         }
@@ -492,10 +500,14 @@ struct StatusChangeMenu: View {
     
     private func statusIcon(for status: TaskStatus) -> String {
         switch status {
+        case .backlog:
+            return "archivebox"
         case .todo:
             return "tray.full"
         case .inProgress:
             return "play.circle"
+        case .testing:
+            return "testtube.2"
         case .done:
             return "checkmark.circle.fill"
         }

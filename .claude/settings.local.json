@@ -129,7 +129,9 @@
       "Bash(xcrun simctl ui:*)",
       "Bash(xcrun simctl openurl:*)",
       "Bash(# Let''s also check for the quality gate system\ngit show feature/ios-production-ready:leenvibe-backend/ --name-only 2>/dev/null | grep -E \"\"(quality|gate)\"\" | head -10)",
-      "Bash(# Let''s check the actual file structure in the production branch\ngit ls-tree -r feature/ios-production-ready | grep -E \"\"(APP_STORE|ExportOptions|quality_gate)\"\" | head -10)"
+      "Bash(# Let''s check the actual file structure in the production branch\ngit ls-tree -r feature/ios-production-ready | grep -E \"\"(APP_STORE|ExportOptions|quality_gate)\"\" | head -10)",
+      "mcp__mobile__mobile_click_on_screen_at_coordinates",
+      "mcp__mobile__swipe_on_screen"
     ],
     "deny": []
   }

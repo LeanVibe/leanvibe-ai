@@ -51,7 +51,7 @@ struct ArchitectureTabView: View {
                     try await projectManager.refreshProjects()
                     // Set first project as selected if none selected
                     if selectedProjectId.isEmpty && !projectManager.projects.isEmpty {
-                        selectedProjectId = projectManager.projects.first!.id
+                        selectedProjectId = projectManager.projects.first!.id.uuidString
                     }
                     loadDiagramForProject()
                 } catch {
