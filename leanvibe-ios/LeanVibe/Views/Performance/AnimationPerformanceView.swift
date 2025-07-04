@@ -211,11 +211,19 @@ struct OptimizedTaskCardView: View {
         // Conditional animation optimization
         .modifier(ConditionalAnimationModifier(shouldOptimize: shouldOptimize, isDragged: isDragged, isPressed: isPressed))
         
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+        .onTapGesture {
+            // Standard tap interaction - iOS HIG compliant
+            // Brief press feedback for user interaction
             withAnimation(.easeInOut(duration: 0.1)) {
-                isPressed = pressing
+                isPressed = true
             }
-        }, perform: {})
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    isPressed = false
+                }
+            }
+        }
     }
 }
 
