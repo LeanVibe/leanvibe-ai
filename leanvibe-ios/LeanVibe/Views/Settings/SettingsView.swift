@@ -846,8 +846,8 @@ struct ArchitectureViewerSettingsView: View {
                 }
                 .padding(.vertical, 4)
                 
-                Toggle("WebView Pooling", isOn: $bindableSettingsManager.architecture.enableWebViewPooling)
-                Toggle("Performance Monitoring", isOn: $bindableSettingsManager.architecture.performanceMonitoringEnabled)
+                Toggle("Include Private Elements", isOn: $bindableSettingsManager.architecture.includePrivateElements)
+                Toggle("Enable Interaction", isOn: $bindableSettingsManager.architecture.enableInteraction)
             }
             
             // Export & Sharing Section
@@ -864,15 +864,28 @@ struct ArchitectureViewerSettingsView: View {
                     .pickerStyle(.menu)
                 }
                 
-                Toggle("Include Metadata", isOn: $bindableSettingsManager.architecture.includeMetadataInExport)
-                Toggle("Auto-Save Exports", isOn: $bindableSettingsManager.architecture.autoSaveExports)
+                Toggle("Show Metadata", isOn: $bindableSettingsManager.architecture.showMetadata)
+                Toggle("Auto Update", isOn: $bindableSettingsManager.architecture.autoUpdate)
             }
             
             // Advanced Features Section
             Section("Advanced Features") {
-                Toggle("Diagram Versioning", isOn: $bindableSettingsManager.architecture.enableDiagramVersioning)
-                Toggle("Collaborative Editing", isOn: $bindableSettingsManager.architecture.enableCollaborativeEditing)
-                Toggle("Real-Time Sync", isOn: $bindableSettingsManager.architecture.enableRealTimeSync)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Zoom Level")
+                        Spacer()
+                        Text("\\(Int(settingsManager.architecture.zoomLevel * 100))%")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Slider(
+                        value: $bindableSettingsManager.architecture.zoomLevel,
+                        in: 0.5...3.0,
+                        step: 0.1
+                    )
+                }
+                Toggle("Pan Lock", isOn: $bindableSettingsManager.architecture.panLock)
+                Toggle("Include Private Elements", isOn: $bindableSettingsManager.architecture.includePrivateElements)
             }
             
             // Reset Section
