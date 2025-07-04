@@ -65,6 +65,53 @@ class DocumentIntelligenceService: ObservableObject {
         }
     }
     
+    /// Auto-populate entire Kanban board from Plan.md documents in project folders
+    func autoPopulateKanbanFromPlanDocs(for project: Project) async throws {
+        isProcessing = true
+        processingStatus = "Auto-populating Kanban from Plan.md docs..."
+        defer { 
+            isProcessing = false
+            processingStatus = "Idle"
+        }
+        
+        // Scan project directory for Plan.md files
+        let planDocuments = await scanProjectForPlanDocuments(projectPath: project.path)
+        
+        guard !planDocuments.isEmpty else {
+            print("📄 No Plan.md files found in project: \(project.displayName)")
+            return
+        }
+        
+        // Process each Plan.md document found
+        var allKanbanTasks: [DocumentTask] = []
+        
+        for planDoc in planDocuments {
+            let tasks = await extractKanbanTasksFromPlan(
+                planPath: planDoc.path,
+                projectId: project.id,
+                relativePath: planDoc.relativePath
+            )
+            allKanbanTasks.append(contentsOf: tasks)
+        }
+        
+        guard !allKanbanTasks.isEmpty else {
+            print("📝 No actionable tasks found in Plan.md files")
+            return
+        }
+        
+        // Organize tasks by status and populate appropriate Kanban columns
+        let organizedTasks = organizeTasksByKanbanColumns(tasks: allKanbanTasks)
+        
+        // Create tasks in backend (or store locally if backend unavailable)
+        try await createKanbanTasksInBackend(organizedTasks, projectId: project.id)
+        
+        // Store all discovered tasks for review
+        discoveredTasks = allKanbanTasks
+        lastProcessedDate = Date()
+        
+        print("🎯 Kanban auto-population completed: \(allKanbanTasks.count) tasks organized across columns")
+    }
+    
     /// Auto-populate Backlog from PRD/MVP specs in docs folder
     func autoPopulateBacklogFromSpecs(for project: Project) async throws {
         isProcessing = true
@@ -146,6 +193,51 @@ class DocumentIntelligenceService: ObservableObject {
         try await autoPopulateBacklogFromSpecs(for: project)
         
         print("🎉 Comprehensive Backlog population completed")
+    }
+    
+    /// Auto-populate entire Kanban board from Plan.md documents in project folders
+    /// This method scans project directories and populates all Kanban columns based on task status
+    func autoPopulateKanbanFromPlanDocs(for project: Project) async throws {
+        isProcessing = true
+        processingStatus = "Auto-populating Kanban from Plan.md docs..."
+        defer { 
+            isProcessing = false
+            processingStatus = "Idle"
+        }
+        
+        // Clear previous discoveries
+        discoveredTasks.removeAll()
+        
+        // Scan project directory for Plan.md files
+        let planDocuments = await scanProjectForPlanDocuments(projectPath: project.path)
+        
+        // Process each Plan.md document found
+        var allKanbanTasks: [DocumentTask] = []
+        
+        for planDoc in planDocuments {
+            let tasks = await extractKanbanTasksFromPlan(
+                planPath: planDoc.path,
+                projectId: project.id,
+                relativePath: planDoc.relativePath
+            )
+            allKanbanTasks.append(contentsOf: tasks)
+        }
+        
+        // Organize tasks by status and populate appropriate Kanban columns
+        let organizedTasks = organizeTasksByKanbanColumns(tasks: allKanbanTasks)
+        
+        // Store discovered tasks
+        discoveredTasks = allKanbanTasks
+        
+        // Create tasks in backend if available
+        if backendService.isAvailable {
+            try await createKanbanTasksInBackend(organizedTasks, projectId: project.id)
+        }
+        
+        // Update last processed date
+        lastProcessedDate = Date()
+        
+        print("🎯 Kanban auto-population completed: \(allKanbanTasks.count) tasks from \(planDocuments.count) Plan.md files")
     }
     
     /// Process project documents and create Kanban tasks automatically
@@ -1010,6 +1102,307 @@ class DocumentIntelligenceService: ObservableObject {
             try await taskService.addTask(leanVibeTask)
         }
     }
+    
+    // MARK: - Kanban Auto-Population Support Methods
+    
+    /// Scan project directory recursively for Plan.md files
+    private func scanProjectForPlanDocuments(projectPath: String) async -> [PlanDocument] {
+        let projectURL = URL(fileURLWithPath: projectPath)
+        var planDocuments: [PlanDocument] = []
+        
+        let fileManager = FileManager.default
+        
+        // Search for Plan.md files recursively
+        if let enumerator = fileManager.enumerator(
+            at: projectURL,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) {
+            for case let fileURL as URL in enumerator {
+                let fileName = fileURL.lastPathComponent
+                
+                // Look for Plan.md files (case insensitive)
+                if fileName.lowercased() == "plan.md" || fileName == "PLAN.md" {
+                    let relativePath = String(fileURL.path.dropFirst(projectURL.path.count + 1))
+                    
+                    planDocuments.append(PlanDocument(
+                        path: fileURL.path,
+                        relativePath: relativePath,
+                        directory: fileURL.deletingLastPathComponent().lastPathComponent
+                    ))
+                }
+            }
+        }
+        
+        print("🔍 Found \(planDocuments.count) Plan.md files in project")
+        return planDocuments
+    }
+    
+    /// Extract Kanban tasks from a specific Plan.md file with status detection
+    private func extractKanbanTasksFromPlan(
+        planPath: String,
+        projectId: UUID,
+        relativePath: String
+    ) async -> [DocumentTask] {
+        
+        guard let content = try? String(contentsOfFile: planPath, encoding: .utf8) else {
+            print("❌ Could not read Plan.md at \(planPath)")
+            return []
+        }
+        
+        let lines = content.components(separatedBy: .newlines)
+        var tasks: [DocumentTask] = []
+        var currentSection = ""
+        
+        for (index, line) in lines.enumerated() {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Track current section
+            if trimmedLine.hasPrefix("#") {
+                currentSection = extractSectionTitle(from: trimmedLine)
+                continue
+            }
+            
+            // Extract tasks with enhanced Kanban status detection
+            if let task = parseLineAsKanbanTask(
+                line: trimmedLine,
+                lineNumber: index + 1,
+                section: currentSection,
+                projectId: projectId,
+                planPath: relativePath
+            ) {
+                tasks.append(task)
+            }
+        }
+        
+        print("📝 Extracted \(tasks.count) tasks from \(relativePath)")
+        return tasks
+    }
+    
+    /// Parse a line as a Kanban task with enhanced status detection
+    private func parseLineAsKanbanTask(
+        line: String,
+        lineNumber: Int,
+        section: String,
+        projectId: UUID,
+        planPath: String
+    ) -> DocumentTask? {
+        
+        // Skip empty lines and pure markdown
+        guard !line.isEmpty && !line.hasPrefix("#") else { return nil }
+        
+        var taskText = line
+        var status = TaskStatus.backlog // Default status
+        var priority = TaskPriority.medium
+        var confidence: Double = 0.7
+        
+        // Enhanced status detection with emojis and keywords
+        if line.hasPrefix("✅") || line.contains("✅") || line.contains("[x]") || 
+           line.localizedCaseInsensitiveContains("completed") || 
+           line.localizedCaseInsensitiveContains("done") {
+            status = .done
+            confidence += 0.2
+            taskText = cleanTaskText(line.replacingOccurrences(of: "✅", with: "").replacingOccurrences(of: "[x]", with: ""))
+            
+        } else if line.hasPrefix("🚧") || line.contains("🚧") || 
+                  line.localizedCaseInsensitiveContains("in progress") ||
+                  line.localizedCaseInsensitiveContains("working on") ||
+                  line.localizedCaseInsensitiveContains("current") {
+            status = .inProgress
+            confidence += 0.15
+            taskText = cleanTaskText(line.replacingOccurrences(of: "🚧", with: ""))
+            
+        } else if line.hasPrefix("🧪") || line.contains("🧪") || line.contains("⚠️") ||
+                  line.localizedCaseInsensitiveContains("testing") ||
+                  line.localizedCaseInsensitiveContains("review") ||
+                  line.localizedCaseInsensitiveContains("qa") {
+            status = .testing
+            confidence += 0.15
+            taskText = cleanTaskText(line.replacingOccurrences(of: "🧪", with: "").replacingOccurrences(of: "⚠️", with: ""))
+            
+        } else if line.hasPrefix("📋") || line.contains("📋") || line.contains("[ ]") ||
+                  line.localizedCaseInsensitiveContains("todo") ||
+                  line.localizedCaseInsensitiveContains("planned") ||
+                  line.localizedCaseInsensitiveContains("next") {
+            status = .todo
+            confidence += 0.1
+            taskText = cleanTaskText(line.replacingOccurrences(of: "📋", with: "").replacingOccurrences(of: "[ ]", with: ""))
+            
+        } else if line.hasPrefix("- ") || line.hasPrefix("* ") || line.hasPrefix("+ ") {
+            // Regular bullet points go to backlog by default
+            status = .backlog
+            taskText = cleanTaskText(String(line.dropFirst(2)))
+        }
+        
+        // Priority detection with emojis and keywords
+        if line.contains("🔥") || line.localizedCaseInsensitiveContains("urgent") || 
+           line.localizedCaseInsensitiveContains("critical") {
+            priority = .urgent
+            confidence += 0.2
+        } else if line.contains("⚡") || line.localizedCaseInsensitiveContains("high") || 
+                  line.localizedCaseInsensitiveContains("important") {
+            priority = .high
+            confidence += 0.1
+        } else if line.localizedCaseInsensitiveContains("low") || 
+                  line.localizedCaseInsensitiveContains("minor") {
+            priority = .low
+        }
+        
+        // Section-based context enhancements
+        if section.localizedCaseInsensitiveContains("phase 1") || 
+           section.localizedCaseInsensitiveContains("mvp") ||
+           section.localizedCaseInsensitiveContains("milestone") {
+            priority = enhancePriority(priority)
+            confidence += 0.1
+        }
+        
+        // Filter out non-actionable items
+        guard taskText.count > 8 && 
+              !taskText.localizedCaseInsensitiveContains("example") &&
+              !taskText.localizedCaseInsensitiveContains("description") else {
+            return nil
+        }
+        
+        let description = generateKanbanTaskDescription(
+            originalText: line,
+            section: section,
+            confidence: confidence,
+            planPath: planPath,
+            suggestedStatus: status
+        )
+        
+        return DocumentTask(
+            id: UUID(),
+            title: taskText,
+            description: description,
+            suggestedStatus: status,
+            suggestedPriority: priority,
+            projectId: projectId,
+            confidence: min(confidence, 1.0),
+            sourceType: .plan,
+            documentSource: planPath,
+            originalLine: line,
+            lineNumber: lineNumber,
+            section: section,
+            tags: generateKanbanTags(from: taskText, section: section, status: status)
+        )
+    }
+    
+    /// Generate enhanced description for Kanban tasks
+    private func generateKanbanTaskDescription(
+        originalText: String,
+        section: String,
+        confidence: Double,
+        planPath: String,
+        suggestedStatus: TaskStatus
+    ) -> String {
+        var description = "Auto-extracted from Plan.md for Kanban board population"
+        
+        if !section.isEmpty {
+            description += " (Section: \(section))"
+        }
+        
+        description += "\nSource: \(planPath)"
+        description += "\nSuggested Column: \(suggestedStatus.displayName)"
+        description += "\nOriginal: \(originalText)"
+        description += "\nConfidence: \(Int(confidence * 100))%"
+        
+        return description
+    }
+    
+    /// Generate specialized tags for Kanban tasks
+    private func generateKanbanTags(from text: String, section: String, status: TaskStatus) -> [String] {
+        var tags = ["auto-kanban", "plan-md", status.rawValue.lowercased()]
+        
+        if !section.isEmpty {
+            tags.append(section.lowercased().replacingOccurrences(of: " ", with: "-"))
+        }
+        
+        // Add feature-specific tags
+        let featureKeywords = [
+            "ui": "frontend",
+            "ux": "frontend", 
+            "backend": "backend",
+            "api": "api",
+            "database": "database",
+            "test": "testing",
+            "security": "security",
+            "performance": "optimization",
+            "deploy": "deployment",
+            "config": "configuration"
+        ]
+        
+        for (keyword, tag) in featureKeywords {
+            if text.localizedCaseInsensitiveContains(keyword) {
+                tags.append(tag)
+                break
+            }
+        }
+        
+        return tags
+    }
+    
+    /// Organize tasks by Kanban columns for backend creation
+    private func organizeTasksByKanbanColumns(tasks: [DocumentTask]) -> KanbanOrganizedTasks {
+        var organized = KanbanOrganizedTasks()
+        
+        for task in tasks {
+            switch task.suggestedStatus {
+            case .backlog:
+                organized.backlog.append(task)
+            case .todo:
+                organized.todo.append(task)
+            case .inProgress:
+                organized.inProgress.append(task)
+            case .testing:
+                organized.testing.append(task)
+            case .done:
+                organized.done.append(task)
+            }
+        }
+        
+        print("📊 Organized tasks: Backlog(\(organized.backlog.count)), Todo(\(organized.todo.count)), InProgress(\(organized.inProgress.count)), Testing(\(organized.testing.count)), Done(\(organized.done.count))")
+        
+        return organized
+    }
+    
+    /// Create organized Kanban tasks in backend
+    private func createKanbanTasksInBackend(_ organizedTasks: KanbanOrganizedTasks, projectId: UUID) async throws {
+        guard config.isBackendConfigured else { 
+            print("ℹ️ Backend not configured - tasks stored locally only")
+            return 
+        }
+        
+        processingStatus = "Creating Kanban tasks in backend..."
+        
+        let allTasks = organizedTasks.backlog + organizedTasks.todo + organizedTasks.inProgress + organizedTasks.testing + organizedTasks.done
+        
+        for task in allTasks {
+            let leanVibeTask = LeanVibeTask(
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                status: task.suggestedStatus,
+                priority: task.suggestedPriority,
+                projectId: task.projectId,
+                createdAt: Date(),
+                updatedAt: Date(),
+                confidence: task.confidence,
+                agentDecision: nil,
+                clientId: "kanban-auto-population",
+                assignedTo: nil,
+                estimatedEffort: nil,
+                actualEffort: nil,
+                tags: task.tags,
+                dependencies: [],
+                attachments: []
+            )
+            
+            try await taskService.addTask(leanVibeTask)
+        }
+        
+        print("✅ Successfully created \(allTasks.count) Kanban tasks in backend")
+    }
 }
 
 // MARK: - Supporting Models
@@ -1089,4 +1482,20 @@ enum DocumentType: String, CaseIterable {
         case .agent: return 6    // Agent config items
         }
     }
+}
+
+// MARK: - Kanban Auto-Population Supporting Models
+
+struct PlanDocument {
+    let path: String
+    let relativePath: String  
+    let directory: String
+}
+
+struct KanbanOrganizedTasks {
+    var backlog: [DocumentTask] = []
+    var todo: [DocumentTask] = []
+    var inProgress: [DocumentTask] = []
+    var testing: [DocumentTask] = []
+    var done: [DocumentTask] = []
 }
