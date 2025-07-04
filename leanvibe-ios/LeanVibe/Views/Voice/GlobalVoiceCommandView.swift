@@ -124,7 +124,13 @@ struct GlobalVoiceCommandView: View {
             let webSocket = WebSocketService()
             let projectManager = ProjectManager()
             let settingsManager = SettingsManager.shared
-            let globalVoice = GlobalVoiceManager(webSocketService: webSocket, projectManager: projectManager, settingsManager: settingsManager)
+            let voiceFactory = VoiceManagerFactory(
+                speechService: nil,
+                webSocketService: webSocket,
+                projectManager: projectManager,
+                settingsManager: settingsManager
+            )
+            let globalVoice = voiceFactory.globalVoiceManager!
             globalVoice.isVoiceCommandActive = true
             globalVoice.voiceCommandText = "Show me the project status"
             return globalVoice

@@ -21,7 +21,7 @@ class UnifiedVoiceService: ObservableObject {
     // MARK: - Performance Monitoring
     @Published private(set) var responseTime: TimeInterval = 0.0
     @Published private(set) var averageResponseTime: TimeInterval = 0.0
-    @Published private(set) var performanceStatus: PerformanceStatus = .optimal
+    @Published private(set) var performanceStatus: VoicePerformanceStatus = .optimal
     private var responseTimes: [TimeInterval] = []
     private var lastVoiceStartTime: Date?
     
@@ -542,7 +542,7 @@ enum ListeningMode: Equatable {
 
 // MARK: - Performance Models
 
-enum PerformanceStatus: String, CaseIterable {
+enum VoicePerformanceStatus: String, CaseIterable {
     case optimal = "optimal"      // < 500ms
     case good = "good"           // 500ms - 1s
     case warning = "warning"     // 1s - 2s  
@@ -570,7 +570,7 @@ enum PerformanceStatus: String, CaseIterable {
 struct VoicePerformanceMetrics {
     let currentResponseTime: TimeInterval
     let averageResponseTime: TimeInterval
-    let performanceStatus: PerformanceStatus
+    let performanceStatus: VoicePerformanceStatus
     let totalMeasurements: Int
     let targetResponseTime: TimeInterval
     let isWithinTarget: Bool

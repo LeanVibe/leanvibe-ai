@@ -18,10 +18,6 @@ final class BetaAnalyticsService: Sendable {
     }
 }
 
-enum UsageEventType: String {
-    case screenView = "screen_view"
-    case featureUsed = "feature_used"
-}
 
 // Voice service wrapper to handle optional initialization
 @MainActor
@@ -29,7 +25,12 @@ class VoiceServiceContainer: ObservableObject {
     let speechService: SpeechRecognitionService?
     let wakePhraseManager: WakePhraseManager?
     let permissionManager: VoicePermissionManager?
-    let globalVoice: GlobalVoiceManager?
+    let voiceManagerFactory: VoiceManagerFactory?
+    
+    // Legacy compatibility properties
+    var globalVoice: GlobalVoiceManager? {
+        return voiceManagerFactory?.globalVoiceManager
+    }
     
     init(webSocket: WebSocketService, projectManager: ProjectManager, settingsManager: SettingsManager, isVoiceEnabled: Bool) {
         if isVoiceEnabled {
@@ -38,7 +39,6 @@ class VoiceServiceContainer: ObservableObject {
             // Extra defensive voice service initialization with comprehensive error boundaries
             var tempSpeechService: SpeechRecognitionService?
             var tempWakePhraseManager: WakePhraseManager?
-            var tempGlobalVoice: GlobalVoiceManager?
             var tempPermissionManager: VoicePermissionManager?
             
             do {
@@ -66,18 +66,19 @@ class VoiceServiceContainer: ObservableObject {
                 )
                 print("✅ WakePhraseManager initialized")
                 
-                // Initialize global voice manager last (most complex)
-                tempGlobalVoice = GlobalVoiceManager(
+                // Initialize voice manager factory (replaces direct GlobalVoiceManager)
+                let voiceFactory = VoiceManagerFactory(
+                    speechService: tempSpeechService,
                     webSocketService: webSocket,
                     projectManager: projectManager,
                     settingsManager: settingsManager
                 )
-                print("✅ GlobalVoiceManager initialized")
+                print("✅ VoiceManagerFactory initialized")
                 
                 // All services initialized successfully
                 self.speechService = tempSpeechService
                 self.wakePhraseManager = tempWakePhraseManager
-                self.globalVoice = tempGlobalVoice
+                self.voiceManagerFactory = voiceFactory
                 self.permissionManager = tempPermissionManager
                 
                 print("🎉 VoiceServiceContainer: All voice services initialized successfully")
@@ -91,13 +92,12 @@ class VoiceServiceContainer: ObservableObject {
                 // Clean up any partially initialized services
                 tempSpeechService = nil
                 tempWakePhraseManager = nil
-                tempGlobalVoice = nil
                 tempPermissionManager = nil
                 
                 // Set all services to nil for safe operation
                 self.speechService = nil
                 self.wakePhraseManager = nil
-                self.globalVoice = nil
+                self.voiceManagerFactory = nil
                 self.permissionManager = nil
                 
                 print("⚠️ App will continue without voice features")
@@ -106,7 +106,7 @@ class VoiceServiceContainer: ObservableObject {
             print("🎤 VoiceServiceContainer: Voice features disabled in configuration")
             self.speechService = nil
             self.wakePhraseManager = nil
-            self.globalVoice = nil
+            self.voiceManagerFactory = nil
             self.permissionManager = nil
         }
     }
@@ -312,18 +312,21 @@ struct DashboardTabView: View {
             
             // Global voice command overlay with premium transitions
             if AppConfiguration.shared.isVoiceEnabled,
-               let globalVoice = voiceContainer.globalVoice {
-                if let unifiedService = unifiedVoice {
+               let voiceFactory = voiceContainer.voiceManagerFactory {
+                if let unifiedService = unifiedVoice, voiceFactory.isUsingUnifiedService {
                     // Use UnifiedVoiceService for new voice interface
                     if unifiedService.state.isListening || isProcessingState(unifiedService.state) {
                         // TODO: Create UnifiedVoiceCommandView - using legacy view for now
-                        GlobalVoiceCommandView(globalVoice: globalVoice)
-                            .transition(PremiumTransitions.modalTransition)
-                            .zIndex(999)
+                        if let globalVoice = voiceFactory.globalVoiceManager {
+                            GlobalVoiceCommandView(globalVoice: globalVoice)
+                                .transition(PremiumTransitions.modalTransition)
+                                .zIndex(999)
+                        }
                     }
                 } else {
                     // Fallback to legacy GlobalVoiceManager
-                    if globalVoice.isVoiceCommandActive {
+                    if let globalVoice = voiceFactory.globalVoiceManager,
+                       globalVoice.isVoiceCommandActive {
                         GlobalVoiceCommandView(globalVoice: globalVoice)
                             .transition(PremiumTransitions.modalTransition)
                             .zIndex(999)
@@ -358,10 +361,10 @@ struct DashboardTabView: View {
         .onDisappear {
             // Stop global voice listening when view disappears
             if AppConfiguration.shared.isVoiceEnabled,
-               let globalVoice = voiceContainer.globalVoice {
-                if let unifiedService = unifiedVoice {
+               let voiceFactory = voiceContainer.voiceManagerFactory {
+                if let unifiedService = unifiedVoice, voiceFactory.isUsingUnifiedService {
                     unifiedService.stopListening()
-                } else {
+                } else if let globalVoice = voiceFactory.globalVoiceManager {
                     globalVoice.stopGlobalVoiceListening()
                 }
             }
@@ -394,8 +397,8 @@ struct DashboardTabView: View {
                     return
                 }
                 
-                guard let globalVoice = voiceContainer.globalVoice else {
-                    print("⚠️ Global voice manager not available - skipping voice startup")
+                guard let voiceFactory = voiceContainer.voiceManagerFactory else {
+                    print("⚠️ Voice manager factory not available - skipping voice startup")
                     return
                 }
                 
@@ -406,19 +409,23 @@ struct DashboardTabView: View {
                 }
                 
                 // Try UnifiedVoiceService first, fallback to legacy
-                if let unifiedService = unifiedVoice {
+                if let unifiedService = unifiedVoice, voiceFactory.isUsingUnifiedService {
                     do {
                         await unifiedService.startListening(mode: .wakeWord)
                         print("✅ UnifiedVoiceService started successfully")
                     } catch {
                         print("⚠️ UnifiedVoiceService failed to start, falling back to legacy: \(error)")
                         await MainActor.run {
-                            startLegacyVoiceServiceSafely(globalVoice)
+                            if let globalVoice = voiceFactory.globalVoiceManager {
+                                startLegacyVoiceServiceSafely(globalVoice)
+                            }
                         }
                     }
                 } else {
                     await MainActor.run {
-                        startLegacyVoiceServiceSafely(globalVoice)
+                        if let globalVoice = voiceFactory.globalVoiceManager {
+                            startLegacyVoiceServiceSafely(globalVoice)
+                        }
                     }
                 }
                 
