@@ -90,14 +90,20 @@ struct ErrorBannerView: View {
                     Spacer()
                     
                     ForEach(error.suggestedActions) { action in
-                        Button(action.title) {
-                            action.action()
-                            if action.isPrimary {
+                        if action.isPrimary {
+                            Button(action.title) {
+                                action.action()
                                 onDismiss()
                             }
+                            .buttonStyle(BorderedProminentButtonStyle())
+                            .controlSize(.small)
+                        } else {
+                            Button(action.title) {
+                                action.action()
+                            }
+                            .buttonStyle(BorderedButtonStyle())
+                            .controlSize(.small)
                         }
-                        .buttonStyle(action.isPrimary ? .borderedProminent : .bordered)
-                        .controlSize(.small)
                     }
                 }
             }

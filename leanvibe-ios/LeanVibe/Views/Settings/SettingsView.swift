@@ -2062,7 +2062,40 @@ struct TemplateRow: View {
 
 // CustomFieldsView is defined in KanbanSettingsView.swift to avoid duplication
 
-// SyncSettingsView is implemented in its separate file: SyncSettingsView.swift
+// Temporary minimal view implementations until fully integrated
+@available(iOS 18.0, macOS 14.0, *)
+struct WakePhraseSettingsView: View {
+    var body: some View {
+        Text("Wake Phrase Settings")
+            .navigationTitle("Wake Phrase")
+    }
+}
+
+@available(iOS 18.0, macOS 14.0, *)
+struct SpeechSettingsView: View {
+    var body: some View {
+        Text("Speech Settings")
+            .navigationTitle("Speech")
+    }
+}
+
+@available(iOS 18.0, macOS 14.0, *)
+struct TaskNotificationSettingsView: View {
+    var body: some View {
+        Text("Task Notification Settings")
+            .navigationTitle("Task Notifications")
+    }
+}
+
+@available(iOS 18.0, macOS 14.0, *)
+struct SyncSettingsView: View {
+    var body: some View {
+        Text("Sync Settings")
+            .navigationTitle("Sync")
+    }
+}
+
+// Additional temporary view implementations
 
 @available(iOS 18.0, macOS 14.0, *)
 struct OfflineSettingsView: View {

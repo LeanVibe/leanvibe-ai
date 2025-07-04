@@ -73,6 +73,23 @@ struct NotificationSettings: SettingsProtocol {
 struct KanbanSettings: SettingsProtocol {
     var autoRefresh: Bool = true
     var refreshInterval: TimeInterval = 30.0
+    var showStatistics: Bool = true
+    var showColumnTaskCounts: Bool = true
+    var enableVoiceTaskCreation: Bool = false
+    var maxTasksPerColumn: Int = 50
+    var syncWithBackend: Bool = true
+    var offlineModeEnabled: Bool = false
+    var columnOrder: [String] = ["todo", "inProgress", "testing", "done"]
+    var compactMode: Bool = false
+    var enableColumnCustomization: Bool = true
+    var showTaskIds: Bool = false
+    var autoAssignTasks: Bool = false
+    var conflictResolution: String = "manual"
+    var defaultTaskPriority: String = "medium"
+    var enableAnimations: Bool = true
+    var enableInfiniteScroll: Bool = false
+    var enableTaskNotifications: Bool = true
+    var prefetchTaskDetails: Bool = true
     
     init() {}
 }

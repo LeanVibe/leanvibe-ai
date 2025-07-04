@@ -1,25 +1,26 @@
 import Foundation
 
-/// Temporary FeatureFlag enum until circular dependency is resolved
-enum FeatureFlag: String, CaseIterable {
+// FeatureFlag and FeatureFlagManager are defined in FeatureFlagManager.swift
+// Temporary forward declarations until circular dependency is resolved
+enum FeatureFlag: String {
     case performanceMonitoring = "performance_monitoring"
     case voiceFeatures = "voice_features"
-    case codeCompletion = "code_completion"
+    case wakePhraseDetection = "wake_phrase_detection"
+    case voiceRecognition = "voice_recognition"
     case betaAnalytics = "beta_analytics"
     case advancedArchitectureFeatures = "advanced_architecture_features"
     case advancedKanbanFeatures = "advanced_kanban_features"
     case debugSettings = "debug_settings"
     case experimentalUI = "experimental_ui"
+    case codeCompletion = "code_completion"
 }
 
-/// Temporary FeatureFlagManager until circular dependency is resolved
 final class FeatureFlagManager: Sendable {
     static let shared = FeatureFlagManager()
     private init() {}
     
     func isFeatureEnabled(_ flag: FeatureFlag) -> Bool {
-        // Simple implementation - all features enabled for now
-        return true
+        return true // Simplified for compilation
     }
 }
 
