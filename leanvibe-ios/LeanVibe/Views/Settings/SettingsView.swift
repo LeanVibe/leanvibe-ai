@@ -456,8 +456,234 @@ struct TaskCreationSettingsView: View {
 
 @available(iOS 18.0, macOS 14.0, *)
 struct SyncSettingsView: View {
+    @StateObject private var settingsManager = SettingsManager.shared
+    @StateObject private var backendService = BackendSettingsService.shared
+    @Bindable private var bindableSettingsManager: SettingsManager = SettingsManager.shared
+    @State private var isSyncing = false
+    @State private var showingResetConfirmation = false
+    
     var body: some View {
-        Text("Sync Settings")
+        List {
+            // Backend Status Section
+            Section("Backend Status") {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Backend Connection")
+                            .fontWeight(.medium)
+                        
+                        HStack {
+                            Circle()
+                                .fill(backendService.isAvailable ? .green : .red)
+                                .frame(width: 8, height: 8)
+                            
+                            Text(backendService.isAvailable ? "Connected" : "Disconnected")
+                                .foregroundColor(.secondary)
+                                .font(.caption)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Button(backendService.isAvailable ? "Sync Now" : "Retry") {
+                        Task {
+                            await syncWithBackend()
+                        }
+                    }
+                    .disabled(isSyncing)
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+                
+                if let lastSync = settingsManager.lastSyncDate {
+                    Text("Last sync: \(formatDate(lastSync))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                if let error = backendService.lastError {
+                    Text("Error: \(error)")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .padding(.top, 4)
+                }
+            }
+            
+            // Sync Preferences
+            Section("Sync Preferences") {
+                Toggle("Auto-Sync Settings", isOn: $bindableSettingsManager.isBackendSyncEnabled)
+                    .onChange(of: settingsManager.isBackendSyncEnabled) { _, enabled in
+                        if enabled {
+                            Task {
+                                await syncWithBackend()
+                            }
+                        }
+                    }
+                
+                if settingsManager.isBackendSyncEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Automatic synchronization keeps your settings consistent across devices and ensures they're backed up to your LeanVibe backend.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            
+            // Sync Status
+            Section("Sync Status") {
+                HStack {
+                    Text("Current Status")
+                    Spacer()
+                    Text(syncStatusText)
+                        .foregroundColor(syncStatusColor)
+                        .font(.caption)
+                }
+                
+                if case .syncing = settingsManager.syncStatus {
+                    HStack {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Synchronizing...")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
+            // Manual Actions
+            Section("Manual Actions") {
+                Button(action: {
+                    Task {
+                        await forceSyncFromBackend()
+                    }
+                }) {
+                    SettingsRow(
+                        icon: "arrow.down.circle",
+                        iconColor: .blue,
+                        title: "Pull from Backend",
+                        subtitle: "Download latest settings from server"
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isSyncing || !backendService.isAvailable)
+                
+                Button(action: {
+                    Task {
+                        await pushToBackend()
+                    }
+                }) {
+                    SettingsRow(
+                        icon: "arrow.up.circle",
+                        iconColor: .green,
+                        title: "Push to Backend",
+                        subtitle: "Upload current settings to server"
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isSyncing || !backendService.isAvailable)
+                
+                Button(action: {
+                    showingResetConfirmation = true
+                }) {
+                    SettingsRow(
+                        icon: "arrow.clockwise.circle",
+                        iconColor: .orange,
+                        title: "Reset to Backend Defaults",
+                        subtitle: "Restore settings from server"
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isSyncing || !backendService.isAvailable)
+            }
+        }
+        .navigationTitle("Sync Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(
+            "Reset to Backend Defaults",
+            isPresented: $showingResetConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reset All Settings", role: .destructive) {
+                Task {
+                    await resetToBackendDefaults()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will replace all local settings with the latest values from your backend. This action cannot be undone.")
+        }
+    }
+    
+    private var syncStatusText: String {
+        switch settingsManager.syncStatus {
+        case .idle:
+            return "Idle"
+        case .syncing:
+            return "Syncing..."
+        case .synced(let date):
+            return "Synced \(formatTime(date))"
+        case .failed:
+            return "Failed"
+        }
+    }
+    
+    private var syncStatusColor: Color {
+        switch settingsManager.syncStatus {
+        case .idle:
+            return .secondary
+        case .syncing:
+            return .blue
+        case .synced:
+            return .green
+        case .failed:
+            return .red
+        }
+    }
+    
+    private func syncWithBackend() async {
+        isSyncing = true
+        await settingsManager.syncWithBackendIfAvailable()
+        isSyncing = false
+    }
+    
+    private func forceSyncFromBackend() async {
+        isSyncing = true
+        do {
+            _ = try await backendService.refreshSettings()
+            await settingsManager.syncWithBackendIfAvailable()
+        } catch {
+            print("Failed to force sync: \(error)")
+        }
+        isSyncing = false
+    }
+    
+    private func pushToBackend() async {
+        isSyncing = true
+        do {
+            try await settingsManager.pushSettingsToBackend()
+        } catch {
+            print("Failed to push to backend: \(error)")
+        }
+        isSyncing = false
+    }
+    
+    private func resetToBackendDefaults() async {
+        isSyncing = true
+        settingsManager.resetAll()
+        isSyncing = false
+    }
+    
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+    
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
     }
 }
 

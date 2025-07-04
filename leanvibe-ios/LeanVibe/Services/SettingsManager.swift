@@ -3,6 +3,7 @@ import SwiftUI
 import Observation
 
 /// Represents user-configurable settings for the application.
+/// NO HARDCODED VALUES - All settings come from backend or user configuration
 @available(iOS 18.0, macOS 14.0, *)
 @Observable
 class SettingsManager: ObservableObject, @unchecked Sendable {
@@ -10,6 +11,19 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         let instance = SettingsManager()
         return instance
     }()
+    
+    // MARK: - Backend Integration
+    private let backendService = BackendSettingsService.shared
+    var isBackendSyncEnabled = true
+    var lastSyncDate: Date?
+    var syncStatus: SyncStatus = .idle
+    
+    enum SyncStatus {
+        case idle
+        case syncing
+        case synced(Date)
+        case failed(Error)
+    }
 
     // MARK: - Observable Properties (Swift 6)
     var connection: ConnectionPreferences {
@@ -44,7 +58,7 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
     }
 
     init() {
-        // Initialize with defaults first to satisfy Swift 6 initialization requirements
+        // Initialize with minimal defaults first to satisfy Swift 6 initialization requirements
         self.connection = ConnectionPreferences()
         self.voice = VoiceSettings()
         self.notifications = NotificationSettings()
@@ -52,8 +66,13 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         self.accessibility = AccessibilitySettings()
         self.architecture = ArchitectureSettings()
         
-        // Then load saved values
+        // Load stored values first, then sync with backend
         loadStoredValues()
+        
+        // Start background sync with backend if available
+        Task {
+            await syncWithBackendIfAvailable()
+        }
     }
     
     private func loadStoredValues() {
@@ -77,8 +96,98 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         }
     }
 
+    // MARK: - Backend Sync Methods
+    
+    /// Sync settings with backend if available
+    func syncWithBackendIfAvailable() async {
+        guard isBackendSyncEnabled else { return }
+        
+        syncStatus = .syncing
+        
+        do {
+            let backendSettings = try await backendService.fetchSettings()
+            
+            await MainActor.run {
+                // Update settings from backend while preserving user overrides
+                updateFromBackend(backendSettings)
+                syncStatus = .synced(Date())
+                lastSyncDate = Date()
+            }
+        } catch {
+            await MainActor.run {
+                syncStatus = .failed(error)
+                print("⚠️ Settings sync failed: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    /// Push local settings to backend
+    func pushSettingsToBackend() async throws {
+        guard isBackendSyncEnabled else { return }
+        
+        let allSettings = AllSettings(
+            connection: connection,
+            voice: voice,
+            notifications: notifications,
+            kanban: kanban,
+            accessibility: accessibility,
+            architecture: architecture
+        )
+        
+        try await backendService.pushSettings(allSettings)
+        await MainActor.run {
+            lastSyncDate = Date()
+            syncStatus = .synced(Date())
+        }
+    }
+    
+    private func updateFromBackend(_ backendSettings: AllSettings) {
+        // Only update if backend has more recent data or user hasn't customized locally
+        
+        if !hasUserCustomizations(for: .connection) {
+            self.connection = backendSettings.connection
+        }
+        
+        if !hasUserCustomizations(for: .voice) {
+            self.voice = backendSettings.voice
+        }
+        
+        if !hasUserCustomizations(for: .notifications) {
+            self.notifications = backendSettings.notifications
+        }
+        
+        if !hasUserCustomizations(for: .kanban) {
+            self.kanban = backendSettings.kanban
+        }
+        
+        if !hasUserCustomizations(for: .accessibility) {
+            self.accessibility = backendSettings.accessibility
+        }
+        
+        if !hasUserCustomizations(for: .architecture) {
+            self.architecture = backendSettings.architecture
+        }
+        
+        saveAll()
+    }
+    
+    private func hasUserCustomizations(for key: SettingsKey) -> Bool {
+        // Check if user has made customizations to this setting category
+        return UserDefaults.standard.bool(forKey: "\(key.rawValue).userCustomized")
+    }
+    
+    private func markAsUserCustomized(_ key: SettingsKey) {
+        UserDefaults.standard.set(true, forKey: "\(key.rawValue).userCustomized")
+    }
+    
     // MARK: - Public Methods
     func resetAll() {
+        // Clear user customization flags
+        SettingsKey.allCases.forEach { key in
+            UserDefaults.standard.removeObject(forKey: "\(key.rawValue).userCustomized")
+        }
+        
+        // Reset to backend defaults or minimal defaults
         self.connection = ConnectionPreferences()
         self.voice = VoiceSettings()
         self.notifications = NotificationSettings()
@@ -86,6 +195,11 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         self.accessibility = AccessibilitySettings()
         self.architecture = ArchitectureSettings()
         saveAll()
+        
+        // Re-sync with backend
+        Task {
+            await syncWithBackendIfAvailable()
+        }
     }
     
     func resetAllSettings() {
@@ -99,11 +213,21 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         // Add other types as needed
     }
     
-    // Type-safe save method
+    // Type-safe save method with backend sync
     func save<T: Codable>(_ data: T, for key: SettingsKey) {
         let encoder = JSONEncoder()
         if let encoded = try? encoder.encode(data) {
             UserDefaults.standard.set(encoded, forKey: key.rawValue)
+            
+            // Mark as user customized and sync to backend
+            markAsUserCustomized(key)
+            
+            // Push to backend in background
+            if isBackendSyncEnabled {
+                Task {
+                    try? await pushSettingsToBackend()
+                }
+            }
         }
     }
 
@@ -131,13 +255,23 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
 
 // MARK: - Settings Structures
 /// Defines the keys used to store settings in UserDefaults.
-enum SettingsKey: String {
+enum SettingsKey: String, CaseIterable {
     case connection = "LeanVibe.ConnectionSettings"
     case voice = "LeanVibe.VoiceSettings"
     case notifications = "LeanVibe.NotificationSettings"
     case kanban = "LeanVibe.KanbanSettings"
     case accessibility = "LeanVibe.AccessibilitySettings"
     case architecture = "LeanVibe.ArchitectureSettings"
+}
+
+/// Container for all settings to sync with backend
+struct AllSettings: Codable {
+    let connection: ConnectionPreferences
+    let voice: VoiceSettings
+    let notifications: NotificationSettings
+    let kanban: KanbanSettings
+    let accessibility: AccessibilitySettings
+    let architecture: ArchitectureSettings
 }
 
 /// A protocol for settings structures to ensure they provide default values.
@@ -147,10 +281,11 @@ protocol SettingsProtocol: Codable {
 
 // MARK: - Settings Definitions
 /// Stores the settings related to the WebSocket server connection.
+/// NO HARDCODED VALUES - Everything comes from backend or user configuration
 struct ConnectionPreferences: SettingsProtocol {
-    var host: String = "127.0.0.1"
-    var port: Int = 8765
-    var authToken: String = "your_auth_token"
+    var host: String = ""
+    var port: Int = 0
+    var authToken: String = ""
     var useSSL: Bool = false
     
     var url: URL? {
@@ -161,7 +296,7 @@ struct ConnectionPreferences: SettingsProtocol {
         return components.url
     }
     
-    init(host: String = "127.0.0.1", port: Int = 8765, authToken: String = "your_auth_token", useSSL: Bool = false) {
+    init(host: String = "", port: Int = 0, authToken: String = "", useSSL: Bool = false) {
         self.host = host
         self.port = port
         self.authToken = authToken
@@ -169,33 +304,34 @@ struct ConnectionPreferences: SettingsProtocol {
     }
     
     init() {
-        // Initializes with default values
+        // Initializes with empty values - will be populated from backend
     }
 }
 
 /// Stores settings related to voice commands and transcription.
+/// NO HARDCODED VALUES - Everything comes from backend or user configuration
 struct VoiceSettings: SettingsProtocol {
-    var wakeWord: String = "Hey Lean"
-    var autoStartListening: Bool = true
+    var wakeWord: String = ""
+    var autoStartListening: Bool = false
     var autoStopListening: Bool = false
-    var wakePhraseEnabled: Bool = true
+    var wakePhraseEnabled: Bool = false
     var wakePhraseSensitivity: Double = 0.5
-    var voiceFeedbackEnabled: Bool = true
+    var voiceFeedbackEnabled: Bool = false
     var backgroundListening: Bool = false
-    var recognitionLanguage: String = "en-US"
+    var recognitionLanguage: String = ""
     
-    // Additional properties used by VoiceSettingsView
-    var confidenceThreshold: Double = 0.7
-    var maxRecordingDuration: Double = 30.0
-    var enableVoiceCommands: Bool = true
-    var commandHistoryEnabled: Bool = true
-    var maxHistoryItems: Int = 50
+    // Additional properties used by VoiceSettingsView - defaults from backend
+    var confidenceThreshold: Double = 0.0
+    var maxRecordingDuration: Double = 0.0
+    var enableVoiceCommands: Bool = false
+    var commandHistoryEnabled: Bool = false
+    var maxHistoryItems: Int = 0
     var enableCustomCommands: Bool = false
-    var microphoneGain: Double = 1.0
-    var noiseReduction: Bool = true
-    var echoCanselation: Bool = true
+    var microphoneGain: Double = 0.0
+    var noiseReduction: Bool = false
+    var echoCanselation: Bool = false
     
-    init(wakeWord: String = "Hey Lean", autoStartListening: Bool = true) {
+    init(wakeWord: String = "", autoStartListening: Bool = false) {
         self.wakeWord = wakeWord
         self.autoStartListening = autoStartListening
     }

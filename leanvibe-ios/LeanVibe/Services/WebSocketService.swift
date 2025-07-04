@@ -57,8 +57,11 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     private func createDefaultConnection() -> ConnectionSettings? {
         let config = AppConfiguration.shared
         
-        // Always auto-connect in debug builds or when explicitly configured
-        guard config.isLoggingEnabled else { return nil }
+        // Only auto-connect if backend is properly configured
+        guard config.isBackendConfigured else { 
+            print("⚠️ No backend configured - QR code setup required")
+            return nil 
+        }
         
         // Detect if running in simulator
         let isSimulator = isRunningInSimulator()
@@ -67,27 +70,27 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             try config.validateConfiguration()
             
             // Parse URL to extract host and port
-            let url = URL(string: config.apiBaseURL)
-            var host = url?.host ?? "localhost"
-            var port = url?.port ?? 8001
+            guard let url = URL(string: config.apiBaseURL) else {
+                print("⚠️ Invalid backend URL: \(config.apiBaseURL)")
+                return nil
+            }
             
-            // For simulator, try multiple common development ports
+            let host = url.host ?? ""
+            let port = url.port ?? (url.scheme == "https" ? 443 : 80)
+            
             if isSimulator {
-                host = "localhost"
-                // Try port 8000 first (current backend), then 8001, then 8002
-                port = 8000
-                print("🤖 Simulator detected - auto-connecting to \(host):\(port)")
+                print("🤖 Simulator detected - connecting to configured backend: \(host):\(port)")
             }
             
             return ConnectionSettings(
                 host: host,
                 port: port,
                 websocketPath: "/ws",
-                serverName: isSimulator ? "Simulator Development" : "Local Development",
-                network: isSimulator ? "simulator" : "development"
+                serverName: isSimulator ? "Simulator (\(host))" : "Backend (\(host))",
+                network: isSimulator ? "simulator" : "production"
             )
         } catch {
-            print("⚠️ Cannot create default connection: \(error)")
+            print("⚠️ Cannot create connection from configuration: \(error)")
             return nil
         }
     }

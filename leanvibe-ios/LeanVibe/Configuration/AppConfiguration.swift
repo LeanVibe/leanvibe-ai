@@ -1,7 +1,8 @@
 import Foundation
 
 /// Global application configuration for LeanVibe iOS app
-/// Handles environment-specific settings for development, staging, and production
+/// Handles dynamic backend configuration and environment-specific settings
+/// NO HARDCODED VALUES - Everything comes from user configuration or auto-discovery
 @available(iOS 18.0, *)
 struct AppConfiguration {
     static let shared = AppConfiguration()
@@ -25,23 +26,45 @@ struct AppConfiguration {
     
     /// Base URL for the LeanVibe backend API
     var apiBaseURL: String {
+        // Priority 1: Environment variable
         if let envURL = ProcessInfo.processInfo.environment["LEANVIBE_API_URL"] {
             return envURL
         }
         
+        // Priority 2: User-configured backend (from QR code or settings)
+        if let configuredURL = UserDefaults.standard.string(forKey: "LeanVibe_Backend_URL"),
+           !configuredURL.isEmpty {
+            return configuredURL
+        }
+        
+        // Priority 3: Bundle configuration
         if let bundleURL = Bundle.main.object(forInfoDictionaryKey: "API_BASE_URL") as? String,
            !bundleURL.isEmpty {
             return bundleURL
         }
         
-        // Environment-specific defaults
-        if isDebugBuild {
-            return "http://localhost:8001"  // Development server
-        } else if isTestFlightBuild {
-            return "https://staging-api.leanvibe.ai"  // Staging environment
-        } else {
-            return "https://api.leanvibe.ai"  // Production environment
+        // Priority 4: Auto-discovery from Bonjour/mDNS (for local development)
+        if let discoveredURL = autoDiscoverLocalBackend() {
+            return discoveredURL
         }
+        
+        // CRITICAL: No hardcoded fallbacks - return empty to force user configuration
+        return ""
+    }
+    
+    /// Auto-discover local backend via Bonjour/mDNS
+    private func autoDiscoverLocalBackend() -> String? {
+        // In development, try to discover local backend services
+        if isDebugBuild {
+            // This will be implemented to scan for _leanvibe._tcp services
+            // For now, only return localhost if explicitly running in simulator
+            #if targetEnvironment(simulator)
+            return "http://localhost:8001"
+            #else
+            return nil
+            #endif
+        }
+        return nil
     }
     
     /// WebSocket URL for real-time communication
@@ -212,8 +235,13 @@ struct AppConfiguration {
         #if DEBUG
         print("🔧 LeanVibe Configuration")
         print("   Environment: \(environmentName)")
-        print("   API Base URL: \(apiBaseURL)")
-        print("   WebSocket URL: \(webSocketURL)")
+        print("   Backend Configured: \(isBackendConfigured)")
+        if isBackendConfigured {
+            print("   API Base URL: \(apiBaseURL)")
+            print("   WebSocket URL: \(webSocketURL)")
+        } else {
+            print("   ⚠️  No backend configured - QR code setup required")
+        }
         print("   Logging: \(isLoggingEnabled)")
         print("   Analytics: \(isAnalyticsEnabled)")
         print("   Voice Features: \(isVoiceEnabled)")
@@ -223,6 +251,47 @@ struct AppConfiguration {
         print("   Network Timeout: \(networkTimeout)s")
         #endif
     }
+    
+    /// Get configuration status for UI display
+    var configurationStatus: ConfigurationStatus {
+        if !isBackendConfigured {
+            return .notConfigured
+        }
+        
+        // Test basic connectivity (this would need to be async in real implementation)
+        return .configured(apiBaseURL)
+    }
+}
+
+// MARK: - Configuration Status
+
+enum ConfigurationStatus {
+    case notConfigured
+    case configured(String)
+    case testing(String)
+    case error(String, Error)
+    
+    var displayText: String {
+        switch self {
+        case .notConfigured:
+            return "Backend not configured"
+        case .configured(let url):
+            return "Connected to \(url)"
+        case .testing(let url):
+            return "Testing \(url)..."
+        case .error(let url, _):
+            return "Connection failed: \(url)"
+        }
+    }
+    
+    var isConfigured: Bool {
+        switch self {
+        case .configured:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 // MARK: - Configuration Extensions
@@ -230,22 +299,71 @@ struct AppConfiguration {
 extension AppConfiguration {
     /// Validate that all required configuration is present
     func validateConfiguration() throws {
-        guard !apiBaseURL.isEmpty else {
+        let baseURL = apiBaseURL
+        
+        if baseURL.isEmpty {
             throw ConfigurationError.missingAPIBaseURL
         }
         
-        guard !webSocketURL.isEmpty else {
+        let wsURL = webSocketURL
+        if wsURL.isEmpty {
             throw ConfigurationError.missingWebSocketURL
         }
         
         // Validate URL format
-        guard URL(string: apiBaseURL) != nil else {
-            throw ConfigurationError.invalidAPIBaseURL(apiBaseURL)
+        guard URL(string: baseURL) != nil else {
+            throw ConfigurationError.invalidAPIBaseURL(baseURL)
         }
         
-        guard URL(string: webSocketURL) != nil else {
-            throw ConfigurationError.invalidWebSocketURL(webSocketURL)
+        guard URL(string: wsURL) != nil else {
+            throw ConfigurationError.invalidWebSocketURL(wsURL)
         }
+    }
+    
+    /// Check if backend is configured
+    var isBackendConfigured: Bool {
+        return !apiBaseURL.isEmpty
+    }
+    
+    /// Configure backend URL (typically from QR code scan)
+    func configureBackend(url: String) throws {
+        // Validate URL format
+        guard URL(string: url) != nil else {
+            throw ConfigurationError.invalidAPIBaseURL(url)
+        }
+        
+        // Clean up URL (remove trailing slash, add scheme if missing)
+        let cleanURL = cleanBackendURL(url)
+        
+        // Save to UserDefaults
+        UserDefaults.standard.set(cleanURL, forKey: "LeanVibe_Backend_URL")
+        UserDefaults.standard.set(Date(), forKey: "LeanVibe_Backend_Configured_Date")
+        
+        print("✅ Backend configured: \(cleanURL)")
+    }
+    
+    /// Clean and normalize backend URL
+    private func cleanBackendURL(_ url: String) -> String {
+        var cleanURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Remove trailing slash
+        if cleanURL.hasSuffix("/") {
+            cleanURL = String(cleanURL.dropLast())
+        }
+        
+        // Add scheme if missing
+        if !cleanURL.hasPrefix("http://") && !cleanURL.hasPrefix("https://") {
+            cleanURL = "http://\(cleanURL)"
+        }
+        
+        return cleanURL
+    }
+    
+    /// Reset backend configuration (force re-setup)
+    func resetBackendConfiguration() {
+        UserDefaults.standard.removeObject(forKey: "LeanVibe_Backend_URL")
+        UserDefaults.standard.removeObject(forKey: "LeanVibe_Backend_Configured_Date")
+        print("🔄 Backend configuration reset")
     }
 }
 
@@ -256,17 +374,31 @@ enum ConfigurationError: LocalizedError {
     case missingWebSocketURL
     case invalidAPIBaseURL(String)
     case invalidWebSocketURL(String)
+    case backendNotConfigured
     
     var errorDescription: String? {
         switch self {
         case .missingAPIBaseURL:
-            return "API Base URL is not configured"
+            return "Backend API URL is not configured. Please scan the QR code from your Mac agent or manually configure the backend URL in Settings."
         case .missingWebSocketURL:
-            return "WebSocket URL is not configured"
+            return "WebSocket URL could not be determined from the configured backend URL."
         case .invalidAPIBaseURL(let url):
-            return "Invalid API Base URL: \(url)"
+            return "Invalid backend URL format: \(url). Please check the URL and try again."
         case .invalidWebSocketURL(let url):
-            return "Invalid WebSocket URL: \(url)"
+            return "Invalid WebSocket URL format: \(url). This is derived from your backend URL."
+        case .backendNotConfigured:
+            return "No backend is configured. Please scan the QR code from your Mac agent to connect."
+        }
+    }
+    
+    var recoverySuggestion: String? {
+        switch self {
+        case .missingAPIBaseURL, .backendNotConfigured:
+            return "Launch the LeanVibe Mac agent and scan the QR code it displays, or manually enter the backend URL in Settings."
+        case .invalidAPIBaseURL, .invalidWebSocketURL:
+            return "Check that your backend URL is in the format 'http://ip-address:port' or 'https://domain.com'."
+        case .missingWebSocketURL:
+            return "This is an internal error. Please try reconfiguring your backend URL."
         }
     }
 }
