@@ -6,21 +6,62 @@ import Observation
 // Note: Models are imported implicitly from the same module
 
 // Temporary settings structs until circular dependency is resolved
-struct VoiceSettings: Codable {
+protocol SettingsProtocol: Codable {
+    init()
+}
+
+struct ConnectionPreferences: SettingsProtocol {
+    var host: String = ""
+    var port: Int = 0
+    var authToken: String = ""
+    var isSSLEnabled: Bool = false
+    var connectionTimeout: TimeInterval = 10.0
+    var reconnectInterval: TimeInterval = 5.0
+    var maxReconnectAttempts: Int = 5
+    var qrCodeExpiry: TimeInterval = 300.0
+    var autoConnect: Bool = true
+    var persistConnection: Bool = true
+    var serverCertificateValidation: Bool = true
+    var useCompression: Bool = false
+    
+    init() {}
+}
+
+struct VoiceSettings: SettingsProtocol {
     var isEnabled: Bool = true
     var wakeWord: String = ""
     var confidenceThreshold: Double = 0.7
     var recognitionLanguage: String = ""
     var autoStopListening: Bool = true
+    var wakePhraseEnabled: Bool = true
+    var backgroundListening: Bool = false
+    var commandHistoryEnabled: Bool = true
+    var echoCanselation: Bool = true
+    var enableCustomCommands: Bool = true
+    var enableVoiceCommands: Bool = true
+    var maxHistoryItems: Int = 100
+    var maxRecordingDuration: Double = 60.0
+    var microphoneGain: Double = 1.0
+    var noiseReduction: Bool = true
+    var voiceFeedbackEnabled: Bool = true
+    var wakePhraseSensitivity: Double = 0.7
     
     init() {}
 }
 
-struct NotificationSettings: Codable {
+struct NotificationSettings: SettingsProtocol {
     var notificationsEnabled: Bool = true
+    var bannerNotificationsEnabled: Bool = true
     var taskUpdates: Bool = false
+    var taskNotificationsEnabled: Bool = false
+    var taskOverdueNotifications: Bool = true
     var voiceNotificationsEnabled: Bool = false
+    var voiceCommandResultNotifications: Bool = false
+    var systemNotificationsEnabled: Bool = false
+    var serverConnectionNotifications: Bool = true
     var emailNotifications: Bool = false
+    var soundEnabled: Bool = true
+    var vibrationEnabled: Bool = true
     var frequency: String = "immediate"
     var quietHoursEnabled: Bool = false
     var quietHoursStart: String = "22:00"
@@ -29,21 +70,21 @@ struct NotificationSettings: Codable {
     init() {}
 }
 
-struct KanbanSettings: Codable {
+struct KanbanSettings: SettingsProtocol {
     var autoRefresh: Bool = true
     var refreshInterval: TimeInterval = 30.0
     
     init() {}
 }
 
-struct AccessibilitySettings: Codable {
+struct AccessibilitySettings: SettingsProtocol {
     var fontSize: Double = 16.0
     var highContrast: Bool = false
     
     init() {}
 }
 
-struct ArchitectureSettings: Codable {
+struct ArchitectureSettings: SettingsProtocol {
     var diagramTheme: String = "default"
     var renderQuality: String = "high"
     var showMetadata: Bool = true
@@ -55,34 +96,76 @@ struct ArchitectureSettings: Codable {
     init() {}
 }
 
-struct MetricsSettings: Codable {
+struct MetricsSettings: SettingsProtocol {
     var isEnabled: Bool = true
     
     init() {}
 }
 
-struct TaskCreationSettings: Codable {
+struct TaskCreationSettings: SettingsProtocol {
     var defaultPriority: String = "medium"
     
     init() {}
 }
 
-struct OfflineSettings: Codable {
+struct OfflineSettings: SettingsProtocol {
     var isEnabled: Bool = false
     
     init() {}
 }
 
-struct InterfaceSettings: Codable {
+struct InterfaceSettings: SettingsProtocol {
     var theme: String = "system"
     
     init() {}
 }
 
-struct PerformanceSettings: Codable {
+struct PerformanceSettings: SettingsProtocol {
     var optimizationLevel: String = "balanced"
     
     init() {}
+}
+
+struct AllSettings: Codable {
+    let connection: ConnectionPreferences
+    let voice: VoiceSettings
+    let notifications: NotificationSettings
+    let kanban: KanbanSettings
+    let accessibility: AccessibilitySettings
+    let architecture: ArchitectureSettings
+    let metrics: MetricsSettings
+    let taskCreation: TaskCreationSettings
+    let offline: OfflineSettings
+    let interface: InterfaceSettings
+    let performance: PerformanceSettings
+    
+    init() {
+        connection = ConnectionPreferences()
+        voice = VoiceSettings()
+        notifications = NotificationSettings()
+        kanban = KanbanSettings()
+        accessibility = AccessibilitySettings()
+        architecture = ArchitectureSettings()
+        metrics = MetricsSettings()
+        taskCreation = TaskCreationSettings()
+        offline = OfflineSettings()
+        interface = InterfaceSettings()
+        performance = PerformanceSettings()
+    }
+    
+    init(connection: ConnectionPreferences, voice: VoiceSettings, notifications: NotificationSettings, kanban: KanbanSettings, accessibility: AccessibilitySettings, architecture: ArchitectureSettings, metrics: MetricsSettings, taskCreation: TaskCreationSettings, offline: OfflineSettings, interface: InterfaceSettings, performance: PerformanceSettings) {
+        self.connection = connection
+        self.voice = voice
+        self.notifications = notifications
+        self.kanban = kanban
+        self.accessibility = accessibility
+        self.architecture = architecture
+        self.metrics = metrics
+        self.taskCreation = taskCreation
+        self.offline = offline
+        self.interface = interface
+        self.performance = performance
+    }
 }
 
 /// Represents user-configurable settings for the application.

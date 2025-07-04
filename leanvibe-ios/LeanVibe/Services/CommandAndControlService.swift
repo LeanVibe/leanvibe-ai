@@ -23,7 +23,8 @@ class CommandAndControlService: NSObject, ObservableObject, SFSpeechRecognizerDe
         self.projectManager = projectManager
         self.webSocketService = webSocketService
         self.settingsManager = settingsManager
-        self.commandProcessor = VoiceCommandProcessor(settings: settingsManager.voice)
+        // TODO: Fix VoiceSettings import issue
+        self.commandProcessor = VoiceCommandProcessor() // (settings: settingsManager.voice)
         self.speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
         
         super.init()

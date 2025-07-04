@@ -1,5 +1,14 @@
 import SwiftUI
 
+// Temporary VoiceTestView until voice services are fully integrated
+@available(iOS 18.0, macOS 14.0, *)
+struct VoiceTestView: View {
+    var body: some View {
+        Text("Voice Test View")
+            .navigationTitle("Voice Test")
+    }
+}
+
 /// Comprehensive Voice Settings view for configuring the voice system built by KAPPA
 /// Provides controls for wake phrase, speech recognition, voice commands, and testing
 @available(iOS 18.0, macOS 14.0, *)

@@ -1,15 +1,6 @@
 import SwiftUI
 
-// Temporary VoiceSettings until circular dependency is resolved
-struct VoiceSettings: Codable {
-    var isEnabled: Bool = true
-    var wakeWord: String = ""
-    var confidenceThreshold: Double = 0.7
-    var recognitionLanguage: String = ""
-    var autoStopListening: Bool = true
-    
-    init() {}
-}
+// VoiceSettings is now defined in SettingsManager.swift
 
 @available(iOS 18.0, *)
 struct CodeCompletionTestView: View {
