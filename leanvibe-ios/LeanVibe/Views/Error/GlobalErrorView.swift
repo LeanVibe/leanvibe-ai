@@ -24,34 +24,86 @@ struct GlobalErrorView: View {
 struct ErrorBannerView: View {
     let error: AppError
     let onDismiss: () -> Void
+    @State private var showDetails = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                Image(systemName: error.severity.systemImage)
-                    .foregroundColor(error.severity.color)
-                    .font(.title2)
+                // Category and severity icons
+                HStack(spacing: 4) {
+                    Image(systemName: error.category.systemImage)
+                        .foregroundColor(error.category == .network ? .blue : error.severity.color)
+                        .font(.caption)
+                    
+                    Image(systemName: error.severity.systemImage)
+                        .foregroundColor(error.severity.color)
+                        .font(.title2)
+                }
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(error.title)
-                        .font(.headline)
-                        .fontWeight(.semibold)
+                    HStack {
+                        Text(error.title)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        
+                        if !error.context.isEmpty {
+                            Text("• \(error.context)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                     
-                    Text(error.message)
+                    Text(error.userFacingMessage)
                         .font(.body)
                         .foregroundColor(.secondary)
+                    
+                    if showDetails && error.technicalDetails != nil {
+                        Text(error.technicalDetails!)
+                            .font(.caption)
+                            .foregroundColor(.secondary.opacity(0.7))
+                            .padding(.top, 4)
+                    }
                 }
                 
                 Spacer()
                 
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
-                        .font(.title2)
+                VStack(spacing: 4) {
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                            .font(.title2)
+                    }
+                    
+                    if error.technicalDetails != nil {
+                        Button(action: { showDetails.toggle() }) {
+                            Image(systemName: showDetails ? "info.circle.fill" : "info.circle")
+                                .foregroundColor(.secondary)
+                                .font(.caption)
+                        }
+                    }
                 }
             }
             
-            if let retryAction = error.retryAction {
+            // Action buttons
+            if !error.suggestedActions.isEmpty {
+                HStack {
+                    Spacer()
+                    
+                    ForEach(error.suggestedActions) { action in
+                        Button(action.title) {
+                            action.action()
+                            if action.isPrimary {
+                                onDismiss()
+                            }
+                        }
+                        .buttonStyle(action.isPrimary ? .borderedProminent : .bordered)
+                        .controlSize(.small)
+                    }
+                }
+            }
+            
+            // Legacy retry action support
+            if let retryAction = error.retryAction, error.suggestedActions.isEmpty {
                 HStack {
                     Spacer()
                     
@@ -161,5 +213,9 @@ extension DateFormatter {
 }
 
 #Preview {
-    GlobalErrorView(errorManager: GlobalErrorManager.shared)
+    if #available(iOS 18.0, macOS 14.0, *) {
+        GlobalErrorView(errorManager: GlobalErrorManager.shared)
+    } else {
+        Text("Preview unavailable")
+    }
 }

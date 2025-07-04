@@ -3,6 +3,7 @@ import SwiftUI
 import Observation
 
 // Import settings models from SettingsModels.swift to avoid duplication
+// Note: Models are imported implicitly from the same module
 
 /// Represents user-configurable settings for the application.
 /// NO HARDCODED VALUES - All settings come from backend or user configuration
@@ -58,6 +59,31 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
             save(architecture, for: .architecture)
         }
     }
+    var metrics: MetricsSettings {
+        didSet {
+            save(metrics, for: .metrics)
+        }
+    }
+    var taskCreation: TaskCreationSettings {
+        didSet {
+            save(taskCreation, for: .taskCreation)
+        }
+    }
+    var offline: OfflineSettings {
+        didSet {
+            save(offline, for: .offline)
+        }
+    }
+    var interface: InterfaceSettings {
+        didSet {
+            save(interface, for: .interface)
+        }
+    }
+    var performance: PerformanceSettings {
+        didSet {
+            save(performance, for: .performance)
+        }
+    }
 
     init() {
         // Initialize with minimal defaults first to satisfy Swift 6 initialization requirements
@@ -67,6 +93,11 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         self.kanban = KanbanSettings()
         self.accessibility = AccessibilitySettings()
         self.architecture = ArchitectureSettings()
+        self.metrics = MetricsSettings()
+        self.taskCreation = TaskCreationSettings()
+        self.offline = OfflineSettings()
+        self.interface = InterfaceSettings()
+        self.performance = PerformanceSettings()
         
         // Load stored values first, then sync with backend
         loadStoredValues()
@@ -95,6 +126,21 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         }
         if let loadedArchitecture = load(.architecture, as: ArchitectureSettings.self) {
             self.architecture = loadedArchitecture
+        }
+        if let loadedMetrics = load(.metrics, as: MetricsSettings.self) {
+            self.metrics = loadedMetrics
+        }
+        if let loadedTaskCreation = load(.taskCreation, as: TaskCreationSettings.self) {
+            self.taskCreation = loadedTaskCreation
+        }
+        if let loadedOffline = load(.offline, as: OfflineSettings.self) {
+            self.offline = loadedOffline
+        }
+        if let loadedInterface = load(.interface, as: InterfaceSettings.self) {
+            self.interface = loadedInterface
+        }
+        if let loadedPerformance = load(.performance, as: PerformanceSettings.self) {
+            self.performance = loadedPerformance
         }
     }
 
@@ -134,7 +180,12 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
             notifications: notifications,
             kanban: kanban,
             accessibility: accessibility,
-            architecture: architecture
+            architecture: architecture,
+            metrics: metrics,
+            taskCreation: taskCreation,
+            offline: offline,
+            interface: interface,
+            performance: performance
         )
         
         // TODO: Fix BackendSettingsService target membership
@@ -172,6 +223,26 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
             self.architecture = backendSettings.architecture
         }
         
+        if !hasUserCustomizations(for: .metrics) {
+            self.metrics = backendSettings.metrics
+        }
+        
+        if !hasUserCustomizations(for: .taskCreation) {
+            self.taskCreation = backendSettings.taskCreation
+        }
+        
+        if !hasUserCustomizations(for: .offline) {
+            self.offline = backendSettings.offline
+        }
+        
+        if !hasUserCustomizations(for: .interface) {
+            self.interface = backendSettings.interface
+        }
+        
+        if !hasUserCustomizations(for: .performance) {
+            self.performance = backendSettings.performance
+        }
+        
         saveAll()
     }
     
@@ -198,6 +269,11 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         self.kanban = KanbanSettings()
         self.accessibility = AccessibilitySettings()
         self.architecture = ArchitectureSettings()
+        self.metrics = MetricsSettings()
+        self.taskCreation = TaskCreationSettings()
+        self.offline = OfflineSettings()
+        self.interface = InterfaceSettings()
+        self.performance = PerformanceSettings()
         saveAll()
         
         // Re-sync with backend
@@ -254,6 +330,11 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         save(kanban, for: .kanban)
         save(accessibility, for: .accessibility)
         save(architecture, for: .architecture)
+        save(metrics, for: .metrics)
+        save(taskCreation, for: .taskCreation)
+        save(offline, for: .offline)
+        save(interface, for: .interface)
+        save(performance, for: .performance)
     }
 }
 
@@ -266,6 +347,11 @@ enum SettingsKey: String, CaseIterable {
     case kanban = "LeanVibe.KanbanSettings"
     case accessibility = "LeanVibe.AccessibilitySettings"
     case architecture = "LeanVibe.ArchitectureSettings"
+    case metrics = "LeanVibe.MetricsSettings"
+    case taskCreation = "LeanVibe.TaskCreationSettings"
+    case offline = "LeanVibe.OfflineSettings"
+    case interface = "LeanVibe.InterfaceSettings"
+    case performance = "LeanVibe.PerformanceSettings"
 }
 
 

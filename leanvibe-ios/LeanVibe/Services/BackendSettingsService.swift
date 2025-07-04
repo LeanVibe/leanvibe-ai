@@ -70,7 +70,12 @@ class BackendSettingsService: ObservableObject {
                 notifications: backendSettings.notifications ?? NotificationSettings(),
                 kanban: backendSettings.kanban ?? KanbanSettings(),
                 accessibility: backendSettings.accessibility ?? AccessibilitySettings(),
-                architecture: backendSettings.architecture ?? ArchitectureSettings()
+                architecture: backendSettings.architecture ?? ArchitectureSettings(),
+                metrics: backendSettings.metrics ?? MetricsSettings(),
+                taskCreation: backendSettings.taskCreation ?? TaskCreationSettings(),
+                offline: backendSettings.offline ?? OfflineSettings(),
+                interface: backendSettings.interface ?? InterfaceSettings(),
+                performance: backendSettings.performance ?? PerformanceSettings()
             )
             
             // Cache the results
@@ -104,7 +109,12 @@ class BackendSettingsService: ObservableObject {
                 notifications: settings.notifications,
                 kanban: settings.kanban,
                 accessibility: settings.accessibility,
-                architecture: settings.architecture
+                architecture: settings.architecture,
+                metrics: settings.metrics,
+                taskCreation: settings.taskCreation,
+                offline: settings.offline,
+                interface: settings.interface,
+                performance: settings.performance
             )
             
             request.httpBody = try JSONEncoder().encode(requestData)
@@ -137,7 +147,12 @@ class BackendSettingsService: ObservableObject {
             notifications: getDefaultNotificationSettings(),
             kanban: getDefaultKanbanSettings(),
             accessibility: AccessibilitySettings(),
-            architecture: getDefaultArchitectureSettings()
+            architecture: getDefaultArchitectureSettings(),
+            metrics: getDefaultMetricsSettings(),
+            taskCreation: getDefaultTaskCreationSettings(),
+            offline: getDefaultOfflineSettings(),
+            interface: getDefaultInterfaceSettings(),
+            performance: getDefaultPerformanceSettings()
         )
     }
     
@@ -197,6 +212,73 @@ class BackendSettingsService: ObservableObject {
         architecture.sharePermissionLevel = "view-only"
         
         return architecture
+    }
+    
+    private func getDefaultMetricsSettings() -> MetricsSettings {
+        var metrics = MetricsSettings()
+        
+        // Essential metrics defaults
+        metrics.dataRetentionDays = 30
+        metrics.exportFormat = "json"
+        metrics.aggregationInterval = "hourly"
+        metrics.maxStorageSize = 100
+        
+        return metrics
+    }
+    
+    private func getDefaultTaskCreationSettings() -> TaskCreationSettings {
+        var taskCreation = TaskCreationSettings()
+        
+        // Essential task creation defaults
+        taskCreation.defaultPriority = "medium"
+        taskCreation.defaultDueDate = "none"
+        taskCreation.defaultTemplate = "basic"
+        
+        return taskCreation
+    }
+    
+    private func getDefaultOfflineSettings() -> OfflineSettings {
+        var offline = OfflineSettings()
+        
+        // Essential offline defaults
+        offline.offlineStorageLimit = 500
+        offline.conflictResolutionStrategy = "merge"
+        offline.cacheExpiration = 24
+        offline.maxOfflineActions = 1000
+        offline.syncRetryAttempts = 3
+        
+        return offline
+    }
+    
+    private func getDefaultInterfaceSettings() -> InterfaceSettings {
+        var interface = InterfaceSettings()
+        
+        // Essential interface defaults
+        interface.theme = "auto"
+        interface.accentColor = "blue"
+        interface.fontSize = "medium"
+        interface.toolbarPosition = "top"
+        interface.navigationStyle = "default"
+        interface.sidebarPosition = "left"
+        interface.tabBarStyle = "default"
+        interface.layoutDensity = "comfortable"
+        interface.gridSize = "medium"
+        interface.iconStyle = "default"
+        
+        return interface
+    }
+    
+    private func getDefaultPerformanceSettings() -> PerformanceSettings {
+        var performance = PerformanceSettings()
+        
+        // Essential performance defaults
+        performance.maxMemoryUsage = 512
+        performance.maxCacheSize = 200
+        performance.threadPoolSize = 4
+        performance.networkRequestTimeout = 30
+        performance.maxConcurrentRequests = 10
+        
+        return performance
     }
     
     /// Force refresh settings from backend

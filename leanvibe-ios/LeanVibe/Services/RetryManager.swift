@@ -68,12 +68,13 @@ class RetryManager: ObservableObject {
         throw lastError ?? RetryError.maxAttemptsExceeded
     }
     
-    /// Create a retry action for GlobalErrorManager
+    /// Create a retry action for GlobalErrorManager with enhanced error categorization
     func createRetryAction<T>(
         operation: @escaping () async throws -> T,
         maxAttempts: Int = 3,
         backoffStrategy: BackoffStrategy = .exponential(),
         context: String = "",
+        category: ErrorCategory = .system,
         onSuccess: @escaping (T) -> Void = { _ in },
         onFailure: @escaping (Error) -> Void = { _ in }
     ) -> () -> Void {
@@ -90,7 +91,15 @@ class RetryManager: ObservableObject {
                     GlobalErrorManager.shared.showSuccess("Operation completed successfully")
                 } catch {
                     onFailure(error)
-                    GlobalErrorManager.shared.showError(error, context: "Retry failed: \(context)")
+                    GlobalErrorManager.shared.showError(error, context: "Retry failed: \(context)", category: category)
+                    
+                    // Trigger automatic recovery if appropriate
+                    if category == .network || category == .service {
+                        let appError = AppError.from(error, context: context, category: category)
+                        Task {
+                            await ErrorRecoveryManager.shared.attemptRecovery(for: appError)
+                        }
+                    }
                 }
             }
         }

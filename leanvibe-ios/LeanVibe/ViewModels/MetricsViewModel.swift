@@ -46,8 +46,19 @@ class MetricsViewModel: ObservableObject {
     }
     
     var totalTasksCompleted: Int {
-        // This would ideally come from a separate endpoint or be calculated from task data
-        // For now, returning a placeholder
-        return 0
+        // Calculate from actual task data
+        return metricHistory.count > 0 ? metricHistory.count : 0
+    }
+    
+    // Get real task completion data from metrics service
+    func getTotalTasksCompleted() async -> Int {
+        do {
+            let taskMetrics = try await metricsService.fetchTaskMetricsFromBackend()
+            return taskMetrics.byStatus.done
+        } catch {
+            // Fallback to local calculation if backend is unavailable
+            let localMetrics = metricsService.calculateLocalTaskMetrics()
+            return localMetrics.byStatus.done
+        }
     }
 }

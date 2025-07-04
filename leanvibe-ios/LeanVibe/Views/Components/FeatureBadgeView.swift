@@ -32,35 +32,32 @@ struct FeatureBadgeView: View {
         HStack(spacing: 2) {
             if feature.isBetaOnly {
                 Text("BETA")
-                    .font(.caption2)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(Color.blue)
+                    .font(PremiumDesignSystem.Components.Badge.font)
+                    .padding(.horizontal, PremiumDesignSystem.Components.Badge.horizontalPadding)
+                    .padding(.vertical, PremiumDesignSystem.Components.Badge.verticalPadding)
+                    .background(PremiumDesignSystem.Colors.betaBadge)
                     .foregroundColor(.white)
-                    .cornerRadius(3)
+                    .cornerRadius(PremiumDesignSystem.Components.Badge.cornerRadius)
             }
             
             if feature.isExperimental {
                 Text("EXP")
-                    .font(.caption2)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(Color.orange)
+                    .font(PremiumDesignSystem.Components.Badge.font)
+                    .padding(.horizontal, PremiumDesignSystem.Components.Badge.horizontalPadding)
+                    .padding(.vertical, PremiumDesignSystem.Components.Badge.verticalPadding)
+                    .background(PremiumDesignSystem.Colors.experimentalBadge)
                     .foregroundColor(.white)
-                    .cornerRadius(3)
+                    .cornerRadius(PremiumDesignSystem.Components.Badge.cornerRadius)
             }
             
             if isDebugOverridden {
                 Text("DEV")
-                    .font(.caption2)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 1)
-                    .background(Color.purple)
+                    .font(PremiumDesignSystem.Components.Badge.font)
+                    .padding(.horizontal, PremiumDesignSystem.Components.Badge.horizontalPadding)
+                    .padding(.vertical, PremiumDesignSystem.Components.Badge.verticalPadding)
+                    .background(PremiumDesignSystem.Colors.debugBadge)
                     .foregroundColor(.white)
-                    .cornerRadius(3)
+                    .cornerRadius(PremiumDesignSystem.Components.Badge.cornerRadius)
             }
         }
     }
@@ -68,7 +65,7 @@ struct FeatureBadgeView: View {
     // MARK: - Full Badge
     
     private var fullBadge: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: PremiumDesignSystem.Spacing.xs) {
             HStack {
                 Image(systemName: badgeIcon)
                     .font(.caption)
@@ -92,14 +89,14 @@ struct FeatureBadgeView: View {
                 }
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
+        .padding(.horizontal, PremiumDesignSystem.Spacing.sm)
+        .padding(.vertical, PremiumDesignSystem.Spacing.xs)
         .background(badgeColor.opacity(0.1))
         .overlay(
-            RoundedRectangle(cornerRadius: 6)
+            RoundedRectangle(cornerRadius: PremiumDesignSystem.CornerRadius.sm)
                 .stroke(badgeColor.opacity(0.3), lineWidth: 1)
         )
-        .cornerRadius(6)
+        .cornerRadius(PremiumDesignSystem.CornerRadius.sm)
     }
     
     // MARK: - Banner Badge
@@ -110,7 +107,7 @@ struct FeatureBadgeView: View {
                 .font(.body)
                 .foregroundColor(badgeColor)
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.xs) {
                 Text(bannerTitle)
                     .font(.body)
                     .fontWeight(.medium)
@@ -126,7 +123,7 @@ struct FeatureBadgeView: View {
             
             Spacer()
         }
-        .padding()
+        .padding(PremiumDesignSystem.Spacing.containerPadding)
         .background(badgeColor.opacity(0.1))
         .overlay(
             Rectangle()
@@ -140,25 +137,25 @@ struct FeatureBadgeView: View {
     
     private var badgeIcon: String {
         if feature.isBetaOnly {
-            return "flask"
+            return PremiumDesignSystem.Icons.beta
         } else if feature.isExperimental {
-            return "exclamationmark.triangle"
+            return PremiumDesignSystem.Icons.experimental
         } else if isDebugOverridden {
-            return "hammer"
+            return PremiumDesignSystem.Icons.debug
         } else {
-            return "flag"
+            return PremiumDesignSystem.Icons.feature
         }
     }
     
     private var badgeColor: Color {
         if feature.isBetaOnly {
-            return .blue
+            return PremiumDesignSystem.Colors.betaBadge
         } else if feature.isExperimental {
-            return .orange
+            return PremiumDesignSystem.Colors.experimentalBadge
         } else if isDebugOverridden {
-            return .purple
+            return PremiumDesignSystem.Colors.debugBadge
         } else {
-            return .gray
+            return PremiumDesignSystem.Colors.iconSecondary
         }
     }
     
@@ -242,8 +239,8 @@ struct FeatureBadgeModifier: ViewModifier {
                     }
                     Spacer()
                 }
-                .padding(.top, 8)
-                .padding(.leading, 8)
+                .padding(.top, PremiumDesignSystem.Spacing.sm)
+                .padding(.leading, PremiumDesignSystem.Spacing.sm)
                 
             case .topTrailing:
                 VStack {
@@ -253,15 +250,15 @@ struct FeatureBadgeModifier: ViewModifier {
                     }
                     Spacer()
                 }
-                .padding(.top, 8)
-                .padding(.trailing, 8)
+                .padding(.top, PremiumDesignSystem.Spacing.sm)
+                .padding(.trailing, PremiumDesignSystem.Spacing.sm)
                 
             case .bottom:
                 VStack {
                     Spacer()
                     FeatureBadgeView(feature: feature, style: style)
                 }
-                .padding(.bottom, 8)
+                .padding(.bottom, PremiumDesignSystem.Spacing.sm)
                 
             case .overlay:
                 FeatureBadgeView(feature: feature, style: style)
@@ -332,7 +329,7 @@ struct FeatureLabeledView<Content: View>: View {
             FeatureBadgeView(feature: .kanbanBoard, style: .compact)
         }
     }
-    .padding()
+    .padding(PremiumDesignSystem.Spacing.containerPadding)
 }
 
 #Preview("Full Badges") {
@@ -341,7 +338,7 @@ struct FeatureLabeledView<Content: View>: View {
         FeatureBadgeView(feature: .experimentalUI, style: .full)
         FeatureBadgeView(feature: .kanbanBoard, style: .full)
     }
-    .padding()
+    .padding(PremiumDesignSystem.Spacing.containerPadding)
 }
 
 #Preview("Banner Badges") {
@@ -359,7 +356,7 @@ struct FeatureLabeledView<Content: View>: View {
             Text("This is a beta feature with limited functionality")
                 .foregroundColor(.secondary)
         }
-        .padding()
+        .padding(PremiumDesignSystem.Spacing.containerPadding)
         .background(Color(.systemGroupedBackground))
     }
 }

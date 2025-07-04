@@ -130,10 +130,10 @@ class TaskService: ObservableObject {
         // Filter tasks for the specific project
         let projectTasks = tasks.filter { $0.projectId == projectId }
         
-        // Only generate samples if no tasks exist at all for this project
-        if projectTasks.isEmpty {
-            generateSampleTasks(for: projectId)
-            try await saveTasks()
+        // If no tasks exist for this project and backend is unavailable, that's okay
+        // The UI will show an empty state encouraging the user to add tasks
+        if projectTasks.isEmpty && !isBackendAvailable {
+            print("No tasks found for project \(projectId) and backend is unavailable")
         }
     }
     
@@ -474,7 +474,7 @@ class TaskService: ObservableObject {
     }
     
     @MainActor
-    private func updatePerformanceMetrics() async {
+    func updatePerformanceMetrics() async {
         // Try to get real performance metrics from backend
         do {
             if let backendMetrics = try await fetchPerformanceMetricsFromBackend() {
@@ -669,39 +669,6 @@ class TaskService: ObservableObject {
         }
     }
     
-    private func generateSampleTasks(for projectId: UUID) {
-        // Only generate sample tasks if backend is completely unavailable
-        // This should be a last resort fallback
-        guard !isBackendAvailable else {
-            print("Backend is available - skipping sample task generation")
-            return
-        }
-        
-        print("Backend unavailable - generating minimal sample tasks for project: \(projectId.uuidString)")
-        
-        let minimalSampleTasks = [
-            LeanVibeTask(
-                title: "Connect to backend",
-                description: "Establish connection to LeanVibe backend service",
-                status: .todo,
-                priority: .high,
-                projectId: projectId,
-                confidence: 1.0,
-                clientId: "offline-client"
-            ),
-            LeanVibeTask(
-                title: "Sync local data",
-                description: "Synchronize offline changes with backend",
-                status: .todo,
-                priority: .medium,
-                projectId: projectId,
-                confidence: 1.0,
-                clientId: "offline-client"
-            )
-        ]
-        
-        tasks.append(contentsOf: minimalSampleTasks)
-    }
     
     // MARK: - Backend Connectivity Testing
     

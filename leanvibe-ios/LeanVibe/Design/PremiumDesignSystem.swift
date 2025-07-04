@@ -28,13 +28,48 @@ struct PremiumDesignSystem {
         static let subtle = Shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
     }
     
-    // MARK: - Spacing & Layout
-    static let cornerRadius: CGFloat = 16
-    static let smallCornerRadius: CGFloat = 8
-    static let largeCornerRadius: CGFloat = 24
-    static let cardPadding: CGFloat = 16
-    static let sectionSpacing: CGFloat = 24
-    static let itemSpacing: CGFloat = 12
+    // MARK: - Spacing & Layout System (8pt Grid)
+    struct Spacing {
+        static let xs: CGFloat = 4      // 4pt
+        static let sm: CGFloat = 8      // 8pt
+        static let md: CGFloat = 12     // 12pt
+        static let lg: CGFloat = 16     // 16pt
+        static let xl: CGFloat = 20     // 20pt
+        static let xxl: CGFloat = 24    // 24pt
+        static let xxxl: CGFloat = 32   // 32pt
+        
+        // Semantic spacing
+        static let containerPadding: CGFloat = lg      // 16pt
+        static let sectionSpacing: CGFloat = xxl       // 24pt
+        static let itemSpacing: CGFloat = md           // 12pt
+        static let buttonSpacing: CGFloat = sm         // 8pt
+        static let cardSpacing: CGFloat = lg           // 16pt
+        static let listRowSpacing: CGFloat = sm        // 8pt
+    }
+    
+    struct CornerRadius {
+        static let xs: CGFloat = 4
+        static let sm: CGFloat = 8
+        static let md: CGFloat = 12
+        static let lg: CGFloat = 16
+        static let xl: CGFloat = 20
+        static let xxl: CGFloat = 24
+        static let pill: CGFloat = 999
+        
+        // Semantic corner radius
+        static let button: CGFloat = md        // 12pt
+        static let card: CGFloat = lg          // 16pt
+        static let modal: CGFloat = xl         // 20pt
+        static let badge: CGFloat = xs         // 4pt
+    }
+    
+    // Legacy support (deprecated - use Spacing struct)
+    static let cornerRadius: CGFloat = CornerRadius.card
+    static let smallCornerRadius: CGFloat = CornerRadius.sm
+    static let largeCornerRadius: CGFloat = CornerRadius.xl
+    static let cardPadding: CGFloat = Spacing.containerPadding
+    static let sectionSpacing: CGFloat = Spacing.sectionSpacing
+    static let itemSpacing: CGFloat = Spacing.itemSpacing
     
     // MARK: - Animation
     static let animationDuration: Double = 0.3
@@ -43,20 +78,39 @@ struct PremiumDesignSystem {
     
     // MARK: - Premium Color Palette
     struct Colors {
-        // Primary Colors - Theme Aware
+        // MARK: - Brand Colors
         static let primary = Color.accentColor
         static let primaryLight = Color.accentColor.opacity(0.7)
         static let primaryDark = Color.accentColor.opacity(0.9)
         
-        // Secondary Colors - Theme Aware
+        // MARK: - Semantic Colors (System Adaptive)
         static let secondary = Color(.systemBlue)
         static let accent = Color(.systemTeal)
         
-        // Status Colors - Theme Aware
+        // MARK: - Status Colors (System Adaptive)
         static let success = Color(.systemGreen)
         static let warning = Color(.systemOrange)
         static let error = Color(.systemRed)
         static let info = Color(.systemBlue)
+        
+        // MARK: - UI Element Colors (Consistent across app)
+        static let buttonPrimary = Color(.systemBlue)
+        static let buttonSecondary = Color(.systemGray)
+        static let buttonDestructive = Color(.systemRed)
+        static let buttonSuccess = Color(.systemGreen)
+        
+        // MARK: - Badge & Feature Colors
+        static let betaBadge = Color(.systemBlue)
+        static let experimentalBadge = Color(.systemOrange)
+        static let debugBadge = Color(.systemPurple)
+        
+        // MARK: - Icon Colors
+        static let iconPrimary = Color(.systemBlue)
+        static let iconSecondary = Color(.systemGray)
+        static let iconSuccess = Color(.systemGreen)
+        static let iconWarning = Color(.systemOrange)
+        static let iconError = Color(.systemRed)
+        static let iconInfo = Color(.systemBlue)
         
         // Neutral Colors
         #if canImport(UIKit)
@@ -107,6 +161,113 @@ struct PremiumDesignSystem {
         static let heroTitle = Font.system(size: 34, weight: .bold, design: .default)
         static let cardTitle = Font.system(size: 18, weight: .semibold, design: .default)
         static let buttonTitle = Font.system(size: 16, weight: .semibold, design: .default)
+        static let settingsRowTitle = Font.system(size: 17, weight: .regular, design: .default)
+        static let settingsRowSubtitle = Font.system(size: 15, weight: .regular, design: .default)
+        static let badgeText = Font.system(size: 12, weight: .medium, design: .default)
+        static let navigationTitle = Font.system(size: 18, weight: .semibold, design: .default)
+    }
+    
+    // MARK: - Icon System
+    struct Icons {
+        // MARK: - Icon Sizes
+        static let small: CGFloat = 16
+        static let medium: CGFloat = 20
+        static let large: CGFloat = 24
+        static let extraLarge: CGFloat = 32
+        
+        // MARK: - Navigation Icons
+        static let settings = "gear"
+        static let back = "chevron.left"
+        static let close = "xmark"
+        static let menu = "ellipsis.circle"
+        static let search = "magnifyingglass"
+        static let filter = "line.horizontal.3.decrease"
+        static let sort = "arrow.up.arrow.down"
+        
+        // MARK: - Action Icons
+        static let add = "plus"
+        static let edit = "pencil"
+        static let delete = "trash"
+        static let save = "checkmark"
+        static let refresh = "arrow.clockwise"
+        static let share = "square.and.arrow.up"
+        static let copy = "doc.on.doc"
+        
+        // MARK: - Status Icons
+        static let success = "checkmark.circle.fill"
+        static let warning = "exclamationmark.triangle.fill"
+        static let error = "xmark.circle.fill"
+        static let info = "info.circle.fill"
+        static let loading = "arrow.triangle.2.circlepath"
+        
+        // MARK: - Feature Icons
+        static let voice = "mic.fill"
+        static let voiceOff = "mic.slash.fill"
+        static let kanban = "rectangle.3.group"
+        static let architecture = "building.columns"
+        static let dashboard = "chart.bar.xaxis"
+        static let tasks = "checklist"
+        static let projects = "folder"
+        static let analytics = "chart.line.uptrend.xyaxis"
+        
+        // MARK: - Badge Icons
+        static let beta = "flask"
+        static let experimental = "exclamationmark.triangle"
+        static let debug = "hammer"
+        static let feature = "flag"
+        
+        // MARK: - System Icons
+        static let offline = "wifi.slash"
+        static let online = "wifi"
+        static let sync = "arrow.triangle.2.circlepath"
+        static let notification = "bell"
+        static let privacy = "hand.raised"
+        static let security = "lock.shield"
+    }
+    
+    // MARK: - Component Standards
+    struct Components {
+        // MARK: - Button Standards
+        struct Button {
+            static let cornerRadius: CGFloat = CornerRadius.button
+            static let horizontalPadding: CGFloat = Spacing.xl
+            static let verticalPadding: CGFloat = Spacing.md
+            static let iconSize: CGFloat = Icons.small
+            static let minimumTapTarget: CGFloat = 44
+        }
+        
+        // MARK: - Card Standards
+        struct Card {
+            static let cornerRadius: CGFloat = CornerRadius.card
+            static let padding: CGFloat = Spacing.containerPadding
+            static let spacing: CGFloat = Spacing.itemSpacing
+            static let shadowOpacity: Double = 0.1
+        }
+        
+        // MARK: - List Row Standards
+        struct ListRow {
+            static let verticalPadding: CGFloat = Spacing.listRowSpacing
+            static let horizontalPadding: CGFloat = Spacing.containerPadding
+            static let iconSize: CGFloat = Icons.medium
+            static let minimumHeight: CGFloat = 44
+            static let titleFont: Font = Typography.settingsRowTitle
+            static let subtitleFont: Font = Typography.settingsRowSubtitle
+        }
+        
+        // MARK: - Badge Standards
+        struct Badge {
+            static let cornerRadius: CGFloat = CornerRadius.badge
+            static let horizontalPadding: CGFloat = Spacing.sm
+            static let verticalPadding: CGFloat = Spacing.xs
+            static let font: Font = Typography.badgeText
+        }
+        
+        // MARK: - Modal Standards
+        struct Modal {
+            static let cornerRadius: CGFloat = CornerRadius.modal
+            static let padding: CGFloat = Spacing.xxl
+            static let titleSpacing: CGFloat = Spacing.lg
+        }
     }
     
 }
@@ -525,6 +686,178 @@ extension View {
     
     func backdrop(_ material: Material) -> some View {
         self.background(material)
+    }
+}
+
+// MARK: - Standardized Components
+
+@available(iOS 18.0, macOS 14.0, *)
+struct StandardSettingsRow: View {
+    let title: String
+    let subtitle: String?
+    let icon: String
+    let iconColor: Color
+    let action: () -> Void
+    
+    init(
+        title: String,
+        subtitle: String? = nil,
+        icon: String,
+        iconColor: Color = PremiumDesignSystem.Colors.iconPrimary,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.icon = icon
+        self.iconColor = iconColor
+        self.action = action
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: PremiumDesignSystem.Spacing.md) {
+                Image(systemName: icon)
+                    .font(.system(size: PremiumDesignSystem.Components.ListRow.iconSize))
+                    .foregroundColor(iconColor)
+                    .frame(width: PremiumDesignSystem.Icons.medium, height: PremiumDesignSystem.Icons.medium)
+                
+                VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.xs) {
+                    Text(title)
+                        .font(PremiumDesignSystem.Components.ListRow.titleFont)
+                        .foregroundColor(PremiumDesignSystem.Colors.primaryText)
+                    
+                    if let subtitle = subtitle {
+                        Text(subtitle)
+                            .font(PremiumDesignSystem.Components.ListRow.subtitleFont)
+                            .foregroundColor(PremiumDesignSystem.Colors.secondaryText)
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: PremiumDesignSystem.Icons.small))
+                    .foregroundColor(PremiumDesignSystem.Colors.tertiaryText)
+            }
+            .padding(.vertical, PremiumDesignSystem.Components.ListRow.verticalPadding)
+            .frame(minHeight: PremiumDesignSystem.Components.ListRow.minimumHeight)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+@available(iOS 18.0, macOS 14.0, *)
+struct StandardToggleRow: View {
+    let title: String
+    let subtitle: String?
+    let icon: String
+    let iconColor: Color
+    @Binding var isOn: Bool
+    
+    init(
+        title: String,
+        subtitle: String? = nil,
+        icon: String,
+        iconColor: Color = PremiumDesignSystem.Colors.iconPrimary,
+        isOn: Binding<Bool>
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.icon = icon
+        self.iconColor = iconColor
+        self._isOn = isOn
+    }
+    
+    var body: some View {
+        HStack(spacing: PremiumDesignSystem.Spacing.md) {
+            Image(systemName: icon)
+                .font(.system(size: PremiumDesignSystem.Components.ListRow.iconSize))
+                .foregroundColor(iconColor)
+                .frame(width: PremiumDesignSystem.Icons.medium, height: PremiumDesignSystem.Icons.medium)
+            
+            VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.xs) {
+                Text(title)
+                    .font(PremiumDesignSystem.Components.ListRow.titleFont)
+                    .foregroundColor(PremiumDesignSystem.Colors.primaryText)
+                
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(PremiumDesignSystem.Components.ListRow.subtitleFont)
+                        .foregroundColor(PremiumDesignSystem.Colors.secondaryText)
+                }
+            }
+            
+            Spacer()
+            
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+        }
+        .padding(.vertical, PremiumDesignSystem.Components.ListRow.verticalPadding)
+        .frame(minHeight: PremiumDesignSystem.Components.ListRow.minimumHeight)
+    }
+}
+
+@available(iOS 18.0, macOS 14.0, *)
+struct StandardBadge: View {
+    let text: String
+    let color: Color
+    let style: BadgeStyle
+    
+    enum BadgeStyle {
+        case filled
+        case outlined
+        case subtle
+    }
+    
+    init(text: String, color: Color = PremiumDesignSystem.Colors.primary, style: BadgeStyle = .filled) {
+        self.text = text
+        self.color = color
+        self.style = style
+    }
+    
+    var body: some View {
+        Text(text)
+            .font(PremiumDesignSystem.Components.Badge.font)
+            .padding(.horizontal, PremiumDesignSystem.Components.Badge.horizontalPadding)
+            .padding(.vertical, PremiumDesignSystem.Components.Badge.verticalPadding)
+            .background(backgroundFor(style))
+            .foregroundColor(foregroundFor(style))
+            .cornerRadius(PremiumDesignSystem.Components.Badge.cornerRadius)
+            .overlay(
+                RoundedRectangle(cornerRadius: PremiumDesignSystem.Components.Badge.cornerRadius)
+                    .stroke(strokeFor(style), lineWidth: style == .outlined ? 1 : 0)
+            )
+    }
+    
+    private func backgroundFor(_ style: BadgeStyle) -> Color {
+        switch style {
+        case .filled:
+            return color
+        case .outlined:
+            return Color.clear
+        case .subtle:
+            return color.opacity(0.1)
+        }
+    }
+    
+    private func foregroundFor(_ style: BadgeStyle) -> Color {
+        switch style {
+        case .filled:
+            return .white
+        case .outlined:
+            return color
+        case .subtle:
+            return color
+        }
+    }
+    
+    private func strokeFor(_ style: BadgeStyle) -> Color {
+        switch style {
+        case .filled, .subtle:
+            return Color.clear
+        case .outlined:
+            return color
+        }
     }
 }
 

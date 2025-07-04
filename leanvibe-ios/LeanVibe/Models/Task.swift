@@ -132,11 +132,13 @@ struct LeanVibeTask: Identifiable, Codable, Sendable, Transferable {
     
     // MARK: - Transferable Implementation
     
+    @available(macOS 13.0, iOS 16.0, *)
     static var transferRepresentation: some TransferRepresentation {
         CodableRepresentation(contentType: .kanbanTask)
     }
 }
 
+@available(macOS 11.0, iOS 14.0, *)
 extension UTType {
     static let kanbanTask = UTType(exportedAs: "ai.leanvibe.task")
 }
@@ -201,8 +203,9 @@ enum TaskPriority: String, CaseIterable, Codable, Sendable {
 
 import SwiftUI
 
+@available(macOS 10.15, iOS 13.0, *)
 extension TaskPriority {
-    var color: Color {
+    var swiftUIColor: Color {
         switch self {
         case .low:
             return .green
@@ -212,6 +215,19 @@ extension TaskPriority {
             return .orange
         case .urgent:
             return .red
+        }
+    }
+    
+    var color: String {
+        switch self {
+        case .low:
+            return "green"
+        case .medium:
+            return "blue"
+        case .high:
+            return "orange"
+        case .urgent:
+            return "red"
         }
     }
 }

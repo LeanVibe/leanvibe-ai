@@ -9,6 +9,11 @@ struct AllSettings: Codable {
     let kanban: KanbanSettings
     let accessibility: AccessibilitySettings
     let architecture: ArchitectureSettings
+    let metrics: MetricsSettings
+    let taskCreation: TaskCreationSettings
+    let offline: OfflineSettings
+    let interface: InterfaceSettings
+    let performance: PerformanceSettings
 }
 
 /// A protocol for settings structures to ensure they provide default values.
@@ -142,7 +147,7 @@ struct KanbanSettings: SettingsProtocol {
 
 /// Accessibility-related settings.
 /// NO HARDCODED VALUES - Based on user accessibility needs and system settings
-struct AccessibilitySettings: SettingsProtocol {
+struct AccessibilitySettings: SettingsProtocol, Codable {
     var isVoiceOverEnabled: Bool = false
     var isLargeTextEnabled: Bool = false
     var isHighContrastEnabled: Bool = false
@@ -194,6 +199,129 @@ struct ArchitectureSettings: SettingsProtocol {
 
 // MARK: - Backend Models
 
+/// Metrics and performance monitoring settings.
+/// NO HARDCODED VALUES - All controlled by backend configuration
+struct MetricsSettings: SettingsProtocol {
+    var isEnabled: Bool = true
+    var performanceMonitoringEnabled: Bool = true
+    var memoryUsageTrackingEnabled: Bool = true
+    var networkMetricsEnabled: Bool = true
+    var voiceMetricsEnabled: Bool = true
+    var taskCompletionMetricsEnabled: Bool = true
+    var dataRetentionDays: Int = 30
+    var exportFormat: String = "json"
+    var shareMetricsEnabled: Bool = false
+    var aggregationInterval: String = "hourly"
+    var detailedLoggingEnabled: Bool = false
+    var realTimeMonitoringEnabled: Bool = true
+    var alertsEnabled: Bool = true
+    var performanceThresholds: [String: Double] = [:]
+    var maxStorageSize: Int = 100 // MB
+    var autoExportEnabled: Bool = false
+    var privacyMode: Bool = true
+    
+    init() {} // Default initialization
+}
+
+/// Task creation and template settings.
+/// NO HARDCODED VALUES - All controlled by backend configuration
+struct TaskCreationSettings: SettingsProtocol {
+    var defaultPriority: String = "medium"
+    var defaultAssignee: String = ""
+    var defaultLabels: [String] = []
+    var defaultDueDate: String = "none"
+    var useTemplates: Bool = true
+    var defaultTemplate: String = ""
+    var autoAssignToSelf: Bool = true
+    var requireDescription: Bool = false
+    var enableQuickActions: Bool = true
+    var voiceTaskCreationEnabled: Bool = true
+    var taskNotificationsEnabled: Bool = true
+    var duplicateTaskWarning: Bool = true
+    var autoSaveEnabled: Bool = true
+    var taskValidationEnabled: Bool = true
+    var customFieldsEnabled: Bool = false
+    var bulkCreationEnabled: Bool = false
+    var templateSharingEnabled: Bool = false
+    var taskHistoryEnabled: Bool = true
+    
+    init() {} // Default initialization
+}
+
+/// Offline mode and synchronization settings.
+/// NO HARDCODED VALUES - All controlled by backend configuration
+struct OfflineSettings: SettingsProtocol {
+    var isEnabled: Bool = true
+    var offlineStorageLimit: Int = 500 // MB
+    var syncOnWifiOnly: Bool = false
+    var backgroundSyncEnabled: Bool = true
+    var conflictResolutionStrategy: String = "merge"
+    var cacheExpiration: Int = 24 // hours
+    var preloadData: Bool = true
+    var compressionEnabled: Bool = true
+    var encryptionEnabled: Bool = true
+    var autoCleanupEnabled: Bool = true
+    var maxOfflineActions: Int = 1000
+    var syncRetryAttempts: Int = 3
+    var queuedActionsPersistence: Bool = true
+    var offlineIndicatorEnabled: Bool = true
+    var smartSyncEnabled: Bool = true
+    var prioritySyncEnabled: Bool = true
+    var deltaSyncEnabled: Bool = true
+    
+    init() {} // Default initialization
+}
+
+/// Interface customization and appearance settings.
+/// NO HARDCODED VALUES - All controlled by backend configuration
+struct InterfaceSettings: SettingsProtocol {
+    var theme: String = "auto"
+    var accentColor: String = "blue"
+    var fontSize: String = "medium"
+    var compactMode: Bool = false
+    var showToolbar: Bool = true
+    var toolbarPosition: String = "top"
+    var navigationStyle: String = "default"
+    var showSidebar: Bool = true
+    var sidebarPosition: String = "left"
+    var tabBarStyle: String = "default"
+    var animationsEnabled: Bool = true
+    var reducedMotion: Bool = false
+    var highContrast: Bool = false
+    var customColors: [String: String] = [:]
+    var layoutDensity: String = "comfortable"
+    var showPreviewPane: Bool = true
+    var gridSize: String = "medium"
+    var iconStyle: String = "default"
+    
+    init() {} // Default initialization
+}
+
+/// Performance optimization and resource management settings.
+/// NO HARDCODED VALUES - All controlled by backend configuration
+struct PerformanceSettings: SettingsProtocol {
+    var memoryLimitEnabled: Bool = true
+    var maxMemoryUsage: Int = 512 // MB
+    var backgroundProcessingEnabled: Bool = true
+    var networkOptimizationEnabled: Bool = true
+    var batteryOptimizationEnabled: Bool = true
+    var lowPowerModeEnabled: Bool = false
+    var cacheOptimizationEnabled: Bool = true
+    var maxCacheSize: Int = 200 // MB
+    var imageCompressionEnabled: Bool = true
+    var prefetchingEnabled: Bool = true
+    var lazyLoadingEnabled: Bool = true
+    var renderingOptimizationEnabled: Bool = true
+    var threadPoolSize: Int = 4
+    var networkRequestTimeout: Int = 30 // seconds
+    var maxConcurrentRequests: Int = 10
+    var diskCacheEnabled: Bool = true
+    var memoryWarningHandlingEnabled: Bool = true
+    var performanceMonitoringEnabled: Bool = true
+    
+    init() {} // Default initialization
+}
+
 struct BackendSettingsResponse: Codable {
     let connection: ConnectionPreferences?
     let voice: VoiceSettings?
@@ -201,6 +329,11 @@ struct BackendSettingsResponse: Codable {
     let kanban: KanbanSettings?
     let accessibility: AccessibilitySettings?
     let architecture: ArchitectureSettings?
+    let metrics: MetricsSettings?
+    let taskCreation: TaskCreationSettings?
+    let offline: OfflineSettings?
+    let interface: InterfaceSettings?
+    let performance: PerformanceSettings?
 }
 
 struct BackendSettingsRequest: Codable {
@@ -210,6 +343,11 @@ struct BackendSettingsRequest: Codable {
     let kanban: KanbanSettings
     let accessibility: AccessibilitySettings
     let architecture: ArchitectureSettings
+    let metrics: MetricsSettings
+    let taskCreation: TaskCreationSettings
+    let offline: OfflineSettings
+    let interface: InterfaceSettings
+    let performance: PerformanceSettings
 }
 
 // MARK: - Errors
