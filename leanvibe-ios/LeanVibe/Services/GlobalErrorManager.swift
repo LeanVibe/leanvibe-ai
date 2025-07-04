@@ -1,27 +1,6 @@
 import SwiftUI
 import Foundation
 
-/// Temporary enum until BackendSettingsError import issue is resolved
-@available(iOS 18.0, macOS 14.0, *)
-enum BackendSettingsError: Error, LocalizedError {
-    case backendNotConfigured
-    case networkError(Error)
-    case invalidResponse
-    case httpError(Int)
-    
-    var errorDescription: String? {
-        switch self {
-        case .backendNotConfigured:
-            return "Backend is not configured"
-        case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
-        case .invalidResponse:
-            return "Invalid response from backend"
-        case .httpError(let statusCode):
-            return "HTTP error: \(statusCode)"
-        }
-    }
-}
 
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor
@@ -228,7 +207,7 @@ struct AppError: Identifiable, Equatable {
                 severity: .warning,
                 category: .service,
                 context: context,
-                userFacingMessage: serviceError.userFacingMessage
+                userFacingMessage: serviceError.localizedDescription
             )
         default:
             return AppError(
@@ -505,19 +484,5 @@ extension TaskServiceError {
     }
 }
 
-extension BackendSettingsError {
-    var userFacingMessage: String {
-        switch self {
-        case .backendNotConfigured:
-            return "Please scan a QR code to connect to your server."
-        case .invalidResponse:
-            return "Received unexpected data from server. Please try again."
-        case .httpError(let code):
-            return "Server returned error \(code). Please try again later."
-        case .networkError:
-            return "Unable to reach the server. Please check your connection."
-        }
-    }
-}
 
 // Note: Additional service errors would have similar extensions

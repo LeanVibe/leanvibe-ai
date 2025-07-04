@@ -3,17 +3,17 @@ import Foundation
 /// Represents all user-configurable settings for the application.
 /// NO HARDCODED VALUES - All settings come from backend or user configuration
 struct AllSettings: Codable {
-    let connection: ConnectionPreferences
-    let voice: VoiceSettings
-    let notifications: NotificationSettings
-    let kanban: KanbanSettings
-    let accessibility: AccessibilitySettings
-    let architecture: ArchitectureSettings
-    let metrics: MetricsSettings
-    let taskCreation: TaskCreationSettings
-    let offline: OfflineSettings
-    let interface: InterfaceSettings
-    let performance: PerformanceSettings
+    var connection: ConnectionPreferences
+    var voice: VoiceSettings
+    var notifications: NotificationSettings
+    var kanban: KanbanSettings
+    var accessibility: AccessibilitySettings
+    var architecture: ArchitectureSettings
+    var metrics: MetricsSettings
+    var taskCreation: TaskCreationSettings
+    var offline: OfflineSettings
+    var interface: InterfaceSettings
+    var performance: PerformanceSettings
 }
 
 /// A protocol for settings structures to ensure they provide default values.

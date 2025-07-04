@@ -1,6 +1,9 @@
 import Foundation
 import Network
 import Combine
+#if canImport(UIKit)
+import UIKit
+#endif
 
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor
@@ -99,9 +102,11 @@ class NetworkErrorHandler: ObservableObject {
                 },
                 ErrorAction(title: "Settings", systemImage: "gear") {
                     // Open network settings
+                    #if canImport(UIKit)
                     if let settingsUrl = URL(string: "App-Prefs:root=WIFI") {
                         UIApplication.shared.open(settingsUrl)
                     }
+                    #endif
                 }
             ]
         )
@@ -322,6 +327,7 @@ class NetworkErrorHandler: ObservableObject {
 
 // MARK: - Supporting Types
 
+@available(iOS 18.0, macOS 14.0, *)
 struct NetworkErrorStats {
     let webSocketErrors: Int
     let restAPIErrors: Int
@@ -343,6 +349,8 @@ extension Notification.Name {
 
 // MARK: - UIApplication Extension for Settings
 
+#if canImport(UIKit)
+@available(iOS 18.0, macOS 14.0, *)
 extension UIApplication {
     func openSettings() {
         if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
@@ -350,3 +358,4 @@ extension UIApplication {
         }
     }
 }
+#endif

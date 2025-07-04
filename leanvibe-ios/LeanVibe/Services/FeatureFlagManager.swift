@@ -578,7 +578,7 @@ enum FeatureCategory: String, CaseIterable {
 
 // MARK: - Supporting Types
 
-enum Environment: String {
+enum AppEnvironment: String {
     case debug = "debug"
     case testFlight = "testflight"
     case production = "production"

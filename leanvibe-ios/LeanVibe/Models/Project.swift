@@ -32,7 +32,7 @@ struct Project: Identifiable, Codable, Equatable {
         path: String,
         language: ProjectLanguage,
         lastActivity: Date = Date(),
-        metrics: ProjectMetrics = ProjectMetrics(healthScore: 0.5), // Default placeholder until real metrics are fetched
+        metrics: ProjectMetrics = ProjectMetrics(healthScore: 0.0), // Will be updated with real metrics from backend
         clientId: String? = nil
     ) {
         self.id = id

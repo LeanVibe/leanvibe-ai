@@ -550,20 +550,12 @@ class TaskService: ObservableObject {
         let backend = try await backendHealth
         let tasks = try await taskHealth
         
-        // Mock other services for now
-        let database = ServiceHealth(
-            serviceName: "Database",
-            level: .healthy,
-            message: "In-memory storage operational",
-            responseTime: 0.001
-        )
+        // Get real service health from backend
+        async let databaseHealth = checkServiceHealth(endpoint: "/api/database/health", serviceName: "Database")
+        async let webSocketHealth = checkServiceHealth(endpoint: "/api/websocket/health", serviceName: "WebSocket")
         
-        let webSocket = ServiceHealth(
-            serviceName: "WebSocket",
-            level: .healthy,
-            message: "Real-time communication active",
-            responseTime: 0.050
-        )
+        let database = try await databaseHealth
+        let webSocket = try await webSocketHealth
         
         return SystemHealthStatus(
             backend: backend,

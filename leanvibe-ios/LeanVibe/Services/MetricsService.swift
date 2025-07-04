@@ -421,21 +421,71 @@ class MetricsService: ObservableObject {
             )
         }
         
-        // Simplified database check
-        return ServiceHealth(
-            serviceName: "Database",
-            level: .healthy,
-            message: "Database is operational"
-        )
+        // Check actual database health through backend
+        do {
+            let url = URL(string: "\(config.apiBaseURL)/api/database/health")!
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 5.0
+            
+            let (_, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                return ServiceHealth(
+                    serviceName: "Database",
+                    level: .healthy,
+                    message: "Database is operational"
+                )
+            } else {
+                return ServiceHealth(
+                    serviceName: "Database",
+                    level: .warning,
+                    message: "Database service unavailable"
+                )
+            }
+        } catch {
+            return ServiceHealth(
+                serviceName: "Database",
+                level: .error,
+                message: "Database connection failed: \(error.localizedDescription)"
+            )
+        }
     }
     
     private func checkWebSocketHealth() async -> ServiceHealth {
-        // Check WebSocket connection
-        return ServiceHealth(
-            serviceName: "WebSocket",
-            level: .healthy,
-            message: "WebSocket connection is stable"
-        )
+        guard config.isBackendConfigured else {
+            return ServiceHealth(
+                serviceName: "WebSocket",
+                level: .warning,
+                message: "Backend not configured"
+            )
+        }
+        
+        // Check actual WebSocket health through backend
+        do {
+            let url = URL(string: "\(config.apiBaseURL)/api/websocket/health")!
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 5.0
+            
+            let (_, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                return ServiceHealth(
+                    serviceName: "WebSocket",
+                    level: .healthy,
+                    message: "WebSocket connection is stable"
+                )
+            } else {
+                return ServiceHealth(
+                    serviceName: "WebSocket",
+                    level: .warning,
+                    message: "WebSocket service unavailable"
+                )
+            }
+        } catch {
+            return ServiceHealth(
+                serviceName: "WebSocket",
+                level: .error,
+                message: "WebSocket connection failed: \(error.localizedDescription)"
+            )
+        }
     }
     
     private func checkTasksHealth() async -> ServiceHealth {

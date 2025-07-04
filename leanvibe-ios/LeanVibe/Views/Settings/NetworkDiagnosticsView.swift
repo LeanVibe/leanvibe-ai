@@ -6,7 +6,7 @@ struct NetworkDiagnosticsView: View {
     @ObservedObject var settingsManager: SettingsManager
     @State private var isRunningDiagnostics = false
     @State private var diagnosticResults: [DiagnosticResult] = []
-    @State private var networkStatus: NetworkStatus = .unknown
+    @State private var networkStatus: DiagnosticNetworkStatus = .unknown
     @State private var connectionDetails: ConnectionDetails?
     @Environment(\.dismiss) private var dismiss
     
@@ -336,7 +336,7 @@ struct ConnectionDetails {
     }
 }
 
-enum NetworkStatus {
+enum DiagnosticNetworkStatus {
     case connected
     case disconnected
     case issues

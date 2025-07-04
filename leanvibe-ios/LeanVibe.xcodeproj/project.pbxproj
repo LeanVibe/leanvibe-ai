@@ -104,6 +104,7 @@
 		9C6D3BBA9ECECFB56ACBC224 /* Task.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C145C61F11BDBDD9F2C9D5 /* Task.swift */; };
 		9D8F74A618C205155D909185 /* LaunchScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38EFD52D7680448549F65F6A /* LaunchScreenView.swift */; };
 		9D91C6A930687B8654EB2CD4 /* interaction-bridge.js in Resources */ = {isa = PBXBuildFile; fileRef = 12CA3D394D11950CDE572AE9 /* interaction-bridge.js */; };
+		770D361406E3637C65D13DAA /* SettingsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 598016966EC49E0369FE0E6B /* SettingsModels.swift */; };
 		9D93327A637A2B89C9ED65BE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F76E9D51F64F297E4BFA4248 /* SettingsView.swift */; };
 		9F819A1072DDACFA96B0A899 /* View+GlobalError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C0E9196EA96740CDFE3AE1 /* View+GlobalError.swift */; };
 		A0C85E892330A908F8ED3540 /* WakePhraseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 469DA90FBFE05330D089785D /* WakePhraseManager.swift */; };
@@ -233,6 +234,7 @@
 		53484045134DD24F801940F7 /* WelcomeOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeOnboardingView.swift; sourceTree = "<group>"; };
 		5BC6A64194971E102206EFC8 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		5BD5DE750342F3ED0FDEDCD4 /* VoiceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsView.swift; sourceTree = "<group>"; };
+		598016966EC49E0369FE0E6B /* SettingsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsModels.swift; sourceTree = "<group>"; };
 		5FE0BA2D821AFE214FBB71BE /* PerformanceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceManager.swift; sourceTree = "<group>"; };
 		609EF678BB0EBEDB8636DA7A /* CampaignManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CampaignManagementView.swift; sourceTree = "<group>"; };
 		6460F4D20A07CACD3B1CB3DA /* ErrorDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorDisplayView.swift; sourceTree = "<group>"; };
@@ -461,6 +463,7 @@
 				717B2E220367B0DA16F529D1 /* KanbanTypes.swift */,
 				0DCD1318E6924B3D12B17BAC /* MetricData.swift */,
 				36F815B0364874F529D8238A /* Project.swift */,
+				598016966EC49E0369FE0E6B /* SettingsModels.swift */,
 				76C145C61F11BDBDD9F2C9D5 /* Task.swift */,
 				325E545360C6B13C89212EB7 /* TaskMetrics.swift */,
 				34D15059F8A04F9DC51E8D44 /* VoiceCommand.swift */,
@@ -1006,6 +1009,7 @@
 				5F005CD1B3EB0ADCAD2B3A0C /* ServerSettingsView.swift in Sources */,
 				70AD017577B3F34377092C31 /* SettingsManager.swift in Sources */,
 				6DF080E8825124A165FB1ACF /* SettingsTabView.swift in Sources */,
+				770D361406E3637C65D13DAA /* SettingsModels.swift in Sources */,
 				9D93327A637A2B89C9ED65BE /* SettingsView.swift in Sources */,
 				09D1541B4163B760A4302E5C /* SpeechRecognitionService.swift in Sources */,
 				7716E81EB0B60F0EAD006452 /* SystemPerformanceView.swift in Sources */,

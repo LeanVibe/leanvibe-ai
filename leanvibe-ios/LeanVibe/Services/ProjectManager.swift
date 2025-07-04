@@ -431,7 +431,7 @@ class ProjectManager: ObservableObject {
                 path: "/Users/bogdan/work/leanvibe-backend",
                 language: .python,
                 lastActivity: Date(),
-                metrics: ProjectMetrics(filesCount: 42, linesOfCode: 12345, healthScore: 0.75, issuesCount: 1) // Fallback value, real: 0.92
+                metrics: ProjectMetrics(filesCount: 42, linesOfCode: 12345, healthScore: 0.75, issuesCount: 1) // Fallback only - real backend data replaces this
             ),
             Project(
                 displayName: "iOS Client",
@@ -439,7 +439,7 @@ class ProjectManager: ObservableObject {
                 path: "/Users/bogdan/work/leanvibe-ios",
                 language: .swift,
                 lastActivity: Date(),
-                metrics: ProjectMetrics(filesCount: 30, linesOfCode: 6789, healthScore: 0.70, issuesCount: 0) // Fallback value, real: 0.87
+                metrics: ProjectMetrics(filesCount: 30, linesOfCode: 6789, healthScore: 0.70, issuesCount: 0) // Fallback only - real backend data replaces this
             )
         ]
     }

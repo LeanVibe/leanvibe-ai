@@ -95,13 +95,13 @@ struct ErrorBannerView: View {
                                 action.action()
                                 onDismiss()
                             }
-                            .buttonStyle(BorderedProminentButtonStyle())
+                            .buttonStyle(.borderedProminent)
                             .controlSize(.small)
                         } else {
                             Button(action.title) {
                                 action.action()
                             }
-                            .buttonStyle(BorderedButtonStyle())
+                            .buttonStyle(.bordered)
                             .controlSize(.small)
                         }
                     }
