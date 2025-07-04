@@ -1,8 +1,10 @@
 import SwiftUI
+import UserNotifications
 
 @available(iOS 18.0, macOS 14.0, *)
 struct TaskNotificationSettingsView: View {
     @ObservedObject var settingsManager: SettingsManager
+    @StateObject private var notificationService = PushNotificationService.shared
     @State private var taskCompletionNotifications = true
     @State private var highPriorityTaskAlerts = true
     @State private var dailyProgressSummary = false
@@ -12,6 +14,7 @@ struct TaskNotificationSettingsView: View {
     @State private var quietHoursEnabled = false
     @State private var quietHoursStart = Calendar.current.date(from: DateComponents(hour: 22, minute: 0))!
     @State private var quietHoursEnd = Calendar.current.date(from: DateComponents(hour: 8, minute: 0))!
+    @State private var showingPermissionAlert = false
     @Environment(\.dismiss) private var dismiss
     
     init(settingsManager: SettingsManager) {
@@ -30,6 +33,28 @@ struct TaskNotificationSettingsView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .padding(.vertical, 4)
+                }
+                
+                Section("Permission Status") {
+                    HStack {
+                        Image(systemName: notificationService.isAuthorized ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                            .foregroundColor(notificationService.isAuthorized ? .green : .orange)
+                        VStack(alignment: .leading) {
+                            Text(notificationService.isAuthorized ? "Notifications Enabled" : "Notifications Disabled")
+                                .font(.headline)
+                            Text(notificationService.isAuthorized ? "You'll receive task notifications" : "Enable in Settings to receive notifications")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        if !notificationService.isAuthorized {
+                            Button("Enable") {
+                                requestNotificationPermission()
+                            }
+                            .foregroundColor(Color(.systemBlue))
+                        }
+                    }
+                    .padding(.vertical, 4)
                 }
                 
                 Section("Task Updates") {
@@ -96,6 +121,13 @@ struct TaskNotificationSettingsView: View {
                         sendTestNotification()
                     }
                     .foregroundColor(Color(.systemBlue))
+                    .disabled(!notificationService.isAuthorized)
+                    
+                    if !notificationService.isAuthorized {
+                        Text("Enable notification permissions to test")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             .navigationTitle("Task Notifications")
@@ -123,9 +155,38 @@ struct TaskNotificationSettingsView: View {
     }
     
     private func sendTestNotification() {
-        // Send a test notification to verify settings
-        // In a real implementation, would use UNUserNotificationCenter
-        print("Sending test notification...")
+        guard notificationService.isAuthorized else {
+            showingPermissionAlert = true
+            return
+        }
+        
+        // Create test request using the proper LocalNotificationRequest structure
+        let request = LocalNotificationRequest(
+            id: "test-notification-\(Date().timeIntervalSince1970)",
+            title: "LeanVibe Test Notification",
+            body: "This is a test notification from your task management settings.",
+            category: "TASK_NOTIFICATION_TEST",
+            trigger: .timeInterval(1, repeats: false)
+        )
+        
+        Task {
+            let success = await notificationService.scheduleLocalNotification(request)
+            DispatchQueue.main.async {
+                print("Test notification \(success ? "scheduled successfully" : "failed to schedule")")
+            }
+        }
+    }
+    
+    private func requestNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            DispatchQueue.main.async {
+                if granted {
+                    notificationService.isAuthorized = true
+                } else {
+                    showingPermissionAlert = true
+                }
+            }
+        }
     }
 }
 

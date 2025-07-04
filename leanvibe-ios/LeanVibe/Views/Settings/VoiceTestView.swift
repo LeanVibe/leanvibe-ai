@@ -1,13 +1,16 @@
 import SwiftUI
+import Speech
 
 @available(iOS 18.0, macOS 14.0, *)
 struct VoiceTestView: View {
     @ObservedObject var settingsManager: SettingsManager
+    @StateObject private var speechService = SpeechRecognitionService()
     @State private var testPhrase = "Hello, this is a voice test for LeanVibe"
     @State private var isRecording = false
     @State private var isPlaying = false
     @State private var testResults: [VoiceTestResult] = []
     @State private var currentTestType: VoiceTestType = .recognition
+    @State private var speechPermissionStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
     @Environment(\.dismiss) private var dismiss
     
     init(settingsManager: SettingsManager) {
@@ -73,6 +76,9 @@ struct VoiceTestView: View {
                     }
                 }
             }
+            .onAppear {
+                speechPermissionStatus = SFSpeechRecognizer.authorizationStatus()
+            }
         }
     }
     
@@ -85,38 +91,65 @@ struct VoiceTestView: View {
                     .multilineTextAlignment(.center)
                 
                 Button(action: {
-                    if isRecording {
+                    if speechService.isListening {
                         stopRecording()
                     } else {
                         startRecording()
                     }
                 }) {
                     VStack {
-                        Image(systemName: isRecording ? "mic.fill" : "mic")
+                        Image(systemName: speechService.isListening ? "mic.fill" : "mic")
                             .font(.system(size: 48))
-                            .foregroundColor(isRecording ? .red : Color(.systemBlue))
+                            .foregroundColor(speechService.isListening ? .red : Color(.systemBlue))
                         
-                        Text(isRecording ? "Recording..." : "Tap to Record")
+                        Text(speechService.isListening ? "Listening..." : "Tap to Record")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     .frame(width: 120, height: 120)
                     .background(
                         Circle()
-                            .fill(isRecording ? Color.red.opacity(0.1) : Color.blue.opacity(0.1))
+                            .fill(speechService.isListening ? Color.red.opacity(0.1) : Color.blue.opacity(0.1))
                             .overlay(
                                 Circle()
-                                    .stroke(isRecording ? Color.red : Color.blue, lineWidth: 2)
+                                    .stroke(speechService.isListening ? Color.red : Color.blue, lineWidth: 2)
                             )
                     )
                 }
                 .buttonStyle(PlainButtonStyle())
+                .disabled(speechPermissionStatus != .authorized)
                 
-                if isRecording {
-                    Text("Say: '\(settingsManager.voice.wakeWord)'")
+                if speechService.isListening {
+                    VStack(spacing: 4) {
+                        Text("Say: '\(settingsManager.voice.wakeWord)'")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        if !speechService.recognizedText.isEmpty {
+                            Text("Recognized: \"\(speechService.recognizedText)\"")
+                                .font(.caption)
+                                .foregroundColor(.primary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(8)
+                        }
+                        
+                        if speechService.audioLevel > 0 {
+                            ProgressView(value: min(Double(speechService.audioLevel), 1.0))
+                                .progressViewStyle(LinearProgressViewStyle())
+                                .frame(width: 100, height: 4)
+                                .accentColor(.green)
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+                
+                if speechPermissionStatus != .authorized {
+                    Text("Speech recognition permission required")
                         .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 8)
+                        .foregroundColor(.orange)
+                        .padding(.top, 4)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -188,29 +221,66 @@ struct VoiceTestView: View {
     }
     
     private func startRecording() {
-        isRecording = true
-        // Simulate recording duration
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            // Auto-stop after 5 seconds max
-            if isRecording {
-                stopRecording()
+        guard speechPermissionStatus == .authorized else {
+            requestSpeechPermission()
+            return
+        }
+        
+        Task {
+            do {
+                try await speechService.startListening()
+                
+                // Add a listener for when recognition completes
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                    if speechService.isListening {
+                        stopRecording()
+                    }
+                }
+            } catch {
+                let result = VoiceTestResult(
+                    testType: .recognition,
+                    passed: false,
+                    details: "Failed to start recording: \(error.localizedDescription)",
+                    score: nil,
+                    timestamp: Date()
+                )
+                testResults.insert(result, at: 0)
             }
         }
     }
     
     private func stopRecording() {
-        isRecording = false
+        speechService.stopListening()
         
-        // Simulate processing and add test result
+        // Analyze the recognition result
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            let recognizedText = speechService.recognizedText.lowercased()
+            let targetPhrase = settingsManager.voice.wakeWord.lowercased()
+            
+            let passed = recognizedText.contains(targetPhrase) || 
+                        targetPhrase.contains(recognizedText.trimmingCharacters(in: .whitespacesAndNewlines))
+            
             let result = VoiceTestResult(
                 testType: .recognition,
-                passed: true,
-                details: "Wake phrase '\(settingsManager.voice.wakeWord)' recognized successfully",
-                score: 0.92,
+                passed: passed,
+                details: passed ? 
+                    "Wake phrase '\(settingsManager.voice.wakeWord)' recognized successfully" :
+                    "Recognition mismatch. Expected: '\(settingsManager.voice.wakeWord)', Got: '\(speechService.recognizedText)'",
+                score: passed ? Double(speechService.confidenceScore) : 0.0,
                 timestamp: Date()
             )
             testResults.insert(result, at: 0)
+        }
+    }
+    
+    private func requestSpeechPermission() {
+        SFSpeechRecognizer.requestAuthorization { status in
+            DispatchQueue.main.async {
+                speechPermissionStatus = status
+                if status == .authorized {
+                    startRecording()
+                }
+            }
         }
     }
     
