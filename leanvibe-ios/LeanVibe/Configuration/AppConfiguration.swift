@@ -79,7 +79,12 @@ struct AppConfiguration {
         }
     }
     
-    // MARK: - Feature Flags
+    // MARK: - Feature Flags Integration
+    
+    /// Feature flag manager for centralized feature control
+    private var featureFlags: FeatureFlagManager {
+        return FeatureFlagManager.shared
+    }
     
     /// Whether to enable debug logging
     var isLoggingEnabled: Bool {
@@ -89,12 +94,12 @@ struct AppConfiguration {
     
     /// Whether to enable performance monitoring
     var isPerformanceMonitoringEnabled: Bool {
-        return !isDebugBuild ||
-               ProcessInfo.processInfo.environment["LEANVIBE_ENABLE_MONITORING"] == "true"
+        return featureFlags.isFeatureEnabled(.performanceMonitoring) &&
+               (!isDebugBuild || ProcessInfo.processInfo.environment["LEANVIBE_ENABLE_MONITORING"] == "true")
     }
     
     /// Whether to enable voice features
-    /// DISABLED for now due to startup crashes - will re-enable with proper defensive programming
+    /// Now controlled by feature flag system with backward compatibility
     var isVoiceEnabled: Bool {
         // Emergency disable mechanism - if voice features are causing crashes
         if UserDefaults.standard.bool(forKey: "LeanVibe_Emergency_Disable_Voice") {
@@ -106,13 +111,13 @@ struct AppConfiguration {
             return false
         }
         
-        // Temporarily disabled due to startup crashes
-        // Voice features can be re-enabled by setting LEANVIBE_ENABLE_VOICE=true
+        // Environment override to enable voice
         if ProcessInfo.processInfo.environment["LEANVIBE_ENABLE_VOICE"] == "true" {
             return true
         }
         
-        return false  // Disabled by default for stability
+        // Use feature flag system for voice features
+        return featureFlags.isFeatureEnabled(.voiceFeatures)
     }
     
     /// Emergency disable voice features due to crashes
@@ -141,7 +146,33 @@ struct AppConfiguration {
     
     /// Whether to enable code completion features
     var isCodeCompletionEnabled: Bool {
-        return Bundle.main.object(forInfoDictionaryKey: "CODE_COMPLETION_ENABLED") as? Bool ?? true
+        let bundleEnabled = Bundle.main.object(forInfoDictionaryKey: "CODE_COMPLETION_ENABLED") as? Bool ?? true
+        return bundleEnabled && featureFlags.isFeatureEnabled(.codeCompletion)
+    }
+    
+    /// Whether to enable beta analytics features
+    var isBetaAnalyticsEnabled: Bool {
+        return featureFlags.isFeatureEnabled(.betaAnalytics)
+    }
+    
+    /// Whether to enable advanced architecture features
+    var isAdvancedArchitectureEnabled: Bool {
+        return featureFlags.isFeatureEnabled(.advancedArchitectureFeatures)
+    }
+    
+    /// Whether to enable advanced kanban features
+    var isAdvancedKanbanEnabled: Bool {
+        return featureFlags.isFeatureEnabled(.advancedKanbanFeatures)
+    }
+    
+    /// Whether to enable debug settings
+    var isDebugSettingsEnabled: Bool {
+        return featureFlags.isFeatureEnabled(.debugSettings)
+    }
+    
+    /// Whether to enable experimental UI features
+    var isExperimentalUIEnabled: Bool {
+        return featureFlags.isFeatureEnabled(.experimentalUI)
     }
     
     // MARK: - Voice System Configuration

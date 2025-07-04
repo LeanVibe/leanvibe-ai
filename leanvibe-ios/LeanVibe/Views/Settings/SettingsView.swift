@@ -102,40 +102,59 @@ struct SettingsView: View {
     
     private var voiceSettingsSection: some View {
         Section("Voice & Speech") {
-            NavigationLink(destination: VoiceSettingsView()) {
-                SettingsRow(
-                    icon: "mic.fill",
-                    iconColor: Color(.systemBlue),
-                    title: "Voice Commands",
-                    subtitle: settingsManager.voice.autoStopListening ? "Hey LeanVibe enabled" : "Disabled"
-                )
+            // Only show voice settings if voice features are enabled
+            if FeatureFlagManager.shared.isFeatureEnabled(.voiceFeatures) {
+                NavigationLink(destination: VoiceSettingsView()) {
+                    SettingsRow(
+                        icon: "mic.fill",
+                        iconColor: Color(.systemBlue),
+                        title: "Voice Commands",
+                        subtitle: settingsManager.voice.autoStopListening ? "Hey LeanVibe enabled" : "Disabled"
+                    )
+                }
             }
             
-            NavigationLink(destination: WakePhraseSettingsView()) {
-                SettingsRow(
-                    icon: "waveform",
-                    iconColor: Color(.systemGreen),
-                    title: "Wake Phrase Configuration",
+            // Only show wake phrase settings if wake phrase detection is enabled
+            if FeatureFlagManager.shared.isFeatureEnabled(.wakePhraseDetection) {
+                NavigationLink(destination: WakePhraseSettingsView()) {
+                    SettingsRow(
+                        icon: "waveform",
+                        iconColor: Color(.systemGreen),
+                        title: "Wake Phrase Configuration",
                     subtitle: "\"\(settingsManager.voice.wakeWord)\""
                 )
             }
             
-            NavigationLink(destination: SpeechSettingsView()) {
-                SettingsRow(
-                    icon: "bubble.left.and.bubble.right",
-                    iconColor: Color(.systemOrange),
-                    title: "Speech Recognition",
-                    subtitle: "Default"
-                )
+            // Only show speech settings if voice recognition is enabled
+            if FeatureFlagManager.shared.isFeatureEnabled(.voiceRecognition) {
+                NavigationLink(destination: SpeechSettingsView()) {
+                    SettingsRow(
+                        icon: "bubble.left.and.bubble.right",
+                        iconColor: Color(.systemOrange),
+                        title: "Speech Recognition",
+                        subtitle: "Default"
+                    )
+                }
             }
             
-            NavigationLink(destination: VoiceTestView()) {
-                SettingsRow(
-                    icon: "testtube.2",
-                    iconColor: Color(.systemPurple),
-                    title: "Voice Testing",
-                    subtitle: "Test voice recognition"
-                )
+            // Only show voice testing if voice features are enabled and in debug/TestFlight
+            if FeatureFlagManager.shared.isFeatureEnabled(.voiceFeatures) && !AppConfiguration.shared.isProductionBuild {
+                NavigationLink(destination: VoiceTestView()) {
+                    SettingsRow(
+                        icon: "testtube.2",
+                        iconColor: Color(.systemPurple),
+                        title: "Voice Testing",
+                        subtitle: "Test voice recognition"
+                    )
+                }
+            }
+            
+            // If no voice features are enabled, show a message
+            if !FeatureFlagManager.shared.isFeatureEnabled(.voiceFeatures) {
+                Text("Voice features are currently disabled for stability")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding()
             }
         }
     }
@@ -262,6 +281,28 @@ struct SettingsView: View {
     
     private var advancedFeaturesSection: some View {
         Section("Advanced Features") {
+            // Feature Flag Settings
+            NavigationLink(destination: FeatureFlagSettingsView()) {
+                SettingsRow(
+                    icon: "flag.2.crossed",
+                    iconColor: .blue,
+                    title: "Feature Settings",
+                    subtitle: "Manage app features"
+                )
+            }
+            
+            // Debug Feature Flags (Debug builds only)
+            if AppConfiguration.shared.isDebugBuild {
+                NavigationLink(destination: FeatureFlagDebugView()) {
+                    SettingsRow(
+                        icon: "gearshape.2",
+                        iconColor: .orange,
+                        title: "Debug Feature Flags",
+                        subtitle: "Development controls"
+                    )
+                }
+            }
+            
             // TODO: Fix ErrorHistoryView and GlobalErrorManager resolution
             // NavigationLink(destination: ErrorHistoryView(errorManager: GlobalErrorManager.shared)) {
             //     SettingsRow(
@@ -373,22 +414,37 @@ struct SettingsView: View {
     
     private var betaTestingSection: some View {
         Section("Beta Testing") {
-            NavigationLink(destination: BetaFeedbackView()) {
-                SettingsRow(
-                    icon: "star.bubble",
-                    iconColor: Color(.systemYellow),
-                    title: "Send Feedback",
-                    subtitle: "Help improve LeanVibe"
-                )
+            // Show beta feedback only if feature is enabled
+            if FeatureFlagManager.shared.isFeatureEnabled(.betaFeedback) {
+                NavigationLink(destination: BetaFeedbackView()) {
+                    SettingsRow(
+                        icon: "star.bubble",
+                        iconColor: Color(.systemYellow),
+                        title: "Send Feedback",
+                        subtitle: "Help improve LeanVibe"
+                    )
+                }
             }
             
-            NavigationLink(destination: BetaAnalyticsDashboardView()) {
-                SettingsRow(
-                    icon: "chart.line.uptrend.xyaxis",
-                    iconColor: Color(.systemPurple),
-                    title: "Beta Analytics",
-                    subtitle: "Disabled"
-                )
+            // Show beta analytics only if feature is enabled
+            if FeatureFlagManager.shared.isFeatureEnabled(.betaAnalytics) {
+                NavigationLink(destination: BetaAnalyticsDashboardView()) {
+                    SettingsRow(
+                        icon: "chart.line.uptrend.xyaxis",
+                        iconColor: Color(.systemPurple),
+                        title: "Beta Analytics",
+                        subtitle: "Usage insights"
+                    )
+                }
+            }
+            
+            // If no beta features are enabled, show a message
+            if !FeatureFlagManager.shared.isFeatureEnabled(.betaFeedback) && 
+               !FeatureFlagManager.shared.isFeatureEnabled(.betaAnalytics) {
+                Text("Beta features are currently disabled")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding()
             }
         }
     }
