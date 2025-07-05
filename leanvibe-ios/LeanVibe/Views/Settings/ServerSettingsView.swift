@@ -10,7 +10,7 @@ struct ServerSettingsView: View {
     // MARK: - Properties
     
     @StateObject private var webSocketService = WebSocketService.shared
-    @StateObject private var backendService = BackendSettingsService.shared
+    // @StateObject private var backendService = BackendSettingsService.shared
     @State private var isBackendAvailable = false
     @State private var config = AppConfiguration.shared
     @State private var showingQRScanner = false

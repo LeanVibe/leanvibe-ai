@@ -3,55 +3,38 @@ import SwiftUI
 @available(iOS 18.0, macOS 14.0, *)
 struct ContentView: View {
     @StateObject private var webSocketService = WebSocketService.shared
-    @StateObject private var featureFlagManager = FeatureFlagManager.shared
     @State private var inputText = ""
     @State private var showingSettings = false
     @State private var showingCodeCompletion = false
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Connection Status Header
-                connectionStatusHeader
-                
-                // Messages List
-                messagesScrollView
-                
-                // Input Area
-                inputSection
+        VStack(spacing: 0) {
+            // Connection Status Header
+            connectionStatusHeader
+            
+            // Messages List
+            messagesScrollView
+            
+            // Input Area
+            inputSection
+        }
+        .navigationTitle("LeanVibe Agent")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                connectionButton
             }
-            .navigationTitle("LeanVibe Agent")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    connectionButton
-                }
-                
-                ToolbarItem(placement: .primaryAction) {
-                    HStack {
-                        if featureFlagManager.isFeatureEnabled(.codeCompletion) {
-                            Button("Code Test") {
-                                showingCodeCompletion = true
-                            }
-                            .font(.caption)
-                        }
-                        
-                        settingsButton
-                    }
-                }
+            
+            ToolbarItem(placement: .primaryAction) {
+                settingsButton
             }
-            .sheet(isPresented: $showingSettings) {
-                ConnectionSettingsView(webSocketService: webSocketService)
-            }
-            .sheet(isPresented: $showingCodeCompletion) {
-                if featureFlagManager.isFeatureEnabled(.codeCompletion) {
-                    CodeCompletionTestView(webSocketService: webSocketService)
-                }
-            }
-            .onTapGesture {
-                // Dismiss keyboard when tapping outside text field
-                hideKeyboard()
-            }
+        }
+        .sheet(isPresented: $showingSettings) {
+            ConnectionSettingsView(webSocketService: webSocketService)
+        }
+        .onTapGesture {
+            // Dismiss keyboard when tapping outside text field
+            hideKeyboard()
         }
     }
     
@@ -316,7 +299,7 @@ struct ConnectionSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 Section("Connection") {
                     HStack {
