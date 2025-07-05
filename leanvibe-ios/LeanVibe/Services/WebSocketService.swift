@@ -376,7 +376,8 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
                 self.lastError = errorMessage
                 self.connectionStatus = "Error: \(errorMessage)"
                 
-                // Error will be captured by TaskGroup polling
+                // Enhanced error handling with centralized error manager
+                await self.handleWebSocketError(error, context: "websocket_connection")
             }
             
         case .cancelled, .peerClosed:
@@ -732,6 +733,80 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     
     func retryFailedMessage(_ content: String) {
         sendMessage(content)
+    }
+    
+    // MARK: - Centralized Error Handling
+    
+    private func handleWebSocketError(_ error: Error?, context: String) async {
+        let actualError = error ?? URLError(.unknown)
+        
+        // Categorize the error
+        let category: ErrorCategory = {
+            if actualError is URLError {
+                return .network
+            } else {
+                return .service
+            }
+        }()
+        
+        // Create comprehensive error with recovery actions
+        let appError = AppError(
+            title: "Connection Error",
+            message: actualError.localizedDescription,
+            severity: .error,
+            category: category,
+            context: "websocket_\(context)",
+            userFacingMessage: "We're having trouble connecting to the server. Please check your connection and try again.",
+            technicalDetails: "WebSocketService Error in \(context): \(type(of: actualError)) - \(actualError.localizedDescription)",
+            suggestedActions: createWebSocketRecoveryActions(for: actualError)
+        )
+        
+        // Show error to user using centralized error manager
+        if let globalErrorManager = try? GlobalErrorManager.shared {
+            globalErrorManager.showError(appError)
+            
+            // Automatically attempt recovery for network errors
+            if category == .network {
+                await ErrorRecoveryManager.shared.attemptRecovery(for: appError)
+            }
+        } else {
+            // Fallback if GlobalErrorManager is not available
+            print("🚨 WebSocketService Error: \(actualError.localizedDescription)")
+        }
+    }
+    
+    private func createWebSocketRecoveryActions(for error: Error) -> [ErrorAction] {
+        var actions: [ErrorAction] = []
+        
+        // Reconnect action
+        actions.append(ErrorAction(title: "Reconnect", systemImage: "arrow.clockwise", isPrimary: true) {
+            Task { @MainActor in
+                self.connect()
+            }
+        })
+        
+        // Work offline action
+        actions.append(ErrorAction(title: "Work Offline", systemImage: "wifi.slash") {
+            // Enable offline mode
+            print("User chose to work offline")
+        })
+        
+        // Check network action
+        actions.append(ErrorAction(title: "Check Network", systemImage: "network") {
+            Task {
+                await NetworkErrorHandler.shared.checkNetworkStatus()
+            }
+        })
+        
+        // Clear connection data for configuration issues
+        if error is URLError {
+            actions.append(ErrorAction(title: "Reconfigure Connection", systemImage: "qrcode.viewfinder") {
+                // Reset connection settings
+                self.storageManager.clearStoredConnection()
+            })
+        }
+        
+        return actions
     }
 }
 

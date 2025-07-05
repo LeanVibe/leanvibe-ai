@@ -89,6 +89,7 @@ class BackendSettingsService: ObservableObject {
             
         } catch {
             lastError = error.localizedDescription
+            await handleBackendSettingsError(error, context: "fetch_settings", userAction: "fetching settings")
             throw BackendSettingsError.networkError(error)
         }
     }
@@ -138,6 +139,7 @@ class BackendSettingsService: ObservableObject {
             
         } catch {
             lastError = error.localizedDescription
+            await handleBackendSettingsError(error, context: "push_settings", userAction: "syncing settings")
             throw BackendSettingsError.networkError(error)
         }
     }
@@ -319,5 +321,74 @@ class BackendSettingsService: ObservableObject {
             lastError = "Backend ping failed: \(error.localizedDescription)"
             return false
         }
+    }
+    
+    // MARK: - Centralized Error Handling
+    
+    private func handleBackendSettingsError(_ error: Error, context: String, userAction: String) async {
+        // Categorize the error
+        let category: ErrorCategory = {
+            if error is URLError {
+                return .network
+            } else if error is BackendSettingsError {
+                return .service
+            } else {
+                return .data
+            }
+        }()
+        
+        // Create comprehensive error with recovery actions
+        let appError = AppError(
+            title: "Settings Sync Failed",
+            message: error.localizedDescription,
+            severity: .warning,
+            category: category,
+            context: "backend_settings_\(context)",
+            userFacingMessage: "We encountered an issue while \(userAction). Your settings are saved locally.",
+            technicalDetails: "BackendSettingsService Error in \(context): \(type(of: error)) - \(error.localizedDescription)",
+            suggestedActions: createBackendSettingsRecoveryActions(for: error, context: context)
+        )
+        
+        // Show error to user using centralized error manager
+        if let globalErrorManager = try? GlobalErrorManager.shared {
+            globalErrorManager.showError(appError)
+            
+            // Automatically attempt recovery for network errors
+            if category == .network {
+                await ErrorRecoveryManager.shared.attemptRecovery(for: appError)
+            }
+        } else {
+            // Fallback if GlobalErrorManager is not available
+            print("🚨 BackendSettingsService Error: \(error.localizedDescription)")
+        }
+    }
+    
+    private func createBackendSettingsRecoveryActions(for error: Error, context: String) -> [ErrorAction] {
+        var actions: [ErrorAction] = []
+        
+        // Retry sync action
+        actions.append(ErrorAction(title: "Retry Sync", systemImage: "arrow.clockwise", isPrimary: true) {
+            Task {
+                // Retry the operation
+                print("User requested retry for \(context)")
+            }
+        })
+        
+        // Work offline action
+        actions.append(ErrorAction(title: "Continue Offline", systemImage: "wifi.slash") {
+            // Continue with local settings only
+            print("User chose to continue offline")
+        })
+        
+        // Network-specific actions
+        if error is URLError {
+            actions.append(ErrorAction(title: "Check Network", systemImage: "network") {
+                Task {
+                    await NetworkErrorHandler.shared.checkNetworkStatus()
+                }
+            })
+        }
+        
+        return actions
     }
 }
