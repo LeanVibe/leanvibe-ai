@@ -4,29 +4,7 @@ import Foundation
 // Models are now imported from SettingsModels.swift
 
 /// Errors that can occur during backend settings operations
-/// NOTE: BackendSettingsError is defined in GlobalErrorManager.swift to avoid import issues
-/*
-@available(iOS 18.0, macOS 14.0, *)
-enum BackendSettingsError: Error, LocalizedError {
-    case backendNotConfigured
-    case networkError(Error)
-    case invalidResponse
-    case httpError(Int)
-    
-    var errorDescription: String? {
-        switch self {
-        case .backendNotConfigured:
-            return "Backend is not configured"
-        case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
-        case .invalidResponse:
-            return "Invalid response from backend"
-        case .httpError(let statusCode):
-            return "HTTP error: \(statusCode)"
-        }
-    }
-}
-*/
+/// BackendSettingsError is defined in SettingsModels.swift
 
 /// Service for syncing settings with the backend
 /// NO HARDCODED VALUES - All settings come from backend dynamically

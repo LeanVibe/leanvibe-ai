@@ -21,16 +21,11 @@ final class FeatureFlagManager: ObservableObject {
     
     // MARK: - Environment Detection
     private var isDebugBuild: Bool {
-        #if DEBUG
-        return true
-        #else
-        return false
-        #endif
+        return AppConfiguration.shared.isDebugBuild
     }
     
     private var isTestFlightBuild: Bool {
-        guard let path = Bundle.main.appStoreReceiptURL?.path else { return false }
-        return path.contains("sandboxReceipt")
+        return AppConfiguration.shared.isTestFlightBuild
     }
     
     private var isProductionBuild: Bool {

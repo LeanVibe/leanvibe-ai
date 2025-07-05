@@ -172,16 +172,6 @@ struct FeatureGatedView<Content: View>: View {
     }
 }
 
-/// Extension to AppConfiguration for easy access to environment checks
-extension AppConfiguration {
-    var isDebugBuild: Bool {
-        #if DEBUG
-        return true
-        #else
-        return false
-        #endif
-    }
-}
 
 // MARK: - Preview
 

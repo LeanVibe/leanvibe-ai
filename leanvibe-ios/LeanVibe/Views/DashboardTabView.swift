@@ -137,6 +137,7 @@ struct DashboardTabView: View {
     @StateObject private var performanceAnalytics = PerformanceAnalytics()
     @StateObject private var batteryManager = BatteryOptimizedManager()
     @StateObject private var settingsManager = SettingsManager.shared
+    @StateObject private var featureFlagManager = FeatureFlagManager.shared
     
     @State private var showingVoiceInterface = false
     
@@ -226,38 +227,40 @@ struct DashboardTabView: View {
                 .tag(NavigationCoordinator.Tab.architecture.rawValue)
                 .hapticFeedback(.navigation)
                 
-                NavigationStack(path: $navigationCoordinator.navigationPath) {
-                    // TODO: Fix DocumentIntelligenceView target membership and compilation
-                    VStack(spacing: 16) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .font(.system(size: 48))
-                            .foregroundColor(.secondary)
-                        
-                        Text("Document Intelligence")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        
-                        Text("AI-powered document analysis and task generation")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                        
-                        Text("Coming Soon")
-                            .font(.caption)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.blue.opacity(0.1))
-                            .foregroundColor(.blue)
-                            .cornerRadius(16)
+                if featureFlagManager.isFeatureEnabled(.documentIntelligence) {
+                    NavigationStack(path: $navigationCoordinator.navigationPath) {
+                        // TODO: Fix DocumentIntelligenceView target membership and compilation
+                        VStack(spacing: 16) {
+                            Image(systemName: "doc.text.magnifyingglass")
+                                .font(.system(size: 48))
+                                .foregroundColor(.secondary)
+                            
+                            Text("Document Intelligence")
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                            
+                            Text("AI-powered document analysis and task generation")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                            
+                            Text("Coming Soon")
+                                .font(.caption)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color.blue.opacity(0.1))
+                                .foregroundColor(.blue)
+                                .cornerRadius(16)
+                        }
+                        .padding()
                     }
-                    .padding()
+                    .tabItem {
+                        Label(NavigationCoordinator.Tab.documents.title,
+                              systemImage: NavigationCoordinator.Tab.documents.systemImage)
+                    }
+                    .tag(NavigationCoordinator.Tab.documents.rawValue)
+                    .hapticFeedback(.navigation)
                 }
-                .tabItem {
-                    Label(NavigationCoordinator.Tab.documents.title,
-                          systemImage: NavigationCoordinator.Tab.documents.systemImage)
-                }
-                .tag(NavigationCoordinator.Tab.documents.rawValue)
-                .hapticFeedback(.navigation)
                 
                 NavigationStack(path: $navigationCoordinator.navigationPath) {
                     SettingsTabView(webSocketService: webSocketService)

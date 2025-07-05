@@ -338,14 +338,6 @@ extension AppConfiguration {
     fileprivate var isProductionBuild: Bool {
         return !isDebugBuild && !isTestFlightBuild
     }
-    
-    fileprivate var isDebugBuild: Bool {
-        #if DEBUG
-        return true
-        #else
-        return false
-        #endif
-    }
 }
 
 // MARK: - Preview

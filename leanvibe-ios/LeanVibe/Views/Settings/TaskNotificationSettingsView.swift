@@ -132,6 +132,9 @@ struct TaskNotificationSettingsView: View {
             }
             .navigationTitle("Task Notifications")
             .navigationBarTitleDisplayMode(.large)
+            .onAppear {
+                loadSettings()
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -143,15 +146,61 @@ struct TaskNotificationSettingsView: View {
         }
     }
     
+    private func loadSettings() {
+        // Load current settings from SettingsManager
+        let currentSettings = settingsManager.notifications
+        
+        // Load task notification preferences
+        taskCompletionNotifications = currentSettings.taskCompletionNotifications
+        highPriorityTaskAlerts = currentSettings.taskUpdates
+        overdueTaskReminders = currentSettings.taskOverdueNotifications
+        newTaskAssignments = currentSettings.taskNotificationsEnabled
+        
+        // Load quiet hours settings
+        quietHoursEnabled = currentSettings.quietHoursEnabled
+        if quietHoursEnabled && !currentSettings.quietHoursStart.isEmpty && !currentSettings.quietHoursEnd.isEmpty {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "HH:mm"
+            if let startTime = formatter.date(from: currentSettings.quietHoursStart) {
+                quietHoursStart = startTime
+            }
+            if let endTime = formatter.date(from: currentSettings.quietHoursEnd) {
+                quietHoursEnd = endTime
+            }
+        }
+        
+        // Load summary settings
+        dailyProgressSummary = currentSettings.summarizationEnabled
+        
+        print("✅ Task notification settings loaded from SettingsManager")
+    }
+    
     private func saveSettings() {
-        // Save notification preferences to SettingsManager
-        // In a real implementation, these would be stored in UserDefaults or Core Data
-        print("Saving notification settings:")
-        print("- Task Completion: \(taskCompletionNotifications)")
-        print("- High Priority: \(highPriorityTaskAlerts)")
-        print("- Overdue Reminders: \(overdueTaskReminders)")
-        print("- Daily Summary: \(dailyProgressSummary)")
-        print("- Quiet Hours: \(quietHoursEnabled)")
+        // Update the notification settings in SettingsManager
+        var currentSettings = settingsManager.notifications
+        
+        // Update task notification preferences
+        currentSettings.taskCompletionNotifications = taskCompletionNotifications
+        currentSettings.taskUpdates = highPriorityTaskAlerts
+        currentSettings.taskOverdueNotifications = overdueTaskReminders
+        currentSettings.taskNotificationsEnabled = newTaskAssignments
+        
+        // Update quiet hours settings
+        currentSettings.quietHoursEnabled = quietHoursEnabled
+        if quietHoursEnabled {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "HH:mm"
+            currentSettings.quietHoursStart = formatter.string(from: quietHoursStart)
+            currentSettings.quietHoursEnd = formatter.string(from: quietHoursEnd)
+        }
+        
+        // Update summary settings
+        currentSettings.summarizationEnabled = dailyProgressSummary
+        
+        // Save to SettingsManager (this will automatically persist)
+        settingsManager.notifications = currentSettings
+        
+        print("✅ Task notification settings saved to SettingsManager")
     }
     
     private func sendTestNotification() {

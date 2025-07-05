@@ -153,12 +153,11 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         syncStatus = .syncing
         
         do {
-            // TODO: Fix BackendSettingsService target membership
-            // let backendSettings = try await BackendSettingsService.shared.fetchSettings()
+            let backendSettings = try await BackendSettingsService.shared.fetchSettings()
             
             await MainActor.run {
                 // Update settings from backend while preserving user overrides
-                // updateFromBackend(backendSettings)
+                updateFromBackend(backendSettings)
                 syncStatus = .synced(Date())
                 lastSyncDate = Date()
             }
@@ -188,8 +187,7 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
             performance: performance
         )
         
-        // TODO: Fix BackendSettingsService target membership
-        // try await BackendSettingsService.shared.pushSettings(allSettings)
+        try await BackendSettingsService.shared.pushSettings(allSettings)
         await MainActor.run {
             lastSyncDate = Date()
             syncStatus = .synced(Date())

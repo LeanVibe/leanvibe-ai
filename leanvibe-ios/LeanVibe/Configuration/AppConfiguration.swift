@@ -336,6 +336,7 @@ enum ConfigurationStatus {
 
 // MARK: - Configuration Extensions
 
+@available(iOS 18.0, macOS 14.0, *)
 extension AppConfiguration {
     /// Validate that all required configuration is present
     func validateConfiguration() throws {

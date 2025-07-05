@@ -56,16 +56,23 @@ struct SettingsView: View {
     // MARK: - Properties
     
     @StateObject private var settingsManager = SettingsManager.shared
+    @StateObject private var featureFlagManager = FeatureFlagManager.shared
     @ObservedObject var webSocketService: WebSocketService
     @State private var showingAbout = false
     @State private var showingExportImport = false
     
-    // Feature flag computed properties to work around compilation order issues
-    private var isVoiceFeaturesEnabled: Bool { true }
-    private var isWakePhraseDetectionEnabled: Bool { true }
-    private var isVoiceRecognitionEnabled: Bool { true }
-    private var isBetaFeedbackEnabled: Bool { true }
-    private var isBetaAnalyticsEnabled: Bool { true }
+    // Feature flag computed properties using FeatureFlagManager
+    private var isVoiceFeaturesEnabled: Bool { featureFlagManager.isFeatureEnabled(.voiceFeatures) }
+    private var isWakePhraseDetectionEnabled: Bool { featureFlagManager.isFeatureEnabled(.wakePhraseDetection) }
+    private var isVoiceRecognitionEnabled: Bool { featureFlagManager.isFeatureEnabled(.voiceRecognition) }
+    private var isBetaFeedbackEnabled: Bool { featureFlagManager.isFeatureEnabled(.betaFeedback) }
+    private var isBetaAnalyticsEnabled: Bool { featureFlagManager.isFeatureEnabled(.betaAnalytics) }
+    private var isAdvancedSettingsEnabled: Bool { featureFlagManager.isFeatureEnabled(.advancedSettings) }
+    private var isDebugSettingsEnabled: Bool { featureFlagManager.isFeatureEnabled(.debugSettings) }
+    private var isNetworkDiagnosticsEnabled: Bool { featureFlagManager.isFeatureEnabled(.networkDiagnostics) }
+    private var isPerformanceMonitoringEnabled: Bool { featureFlagManager.isFeatureEnabled(.performanceMonitoring) }
+    private var isDocumentIntelligenceEnabled: Bool { featureFlagManager.isFeatureEnabled(.documentIntelligence) }
+    private var isCodeCompletionEnabled: Bool { featureFlagManager.isFeatureEnabled(.codeCompletion) }
     
     // MARK: - Body
     
@@ -237,13 +244,16 @@ struct SettingsView: View {
                 )
             }
             
-            NavigationLink(destination: NetworkDiagnosticsView()) {
-                SettingsRow(
-                    icon: "network",
-                    iconColor: Color(.systemGreen),
-                    title: "Network Diagnostics",
-                    subtitle: "Connection testing & troubleshooting"
-                )
+            // Network Diagnostics (Debug/TestFlight only)
+            if isNetworkDiagnosticsEnabled {
+                NavigationLink(destination: NetworkDiagnosticsView()) {
+                    SettingsRow(
+                        icon: "network",
+                        iconColor: Color(.systemGreen),
+                        title: "Network Diagnostics",
+                        subtitle: "Connection testing & troubleshooting"
+                    )
+                }
             }
         }
     }
@@ -277,31 +287,36 @@ struct SettingsView: View {
                 )
             }
             
-            NavigationLink(destination: PerformanceSettingsView()) {
-                SettingsRow(
-                    icon: "speedometer",
-                    iconColor: .yellow,
-                    title: "Performance",
-                    subtitle: settingsManager.performance.performanceMonitoringEnabled ? "Monitoring enabled" : "Monitoring disabled"
-                )
+            // Performance Settings (Debug/TestFlight only)
+            if isPerformanceMonitoringEnabled {
+                NavigationLink(destination: PerformanceSettingsView()) {
+                    SettingsRow(
+                        icon: "speedometer",
+                        iconColor: .yellow,
+                        title: "Performance",
+                        subtitle: settingsManager.performance.performanceMonitoringEnabled ? "Monitoring enabled" : "Monitoring disabled"
+                    )
+                }
             }
         }
     }
     
     private var advancedFeaturesSection: some View {
         Section("Advanced Features") {
-            // Feature Flag Settings
-            NavigationLink(destination: FeatureFlagSettingsView()) {
-                SettingsRow(
-                    icon: "flag.2.crossed",
-                    iconColor: .blue,
-                    title: "Feature Settings",
-                    subtitle: "Manage app features"
-                )
+            // Feature Flag Settings (Advanced Settings only)
+            if isAdvancedSettingsEnabled {
+                NavigationLink(destination: FeatureFlagSettingsView()) {
+                    SettingsRow(
+                        icon: "flag.2.crossed",
+                        iconColor: .blue,
+                        title: "Feature Settings",
+                        subtitle: "Manage app features"
+                    )
+                }
             }
             
             // Debug Feature Flags (Debug builds only)
-            if AppConfiguration.shared.isDebugBuild {
+            if isDebugSettingsEnabled {
                 NavigationLink(destination: FeatureFlagDebugView()) {
                     SettingsRow(
                         icon: "gearshape.2",
@@ -344,13 +359,16 @@ struct SettingsView: View {
             }
             */
             
-            NavigationLink(destination: ArchitectureViewerSettingsView()) {
-                SettingsRow(
-                    icon: "network",
-                    iconColor: Color(.systemPurple),
-                    title: "Architecture Viewer",
-                    subtitle: architectureStatusText
-                )
+            // Architecture Viewer (Architecture Visualization only)
+            if featureFlagManager.isFeatureEnabled(.architectureVisualization) {
+                NavigationLink(destination: ArchitectureViewerSettingsView()) {
+                    SettingsRow(
+                        icon: "network",
+                        iconColor: Color(.systemPurple),
+                        title: "Architecture Viewer",
+                        subtitle: architectureStatusText
+                    )
+                }
             }
             
             // TODO: Implement IntegrationSettingsView - currently placeholder

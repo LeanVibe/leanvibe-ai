@@ -3,6 +3,7 @@ import SwiftUI
 @available(iOS 18.0, macOS 14.0, *)
 struct ContentView: View {
     @StateObject private var webSocketService = WebSocketService.shared
+    @StateObject private var featureFlagManager = FeatureFlagManager.shared
     @State private var inputText = ""
     @State private var showingSettings = false
     @State private var showingCodeCompletion = false
@@ -28,10 +29,12 @@ struct ContentView: View {
                 
                 ToolbarItem(placement: .primaryAction) {
                     HStack {
-                        Button("Code Test") {
-                            showingCodeCompletion = true
+                        if featureFlagManager.isFeatureEnabled(.codeCompletion) {
+                            Button("Code Test") {
+                                showingCodeCompletion = true
+                            }
+                            .font(.caption)
                         }
-                        .font(.caption)
                         
                         settingsButton
                     }
@@ -41,7 +44,9 @@ struct ContentView: View {
                 ConnectionSettingsView(webSocketService: webSocketService)
             }
             .sheet(isPresented: $showingCodeCompletion) {
-                CodeCompletionTestView(webSocketService: webSocketService)
+                if featureFlagManager.isFeatureEnabled(.codeCompletion) {
+                    CodeCompletionTestView(webSocketService: webSocketService)
+                }
             }
             .onTapGesture {
                 // Dismiss keyboard when tapping outside text field
