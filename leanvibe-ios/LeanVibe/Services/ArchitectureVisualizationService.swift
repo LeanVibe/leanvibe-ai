@@ -129,8 +129,8 @@ class ArchitectureVisualizationService: ObservableObject {
                 print("Primary architecture endpoint failed with status: \(httpResponse.statusCode)")
             }
             
-            // Fallback to alternative endpoint format
-            let vizUrl = baseURL.appendingPathComponent("api/visualization/architecture")
+            // Use actual backend visualization endpoint that exists
+            let vizUrl = baseURL.appendingPathComponent("visualization/\(clientId)/generate")
             var vizRequest = URLRequest(url: vizUrl)
             vizRequest.httpMethod = "POST"
             vizRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -140,7 +140,8 @@ class ArchitectureVisualizationService: ObservableObject {
             let requestBody = [
                 "project_id": projectId,
                 "diagram_type": "architecture_overview",
-                "format": "mermaid"
+                "format": "mermaid",
+                "theme": "light"
             ]
             
             vizRequest.httpBody = try JSONEncoder().encode(requestBody)
@@ -280,6 +281,29 @@ class ArchitectureVisualizationService: ObservableObject {
         // Parse backend diagram response into iOS model
         let title = diagramData["name"] as? String ?? diagramData["title"] as? String ?? "Architecture Diagram"
         
+        // Check if it's actual backend format with nested mermaid_diagram
+        if let diagramObj = diagramData["diagram"] as? [String: Any],
+           let mermaidObj = diagramObj["mermaid_diagram"] as? [String: Any],
+           let content = mermaidObj["content"] as? String {
+            return ArchitectureDiagram(
+                name: title,
+                mermaidDefinition: content,
+                description: diagramObj["description"] as? String,
+                diagramType: mermaidObj["diagram_type"] as? String ?? "architecture"
+            )
+        }
+        
+        // Check if it's direct mermaid_diagram at top level
+        if let mermaidObj = diagramData["mermaid_diagram"] as? [String: Any],
+           let content = mermaidObj["content"] as? String {
+            return ArchitectureDiagram(
+                name: title,
+                mermaidDefinition: content,
+                description: diagramData["description"] as? String,
+                diagramType: mermaidObj["diagram_type"] as? String ?? "architecture"
+            )
+        }
+        
         // Check if it's a direct Mermaid diagram (snake_case)
         if let mermaidDefinition = diagramData["mermaid_definition"] as? String {
             return ArchitectureDiagram(
@@ -409,7 +433,8 @@ class ArchitectureVisualizationService: ObservableObject {
         guard let baseURL = baseURL else { return }
         
         do {
-            let url = baseURL.appendingPathComponent("api/projects/\(projectId)/architecture")
+            // Use the working graph architecture endpoint for monitoring
+            let url = baseURL.appendingPathComponent("graph/architecture/\(clientId)")
             var request = URLRequest(url: url)
             request.httpMethod = "GET"
             request.setValue("application/json", forHTTPHeaderField: "Accept")

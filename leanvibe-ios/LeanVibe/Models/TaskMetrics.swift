@@ -254,7 +254,7 @@ struct TaskStatsAPIResponse: Codable {
     let totalTasks: Int
     let byStatus: [String: Int]
     let byPriority: [String: Int]
-    let completedToday: Int
+    let completedToday: Int?  // Optional since backend doesn't provide this field yet
     let averageCompletionTime: Double?
     
     func toTaskMetrics() -> TaskMetrics {
