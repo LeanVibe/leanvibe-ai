@@ -19,31 +19,32 @@ struct KanbanBoardView: View {
     @State private var showingDependencies = false
 
     var body: some View {
-        NavigationView {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
-                    ForEach(TaskStatus.allCases, id: \.self) { status in
-                        KanbanColumnView(
-                            status: status,
-                            tasks: filteredTasks(for: status),
-                            taskService: taskService,
-                            selectedTask: $selectedTask,
-                            draggedTask: $draggedTask,
-                            onDragError: { error in
-                                // Error is handled by the ErrorDisplayView overlay
-                                // TaskService.lastError will be displayed
-                            }
-                        )
-                    }
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 16) {
+                ForEach(TaskStatus.allCases, id: \.self) { status in
+                    KanbanColumnView(
+                        status: status,
+                        tasks: filteredTasks(for: status),
+                        taskService: taskService,
+                        selectedTask: $selectedTask,
+                        draggedTask: $draggedTask,
+                        onDragError: { error in
+                            // Error is handled by the ErrorDisplayView overlay
+                            // TaskService.lastError will be displayed
+                        }
+                    )
                 }
-                .padding(.horizontal)
             }
-            .navigationTitle("Tasks")
-            .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText, prompt: "Search tasks...")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    HStack {
+            .padding(.horizontal)
+        }
+        .navigationTitle("Tasks")
+#if os(iOS)
+        .navigationBarTitleDisplayMode(.large)
+#endif
+        .searchable(text: $searchText, prompt: "Search tasks...")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                HStack {
                         Button(action: { showingStatistics = true }) {
                             Image(systemName: "chart.bar.xaxis")
                         }
@@ -102,7 +103,7 @@ struct KanbanBoardView: View {
                     }
                 }
             }
-            .overlay(alignment: .top) {
+        .overlay(alignment: .top) {
                 // Display task service errors
                 if let error = taskService.lastError {
                     ErrorDisplayView(
@@ -116,13 +117,13 @@ struct KanbanBoardView: View {
                     .padding()
                 }
             }
-            .sheet(isPresented: $showingStatistics) {
-                NavigationView {
+        .sheet(isPresented: $showingStatistics) {
+                NavigationStack {
                     TaskStatisticsView(taskService: taskService)
                 }
             }
-            .sheet(isPresented: $showingDependencies) {
-                NavigationView {
+        .sheet(isPresented: $showingDependencies) {
+                NavigationStack {
                     VStack(spacing: 20) {
                         Image(systemName: "arrow.triangle.branch")
                             .font(.system(size: 60))
@@ -144,7 +145,9 @@ struct KanbanBoardView: View {
                         .buttonStyle(.borderedProminent)
                     }
                     .navigationTitle("Dependencies")
+#if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
+#endif
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button("Done") {
@@ -154,13 +157,13 @@ struct KanbanBoardView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingCreateTask) {
+        .sheet(isPresented: $showingCreateTask) {
                 TaskCreationView(taskService: taskService, projectId: projectId)
             }
-            .sheet(item: $selectedTask) { task in
+        .sheet(item: $selectedTask) { task in
                 TaskDetailView(taskService: taskService, task: task)
             }
-            .alert("Offline Mode", isPresented: $showingOfflineAlert) {
+        .alert("Offline Mode", isPresented: $showingOfflineAlert) {
                 Button("OK") { }
             } message: {
                 Text("You're currently offline. Changes will be saved locally and synced when connection is restored.")

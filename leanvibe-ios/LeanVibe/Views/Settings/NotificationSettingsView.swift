@@ -194,7 +194,8 @@ struct NotificationSettingsView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(#if os(iOS)
+                    .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -586,7 +587,8 @@ struct NotificationPreview: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(#if os(iOS)
+        .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)

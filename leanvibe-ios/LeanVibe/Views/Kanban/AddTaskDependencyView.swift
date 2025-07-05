@@ -91,7 +91,8 @@ struct AddTaskDependencyView: View {
             }
         }
         .padding()
-        .background(#if os(iOS)
+        .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -368,7 +369,8 @@ struct TaskDependencyRow: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(#if os(iOS)
+                .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)

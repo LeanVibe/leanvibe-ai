@@ -129,7 +129,8 @@ struct VoiceTestView: View {
                                 .foregroundColor(.primary)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(#if os(iOS)
+                                .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -178,7 +179,8 @@ Color.gray.opacity(0.1)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(#if os(iOS)
+                    .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)

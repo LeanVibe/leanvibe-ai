@@ -39,7 +39,8 @@ struct DiagramComparisonView: View {
                 .font(.caption)
             }
             .padding()
-            .background(#if os(iOS)
+            .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -176,7 +177,8 @@ Color.gray.opacity(0.1)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(#if os(iOS)
+        .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)

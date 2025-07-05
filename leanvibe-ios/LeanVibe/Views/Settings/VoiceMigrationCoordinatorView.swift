@@ -170,7 +170,8 @@ struct CurrentStatusCard: View {
             }
         }
         .padding()
-        .background(#if os(iOS)
+        .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -265,7 +266,8 @@ struct ServiceDetailsView: View {
             }
         }
         .padding()
-        .background(#if os(iOS)
+        .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -325,7 +327,8 @@ struct MigrationDetailsView: View {
                         .fontDesign(.monospaced)
                 }
                 .padding()
-                .background(#if os(iOS)
+                .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)

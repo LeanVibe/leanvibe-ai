@@ -393,7 +393,8 @@ struct FeatureFlagStatusSummaryView: View {
                         }
                     }
                     .padding()
-                    .background(#if os(iOS)
+                    .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -412,7 +413,8 @@ Color.gray.opacity(0.1)
                         StatRow(label: "Remote Controlled", value: "\(summary.remoteControlledFeatures)", color: .blue)
                     }
                     .padding()
-                    .background(#if os(iOS)
+                    .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -435,7 +437,8 @@ Color.gray.opacity(0.1)
                         }
                     }
                     .padding()
-                    .background(#if os(iOS)
+                    .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)

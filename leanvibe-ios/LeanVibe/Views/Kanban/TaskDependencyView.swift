@@ -320,7 +320,8 @@ struct DependencyMetricCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(#if os(iOS)
+        .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -478,7 +479,8 @@ struct DependencyTaskChip: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(#if os(iOS)
+        .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)

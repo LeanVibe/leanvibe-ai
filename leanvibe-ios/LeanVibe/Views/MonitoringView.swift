@@ -98,7 +98,8 @@ struct MonitoringView: View {
                 Spacer()
             }
             .padding()
-            .background(#if os(iOS)
+            .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -118,7 +119,8 @@ Color.gray.opacity(0.1)
                     .foregroundColor(.secondary)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(#if os(iOS)
+                    .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -159,7 +161,8 @@ Color.gray.opacity(0.1)
                                 .font(.caption)
                         }
                         .padding()
-                        .background(#if os(iOS)
+                        .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
@@ -211,7 +214,8 @@ struct MonitoringMetricCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(#if os(iOS)
+        .background(
+#if os(iOS)
 Color(.systemGray6)
 #else
 Color.gray.opacity(0.1)
