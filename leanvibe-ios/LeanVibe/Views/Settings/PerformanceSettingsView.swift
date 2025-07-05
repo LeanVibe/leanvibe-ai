@@ -10,7 +10,7 @@ struct PerformanceSettingsView: View {
     @ObservedObject var settingsManager: SettingsManager
     @State private var showingPerformanceAnalysis = false
     @State private var isRunningAnalysis = false
-    @State private var performanceMetrics: PerformanceMetrics?
+    @State private var performanceMetrics: SettingsPerformanceMetrics?
     
     // Local state for performance settings
     @State private var enablePerformanceMonitoring = false
@@ -239,7 +239,7 @@ struct PerformanceSettingsView: View {
         
         // Simulate performance analysis
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            performanceMetrics = PerformanceMetrics(
+            performanceMetrics = SettingsPerformanceMetrics(
                 cpuUsage: Double.random(in: 15...35),
                 memoryUsage: Double.random(in: 200...400),
                 frameRate: Double.random(in: 55...60),
@@ -296,7 +296,7 @@ struct PerformanceSettingsView: View {
 // MARK: - Supporting Views
 
 struct PerformanceMetricsView: View {
-    let metrics: PerformanceMetrics
+    let metrics: SettingsPerformanceMetrics
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -394,7 +394,7 @@ struct PowerManagementView: View {
 
 // MARK: - Supporting Types
 
-struct PerformanceMetrics {
+struct SettingsPerformanceMetrics {
     let cpuUsage: Double
     let memoryUsage: Double
     let frameRate: Double

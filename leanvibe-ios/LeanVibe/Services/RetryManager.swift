@@ -1,17 +1,6 @@
 import SwiftUI
 import Foundation
 
-// Temporary ErrorRecoveryManager until import issue is resolved
-@MainActor
-class ErrorRecoveryManager {
-    static let shared = ErrorRecoveryManager()
-    private init() {}
-    
-    func attemptRecovery(for error: AppError) async {
-        // Minimal implementation for compilation
-        print("Attempting recovery for error: \(error)")
-    }
-}
 
 @available(iOS 18.0, macOS 14.0, *)
 @MainActor

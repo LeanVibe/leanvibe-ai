@@ -5,7 +5,7 @@ import Combine
 @MainActor
 class PerformanceManager: ObservableObject {
     @Published var memoryUsage: Double = 0
-    @Published var performanceMetrics: PerformanceMetrics?
+    @Published var performanceMetrics: SystemPerformanceMetrics?
     @Published var performanceAlerts: [PerformanceAlert] = []
     @Published var isMonitoring = false
     
@@ -18,7 +18,7 @@ class PerformanceManager: ObservableObject {
     private var lastMemoryWarning: Date?
     private var memoryWarningCount = 0
     
-    struct PerformanceMetrics {
+    struct SystemPerformanceMetrics {
         let memoryUsage: Double // MB
         let cpuUsage: Double // Percentage
         let diskUsage: Double // MB
@@ -153,7 +153,7 @@ class PerformanceManager: ObservableObject {
         
         memoryUsage = memory
         
-        let metrics = PerformanceMetrics(
+        let metrics = SystemPerformanceMetrics(
             memoryUsage: memory,
             cpuUsage: cpu,
             diskUsage: disk,
@@ -226,9 +226,9 @@ class PerformanceManager: ObservableObject {
         return 0
     }
     
-    private func getNetworkActivity() -> PerformanceMetrics.NetworkActivity {
+    private func getNetworkActivity() -> SystemPerformanceMetrics.NetworkActivity {
         // Mock network activity for now
-        return PerformanceMetrics.NetworkActivity(
+        return SystemPerformanceMetrics.NetworkActivity(
             bytesReceived: Int64.random(in: 1000...10000),
             bytesSent: Int64.random(in: 500...5000),
             requestCount: Int.random(in: 1...10)
@@ -247,7 +247,7 @@ class PerformanceManager: ObservableObject {
     
     // MARK: - Performance Analysis
     
-    private func checkPerformanceThresholds(_ metrics: PerformanceMetrics) {
+    private func checkPerformanceThresholds(_ metrics: SystemPerformanceMetrics) {
         // Memory checks
         if metrics.memoryUsage > alertThresholds.memoryCritical {
             addAlert(

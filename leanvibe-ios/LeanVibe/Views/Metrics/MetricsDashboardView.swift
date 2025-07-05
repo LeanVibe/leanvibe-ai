@@ -304,10 +304,10 @@ struct MetricsDashboardView: View {
             }
             
             VStack(spacing: 8) {
-                ServiceHealthRow(service: health.backend)
-                ServiceHealthRow(service: health.database)
-                ServiceHealthRow(service: health.webSocket)
-                ServiceHealthRow(service: health.tasks)
+                MetricsServiceHealthRow(service: health.backend)
+                MetricsServiceHealthRow(service: health.database)
+                MetricsServiceHealthRow(service: health.webSocket)
+                MetricsServiceHealthRow(service: health.tasks)
             }
             
             Text("Last checked: \(formatDate(health.lastChecked))")
@@ -590,7 +590,7 @@ struct HealthStatusBadge: View {
 }
 
 @available(iOS 18.0, macOS 14.0, *)
-struct ServiceHealthRow: View {
+struct MetricsServiceHealthRow: View {
     let service: ServiceHealth
     
     var body: some View {

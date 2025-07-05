@@ -119,7 +119,7 @@ class NetworkErrorHandler: ObservableObject {
     
     // MARK: - Connection Quality Monitoring
     
-    private func checkConnectionQuality() async {
+    func checkConnectionQuality() async {
         guard isConnected else { return }
         
         let now = Date()

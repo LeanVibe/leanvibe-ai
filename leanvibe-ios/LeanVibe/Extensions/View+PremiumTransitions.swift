@@ -210,6 +210,7 @@ extension View {
 
 // MARK: - Supporting Types
 
+@available(iOS 15.0, macOS 12.0, *)
 enum SwipeDirection {
     case left, right, up, down
     

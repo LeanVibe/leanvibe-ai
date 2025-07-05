@@ -203,6 +203,7 @@ enum MigrationStatus: String, CaseIterable {
         }
     }
     
+    @available(iOS 15.0, macOS 12.0, *)
     var color: Color {
         switch self {
         case .notStarted:
