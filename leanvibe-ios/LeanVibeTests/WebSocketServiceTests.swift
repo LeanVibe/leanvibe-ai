@@ -447,6 +447,10 @@ class MockWebSocket: WebSocketClient {
         delegate?.didReceive(event: .disconnected("Mock disconnect", closeCode), client: self)
     }
     
+    func disconnect(closeCode: UInt16) {
+        disconnect(forceTimeout: nil, closeCode: closeCode)
+    }
+    
     func write(string: String, completion: (() -> ())? = nil) {
         sentMessages.append(string)
         completion?()
@@ -517,13 +521,4 @@ class MockConnectionStorageManager: ConnectionStorageManager {
 
 // MARK: - Test Extensions
 
-extension AgentMessage {
-    /// Convenience initializer for testing
-    convenience init(content: String, isFromUser: Bool, type: MessageType) {
-        self.init()
-        self.content = content
-        self.isFromUser = isFromUser
-        self.type = type
-        self.timestamp = Date()
-    }
-}
+// Removed invalid convenience initializer for AgentMessage struct

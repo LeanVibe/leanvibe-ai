@@ -662,7 +662,7 @@ final class DashboardUITests: XCTestCase {
 // MARK: - Dashboard Page Object Model
 
 @available(iOS 18.0, macOS 14.0, *)
-struct DashboardPage {
+struct DashboardPageForUITests {
     let app: XCUIApplication
     
     var tabBar: XCUIElement { app.tabBars.firstMatch }

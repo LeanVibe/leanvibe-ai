@@ -92,7 +92,6 @@ final class ProjectManagerTests: XCTestCase {
         // Given
         let newProject = Project(
             displayName: "Test Project",
-            status: .active,
             path: "/test/path",
             language: .swift
         )
@@ -112,7 +111,6 @@ final class ProjectManagerTests: XCTestCase {
         // Given
         let invalidProject = Project(
             displayName: "",
-            status: .active,
             path: "/test/path",
             language: .swift
         )
@@ -132,8 +130,8 @@ final class ProjectManagerTests: XCTestCase {
     
     func testAddDuplicateProject() async throws {
         // Given
-        let project1 = Project(displayName: "Project 1", status: .active, path: "/same/path", language: .swift)
-        let project2 = Project(displayName: "Project 2", status: .active, path: "/same/path", language: .python)
+        let project1 = Project(displayName: "Project 1", path: "/same/path", language: .swift)
+        let project2 = Project(displayName: "Project 2", path: "/same/path", language: .python)
         
         try await projectManager.addProject(project1)
         XCTAssertEqual(projectManager.projects.count, 1)
@@ -153,7 +151,7 @@ final class ProjectManagerTests: XCTestCase {
     
     func testRemoveProject() async throws {
         // Given
-        let project = Project(displayName: "Test Project", status: .active, path: "/test/path", language: .swift)
+        let project = Project(displayName: "Test Project", path: "/test/path", language: .swift)
         try await projectManager.addProject(project)
         XCTAssertEqual(projectManager.projects.count, 1)
         
@@ -183,7 +181,7 @@ final class ProjectManagerTests: XCTestCase {
     
     func testUpdateProject() async throws {
         // Given
-        var project = Project(displayName: "Original Name", status: .active, path: "/test/path", language: .swift)
+        var project = Project(displayName: "Original Name", path: "/test/path", language: .swift)
         try await projectManager.addProject(project)
         
         // When
@@ -202,8 +200,8 @@ final class ProjectManagerTests: XCTestCase {
     
     func testActiveProjects() throws {
         // Given
-        let activeProject = Project(displayName: "Active", status: .active, path: "/active", language: .swift)
-        let inactiveProject = Project(displayName: "Inactive", status: .inactive, path: "/inactive", language: .python)
+        let activeProject = Project(displayName: "Active", path: "/active", language: .swift)
+        let inactiveProject = Project(displayName: "Inactive", path: "/inactive", language: .python, status: .inactive)
         
         projectManager.projects = [activeProject, inactiveProject]
         
@@ -218,9 +216,9 @@ final class ProjectManagerTests: XCTestCase {
     
     func testProjectsByLanguage() throws {
         // Given
-        let swiftProject1 = Project(displayName: "Swift 1", status: .active, path: "/swift1", language: .swift)
-        let swiftProject2 = Project(displayName: "Swift 2", status: .active, path: "/swift2", language: .swift)
-        let pythonProject = Project(displayName: "Python", status: .active, path: "/python", language: .python)
+        let swiftProject1 = Project(displayName: "Swift 1", path: "/swift1", language: .swift)
+        let swiftProject2 = Project(displayName: "Swift 2", path: "/swift2", language: .swift)
+        let pythonProject = Project(displayName: "Python", path: "/python", language: .python)
         
         projectManager.projects = [swiftProject1, swiftProject2, pythonProject]
         
@@ -237,7 +235,7 @@ final class ProjectManagerTests: XCTestCase {
     
     func testProjectPersistence() async throws {
         // Given
-        let project = Project(displayName: "Persistent Project", status: .active, path: "/persistent", language: .swift)
+        let project = Project(displayName: "Persistent Project", path: "/persistent", language: .swift)
         try await projectManager.addProject(project)
         
         // When - Create a new ProjectManager instance (simulating app restart)
@@ -284,7 +282,7 @@ final class ProjectManagerTests: XCTestCase {
         projectManager.lastError = "Previous error"
         
         // When
-        let project = Project(displayName: "Test", status: .active, path: "/test", language: .swift)
+        let project = Project(displayName: "Test", path: "/test", language: .swift)
         try await projectManager.addProject(project)
         
         // Then - Successful operation should clear error
@@ -296,7 +294,7 @@ final class ProjectManagerTests: XCTestCase {
     func testConcurrentProjectOperations() async throws {
         // Given
         let projects = (1...10).map { i in
-            Project(displayName: "Project \(i)", status: .active, path: "/project\(i)", language: .swift)
+            Project(displayName: "Project \(i)", path: "/project\(i)", language: .swift)
         }
         
         // When - Add projects concurrently
@@ -332,7 +330,6 @@ final class ProjectManagerTests: XCTestCase {
         for i in 1...100 {
             let project = Project(
                 displayName: "Performance Project \(i)",
-                status: .active,
                 path: "/perf/project\(i)",
                 language: .swift
             )
@@ -391,7 +388,6 @@ extension ProjectManagerTests {
     func createTestProject(name: String = "Test Project") -> Project {
         return Project(
             displayName: name,
-            status: .active,
             path: "/test/\(UUID().uuidString)",
             language: .swift
         )

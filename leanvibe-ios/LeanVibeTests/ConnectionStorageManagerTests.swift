@@ -10,14 +10,14 @@ final class ConnectionStorageManagerTests: XCTestCase {
     // MARK: - Test Dependencies
     
     private var storageManager: ConnectionStorageManager!
-    private var mockUserDefaults: MockUserDefaults!
+    private var mockUserDefaults: MockUserDefaultsForConnectionTests!
     
     // MARK: - Setup & Teardown
     
     override func setUpWithError() throws {
         try super.setUpWithError()
         
-        mockUserDefaults = MockUserDefaults()
+        mockUserDefaults = MockUserDefaultsForConnectionTests()
         storageManager = ConnectionStorageManager()
         
         // Clear any existing data
@@ -421,7 +421,7 @@ private func createTestConnectionSettings(
 // MARK: - Mock Dependencies
 
 /// Mock UserDefaults for testing without affecting real user defaults
-class MockUserDefaults: UserDefaults {
+class MockUserDefaultsForConnectionTests: UserDefaults {
     private var storage: [String: Any] = [:]
     
     override func set(_ value: Any?, forKey defaultName: String) {
