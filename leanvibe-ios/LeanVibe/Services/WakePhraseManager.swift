@@ -4,6 +4,7 @@ import Foundation
 import AVFoundation
 import SwiftUI
 
+@available(iOS 18.0, macOS 14.0, *)
 @MainActor
 class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
     @Published var isWakeListening = false

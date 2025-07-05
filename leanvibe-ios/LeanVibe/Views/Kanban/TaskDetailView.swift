@@ -282,6 +282,7 @@ struct TaskDetailView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ConfidenceIndicatorView: View {
     let confidence: Double
     

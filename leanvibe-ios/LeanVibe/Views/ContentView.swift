@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 @available(iOS 18.0, macOS 14.0, *)
 struct ContentView: View {
@@ -19,11 +22,19 @@ struct ContentView: View {
             inputSection
         }
         .navigationTitle("LeanVibe Agent")
+#if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+#endif
         .toolbar {
+#if os(iOS)
             ToolbarItem(placement: .navigationBarLeading) {
                 connectionButton
             }
+#else
+            ToolbarItem(placement: .navigation) {
+                connectionButton
+            }
+#endif
             
             ToolbarItem(placement: .primaryAction) {
                 settingsButton
@@ -59,7 +70,11 @@ struct ContentView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+#if os(iOS)
         .background(Color(.systemGray6))
+#else
+        .background(Color.gray.opacity(0.1))
+#endif
     }
     
     private var messagesScrollView: some View {
@@ -118,7 +133,11 @@ struct ContentView: View {
                 CommandSuggestion(command: "/help", description: "Show all commands")
             }
             .padding()
-            .background(Color(.systemGray6))
+    #if os(iOS)
+        .background(Color(.systemGray6))
+#else
+        .background(Color.gray.opacity(0.1))
+#endif
             .cornerRadius(12)
         }
         .padding()
@@ -193,7 +212,9 @@ struct ContentView: View {
     
     /// Hide the keyboard by ending text editing
     private func hideKeyboard() {
+#if os(iOS)
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+#endif
     }
 }
 
@@ -280,7 +301,11 @@ struct MessageBubble: View {
         if message.isFromUser {
             return .blue
         } else {
+#if os(iOS)
             return Color(.systemGray5)
+#else
+            return Color.gray.opacity(0.2)
+#endif
         }
     }
     
@@ -354,7 +379,9 @@ struct ConnectionSettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Done") {

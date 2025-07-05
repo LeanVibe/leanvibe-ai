@@ -98,7 +98,8 @@ class RetryManager: ObservableObject {
                     if category == .network || category == .service {
                         let appError = AppError.from(error, context: context, category: category)
                         Task {
-                            await ErrorRecoveryManager.shared.attemptRecovery(for: appError)
+                            // TODO: Re-enable ErrorRecoveryManager when dependency is available
+                            print("Error recovery requested for: \(appError.title)")
                         }
                     }
                 }

@@ -95,6 +95,9 @@ struct AddProjectView: View {
     }
 }
 
+#if DEBUG
+@available(iOS 18.0, macOS 14.0, *)
 #Preview {
     AddProjectView(projectManager: ProjectManager())
 }
+#endif

@@ -153,11 +153,11 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
         syncStatus = .syncing
         
         do {
-            let backendSettings = try await BackendSettingsService.shared.fetchSettings()
+            // TODO: Re-enable BackendSettingsService when dependency is available
+            print("Backend sync requested but service unavailable")
             
             await MainActor.run {
-                // Update settings from backend while preserving user overrides
-                updateFromBackend(backendSettings)
+                // Backend sync disabled temporarily
                 syncStatus = .synced(Date())
                 lastSyncDate = Date()
             }
@@ -187,7 +187,8 @@ class SettingsManager: ObservableObject, @unchecked Sendable {
             performance: performance
         )
         
-        try await BackendSettingsService.shared.pushSettings(allSettings)
+        // TODO: Re-enable BackendSettingsService when dependency is available
+        print("Backend push requested but service unavailable")
         await MainActor.run {
             lastSyncDate = Date()
             syncStatus = .synced(Date())

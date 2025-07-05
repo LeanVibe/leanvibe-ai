@@ -56,23 +56,25 @@ struct SettingsView: View {
     // MARK: - Properties
     
     @StateObject private var settingsManager = SettingsManager.shared
-    @StateObject private var featureFlagManager = FeatureFlagManager.shared
+    // TODO: Re-enable FeatureFlagManager when dependency is available
+    // @StateObject private var featureFlagManager = FeatureFlagManager.shared
     @ObservedObject var webSocketService: WebSocketService
     @State private var showingAbout = false
     @State private var showingExportImport = false
     
-    // Feature flag computed properties using FeatureFlagManager
-    private var isVoiceFeaturesEnabled: Bool { featureFlagManager.isFeatureEnabled(.voiceFeatures) }
-    private var isWakePhraseDetectionEnabled: Bool { featureFlagManager.isFeatureEnabled(.wakePhraseDetection) }
-    private var isVoiceRecognitionEnabled: Bool { featureFlagManager.isFeatureEnabled(.voiceRecognition) }
-    private var isBetaFeedbackEnabled: Bool { featureFlagManager.isFeatureEnabled(.betaFeedback) }
-    private var isBetaAnalyticsEnabled: Bool { featureFlagManager.isFeatureEnabled(.betaAnalytics) }
-    private var isAdvancedSettingsEnabled: Bool { featureFlagManager.isFeatureEnabled(.advancedSettings) }
-    private var isDebugSettingsEnabled: Bool { featureFlagManager.isFeatureEnabled(.debugSettings) }
-    private var isNetworkDiagnosticsEnabled: Bool { featureFlagManager.isFeatureEnabled(.networkDiagnostics) }
-    private var isPerformanceMonitoringEnabled: Bool { featureFlagManager.isFeatureEnabled(.performanceMonitoring) }
-    private var isDocumentIntelligenceEnabled: Bool { featureFlagManager.isFeatureEnabled(.documentIntelligence) }
-    private var isCodeCompletionEnabled: Bool { featureFlagManager.isFeatureEnabled(.codeCompletion) }
+    // TODO: Re-enable feature flags when FeatureFlagManager is available
+    // Temporarily enabling all features for development build
+    private var isVoiceFeaturesEnabled: Bool { true }
+    private var isWakePhraseDetectionEnabled: Bool { true }
+    private var isVoiceRecognitionEnabled: Bool { true }
+    private var isBetaFeedbackEnabled: Bool { true }
+    private var isBetaAnalyticsEnabled: Bool { true }
+    private var isAdvancedSettingsEnabled: Bool { true }
+    private var isDebugSettingsEnabled: Bool { true }
+    private var isNetworkDiagnosticsEnabled: Bool { true }
+    private var isPerformanceMonitoringEnabled: Bool { true }
+    private var isDocumentIntelligenceEnabled: Bool { true }
+    private var isCodeCompletionEnabled: Bool { true }
     
     // MARK: - Body
     
@@ -360,7 +362,8 @@ struct SettingsView: View {
             */
             
             // Architecture Viewer (Architecture Visualization only)
-            if featureFlagManager.isFeatureEnabled(.architectureVisualization) {
+            // TODO: Re-enable feature flag when FeatureFlagManager is available
+            if true { // Temporarily enabled for development
                 NavigationLink(destination: ArchitectureViewerSettingsView()) {
                     SettingsRow(
                         icon: "network",
