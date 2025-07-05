@@ -23,6 +23,11 @@ struct ProjectDashboardView: View {
                     // Connection Status
                     connectionStatusCard
                     
+                    // Error Display
+                    if let error = projectManager.lastError {
+                        errorDisplayCard(error: error)
+                    }
+                    
                     // Projects Grid
                     projectsGridSection
                     
@@ -32,9 +37,11 @@ struct ProjectDashboardView: View {
                 .padding(PremiumDesignSystem.Spacing.containerPadding)
             }
             .navigationTitle("Projects")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.large)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button(action: { 
                         PremiumHaptics.contextualFeedback(for: .buttonTap)
                         showingAddProject = true 
@@ -49,7 +56,10 @@ struct ProjectDashboardView: View {
                 do {
                     try await projectManager.refreshProjects()
                 } catch {
-                    // Error is handled by projectManager.lastError
+                    // Error handling with user feedback
+                    if let error = projectManager.lastError {
+                        print("🚨 Project refresh failed: \(error)")
+                    }
                 }
             }
             .sheet(isPresented: $showingAddProject) {
@@ -204,6 +214,43 @@ struct ProjectDashboardView: View {
         .cornerRadius(PremiumDesignSystem.CornerRadius.card)
     }
     
+    private func errorDisplayCard(error: String) -> some View {
+        HStack {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(PremiumDesignSystem.Colors.error)
+                .font(.title2)
+            
+            VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.xs) {
+                Text("Error")
+                    .font(.headline)
+                    .foregroundColor(PremiumDesignSystem.Colors.error)
+                
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+            
+            Spacer()
+            
+            Button("Dismiss") {
+                // Clear error by triggering a refresh
+                Task {
+                    try? await projectManager.refreshProjects()
+                }
+            }
+            .font(.caption)
+            .foregroundColor(PremiumDesignSystem.Colors.buttonPrimary)
+        }
+        .padding(PremiumDesignSystem.Spacing.containerPadding)
+        .background(PremiumDesignSystem.Colors.error.opacity(0.1))
+        .cornerRadius(PremiumDesignSystem.CornerRadius.card)
+        .overlay(
+            RoundedRectangle(cornerRadius: PremiumDesignSystem.CornerRadius.card)
+                .stroke(PremiumDesignSystem.Colors.error.opacity(0.3), lineWidth: 1)
+        )
+    }
+    
     private var quickActionsSection: some View {
         VStack(alignment: .leading, spacing: PremiumDesignSystem.Spacing.md) {
             Text("Quick Actions")
@@ -220,7 +267,10 @@ struct ProjectDashboardView: View {
                         do {
                             try await projectManager.refreshProjects()
                         } catch {
-                            // Error is handled by projectManager.lastError
+                            // Error handling with user feedback
+                            if let error = projectManager.lastError {
+                                print("🚨 Project refresh failed: \(error)")
+                            }
                         }
                     }
                 }
@@ -253,6 +303,7 @@ struct ProjectDashboardView: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ProjectCard: View {
     let project: Project
     let onTap: () -> Void
@@ -338,6 +389,7 @@ struct ProjectCard: View {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 struct ProjectStatusBadge: View {
     let status: ProjectStatus
     
@@ -401,7 +453,7 @@ struct HealthScoreBar: View {
                 Text("\(Int(score * 100))%")
                     .font(.caption)
                     .fontWeight(.medium)
-                    .foregroundColor(Color(healthColor))
+                    .foregroundColor(healthColor)
             }
             
             GeometryReader { geometry in
@@ -412,7 +464,7 @@ struct HealthScoreBar: View {
                         .cornerRadius(2)
                     
                     Rectangle()
-                        .fill(Color(healthColor))
+                        .fill(healthColor)
                         .frame(width: geometry.size.width * score, height: 4)
                         .cornerRadius(2)
                 }
@@ -421,11 +473,11 @@ struct HealthScoreBar: View {
         }
     }
     
-    private var healthColor: String {
-        if score >= 0.8 { return "systemGreen" }
-        if score >= 0.6 { return "systemYellow" }
-        if score >= 0.4 { return "systemOrange" }
-        return "systemRed"
+    private var healthColor: Color {
+        if score >= 0.8 { return PremiumDesignSystem.Colors.success }
+        if score >= 0.6 { return Color(.systemYellow) }
+        if score >= 0.4 { return Color(.systemOrange) }
+        return PremiumDesignSystem.Colors.error
     }
 }
 

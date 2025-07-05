@@ -592,6 +592,11 @@ extension TaskPriority {
     }
 }
 
-#Preview {
-    DocumentIntelligenceView()
+#if DEBUG
+@available(iOS 18.0, macOS 14.0, *)
+struct DocumentIntelligenceView_Previews: PreviewProvider {
+    static var previews: some View {
+        DocumentIntelligenceView()
+    }
 }
+#endif
