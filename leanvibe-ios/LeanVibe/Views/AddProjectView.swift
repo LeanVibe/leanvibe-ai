@@ -25,53 +25,51 @@ struct AddProjectView: View {
     }
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section("Project Details") {
-                    TextField("Project Name", text: $projectName)
-                    TextField("Project Path", text: $projectPath)
-                    
-                    Picker("Language", selection: $selectedLanguage) {
-                        ForEach(ProjectLanguage.allCases, id: \.self) { language in
-                            HStack {
-                                Image(systemName: language.icon)
-                                    .foregroundColor(colorFromString(language.color))
-                                Text(language.rawValue)
-                            }
-                            .tag(language)
-                        }
-                    }
-                }
+        Form {
+            Section("Project Details") {
+                TextField("Project Name", text: $projectName)
+                TextField("Project Path", text: $projectPath)
                 
-                Section("Quick Setup") {
-                    Button("Use Current Directory") {
-                        projectPath = "/Users/\(NSUserName())/Documents"
-                        if projectName.isEmpty {
-                            projectName = "My Project"
+                Picker("Language", selection: $selectedLanguage) {
+                    ForEach(ProjectLanguage.allCases, id: \.self) { language in
+                        HStack {
+                            Image(systemName: language.icon)
+                                .foregroundColor(colorFromString(language.color))
+                            Text(language.rawValue)
                         }
-                    }
-                    
-                    Button("Browse...") {
-                        // File picker would go here
-                        projectPath = "/path/to/project"
+                        .tag(language)
                     }
                 }
             }
-            .navigationTitle("Add Project")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
+            
+            Section("Quick Setup") {
+                Button("Use Current Directory") {
+                    projectPath = "/Users/\(NSUserName())/Documents"
+                    if projectName.isEmpty {
+                        projectName = "My Project"
                     }
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Add") {
-                        addProject()
-                    }
-                    .disabled(projectName.isEmpty || projectPath.isEmpty)
+                Button("Browse...") {
+                    // File picker would go here
+                    projectPath = "/path/to/project"
                 }
+            }
+        }
+        .navigationTitle("Add Project")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") {
+                    dismiss()
+                }
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Add") {
+                    addProject()
+                }
+                .disabled(projectName.isEmpty || projectPath.isEmpty)
             }
         }
     }

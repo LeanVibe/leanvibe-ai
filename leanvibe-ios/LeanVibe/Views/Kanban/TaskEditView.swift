@@ -39,8 +39,7 @@ struct TaskEditView: View {
     }
     
     var body: some View {
-        NavigationView {
-            Form {
+        Form {
                 Section("Task Details") {
                     TextField("Task title", text: $title, axis: .vertical)
                         .lineLimit(1...3)

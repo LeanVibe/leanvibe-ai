@@ -15,8 +15,7 @@ struct BetaFeedbackView: View {
     @State private var isSubmitting = false
     
     var body: some View {
-        NavigationView {
-            Form {
+        Form {
                 Section("Feedback Type") {
                     Picker("Type", selection: $feedbackType) {
                         ForEach(BetaFeedbackType.allCases, id: \.self) { type in

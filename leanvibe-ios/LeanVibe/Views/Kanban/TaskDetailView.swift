@@ -11,37 +11,36 @@ struct TaskDetailView: View {
     @State private var approvalFeedback = ""
     
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Header Section
-                    taskHeaderSection
-                    
-                    // Description Section
-                    if let description = task.description, !description.isEmpty {
-                        descriptionSection
-                    }
-                    
-                    // Metadata Section
-                    metadataSection
-                    
-                    // Agent Decision Section
-                    if let decision = task.agentDecision {
-                        agentDecisionSection(decision)
-                    }
-                    
-                    // Tags Section
-                    if !task.tags.isEmpty {
-                        tagsSection
-                    }
-                    
-                    // Timeline Section
-                    timelineSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // Header Section
+                taskHeaderSection
+                
+                // Description Section
+                if let description = task.description, !description.isEmpty {
+                    descriptionSection
                 }
-                .padding()
+                
+                // Metadata Section
+                metadataSection
+                
+                // Agent Decision Section
+                if let decision = task.agentDecision {
+                    agentDecisionSection(decision)
+                }
+                
+                // Tags Section
+                if !task.tags.isEmpty {
+                    tagsSection
+                }
+                
+                // Timeline Section
+                timelineSection
             }
-            .navigationTitle("Task Details")
-            .navigationBarTitleDisplayMode(.inline)
+            .padding()
+        }
+        .navigationTitle("Task Details")
+        .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Close") {

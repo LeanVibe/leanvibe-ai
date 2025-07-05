@@ -15,43 +15,41 @@ struct LeanVibeQRScannerView: View {
     @State private var errorMessage: String?
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Camera view
-                CameraView(
-                    isScanning: $isScanning,
-                    onQRCodeDetected: handleQRCode,
-                    onError: handleError
-                )
-                
-                // Overlay with scanning frame
-                ScannerOverlay()
-                
-                // Error message
-                if let errorMessage = errorMessage {
-                    VStack {
-                        Spacer()
-                        Text(errorMessage)
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(Color.red.opacity(0.8))
-                            .cornerRadius(8)
-                            .padding()
-                    }
+        ZStack {
+            // Camera view
+            CameraView(
+                isScanning: $isScanning,
+                onQRCodeDetected: handleQRCode,
+                onError: handleError
+            )
+            
+            // Overlay with scanning frame
+            ScannerOverlay()
+            
+            // Error message
+            if let errorMessage = errorMessage {
+                VStack {
+                    Spacer()
+                    Text(errorMessage)
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.red.opacity(0.8))
+                        .cornerRadius(8)
+                        .padding()
                 }
             }
-            .navigationTitle("Scan QR Code")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        isPresented = false
-                    }
-                    .foregroundColor(.white)
-                }
-            }
-            .background(Color.black)
         }
+        .navigationTitle("Scan QR Code")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") {
+                    isPresented = false
+                }
+                .foregroundColor(.white)
+            }
+        }
+        .background(Color.black)
     }
     
     private func handleQRCode(_ code: String) {
@@ -191,43 +189,41 @@ struct ServerQRScannerView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Camera view
-                CameraView(
-                    isScanning: $isScanning,
-                    onQRCodeDetected: handleQRCode,
-                    onError: handleError
-                )
-                
-                // Overlay with scanning frame
-                ScannerOverlay()
-                
-                // Error message
-                if let errorMessage = errorMessage {
-                    VStack {
-                        Spacer()
-                        Text(errorMessage)
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(Color.red.opacity(0.8))
-                            .cornerRadius(8)
-                            .padding()
-                    }
+        ZStack {
+            // Camera view
+            CameraView(
+                isScanning: $isScanning,
+                onQRCodeDetected: handleQRCode,
+                onError: handleError
+            )
+            
+            // Overlay with scanning frame
+            ScannerOverlay()
+            
+            // Error message
+            if let errorMessage = errorMessage {
+                VStack {
+                    Spacer()
+                    Text(errorMessage)
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.red.opacity(0.8))
+                        .cornerRadius(8)
+                        .padding()
                 }
             }
-            .navigationTitle("Scan Server QR Code")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundColor(.white)
-                }
-            }
-            .background(Color.black)
         }
+        .navigationTitle("Scan Server QR Code")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .foregroundColor(.white)
+            }
+        }
+        .background(Color.black)
     }
     
     private func handleQRCode(_ code: String) {
