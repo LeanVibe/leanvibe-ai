@@ -19,7 +19,7 @@ struct VoicePermissionSetupView: View {
     ]
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Progress indicator
                 setupProgressView
@@ -36,7 +36,9 @@ struct VoicePermissionSetupView: View {
                 bottomControlsView
             }
             .navigationTitle("Voice Setup")
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Skip") {

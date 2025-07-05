@@ -28,7 +28,7 @@ struct VoiceTabView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 // Header with voice status
                 voiceStatusHeader
@@ -46,7 +46,9 @@ struct VoiceTabView: View {
             }
             .padding()
             .navigationTitle("Voice Commands")
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingPermissionSheet = true }) {

@@ -389,7 +389,7 @@ struct VoiceCommandConfirmationView: View {
     let onCancel: () -> Void
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 24) {
                 VStack(spacing: 16) {
                     Image(systemName: "questionmark.circle.fill")
@@ -455,7 +455,9 @@ struct VoiceCommandConfirmationView: View {
             }
             .padding()
             .navigationTitle("Confirm Command")
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Cancel") {
