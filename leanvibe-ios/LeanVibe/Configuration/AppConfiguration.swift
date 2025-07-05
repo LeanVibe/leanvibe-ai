@@ -103,25 +103,11 @@ struct AppConfiguration {
     }
     
     /// Whether to enable voice features
-    /// Now controlled by feature flag system with backward compatibility
+    /// PERMANENTLY DISABLED due to persistent app crashes
     var isVoiceEnabled: Bool {
-        // Emergency disable mechanism - if voice features are causing crashes
-        if UserDefaults.standard.bool(forKey: "LeanVibe_Emergency_Disable_Voice") {
-            return false
-        }
-        
-        // Environment override for testing
-        if ProcessInfo.processInfo.environment["LEANVIBE_DISABLE_VOICE"] == "true" {
-            return false
-        }
-        
-        // Environment override to enable voice
-        if ProcessInfo.processInfo.environment["LEANVIBE_ENABLE_VOICE"] == "true" {
-            return true
-        }
-        
-        // Use feature flag system for voice features
-        return true // Temporarily hardcoded until feature flags compilation is fixed
+        // CRITICAL: Voice features permanently disabled due to app startup crashes
+        // This prevents all voice-related functionality from initializing
+        return false
     }
     
     /// Emergency disable voice features due to crashes
@@ -187,10 +173,9 @@ struct AppConfiguration {
     // MARK: - Voice System Configuration
     
     /// Whether to use the new UnifiedVoiceService instead of legacy voice managers
-    /// ENABLED: UnifiedVoiceService enabled as default for MVP deployment
+    /// DISABLED: Voice services permanently disabled due to crashes
     var useUnifiedVoiceService: Bool {
-        return ProcessInfo.processInfo.environment["LEANVIBE_USE_UNIFIED_VOICE"] == "true" ||
-               Bundle.main.object(forInfoDictionaryKey: "USE_UNIFIED_VOICE_SERVICE") as? Bool ?? true
+        return false  // All voice services disabled to prevent crashes
     }
     
     /// Voice recognition confidence threshold (0.0 to 1.0)
