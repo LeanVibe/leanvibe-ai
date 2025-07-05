@@ -767,7 +767,8 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
             
             // Automatically attempt recovery for network errors
             if category == .network {
-                await ErrorRecoveryManager.shared.attemptRecovery(for: appError)
+                // TODO: Re-enable ErrorRecoveryManager when dependency is available
+                print("Error recovery requested for: \(appError.title)")
             }
         } else {
             // Fallback if GlobalErrorManager is not available
@@ -794,7 +795,8 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         // Check network action
         actions.append(ErrorAction(title: "Check Network", systemImage: "network") {
             Task {
-                await NetworkErrorHandler.shared.checkNetworkStatus()
+                // TODO: Re-enable NetworkErrorHandler when dependency is available
+                print("Network status check requested")
             }
         })
         
