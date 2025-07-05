@@ -224,6 +224,7 @@ enum SwipeDirection {
     }
 }
 
+@available(iOS 15.0, macOS 12.0, *)
 enum NavigationDirection {
     case forward, backward
     
