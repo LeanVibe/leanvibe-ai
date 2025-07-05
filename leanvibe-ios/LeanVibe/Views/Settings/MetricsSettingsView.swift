@@ -272,9 +272,15 @@ struct MetricsPrivacyView: View {
             }
             
             Section("Data Collection Details") {
-                Text("Privacy settings and data collection details will be implemented here.")
-                    .font(.body)
-                    .foregroundColor(.secondary)
+                if FeatureFlagManager.shared.isFeatureEnabled(.incompleteSettings) {
+                    Text("Privacy settings and data collection details will be implemented here.")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                } else {
+                    Text("This feature is under development and will be available in a future version.")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
             }
         }
         .navigationTitle("Privacy Settings")

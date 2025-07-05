@@ -74,7 +74,6 @@ struct TaskDetailView: View {
                     }
                 }
             }
-        }
         .sheet(isPresented: $isEditing) {
             TaskEditView(task: $task, taskService: taskService)
         }

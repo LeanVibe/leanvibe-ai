@@ -108,7 +108,6 @@ struct TaskEditView: View {
                 }
             }
         }
-    }
     
     private func addTag() {
         let trimmedTag = newTag.trimmingCharacters(in: .whitespacesAndNewlines)

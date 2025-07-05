@@ -128,6 +128,8 @@ final class FeatureFlagManager: ObservableObject {
             return !isProductionBuild
         case .syncSettings:
             return !isProductionBuild
+        case .incompleteSettings:
+            return isDebugBuild  // Only show incomplete settings in debug builds
             
         // Notification Features - Available but can be disabled
         case .pushNotifications:
@@ -375,6 +377,7 @@ enum FeatureFlag: String, CaseIterable, Identifiable {
     case debugSettings = "debug_settings"
     case networkDiagnostics = "network_diagnostics"
     case syncSettings = "sync_settings"
+    case incompleteSettings = "incomplete_settings"  // Hide settings that are not yet implemented
     
     // Notification Features
     case pushNotifications = "push_notifications"
@@ -430,6 +433,7 @@ enum FeatureFlag: String, CaseIterable, Identifiable {
         case .debugSettings: return "Debug Settings"
         case .networkDiagnostics: return "Network Diagnostics"
         case .syncSettings: return "Sync Settings"
+        case .incompleteSettings: return "Incomplete Settings"
         case .pushNotifications: return "Push Notifications"
         case .notificationAnalytics: return "Notification Analytics"
         case .campaignManagement: return "Campaign Management"
@@ -475,6 +479,7 @@ enum FeatureFlag: String, CaseIterable, Identifiable {
         case .debugSettings: return "Enable debug settings and tools"
         case .networkDiagnostics: return "Enable network diagnostics and troubleshooting"
         case .syncSettings: return "Enable sync settings and configuration"
+        case .incompleteSettings: return "Show settings that are still under development"
         case .pushNotifications: return "Enable push notifications"
         case .notificationAnalytics: return "Enable notification analytics"
         case .campaignManagement: return "Enable notification campaign management"
@@ -505,7 +510,7 @@ enum FeatureFlag: String, CaseIterable, Identifiable {
             return .architecture
         case .kanbanBoard, .advancedKanbanFeatures, .taskDependencyGraph, .taskStatistics:
             return .kanban
-        case .advancedSettings, .debugSettings, .networkDiagnostics, .syncSettings:
+        case .advancedSettings, .debugSettings, .networkDiagnostics, .syncSettings, .incompleteSettings:
             return .settings
         case .pushNotifications, .notificationAnalytics, .campaignManagement:
             return .notifications

@@ -89,7 +89,6 @@ struct TaskCreationView: View {
                 }
             }
         }
-    }
     
     private func addTag() {
         let trimmedTag = newTag.trimmingCharacters(in: .whitespacesAndNewlines)
