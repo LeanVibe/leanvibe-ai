@@ -137,7 +137,7 @@ struct DashboardTabView: View {
     @StateObject private var performanceAnalytics = PerformanceAnalytics()
     @StateObject private var batteryManager = BatteryOptimizedManager()
     @StateObject private var settingsManager = SettingsManager.shared
-    @StateObject private var featureFlagManager = FeatureFlagManager.shared
+    // @StateObject private var featureFlagManager = FeatureFlagManager.shared
     
     @State private var showingVoiceInterface = false
     
@@ -227,7 +227,7 @@ struct DashboardTabView: View {
                 .tag(NavigationCoordinator.Tab.architecture.rawValue)
                 .hapticFeedback(.navigation)
                 
-                if featureFlagManager.isFeatureEnabled(.documentIntelligence) {
+                if false { // featureFlagManager.isFeatureEnabled(.documentIntelligence) {
                     NavigationStack(path: $navigationCoordinator.navigationPath) {
                         // TODO: Fix DocumentIntelligenceView target membership and compilation
                         VStack(spacing: 16) {

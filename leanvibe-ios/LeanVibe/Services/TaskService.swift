@@ -1074,20 +1074,6 @@ struct PerformanceMetricsAPIResponse: Codable {
             apiResponseTime: apiResponseTime
         )
     }
-}
-
-// MARK: - API Response Types
-
-struct TasksAPIResponse: Codable {
-    let tasks: [LeanVibeTask]
-    let total: Int?
-    let status: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case tasks
-        case total
-        case status
-    }
     
     // MARK: - Centralized Error Handling
     
@@ -1166,9 +1152,23 @@ struct TasksAPIResponse: Codable {
     }
 }
 
+// MARK: - API Response Types
+
+struct TasksAPIResponse: Codable {
+    let tasks: [LeanVibeTask]
+    let total: Int?
+    let status: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case tasks
+        case total
+        case status
+    }
+}
+
 // MARK: - Error Types
 
-enum TaskServiceError: LocalizedError {
+enum TaskServiceError: LocalizedError, Equatable {
     case invalidURL
     case httpError(String)
     case decodingError(Error)
@@ -1179,6 +1179,28 @@ enum TaskServiceError: LocalizedError {
     case networkFailure
     case invalidData
     case unauthorized
+    
+    static func == (lhs: TaskServiceError, rhs: TaskServiceError) -> Bool {
+        switch (lhs, rhs) {
+        case (.invalidURL, .invalidURL),
+             (.taskNotFound, .taskNotFound),
+             (.updateFailed, .updateFailed),
+             (.networkFailure, .networkFailure),
+             (.invalidData, .invalidData),
+             (.unauthorized, .unauthorized):
+            return true
+        case (.httpError(let lhsMessage), .httpError(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.invalidTaskData(let lhsMessage), .invalidTaskData(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.persistenceError(let lhsMessage), .persistenceError(let rhsMessage)):
+            return lhsMessage == rhsMessage
+        case (.decodingError(let lhsError), .decodingError(let rhsError)):
+            return lhsError.localizedDescription == rhsError.localizedDescription
+        default:
+            return false
+        }
+    }
     
     var errorDescription: String? {
         switch self {
