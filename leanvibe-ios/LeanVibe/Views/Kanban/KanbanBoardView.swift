@@ -168,7 +168,6 @@ struct KanbanBoardView: View {
             } message: {
                 Text("You're currently offline. Changes will be saved locally and synced when connection is restored.")
             }
-        }
         .task {
             // Load tasks for the current project when view appears
             do {

@@ -252,13 +252,13 @@ struct ArchitectureTabView: View {
             }
         }
         .padding()
-        .background(
+        .background({
 #if os(iOS)
-            Color(.systemGray6)
+            return Color(.systemGray6)
 #else
-            Color.gray.opacity(0.1)
+            return Color.gray.opacity(0.1)
 #endif
-        )
+        }())
     }
     
     private func loadDiagramForProject() {

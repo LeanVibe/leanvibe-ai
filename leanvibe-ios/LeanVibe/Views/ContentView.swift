@@ -70,13 +70,13 @@ struct ContentView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(
+        .background({
 #if os(iOS)
-            Color(.systemGray6)
+            return Color(.systemGray6)
 #else
-            Color.gray.opacity(0.1)
+            return Color.gray.opacity(0.1)
 #endif
-        )
+        }())
     }
     
     private var messagesScrollView: some View {
@@ -135,13 +135,13 @@ struct ContentView: View {
                 CommandSuggestion(command: "/help", description: "Show all commands")
             }
             .padding()
-            .background(
+            .background({
 #if os(iOS)
-                Color(.systemGray6)
+                return Color(.systemGray6)
 #else
-                Color.gray.opacity(0.1)
+                return Color.gray.opacity(0.1)
 #endif
-            )
+            }())
             .cornerRadius(12)
         }
         .padding()

@@ -129,12 +129,13 @@ struct VoiceTestView: View {
                                 .foregroundColor(.primary)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(
+                                .background({
 #if os(iOS)
-Color(.systemGray6)
+                                return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+                                return Color.gray.opacity(0.1)
+#endif
+                            }())
                                 .cornerRadius(8)
                         }
                         
@@ -180,11 +181,13 @@ Color.gray.opacity(0.1)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(
+({
 #if os(iOS)
-Color(.systemGray6)
+                                return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+                                return Color.gray.opacity(0.1)
+#endif
+                            }())
                     .cornerRadius(8)
                 }
                 .disabled(isPlaying)

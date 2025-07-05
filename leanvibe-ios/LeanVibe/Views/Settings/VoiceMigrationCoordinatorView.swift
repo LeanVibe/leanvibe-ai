@@ -170,12 +170,13 @@ struct CurrentStatusCard: View {
             }
         }
         .padding()
-        .background(
+        .background({
 #if os(iOS)
-Color(.systemGray6)
+            return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+            return Color.gray.opacity(0.1)
+#endif
+        }())
         .cornerRadius(12)
     }
 }
@@ -266,12 +267,13 @@ struct ServiceDetailsView: View {
             }
         }
         .padding()
-        .background(
+        .background({
 #if os(iOS)
-Color(.systemGray6)
+            return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+            return Color.gray.opacity(0.1)
+#endif
+        }())
         .cornerRadius(12)
     }
 }
@@ -327,12 +329,13 @@ struct MigrationDetailsView: View {
                         .fontDesign(.monospaced)
                 }
                 .padding()
-                .background(
+                .background({
 #if os(iOS)
-Color(.systemGray6)
+                    return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+                    return Color.gray.opacity(0.1)
+#endif
+                }())
                 .cornerRadius(8)
                 
                 VStack(alignment: .leading, spacing: 8) {

@@ -132,13 +132,13 @@ struct ColumnView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(
+                .fill({
 #if os(iOS)
-                    Color(.systemGray6)
+                    return Color(.systemGray6)
 #else
-                    Color.gray.opacity(0.1)
+                    return Color.gray.opacity(0.1)
 #endif
-                )
+                }())
                 .opacity(isHighlighted ? 0.8 : 1.0)
         )
         .scaleEffect(isHighlighted ? 1.02 : 1.0)

@@ -174,12 +174,13 @@ struct MetricsDashboardView: View {
             PriorityDistributionView(priorityCount: metrics.byPriority)
         }
         .padding()
-        .background(
+        .background({
 #if os(iOS)
-Color(.systemGray6)
+            return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+            return Color.gray.opacity(0.1)
+#endif
+        }())
         .cornerRadius(12)
     }
     
@@ -233,12 +234,13 @@ Color.gray.opacity(0.1)
             ThroughputView(throughput: stats.throughput)
         }
         .padding()
-        .background(
+        .background({
 #if os(iOS)
-Color(.systemGray6)
+            return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+            return Color.gray.opacity(0.1)
+#endif
+        }())
         .cornerRadius(12)
     }
     
@@ -297,12 +299,13 @@ Color.gray.opacity(0.1)
             }
         }
         .padding()
-        .background(
+        .background({
 #if os(iOS)
-Color(.systemGray6)
+            return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+            return Color.gray.opacity(0.1)
+#endif
+        }())
         .cornerRadius(12)
     }
     
@@ -330,12 +333,13 @@ Color.gray.opacity(0.1)
                 .foregroundColor(.secondary)
         }
         .padding()
-        .background(
+        .background({
 #if os(iOS)
-Color(.systemGray6)
+            return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+            return Color.gray.opacity(0.1)
+#endif
+        }())
         .cornerRadius(12)
     }
     

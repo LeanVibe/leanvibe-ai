@@ -94,12 +94,13 @@ struct CodeCompletionTestView: View {
             }
         }
         .padding()
-        .background(
+        .background({
 #if os(iOS)
-Color(.systemGray6)
+                return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+                return Color.gray.opacity(0.1)
+#endif
+            }())
         .cornerRadius(12)
     }
     
@@ -237,12 +238,13 @@ Color.gray.opacity(0.1)
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(
+                .background({
 #if os(iOS)
-Color(.systemGray6)
+                return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+                return Color.gray.opacity(0.1)
+#endif
+            }())
                 .cornerRadius(8)
                 
             } else if let response = codeCompletionService.lastResponse {
@@ -306,12 +308,13 @@ Color.gray.opacity(0.1)
                     .foregroundColor(.secondary)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(
+                    .background({
 #if os(iOS)
-Color(.systemGray6)
+                return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+                return Color.gray.opacity(0.1)
+#endif
+            }())
                     .cornerRadius(8)
             }
         }
@@ -701,12 +704,13 @@ struct SyntaxHighlightedCodeView: View {
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(
+        .background({
 #if os(iOS)
-Color(.systemGray6)
+                return Color(.systemGray6)
 #else
-Color.gray.opacity(0.1)
-#endif)
+                return Color.gray.opacity(0.1)
+#endif
+            }())
         .cornerRadius(8)
     }
 }
