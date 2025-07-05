@@ -118,10 +118,8 @@ struct KanbanBoardView: View {
                 }
             }
         .sheet(isPresented: $showingStatistics) {
-                NavigationStack {
-                    TaskStatisticsView(taskService: taskService)
-                }
-            }
+            TaskStatisticsView(taskService: taskService)
+        }
         .sheet(isPresented: $showingDependencies) {
                 NavigationStack {
                     VStack(spacing: 20) {

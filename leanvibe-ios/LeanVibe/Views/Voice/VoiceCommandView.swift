@@ -447,10 +447,6 @@ struct VoiceCommandConfirmationView: View {
                     .buttonStyle(DefaultButtonStyle())
                     .controlSize(.large)
                     
-                    Button("Cancel") {
-                        onCancel()
-                    }
-                    .buttonStyle(DefaultButtonStyle())
                 }
             }
             .padding()
