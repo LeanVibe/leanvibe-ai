@@ -39,7 +39,11 @@ struct DiagramComparisonView: View {
                 .font(.caption)
             }
             .padding()
-            .background(Color(.systemGray6))
+            .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
             
             // Main comparison view
             switch selectedView {
@@ -172,7 +176,11 @@ struct DiagramComparisonView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(Color(.systemGray6))
+        .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
     }
     
     private func handleNodeTap(_ nodeId: String, in diagram: String) {

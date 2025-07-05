@@ -82,7 +82,11 @@ struct VoicePerformanceView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
         .cornerRadius(12)
     }
     
@@ -128,7 +132,11 @@ struct VoicePerformanceView: View {
             
             ZStack {
                 Rectangle()
-                    .fill(Color(.systemGray6))
+                    .fill(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
                     .frame(height: 120)
                     .cornerRadius(8)
                 
@@ -204,7 +212,11 @@ struct VoicePerformanceView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color(.systemGray6))
+        .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
         .cornerRadius(8)
     }
     

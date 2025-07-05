@@ -71,7 +71,11 @@ struct ContentView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
 #if os(iOS)
-        .background(Color(.systemGray6))
+        .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
 #else
         .background(Color.gray.opacity(0.1))
 #endif
@@ -134,7 +138,11 @@ struct ContentView: View {
             }
             .padding()
     #if os(iOS)
-        .background(Color(.systemGray6))
+        .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
 #else
         .background(Color.gray.opacity(0.1))
 #endif

@@ -98,7 +98,11 @@ struct MonitoringView: View {
                 Spacer()
             }
             .padding()
-            .background(Color(.systemGray6))
+            .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
             .cornerRadius(12)
         }
     }
@@ -114,7 +118,11 @@ struct MonitoringView: View {
                     .foregroundColor(.secondary)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(Color(.systemGray6))
+                    .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
                     .cornerRadius(12)
             } else {
                 ForEach(projectManager.projects.filter({ $0.status == .active }), id: \.id) { project in
@@ -151,7 +159,11 @@ struct MonitoringView: View {
                                 .font(.caption)
                         }
                         .padding()
-                        .background(Color(.systemGray6))
+                        .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
                         .cornerRadius(12)
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -199,7 +211,11 @@ struct MonitoringMetricCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color(.systemGray6))
+        .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
         .cornerRadius(12)
     }
 }

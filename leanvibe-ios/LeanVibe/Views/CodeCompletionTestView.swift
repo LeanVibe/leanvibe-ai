@@ -94,7 +94,11 @@ struct CodeCompletionTestView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
         .cornerRadius(12)
     }
     
@@ -232,7 +236,11 @@ struct CodeCompletionTestView: View {
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(Color(.systemGray6))
+                .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
                 .cornerRadius(8)
                 
             } else if let response = codeCompletionService.lastResponse {
@@ -296,7 +304,11 @@ struct CodeCompletionTestView: View {
                     .foregroundColor(.secondary)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(Color(.systemGray6))
+                    .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
                     .cornerRadius(8)
             }
         }
@@ -686,7 +698,11 @@ struct SyntaxHighlightedCodeView: View {
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color(.systemGray6))
+        .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
         .cornerRadius(8)
     }
 }

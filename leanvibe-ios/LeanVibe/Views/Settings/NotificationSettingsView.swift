@@ -194,7 +194,11 @@ struct NotificationSettingsView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(Color(.systemGray6))
+                    .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
                     .cornerRadius(8)
                 } else {
                     Text("Banner notifications disabled")
@@ -582,7 +586,11 @@ struct NotificationPreview: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(Color(.systemGray6))
+        .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
         .cornerRadius(6)
     }
 }

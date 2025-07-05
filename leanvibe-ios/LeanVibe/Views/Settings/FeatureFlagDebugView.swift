@@ -393,7 +393,11 @@ struct FeatureFlagStatusSummaryView: View {
                         }
                     }
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
                     .cornerRadius(8)
                     
                     // Feature Statistics
@@ -408,7 +412,11 @@ struct FeatureFlagStatusSummaryView: View {
                         StatRow(label: "Remote Controlled", value: "\(summary.remoteControlledFeatures)", color: .blue)
                     }
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
                     .cornerRadius(8)
                     
                     // Category Breakdown
@@ -427,7 +435,11 @@ struct FeatureFlagStatusSummaryView: View {
                         }
                     }
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(#if os(iOS)
+Color(.systemGray6)
+#else
+Color.gray.opacity(0.1)
+#endif)
                     .cornerRadius(8)
                 }
                 .padding()
