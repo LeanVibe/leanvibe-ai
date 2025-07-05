@@ -204,7 +204,7 @@ class TaskService: ObservableObject {
             // Revert optimistic update on error
             updatedTask.status = originalStatus
             tasks[index] = updatedTask
-            await handleTaskServiceError(error, context: "change_task_status", userAction: "changing task status")
+            await self.handleTaskServiceError(error, context: "change_task_status", userAction: "changing task status")
             throw error
         }
     }
@@ -236,7 +236,7 @@ class TaskService: ObservableObject {
             
             try await saveTasks()
         } catch {
-            await handleTaskServiceError(error, context: "update_task", userAction: "updating task '\(task.title)'")
+            await self.handleTaskServiceError(error, context: "update_task", userAction: "updating task '\(task.title)'")
             throw error
         }
     }
@@ -260,7 +260,7 @@ class TaskService: ObservableObject {
                 try await saveTasks()
             }
         } catch {
-            await handleTaskServiceError(error, context: "delete_task", userAction: "deleting task")
+            await self.handleTaskServiceError(error, context: "delete_task", userAction: "deleting task")
             throw error
         }
     }
@@ -916,6 +916,60 @@ class TaskService: ObservableObject {
             return nil // Backend error, return nil for fallback
         }
     }
+    
+    // MARK: - Centralized Error Handling
+    
+    private func handleTaskServiceError(_ error: Error, context: String, userAction: String) async {
+        // Set last error for UI display
+        self.lastError = error.localizedDescription
+        
+        // Log error for debugging
+        print("🚨 TaskService Error in \(context): \(error.localizedDescription)")
+        
+        // TODO: Re-enable advanced error handling when dependencies are available
+        // Temporarily simplified for build stability
+        
+        // Show basic error feedback
+        // Note: Advanced error management with ErrorRecoveryManager and NetworkErrorHandler
+        // will be re-enabled once dependency issues are resolved
+    }
+    
+    private func createRecoveryActions(for error: Error, context: String) -> [ErrorAction] {
+        var actions: [ErrorAction] = []
+        
+        // General recovery actions
+        actions.append(ErrorAction(title: "Retry", systemImage: "arrow.clockwise") {
+            Task {
+                // Implement retry logic
+                print("User chose to retry operation")
+            }
+        })
+        
+        // Network-specific actions - temporarily simplified
+        if error is URLError {
+            actions.append(ErrorAction(title: "Check Connection", systemImage: "network") {
+                Task {
+                    // TODO: Re-enable NetworkErrorHandler when available
+                    print("Network check requested")
+                }
+            })
+        }
+        
+        // Data-specific actions
+        if let taskError = error as? TaskServiceError {
+            switch taskError {
+            case .invalidData, .invalidTaskData, .persistenceError:
+                actions.append(ErrorAction(title: "Reset Local Data", systemImage: "trash.circle") {
+                    // Reset local task data
+                    print("User chose to reset local data")
+                })
+            default:
+                break
+            }
+        }
+        
+        return actions
+    }
 }
 
 // MARK: - Backend API Types
@@ -1073,82 +1127,6 @@ struct PerformanceMetricsAPIResponse: Codable {
             frameRate: frameRate,
             apiResponseTime: apiResponseTime
         )
-    }
-    
-    // MARK: - Centralized Error Handling
-    
-    private func handleTaskServiceError(_ error: Error, context: String, userAction: String) async {
-        lastError = error.localizedDescription
-        
-        // Categorize the error
-        let category: ErrorCategory = {
-            if error is URLError || error is TaskServiceError && [.networkFailure, .invalidURL].contains(error as! TaskServiceError) {
-                return .network
-            } else if error is TaskServiceError {
-                return .service
-            } else {
-                return .data
-            }
-        }()
-        
-        // Create comprehensive error with recovery actions
-        let appError = AppError(
-            title: "Task Operation Failed",
-            message: error.localizedDescription,
-            severity: .error,
-            category: category,
-            context: "task_service_\(context)",
-            userFacingMessage: "We encountered an issue while \(userAction). Please try again.",
-            technicalDetails: "TaskService Error in \(context): \(type(of: error)) - \(error.localizedDescription)",
-            suggestedActions: createRecoveryActions(for: error, context: context)
-        )
-        
-        // Show error to user using centralized error manager
-        if let globalErrorManager = try? GlobalErrorManager.shared {
-            globalErrorManager.showError(appError)
-            
-            // Automatically attempt recovery for critical errors
-            if category == .network || category == .service {
-                await ErrorRecoveryManager.shared.attemptRecovery(for: appError)
-            }
-        } else {
-            // Fallback if GlobalErrorManager is not available
-            print("🚨 TaskService Error: \(error.localizedDescription)")
-        }
-    }
-    
-    private func createRecoveryActions(for error: Error, context: String) -> [ErrorAction] {
-        var actions: [ErrorAction] = []
-        
-        // Retry action for all errors
-        actions.append(ErrorAction(title: "Retry", systemImage: "arrow.clockwise", isPrimary: true) {
-            // Retry logic would need to be implemented based on context
-            print("User requested retry for \(context)")
-        })
-        
-        // Network-specific actions
-        if error is URLError || (error is TaskServiceError && [.networkFailure, .invalidURL].contains(error as! TaskServiceError)) {
-            actions.append(ErrorAction(title: "Work Offline", systemImage: "wifi.slash") {
-                // Enable offline mode
-                print("User chose to work offline")
-            })
-            
-            actions.append(ErrorAction(title: "Check Connection", systemImage: "network") {
-                Task {
-                    await NetworkErrorHandler.shared.checkNetworkStatus()
-                }
-            })
-        }
-        
-        // Data-specific actions
-        if error is TaskServiceError && [.invalidData, .invalidTaskData(""), .persistenceError("")].contains(where: { String(describing: $0).contains(String(describing: error)) }) {
-            actions.append(ErrorAction(title: "Reset Local Data", systemImage: "trash.circle") {
-                // Reset local task data
-                print("User chose to reset local data")
-            })
-        }
-        
-        return actions
     }
 }
 
