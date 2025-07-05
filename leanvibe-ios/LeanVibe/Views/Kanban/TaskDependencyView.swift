@@ -509,48 +509,7 @@ struct TaskPriorityBadge: View {
     }
 }
 
-// Extensions for display names and colors
-extension TaskStatus {
-    var displayName: String {
-        switch self {
-        case .backlog: return "Backlog"
-        case .todo: return "To-Do"
-        case .inProgress: return "In Progress"
-        case .testing: return "Testing"
-        case .done: return "Done"
-        }
-    }
-    
-    var color: Color {
-        switch self {
-        case .backlog: return .gray
-        case .todo: return .blue
-        case .inProgress: return .orange
-        case .testing: return .purple
-        case .done: return .green
-        }
-    }
-}
-
-extension TaskPriority {
-    var displayName: String {
-        switch self {
-        case .low: return "Low"
-        case .medium: return "Medium"
-        case .high: return "High"
-        case .urgent: return "Urgent"
-        }
-    }
-    
-    var color: Color {
-        switch self {
-        case .low: return .green
-        case .medium: return .blue
-        case .high: return .orange
-        case .urgent: return .red
-        }
-    }
-}
+// Extensions removed - displayName and color properties already defined in Task.swift
 
 #Preview {
     TaskDependencyView(taskService: TaskService(), projectId: UUID())

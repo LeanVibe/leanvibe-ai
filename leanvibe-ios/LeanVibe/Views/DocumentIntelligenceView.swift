@@ -572,28 +572,9 @@ extension TaskStatus {
         case .done: return "checkmark.circle"
         }
     }
-    
-    var displayName: String {
-        switch self {
-        case .backlog: return "Backlog"
-        case .todo: return "To-Do"
-        case .inProgress: return "In Progress"
-        case .testing: return "Testing"
-        case .done: return "Done"
-        }
-    }
 }
 
-extension TaskPriority {
-    var color: Color {
-        switch self {
-        case .low: return .green
-        case .medium: return .yellow
-        case .high: return .orange
-        case .urgent: return .red
-        }
-    }
-}
+// TaskPriority color extension removed - already defined in Task.swift
 
 #if DEBUG
 @available(iOS 18.0, macOS 14.0, *)

@@ -14,8 +14,7 @@ struct ProjectDashboardView: View {
     ]
     
     var body: some View {
-        NavigationView {
-            ScrollView {
+        ScrollView {
                 LazyVStack(spacing: PremiumDesignSystem.Spacing.xl) {
                     // Header Section
                     headerSection
@@ -72,7 +71,6 @@ struct ProjectDashboardView: View {
                     webSocketService: webSocketService
                 )
             }
-        }
     }
     
     private var headerSection: some View {
