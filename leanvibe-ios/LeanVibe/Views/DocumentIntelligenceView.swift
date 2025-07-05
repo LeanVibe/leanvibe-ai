@@ -175,7 +175,6 @@ struct DocumentIntelligenceView: View {
                     }
                     .disabled(selectedProject == nil || documentService.isProcessing)
                 }
-            }
                 
                 if !documentService.discoveredTasks.isEmpty {
                     Button(action: {
@@ -198,7 +197,7 @@ struct DocumentIntelligenceView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color(UIColor.systemGray6))
     }
     
     private var processingSection: some View {
@@ -216,7 +215,7 @@ struct DocumentIntelligenceView: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        .background(Color(UIColor.systemBackground))
     }
     
     private var emptyStateSection: some View {
@@ -242,7 +241,7 @@ struct DocumentIntelligenceView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        .background(Color(UIColor.systemBackground))
     }
     
     private var discoveredTasksSection: some View {
@@ -269,7 +268,7 @@ struct DocumentIntelligenceView: View {
                             .padding(.vertical, 8)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .fill(selectedDocumentType == docType ? Color.blue : Color(.systemGray5))
+                                    .fill(selectedDocumentType == docType ? Color.blue : Color(UIColor.systemGray5))
                             )
                             .foregroundColor(selectedDocumentType == docType ? .white : .primary)
                         }
@@ -289,9 +288,12 @@ struct DocumentIntelligenceView: View {
             .listStyle(.plain)
         }
     }
-    
-    // MARK: - Helper Methods
-    
+}
+
+// MARK: - Helper Methods
+
+@available(iOS 18.0, macOS 14.0, *)
+extension DocumentIntelligenceView {
     private func autoPopulateBacklog(for project: Project) {
         Task {
             do {
@@ -367,6 +369,7 @@ struct DocumentIntelligenceView: View {
         formatter.timeStyle = .short
         return formatter
     }
+}
 
 // MARK: - Supporting Views
 
@@ -420,7 +423,7 @@ struct DocumentTaskRow: View {
                                 .font(.caption2)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Color(.systemGray5))
+                                .background(Color(UIColor.systemGray5))
                                 .cornerRadius(4)
                         }
                     }
