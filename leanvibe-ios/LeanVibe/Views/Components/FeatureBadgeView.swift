@@ -267,6 +267,7 @@ struct FeatureBadgeModifier: ViewModifier {
     }
 }
 
+@available(iOS 18.0, macOS 14.0, *)
 extension View {
     /// Add a feature badge to any view
     func featureBadge(

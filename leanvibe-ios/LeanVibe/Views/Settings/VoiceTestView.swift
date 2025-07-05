@@ -370,5 +370,5 @@ struct VoiceTestResult: Identifiable {
 }
 
 #Preview {
-    VoiceTestView()
+    VoiceTestView(settingsManager: SettingsManager.shared)
 }

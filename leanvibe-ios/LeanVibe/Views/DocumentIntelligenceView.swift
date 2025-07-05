@@ -367,6 +367,7 @@ struct DocumentIntelligenceView: View {
         formatter.timeStyle = .short
         return formatter
     }
+}
 
 // MARK: - Supporting Views
 
