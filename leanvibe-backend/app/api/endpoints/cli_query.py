@@ -12,8 +12,6 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ...agent.session_manager import SessionManager
-
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/cli", tags=["CLI Query"])
@@ -36,16 +34,6 @@ class CLIQueryResponse(BaseModel):
     timestamp: str
     session_info: Optional[dict] = None
 
-# Global session manager instance - will be initialized by main app
-session_manager = None
-
-def get_session_manager() -> SessionManager:
-    """Get the session manager instance"""
-    global session_manager
-    if session_manager is None:
-        session_manager = SessionManager()
-    return session_manager
-
 @router.post("/query", response_model=CLIQueryResponse)
 async def process_cli_query(request: CLIQueryRequest) -> CLIQueryResponse:
     """
@@ -59,14 +47,11 @@ async def process_cli_query(request: CLIQueryRequest) -> CLIQueryResponse:
     try:
         logger.info(f"🔍 Processing CLI query: {request.query[:100]}...")
         
-        # Get session manager and ensure it's started
-        session_mgr = get_session_manager()
-        if not hasattr(session_mgr, '_started') or not session_mgr._started:
-            await session_mgr.start()
-            session_mgr._started = True
+        # Import global session manager from main app
+        from ...main import session_manager
         
-        # Get or create agent session
-        agent = await session_mgr.get_or_create_session(
+        # Get or create agent session (session manager already initialized in main.py)
+        agent = await session_manager.get_or_create_session(
             request.session_id, 
             request.workspace_path
         )
@@ -121,12 +106,10 @@ async def process_cli_query(request: CLIQueryRequest) -> CLIQueryResponse:
 async def get_cli_query_status():
     """Get CLI query service status"""
     try:
-        session_mgr = get_session_manager()
-        if not hasattr(session_mgr, '_started') or not session_mgr._started:
-            await session_mgr.start()
-            session_mgr._started = True
+        # Import global session manager from main app
+        from ...main import session_manager
             
-        sessions = await session_mgr.list_sessions()
+        sessions = await session_manager.list_sessions()
         active_sessions = len([s for s in sessions if s.get("active", False)])
         
         return {
