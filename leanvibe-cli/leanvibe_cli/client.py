@@ -27,8 +27,23 @@ class BackendClient:
         self.config = config
         self.client_id = f"cli_{int(time.time())}"
         self.websocket = None
-        self.http_client = httpx.AsyncClient(timeout=config.timeout_seconds)
+        # Optimized HTTP client with connection pooling and shorter timeouts for CLI operations
+        # HTTP/2 is enabled only if h2 package is available
+        try:
+            import h2
+            http2_enabled = True
+        except ImportError:
+            http2_enabled = False
+        
+        self.http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(connect=5.0, read=config.timeout_seconds, write=10.0, pool=5.0),
+            limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
+            http2=http2_enabled
+        )
         self.connected = False
+        # Response cache for frequently accessed data
+        self._cache = {}
+        self._cache_ttl = {}
         
     async def __aenter__(self):
         """Async context manager entry"""
@@ -50,11 +65,19 @@ class BackendClient:
     # HTTP API Methods
     
     async def health_check(self) -> Dict[str, Any]:
-        """Check backend health status"""
+        """Check backend health status with caching"""
+        cache_key = "health_check"
+        
+        # Check cache first (cache for 5 seconds)
+        if self._is_cached(cache_key, ttl_seconds=5):
+            return self._cache[cache_key]
+        
         try:
             response = await self.http_client.get(f"{self.config.backend_url}/health")
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+            self._set_cache(cache_key, result)
+            return result
         except Exception as e:
             raise ConnectionError(f"Backend health check failed: {e}")
     
@@ -555,7 +578,27 @@ class BackendClient:
         return await self.get("/cli/devices")
     
     async def query_agent(self, query: str, workspace_path: str = ".") -> Dict[str, Any]:
-        """Send a natural language query to the L3 agent"""
+        """Send a natural language query to the L3 agent with optimizations"""
+        # Use HTTP for simple queries to avoid WebSocket overhead
+        if len(query) < 100 and not any(keyword in query.lower() for keyword in ['interactive', 'session', 'real-time']):
+            try:
+                payload = {
+                    "query": query,
+                    "session_id": self.client_id,
+                    "workspace_path": workspace_path
+                }
+                response = await self.http_client.post(
+                    f"{self.config.backend_url}/api/v1/cli/query",
+                    json=payload,
+                    timeout=15.0  # Shorter timeout for simple queries
+                )
+                response.raise_for_status()
+                return response.json()
+            except Exception:
+                # Fall back to WebSocket if HTTP fails
+                pass
+        
+        # Use WebSocket for complex queries or if HTTP fails
         if not self.websocket:
             if not await self.connect_websocket():
                 raise ConnectionError("Could not establish WebSocket connection")
@@ -615,3 +658,22 @@ class BackendClient:
     def is_connected(self) -> bool:
         """Check if client is connected to backend"""
         return self.connected and self.websocket and not self.websocket.closed
+    
+    def _is_cached(self, key: str, ttl_seconds: int = 30) -> bool:
+        """Check if data is cached and still valid"""
+        if key not in self._cache or key not in self._cache_ttl:
+            return False
+        return time.time() - self._cache_ttl[key] < ttl_seconds
+    
+    def _set_cache(self, key: str, value: Any) -> None:
+        """Set cache with timestamp"""
+        self._cache[key] = value
+        self._cache_ttl[key] = time.time()
+    
+    def _clear_cache(self) -> None:
+        """Clear expired cache entries"""
+        current_time = time.time()
+        expired_keys = [k for k, timestamp in self._cache_ttl.items() if current_time - timestamp > 60]
+        for key in expired_keys:
+            self._cache.pop(key, None)
+            self._cache_ttl.pop(key, None)

@@ -12,6 +12,8 @@ from .api.endpoints.code_completion import router as code_completion_router
 from .api.endpoints.tasks import router as tasks_router
 from .api.endpoints.health_mlx import router as health_mlx_router
 from .api.endpoints.cli_bridge import router as cli_bridge_router
+from .api.endpoints.cli_query import router as cli_query_router
+from .api.endpoints.debug_cli import router as debug_cli_router
 from .api.endpoints.projects import router as projects_router
 from .api.endpoints.ios_bridge import router as ios_bridge_router
 from .api.models import CodeCompletionRequest
@@ -150,6 +152,8 @@ app.include_router(code_completion_router)
 app.include_router(tasks_router)
 app.include_router(health_mlx_router)
 app.include_router(cli_bridge_router)
+app.include_router(cli_query_router)  # New CLI query endpoint for proper routing
+app.include_router(debug_cli_router)  # Debug endpoint for direct Ollama testing
 app.include_router(projects_router)
 app.include_router(ios_bridge_router)
 

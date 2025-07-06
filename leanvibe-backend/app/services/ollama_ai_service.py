@@ -21,7 +21,7 @@ class OllamaAIService:
     def __init__(self, 
                  host: str = "localhost",
                  port: int = 11434,
-                 default_model: str = "deepseek-r1:32b",
+                 default_model: str = "mistral:7b-instruct",  # Switch to faster model
                  timeout: int = 300):
         self.host = host
         self.port = port
