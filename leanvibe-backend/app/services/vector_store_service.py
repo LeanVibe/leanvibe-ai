@@ -65,8 +65,15 @@ class SearchResult:
 class VectorStoreService:
     """Service for managing code embeddings with ChromaDB"""
 
-    def __init__(self, db_path: str = ".leanvibe_cache/chroma_db"):
+    def __init__(self, 
+                 db_path: str = ".leanvibe_cache/chroma_db",
+                 use_http: bool = False,
+                 host: str = "localhost", 
+                 port: int = 8001):
         self.db_path = Path(db_path)
+        self.use_http = use_http
+        self.host = host
+        self.port = port
         self.client = None
         self.collection = None
         self.is_initialized = False
@@ -79,8 +86,9 @@ class VectorStoreService:
         self.embedding_model = None
         self.embedding_type = "hash"  # Will be "sentence_transformer" if available
 
-        # Create database directory
-        self.db_path.mkdir(parents=True, exist_ok=True)
+        # Create database directory (only for local mode)
+        if not use_http:
+            self.db_path.mkdir(parents=True, exist_ok=True)
 
         # Mock storage for when ChromaDB is not available
         self.mock_embeddings = {}
@@ -98,11 +106,20 @@ class VectorStoreService:
                 self.is_initialized = True
                 return True
 
-            # Initialize ChromaDB client
-            self.client = chromadb.PersistentClient(
-                path=str(self.db_path),
-                settings=Settings(anonymized_telemetry=False, allow_reset=True),
-            )
+            # Initialize ChromaDB client (HTTP or persistent)
+            if self.use_http:
+                logger.info(f"Connecting to ChromaDB HTTP server at {self.host}:{self.port}")
+                self.client = chromadb.HttpClient(
+                    host=self.host,
+                    port=self.port,
+                    settings=Settings(anonymized_telemetry=False)
+                )
+            else:
+                logger.info(f"Using local ChromaDB at {self.db_path}")
+                self.client = chromadb.PersistentClient(
+                    path=str(self.db_path),
+                    settings=Settings(anonymized_telemetry=False, allow_reset=True),
+                )
 
             # Get or create collection
             try:
