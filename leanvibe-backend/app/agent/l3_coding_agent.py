@@ -65,27 +65,51 @@ class AgentState(BaseModel):
         self.project_context[key] = value
 
 
-class SimpleMLXModel:
-    """Simple MLX model for pydantic.ai integration"""
+class SimpleOllamaModel:
+    """Simple Ollama model for pydantic.ai integration"""
 
-    def __init__(self, mlx_service: "RealMLXService"):
-        self.mlx_service = mlx_service
-
+    def __init__(self, ollama_service: "OllamaAIService" = None):
+        self.ollama_service = ollama_service
+        self.fallback_service = None
+        
+    async def initialize(self):
+        """Initialize Ollama service"""
+        if self.ollama_service is None:
+            from ..services.ollama_ai_service import get_ollama_service
+            try:
+                self.ollama_service = await get_ollama_service()
+                logger.info("✅ Ollama service initialized for L3 agent")
+            except Exception as e:
+                logger.warning(f"Failed to initialize Ollama service: {e}")
+                
     async def generate_response(self, prompt: str) -> str:
-        """Generate response using MLX backend"""
+        """Generate response using Ollama backend"""
         try:
-            response_obj = await self.mlx_service.generate_code_completion(
-                context={"prompt": prompt},
-                intent="suggest",  # General suggestion for now
-            )
-
-            if response_obj and response_obj.get("status") == "success":
-                return response_obj.get("response", "")
+            # Ensure Ollama service is initialized
+            if self.ollama_service is None or not self.ollama_service.is_ready():
+                await self.initialize()
+                
+            if self.ollama_service and self.ollama_service.is_ready():
+                # Use Ollama for generation
+                response = await self.ollama_service.generate(
+                    prompt=prompt,
+                    max_tokens=1000,
+                    temperature=0.1
+                )
+                
+                if response:
+                    logger.info(f"✅ Ollama generated response ({len(response)} chars)")
+                    return response
+                else:
+                    logger.warning("Ollama returned empty response")
+                    return "I apologize, but I couldn't generate a response at the moment. Please try again."
             else:
-                return f"MLX model generation failed: {response_obj.get("error", "Unknown error")}"
+                # Fallback to simple response
+                logger.warning("Ollama service not available, using fallback")
+                return f"I received your message: '{prompt[:100]}...' but I'm currently unable to process it fully. The AI service is not available."
 
         except Exception as e:
-            logger.error(f"MLX model generation failed: {e}")
+            logger.error(f"Ollama model generation failed: {e}")
             return f"I encountered an error: {str(e)}. How can I help you differently?"
 
 
@@ -100,9 +124,9 @@ class L3CodingAgent:
     def __init__(self, dependencies: AgentDependencies):
         self.dependencies = dependencies
         self.ai_service = AIService()
-        self.model_wrapper = SimpleMLXModel(
-            unified_mlx_service
-        )  # Use the global unified_mlx_service
+        self.model_wrapper = SimpleOllamaModel()
+        # Initialize Ollama service asynchronously
+        self._model_initialized = False
         self.state = AgentState(
             workspace_path=dependencies.workspace_path,
             session_id=dependencies.client_id,
@@ -283,7 +307,10 @@ You have access to file analysis, file operations, and confidence assessment too
     async def run(self, user_input: str) -> Dict[str, Any]:
         """Main entry point for agent interaction"""
         try:
-            # model_wrapper is initialized in __init__ now
+            # Ensure model wrapper is initialized
+            if not self._model_initialized:
+                await self.model_wrapper.initialize()
+                self._model_initialized = True
 
             # Record user input
             self.state.add_conversation_entry("user", user_input)
@@ -292,10 +319,10 @@ You have access to file analysis, file operations, and confidence assessment too
             response_content = await self._process_user_input(user_input)
 
             # Calculate overall confidence for this interaction
-            # Use unified_mlx_service's confidence calculation if available, otherwise fallback
-            if unified_mlx_service.is_initialized:
-                confidence = 0.8  # Default confidence for unified service
-                # Note: unified_mlx_service responses include confidence scores
+            # Use Ollama service confidence if available, otherwise fallback
+            if (self.model_wrapper.ollama_service and 
+                self.model_wrapper.ollama_service.is_ready()):
+                confidence = 0.85  # High confidence for Ollama responses
             else:
                 confidence = self.ai_service._calculate_confidence_score(
                     response_content, "ai_response"
@@ -311,14 +338,15 @@ You have access to file analysis, file operations, and confidence assessment too
                 "confidence": confidence,
                 "recommendation": self._get_confidence_recommendation(confidence),
                 "model": (
-                    "Unified MLX Service"
-                    if unified_mlx_service.is_initialized
-                    else "L3-Agent-Mock"
+                    f"Ollama ({self.model_wrapper.ollama_service.default_model})"
+                    if self.model_wrapper.ollama_service and self.model_wrapper.ollama_service.is_ready()
+                    else "L3-Agent-Fallback"
                 ),
                 "services_available": {
+                    "ollama": self.model_wrapper.ollama_service and self.model_wrapper.ollama_service.is_ready(),
                     "mlx": unified_mlx_service.is_initialized,
                     "ast": self.ai_service.is_initialized,
-                    "vector": self.ai_service.is_initialized,  # Simplified for testing
+                    "vector": self.ai_service.is_initialized,
                 },
                 "session_state": {
                     "conversation_length": len(self.state.conversation_history),
@@ -408,9 +436,10 @@ Provide a helpful, practical response focused on coding assistance.
         """Calculate confidence for this specific interaction"""
         # This method will be replaced by direct call to unified_mlx_service._calculate_confidence
         # in the run method. Keeping it for now to avoid breaking other parts.
-        base_confidence = 0.5  # Default if MLX service is not initialized
-        if unified_mlx_service.is_initialized:
-            base_confidence = 0.8  # Default confidence for unified service
+        base_confidence = 0.5  # Default if Ollama service is not initialized
+        if (self.model_wrapper.ollama_service and 
+            self.model_wrapper.ollama_service.is_ready()):
+            base_confidence = 0.85  # Default confidence for Ollama service
         else:
             base_confidence = self.ai_service._calculate_confidence_score(
                 response, "ai_response"

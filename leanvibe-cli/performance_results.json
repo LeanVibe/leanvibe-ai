@@ -1,0 +1,102 @@
+{
+  "connection": {
+    "http_connection_times": [
+      11.985582998022437,
+      1.4710000032209791,
+      2.1537080028792843,
+      1.5550419993815012,
+      1.4146250032354146
+    ],
+    "websocket_connection_times": [
+      15.051124995807186,
+      1.5268750066752546,
+      1.5700000003562309,
+      1.426541006367188,
+      1.3718340051127598
+    ],
+    "health_check_times": [
+      0.7947919948492199,
+      0.7619580064783804,
+      0.697584000590723,
+      0.618582998868078,
+      0.6592089994228445
+    ],
+    "failed_connections": 0,
+    "http_connection_times_avg": 3.7159916013479233,
+    "http_connection_times_min": 1.4146250032354146,
+    "http_connection_times_max": 11.985582998022437,
+    "http_connection_times_std": 4.63230100994108,
+    "websocket_connection_times_avg": 4.189275002863724,
+    "websocket_connection_times_min": 1.3718340051127598,
+    "websocket_connection_times_max": 15.051124995807186,
+    "websocket_connection_times_std": 6.0724672386698915,
+    "health_check_times_avg": 0.7064252000418492,
+    "health_check_times_min": 0.618582998868078,
+    "health_check_times_max": 0.7947919948492199,
+    "health_check_times_std": 0.07231246733953832
+  },
+  "commands": {
+    "status": {
+      "avg_time_ms": 6.699486332460462,
+      "min_time_ms": 6.043834000593051,
+      "max_time_ms": 7.911957996839192,
+      "avg_memory_mb": 0.27785078684488934,
+      "max_memory_mb": 0.2806844711303711
+    },
+    "sessions": {
+      "avg_time_ms": 8.513402669147277,
+      "min_time_ms": 6.935707999218721,
+      "max_time_ms": 11.619125005381647,
+      "avg_memory_mb": 0.2754214604695638,
+      "max_memory_mb": 0.27556610107421875
+    },
+    "monitoring": {
+      "avg_time_ms": 6.094888999844746,
+      "min_time_ms": 6.04975000169361,
+      "max_time_ms": 6.14425000094343,
+      "avg_memory_mb": 0.2747163772583008,
+      "max_memory_mb": 0.2748842239379883
+    }
+  },
+  "queries": {
+    "query_times": [
+      1.6937500040512532,
+      15820.185916003538,
+      0.22987499687587842,
+      0.2617499994812533
+    ],
+    "query_success_rate": 1.0,
+    "avg_response_size": 790,
+    "avg_query_time_ms": 3955.5928227509867,
+    "min_query_time_ms": 0.22987499687587842,
+    "max_query_time_ms": 15820.185916003538
+  },
+  "websocket": {
+    "connection_time_ms": 2.423750003799796,
+    "message_roundtrip_times": [
+      12837.682833000144,
+      0.370084002497606,
+      0.24887499603210017
+    ],
+    "heartbeat_times": [
+      0.25483300123596564,
+      0.2006249997066334,
+      0.18450000061420724
+    ],
+    "connection_stable": true,
+    "avg_heartbeat_time_ms": 0.21331933385226876,
+    "avg_roundtrip_time_ms": 4279.433930666225
+  },
+  "memory": {
+    "baseline_memory_mb": 0.003704071044921875,
+    "connection_memory_mb": 0.2747821807861328,
+    "query_memory_mb": 0.467529296875,
+    "websocket_memory_mb": 0.6690454483032227,
+    "memory_growth_mb": 0.6653413772583008
+  },
+  "config": {
+    "avg_load_time_ms": 0.05360409995773807,
+    "min_load_time_ms": 0.029165996238589287,
+    "max_load_time_ms": 0.2430829990771599
+  }
+}

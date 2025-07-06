@@ -15,7 +15,8 @@ The LeanVibe CLI is a terminal-native interface that connects to the LeanVibe ba
 - **📊 Rich Dashboards**: Beautiful terminal interfaces with live updates
 - **🎯 Task Management**: Integrated task tracking and project management
 - **🗣️ Voice Integration**: Voice command support for hands-free operation
-- **⚡ High Performance**: Efficient WebSocket communication with backend
+- **⚡ High Performance**: Optimized with caching, connection pooling, and smart timeouts
+- **📈 Performance Monitoring**: Built-in benchmarking and performance metrics
 
 ## 🚀 Quick Start
 
@@ -314,6 +315,53 @@ flake8 leanvibe_cli/ tests/
 # Type checking
 mypy leanvibe_cli/
 ```
+
+## ⚡ Performance Optimization
+
+The LeanVibe CLI is optimized for speed and efficiency with multiple performance enhancements:
+
+### Performance Features
+
+- **🗄️ Intelligent Caching**: Response caching with configurable TTL
+- **🔗 Connection Pooling**: HTTP connection reuse for better performance  
+- **⏱️ Smart Timeouts**: Adaptive timeouts based on operation complexity
+- **🚀 HTTP/2 Support**: Modern protocol support when available
+- **📊 Performance Monitoring**: Built-in metrics and benchmarking
+
+### Performance Commands
+
+```bash
+# View performance metrics and optimization status
+leanvibe performance
+
+# Run performance benchmark
+leanvibe performance --benchmark
+
+# Clean up expired cache entries  
+leanvibe performance --cleanup
+
+# Reset performance counters
+leanvibe performance --reset
+```
+
+### Performance Metrics
+
+The CLI tracks and displays:
+- Command execution times
+- Cache hit/miss ratios  
+- Connection establishment times
+- Memory usage patterns
+- Query success rates
+
+### Typical Performance
+
+- **Connection Speed**: 1-5ms (excellent)
+- **Simple Queries**: 10s timeout with optimization
+- **Cache Hit Rate**: Up to 80%+ for repeated operations
+- **Memory Usage**: <10MB for optimal performance
+- **Startup Time**: <500ms with lazy loading
+
+See [PERFORMANCE_OPTIMIZATIONS.md](PERFORMANCE_OPTIMIZATIONS.md) for detailed technical information.
 
 ## 🔌 Backend Integration
 

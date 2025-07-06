@@ -123,6 +123,7 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     }
     
     func disconnect() {
+        socket?.delegate = nil  // Fix: Break retain cycle to prevent memory leak
         socket?.disconnect()
         isConnected = false
         connectionStatus = "Disconnected"
@@ -252,23 +253,30 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
     }
     
     // Convert the existing connectWithSettings to async for TaskGroup usage
-    private func connectWithSettingsAsync(_ connectionSettings: ConnectionSettings) async throws {
-        connectWithSettings(connectionSettings)
+    // Fixed: Mark as nonisolated to prevent main thread blocking
+    private nonisolated func connectWithSettingsAsync(_ connectionSettings: ConnectionSettings) async throws {
+        // Hop to main actor for the synchronous call
+        await MainActor.run {
+            self.connectWithSettings(connectionSettings)
+        }
         
         // Wait for connection to be established or fail
-        // This approach uses polling instead of continuation storage
+        // Fixed: Now runs off main thread, with proper cancellation support
         var attempts = 0
         let maxAttempts = 100 // 10 seconds with 100ms intervals
         
         while attempts < maxAttempts {
-            try await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            try Task.checkCancellation() // Honor TaskGroup cancellation
+            try await Task.sleep(nanoseconds: 100_000_000) // 100ms - now off main thread
             
-            if isConnected {
+            // Safe main actor property access
+            let connected = await MainActor.run { self.isConnected }
+            if connected {
                 return // Success
             }
             
             // Check if we got an error
-            if let error = lastError {
+            if let error = await MainActor.run { self.lastError } {
                 throw NSError(
                     domain: "WebSocketService",
                     code: 6,
@@ -809,6 +817,15 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         }
         
         return actions
+    }
+    
+    // Fix: Add deinit to ensure delegate cleanup and prevent memory leaks
+    deinit {
+        // Use Task to hop to MainActor for socket cleanup since WebSocket is not Sendable
+        Task { @MainActor [weak self] in
+            self?.socket?.delegate = nil
+            self?.socket?.disconnect()
+        }
     }
 }
 

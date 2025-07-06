@@ -17,6 +17,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from ..config import CLIConfig
 from ..client import BackendClient
+from ..optimizations import performance_tracker, get_optimized_timeout, response_cache
 
 console = Console()
 
@@ -42,10 +43,24 @@ def query(ctx: click.Context, question: Optional[str], workspace: str, interacti
         console.print("[dim]Example: leanvibe query \"What are the main components of this project?\"[/dim]")
 
 
+@performance_tracker("single_query")
 async def single_query(config: CLIConfig, client: BackendClient, question: str, workspace: str, is_command: bool, output_json: bool):
-    """Execute a single query"""
+    """Execute a single query with performance optimizations"""
     try:
+        # Check cache for recent identical queries
+        cache_key = f"query:{hash(question)}:{workspace}:{is_command}"
+        cached_response = response_cache.get(cache_key, ttl=30)  # 30 second cache
+        
+        if cached_response and not output_json:
+            console.print("[dim](using cached response)[/dim]")
+            display_query_response(cached_response, question)
+            return
+        
         async with client:
+            # Use optimized timeout based on query complexity
+            complexity = "complex" if len(question) > 100 or any(word in question.lower() for word in ['analyze', 'explain', 'complex', 'architecture']) else "simple"
+            timeout = get_optimized_timeout("query", complexity)
+            
             with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
@@ -53,16 +68,33 @@ async def single_query(config: CLIConfig, client: BackendClient, question: str, 
             ) as progress:
                 
                 if not output_json:
-                    task = progress.add_task("Processing query...", total=None)
+                    task = progress.add_task(f"Processing {complexity} query...", total=None)
                 
-                # Execute query
-                if is_command:
-                    response = await client.execute_command(question, workspace)
-                else:
-                    response = await client.query_agent(question, workspace)
+                # Execute query with timeout
+                try:
+                    if is_command:
+                        response = await asyncio.wait_for(
+                            client.execute_command(question, workspace), 
+                            timeout=timeout
+                        )
+                    else:
+                        response = await asyncio.wait_for(
+                            client.query_agent(question, workspace), 
+                            timeout=timeout
+                        )
+                except asyncio.TimeoutError:
+                    response = {
+                        "status": "error",
+                        "message": f"Query timed out after {timeout}s. Try a simpler query or check backend performance.",
+                        "error_details": "timeout"
+                    }
                 
                 if not output_json:
                     progress.update(task, description="Query complete!")
+            
+            # Cache successful responses
+            if response.get("status") != "error":
+                response_cache.set(cache_key, response)
             
             if output_json:
                 import json
@@ -80,8 +112,9 @@ async def single_query(config: CLIConfig, client: BackendClient, question: str, 
             console.print("[dim]Make sure the backend is running and accessible[/dim]")
 
 
+@performance_tracker("interactive_session")
 async def interactive_query_session(config: CLIConfig, client: BackendClient, workspace: str, output_json: bool):
-    """Start an interactive query session"""
+    """Start an interactive query session with optimizations"""
     
     if not output_json:
         show_interactive_header(config)
@@ -124,28 +157,71 @@ async def interactive_query_session(config: CLIConfig, client: BackendClient, wo
                             show_interactive_help()
                         continue
                     
-                    # Process query
+                    # Process query with optimizations
                     is_command = user_input.startswith('/')
                     
-                    if not output_json:
-                        with Progress(
-                            SpinnerColumn(),
-                            TextColumn("[progress.description]{task.description}"),
-                            console=console
-                        ) as progress:
-                            task = progress.add_task("Processing...", total=None)
-                            
-                            if is_command:
-                                response = await client.execute_command(user_input, workspace)
-                            else:
-                                response = await client.query_agent(user_input, workspace)
-                            
-                            progress.update(task, description="Complete!")
+                    # Check cache for interactive queries too
+                    cache_key = f"interactive:{hash(user_input)}:{workspace}:{is_command}"
+                    cached_response = response_cache.get(cache_key, ttl=15)  # Shorter TTL for interactive
+                    
+                    if cached_response:
+                        response = cached_response
+                        if not output_json:
+                            console.print("[dim](cached)[/dim]")
                     else:
-                        if is_command:
-                            response = await client.execute_command(user_input, workspace)
+                        # Determine complexity and timeout
+                        complexity = "complex" if len(user_input) > 50 else "simple"
+                        timeout = get_optimized_timeout("query", complexity)
+                        
+                        if not output_json:
+                            with Progress(
+                                SpinnerColumn(),
+                                TextColumn("[progress.description]{task.description}"),
+                                console=console
+                            ) as progress:
+                                task = progress.add_task(f"Processing {complexity} query...", total=None)
+                                
+                                try:
+                                    if is_command:
+                                        response = await asyncio.wait_for(
+                                            client.execute_command(user_input, workspace),
+                                            timeout=timeout
+                                        )
+                                    else:
+                                        response = await asyncio.wait_for(
+                                            client.query_agent(user_input, workspace),
+                                            timeout=timeout
+                                        )
+                                except asyncio.TimeoutError:
+                                    response = {
+                                        "status": "error",
+                                        "message": f"Query timed out after {timeout}s. Try a simpler query.",
+                                        "error_details": "timeout"
+                                    }
+                                
+                                progress.update(task, description="Complete!")
                         else:
-                            response = await client.query_agent(user_input, workspace)
+                            try:
+                                if is_command:
+                                    response = await asyncio.wait_for(
+                                        client.execute_command(user_input, workspace),
+                                        timeout=timeout
+                                    )
+                                else:
+                                    response = await asyncio.wait_for(
+                                        client.query_agent(user_input, workspace),
+                                        timeout=timeout
+                                    )
+                            except asyncio.TimeoutError:
+                                response = {
+                                    "status": "error",
+                                    "message": f"Query timed out after {timeout}s.",
+                                    "error_details": "timeout"
+                                }
+                        
+                        # Cache successful responses
+                        if response.get("status") != "error":
+                            response_cache.set(cache_key, response)
                     
                     # Display response
                     if output_json:

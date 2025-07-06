@@ -9,11 +9,16 @@ import sys
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional, Dict, Any, List
+from functools import lru_cache
 
 import yaml
 from rich.console import Console
 
 console = Console()
+
+# Global config cache to avoid repeated file I/O
+_config_cache = {}
+_config_cache_time = 0
 
 
 @dataclass
@@ -87,13 +92,15 @@ class CLIConfig:
         return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
 
 
+@lru_cache(maxsize=8)
 def get_config_path(config_path: Optional[str] = None) -> Path:
-    """Get the configuration file path"""
+    """Get the configuration file path (cached)"""
     if config_path:
         return Path(config_path)
     
-    # Try project-specific config first
-    project_config = Path.cwd() / ".leanvibe" / "cli-config.yaml"
+    # Try project-specific config first (but avoid repeated file system calls)
+    cwd = str(Path.cwd())
+    project_config = Path(cwd) / ".leanvibe" / "cli-config.yaml"
     if project_config.exists():
         return project_config
     
@@ -102,9 +109,14 @@ def get_config_path(config_path: Optional[str] = None) -> Path:
     return home_config
 
 
-def load_config(config_path: Optional[str] = None) -> CLIConfig:
-    """Load configuration from file or create default"""
-    
+@lru_cache(maxsize=1)
+def _load_cached_config(config_path_str: str) -> CLIConfig:
+    """Internal cached config loader"""
+    config_path = Path(config_path_str) if config_path_str else None
+    return _load_config_internal(config_path)
+
+def _load_config_internal(config_path: Optional[Path]) -> CLIConfig:
+    """Internal config loading logic"""
     # Try to use new configuration manager first
     try:
         from .config.manager import ConfigurationManager
@@ -133,14 +145,37 @@ def load_config(config_path: Optional[str] = None) -> CLIConfig:
                 data = yaml.safe_load(f) or {}
             return CLIConfig.from_dict(data)
         except Exception as e:
-            console.print(f"[yellow]Warning: Could not load config from {config_file}: {e}[/yellow]")
-            console.print("[yellow]Using default configuration[/yellow]")
+            if config_path:  # Only show warning if explicitly requested
+                console.print(f"[yellow]Warning: Could not load config from {config_file}: {e}[/yellow]")
+                console.print("[yellow]Using default configuration[/yellow]")
     
     # Return default config
     config = CLIConfig()
     
     # Auto-detect backend if running in development
     config.backend_url = detect_backend_url()
+    
+    return config
+
+def load_config(config_path: Optional[str] = None) -> CLIConfig:
+    """Load configuration from file or create default with caching"""
+    global _config_cache, _config_cache_time
+    import time
+    
+    # Use cache if recent (within 10 seconds)
+    cache_key = config_path or "default"
+    current_time = time.time()
+    
+    if (cache_key in _config_cache and 
+        current_time - _config_cache_time < 10):
+        return _config_cache[cache_key]
+    
+    # Load fresh config
+    config = _load_config_internal(Path(config_path) if config_path else None)
+    
+    # Cache the result
+    _config_cache[cache_key] = config
+    _config_cache_time = current_time
     
     return config
 
@@ -162,8 +197,9 @@ def save_config(config: CLIConfig, config_path: Optional[str] = None) -> bool:
         return False
 
 
+@lru_cache(maxsize=1)
 def detect_backend_url() -> str:
-    """Auto-detect backend URL based on environment"""
+    """Auto-detect backend URL based on environment (cached)"""
     
     # Check environment variable
     env_url = os.getenv('LEANVIBE_BACKEND_URL')
@@ -191,8 +227,9 @@ def detect_backend_url() -> str:
     return "http://localhost:8000"
 
 
+@lru_cache(maxsize=1)
 def detect_project_root() -> Optional[str]:
-    """Detect project root by looking for common indicators"""
+    """Detect project root by looking for common indicators (cached)"""
     current_path = Path.cwd()
     
     # Project indicators in order of preference
