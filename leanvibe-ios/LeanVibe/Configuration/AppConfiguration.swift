@@ -61,7 +61,7 @@ struct AppConfiguration {
             // This will be implemented to scan for _leanvibe._tcp services
             // For now, only return localhost if explicitly running in simulator
             #if targetEnvironment(simulator)
-            return "http://localhost:8001"
+            return "http://localhost:8000"
             #else
             return nil
             #endif

@@ -135,7 +135,8 @@
       "Bash(./deploy-leanvibe.sh:*)",
       "mcp__mobile__mobile_type_keys",
       "mcp__mobile__mobile_press_button",
-      "Bash(leanvibe query:*)"
+      "Bash(leanvibe query:*)",
+      "Bash(./test_ios_integration.sh:*)"
     ],
     "deny": []
   }
