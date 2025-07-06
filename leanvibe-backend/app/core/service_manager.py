@@ -10,6 +10,13 @@ import logging
 import time
 from typing import Dict, Any, Optional, List, Type
 
+from .degradation_patterns import (
+    degradation_manager, 
+    DegradationConfig, 
+    FallbackHandlers,
+    get_degradation_summary
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,6 +44,9 @@ class ServiceManager:
         Returns status dict with service availability.
         """
         logger.info("🚀 Initializing LeanVibe AI Backend Services...")
+        
+        # Register services with degradation manager
+        self._register_degradation_patterns()
         
         results = {}
         
@@ -78,6 +88,72 @@ class ServiceManager:
         
         self.initialized = True
         return results
+    
+    def _register_degradation_patterns(self):
+        """Register all services with the degradation manager"""
+        # AI Service - critical with fallback
+        degradation_manager.register_service(
+            'ai',
+            DegradationConfig(
+                max_retries=2,
+                retry_delay=1.0,
+                circuit_breaker_threshold=3,
+                circuit_breaker_timeout=30.0,
+                fallback_enabled=True
+            ),
+            FallbackHandlers.ai_service_fallback
+        )
+        
+        # Vector Service - critical with fallback
+        degradation_manager.register_service(
+            'vector',
+            DegradationConfig(
+                max_retries=3,
+                retry_delay=0.5,
+                circuit_breaker_threshold=5,
+                circuit_breaker_timeout=60.0,
+                fallback_enabled=True
+            ),
+            FallbackHandlers.vector_search_fallback
+        )
+        
+        # Graph Service - optional with fallback
+        degradation_manager.register_service(
+            'graph',
+            DegradationConfig(
+                max_retries=2,
+                retry_delay=1.0,
+                circuit_breaker_threshold=3,
+                circuit_breaker_timeout=45.0,
+                fallback_enabled=True
+            ),
+            FallbackHandlers.graph_analysis_fallback
+        )
+        
+        # Project Service - optional with fallback
+        degradation_manager.register_service(
+            'project',
+            DegradationConfig(
+                max_retries=1,
+                retry_delay=0.5,
+                circuit_breaker_threshold=2,
+                circuit_breaker_timeout=30.0,
+                fallback_enabled=True
+            ),
+            FallbackHandlers.project_indexing_fallback
+        )
+        
+        # Monitor Service - optional, no fallback needed
+        degradation_manager.register_service(
+            'monitor',
+            DegradationConfig(
+                max_retries=1,
+                retry_delay=0.5,
+                circuit_breaker_threshold=2,
+                circuit_breaker_timeout=30.0,
+                fallback_enabled=False
+            )
+        )
     
     async def _initialize_service(self, service_name: str) -> bool:
         """Initialize a specific service"""
@@ -159,7 +235,7 @@ class ServiceManager:
     async def health_check_all(self) -> Dict[str, Any]:
         """
         Perform health checks on all services.
-        Returns comprehensive health status.
+        Returns comprehensive health status including degradation patterns.
         """
         health_status = {
             'timestamp': time.time(),
@@ -169,7 +245,8 @@ class ServiceManager:
                 'total_services': len(self.service_status),
                 'available_services': 0,
                 'core_services_available': 0
-            }
+            },
+            'degradation': get_degradation_summary()
         }
         
         core_services = ['vector', 'ai']
