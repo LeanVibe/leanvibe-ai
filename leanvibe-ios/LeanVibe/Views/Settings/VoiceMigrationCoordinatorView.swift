@@ -84,11 +84,23 @@ struct VoiceMigrationCoordinatorView: View {
             }
             .padding()
             .navigationTitle("Voice Migration")
-            .crossPlatformNavigationBarTitleDisplayMode(.inline)
-            .crossPlatformToolbarItem {
-                Button("Details") {
-                    showingMigrationDetails = true
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Details") {
+                        showingMigrationDetails = true
+                    }
                 }
+                #else
+                ToolbarItem(placement: .automatic) {
+                    Button("Details") {
+                        showingMigrationDetails = true
+                    }
+                }
+                #endif
             }
             .sheet(isPresented: $showingMigrationDetails) {
                 MigrationDetailsView(voiceFactory: voiceFactory)
@@ -369,11 +381,23 @@ struct MigrationDetailsView: View {
             }
             .padding()
             .navigationTitle("Migration Info")
-            .crossPlatformNavigationBarTitleDisplayMode(.inline)
-            .crossPlatformToolbarItem {
-                Button("Done") {
-                    dismiss()
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
                 }
+                #else
+                ToolbarItem(placement: .automatic) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+                #endif
             }
         }
     }
