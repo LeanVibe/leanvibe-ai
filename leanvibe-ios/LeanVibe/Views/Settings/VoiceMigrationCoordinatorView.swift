@@ -84,12 +84,10 @@ struct VoiceMigrationCoordinatorView: View {
             }
             .padding()
             .navigationTitle("Voice Migration")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Details") {
-                        showingMigrationDetails = true
-                    }
+            .crossPlatformNavigationBarTitleDisplayMode(.inline)
+            .crossPlatformToolbarItem {
+                Button("Details") {
+                    showingMigrationDetails = true
                 }
             }
             .sheet(isPresented: $showingMigrationDetails) {
@@ -371,12 +369,10 @@ struct MigrationDetailsView: View {
             }
             .padding()
             .navigationTitle("Migration Info")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
+            .crossPlatformNavigationBarTitleDisplayMode(.inline)
+            .crossPlatformToolbarItem {
+                Button("Done") {
+                    dismiss()
                 }
             }
         }

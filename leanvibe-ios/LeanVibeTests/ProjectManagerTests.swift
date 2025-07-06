@@ -201,7 +201,7 @@ final class ProjectManagerTests: XCTestCase {
     func testActiveProjects() throws {
         // Given
         let activeProject = Project(displayName: "Active", path: "/active", language: .swift)
-        let inactiveProject = Project(displayName: "Inactive", path: "/inactive", language: .python, status: .inactive)
+        let inactiveProject = Project(displayName: "Inactive", status: .inactive, path: "/inactive", language: .python)
         
         projectManager.projects = [activeProject, inactiveProject]
         
