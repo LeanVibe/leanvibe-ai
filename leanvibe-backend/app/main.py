@@ -16,6 +16,7 @@ from .api.endpoints.cli_query import router as cli_query_router
 from .api.endpoints.debug_cli import router as debug_cli_router
 from .api.endpoints.projects import router as projects_router
 from .api.endpoints.ios_bridge import router as ios_bridge_router
+from .api.endpoints.config import router as config_router
 from .api.models import CodeCompletionRequest
 from .core.connection_manager import ConnectionManager
 from .models.event_models import ClientPreferences, EventType
@@ -131,6 +132,10 @@ app = FastAPI(
         {
             "name": "monitoring",
             "description": "Performance monitoring and analytics endpoints for system health and usage metrics.",
+        },
+        {
+            "name": "configuration", 
+            "description": "Dynamic configuration endpoints for iOS app. Provides theme settings, feature flags, and app configuration to eliminate hardcoded values.",
         }
     ],
     openapi_url="/api/v1/openapi.json",
@@ -156,6 +161,7 @@ app.include_router(cli_query_router)  # New CLI query endpoint for proper routin
 app.include_router(debug_cli_router)  # Debug endpoint for direct Ollama testing
 app.include_router(projects_router)
 app.include_router(ios_bridge_router)
+app.include_router(config_router)  # Configuration API for iOS app integration
 
 
 # Code completion WebSocket handler
