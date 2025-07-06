@@ -1,0 +1,9 @@
+{
+  "host": "127.0.0.1",
+  "port": 8000,
+  "websocketPath": "/ws",
+  "serverName": "Local Development Server",
+  "network": "simulator",
+  "lastConnected": "2025-07-06T00:00:00Z",
+  "isActive": true
+}

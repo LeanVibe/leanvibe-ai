@@ -189,6 +189,12 @@ class AppLifecycleManager: ObservableObject {
     }
     
     private func testBackendConnection() async -> Bool {
+        // In simulator mode, bypass connection test for screen validation
+        if isRunningInSimulator() {
+            print("🤖 Simulator mode: bypassing backend connection test for screen validation")
+            return true
+        }
+        
         // Simulate connection test
         try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
         
