@@ -836,7 +836,8 @@ async def handle_cli_query(query: str) -> str:
         
         # Format the response for CLI output
         if result.get("status") == "success":
-            response = result.get("response", "No response generated")
+            # L3 agent returns 'message' field, not 'response'
+            response = result.get("message", result.get("response", "No response generated"))
             confidence = result.get("confidence", 0.0)
             
             # Return formatted response (without box drawing for now)
