@@ -17,7 +17,7 @@ from rich.text import Text
 
 from .config import CLIConfig, load_config
 from .client import BackendClient
-from .commands import status, analyze, monitor, query, info, config, qr, project, bridge, git, init, deps, ios, performance
+from .commands import status, analyze, monitor, query, info, config, qr, project, bridge, git, init, deps, ios, performance, health
 
 
 console = Console()
@@ -83,6 +83,7 @@ def show_welcome():
 
 # Register commands
 cli.add_command(status.status)
+cli.add_command(health.health)
 cli.add_command(analyze.analyze)
 cli.add_command(monitor.monitor)
 cli.add_command(query.query)
