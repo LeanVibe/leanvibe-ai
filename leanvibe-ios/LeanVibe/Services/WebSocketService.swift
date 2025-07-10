@@ -295,6 +295,53 @@ class WebSocketService: ObservableObject, WebSocketDelegate {
         )
     }
     
+    // MARK: - Public Connection Testing
+    
+    /// Test WebSocket connection without storing the connection
+    /// Returns true if connection succeeds, false otherwise
+    public func testConnection(_ connectionSettings: ConnectionSettings) async -> Bool {
+        do {
+            // Store current connection state
+            let wasConnected = isConnected
+            let previousSocket = socket
+            
+            // Test connection with timeout
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    try await self.connectWithSettingsAsync(connectionSettings)
+                }
+                
+                group.addTask {
+                    try await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+                    throw NSError(domain: "ConnectionTest", code: 1, userInfo: [NSLocalizedDescriptionKey: "Connection test timeout"])
+                }
+                
+                try await group.next()
+                group.cancelAll()
+            }
+            
+            let testResult = isConnected
+            
+            // Disconnect test connection to avoid interference
+            if testResult {
+                disconnect()
+            }
+            
+            // Restore previous connection if it existed
+            if wasConnected && previousSocket != nil {
+                // Restore previous connection state
+                socket = previousSocket
+                isConnected = wasConnected
+            }
+            
+            return testResult
+            
+        } catch {
+            print("❌ WebSocket connection test failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+    
     private func parseQRConfig(_ qrData: String) -> ServerConfig? {
         do {
             let data = qrData.data(using: .utf8) ?? Data()

@@ -138,11 +138,27 @@ class AppCoordinator: ObservableObject {
     }
     
     private func testConnection(_ connection: ServerConfig) async -> Bool {
-        // Simulate connection test
-        try? await _Concurrency.Task.sleep(nanoseconds: 1_000_000_000)
+        // Real WebSocket connection test
+        guard !connection.host.isEmpty && connection.port > 0 else {
+            print("❌ Invalid connection config: host=\(connection.host), port=\(connection.port)")
+            return false
+        }
         
-        // In a real implementation, this would test the WebSocket connection
-        return !connection.host.isEmpty && connection.port > 0
+        // Create connection settings for testing
+        let connectionSettings = ConnectionSettings(
+            host: connection.host,
+            port: connection.port,
+            apiKey: connection.apiKey ?? ""
+        )
+        
+        print("🔗 Testing WebSocket connection to \(connection.host):\(connection.port)...")
+        
+        // Use WebSocket service to test actual connection
+        let webSocketService = WebSocketService.shared
+        let testResult = await webSocketService.testConnection(connectionSettings)
+        
+        print("✅ Connection test result: \(testResult ? "SUCCESS" : "FAILED")")
+        return testResult
     }
     
     func retry() {
