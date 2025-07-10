@@ -12,8 +12,12 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from ..services.ai_service import AIService
-from ..services.unified_mlx_service import unified_mlx_service
+# Required for async file operations
+import aiofiles
+
+# Removed conflicting AI services - using only Ollama for performance
+# from ..services.ai_service import AIService  
+# from ..services.unified_mlx_service import unified_mlx_service
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +127,7 @@ class L3CodingAgent:
 
     def __init__(self, dependencies: AgentDependencies):
         self.dependencies = dependencies
-        self.ai_service = AIService()
+        # Use only Ollama service for performance (Mistral 7B <5s responses)
         self.model_wrapper = SimpleOllamaModel()
         # Initialize Ollama service asynchronously
         self._model_initialized = False
@@ -151,13 +155,13 @@ class L3CodingAgent:
         try:
             logger.info("Initializing L3 Coding Agent...")
 
-            # Initialize underlying AI service (for file ops, etc.)
-            await self.ai_service.initialize()
+            # Initialize only the Ollama model wrapper (primary AI service)
+            await self.model_wrapper.initialize()
+            
+            # Mark as initialized
+            self._model_initialized = True
 
-            # Initialize real MLX service
-            await unified_mlx_service.initialize()
-
-            logger.info("L3 Coding Agent initialized successfully")
+            logger.info("L3 Coding Agent initialized successfully with Ollama backend")
             return True
 
         except Exception as e:
@@ -188,23 +192,54 @@ When confidence < 0.4: Require human intervention before proceeding
 You have access to file analysis, file operations, and confidence assessment tools."""
 
     async def _analyze_file_tool(self, file_path: str) -> Dict[str, Any]:
-        """Analyze a code file and provide detailed insights"""
+        """Analyze a code file and provide detailed insights using Ollama"""
         try:
-            result = await self.ai_service._analyze_file(
-                file_path, self.dependencies.client_id
-            )
+            # Read file content
+            import os
+            import aiofiles
+            
+            if not os.path.exists(file_path):
+                return {"status": "error", "message": f"File not found: {file_path}", "confidence": 0.0}
+                
+            async with aiofiles.open(file_path, 'r', encoding='utf-8') as f:
+                content = await f.read()
+            
+            # Analyze with Ollama
+            analysis_prompt = f"""Analyze this code file and provide insights:
 
-            # Update agent state with analysis
-            if result["status"] == "success":
-                confidence = result.get("confidence", 0.5)
+File: {file_path}
+Content:
+```
+{content[:2000]}{'...' if len(content) > 2000 else ''}
+```
+
+Provide:
+1. Purpose and functionality
+2. Key components and structure
+3. Potential issues or improvements
+4. Code quality assessment"""
+            
+            analysis_result = await self.model_wrapper.generate_response(analysis_prompt)
+            
+            if analysis_result:
+                confidence = 0.7  # Medium confidence for code analysis
+                result = {
+                    "status": "success",
+                    "data": {"analysis": analysis_result, "file_path": file_path},
+                    "confidence": confidence
+                }
+                
+                # Update agent state
                 self.state.add_conversation_entry(
                     "system", f"Analyzed file: {file_path}", confidence
                 )
                 self.state.update_project_context(
-                    f"analysis_{file_path}", result["data"]
+                    f"analysis_{file_path}", {"analysis": analysis_result}
                 )
-
-            return result
+                
+                return result
+            else:
+                return {"status": "error", "message": "Failed to analyze file", "confidence": 0.0}
 
         except Exception as e:
             logger.error(f"File analysis tool error: {e}")
@@ -215,18 +250,47 @@ You have access to file analysis, file operations, and confidence assessment too
     ) -> Dict[str, Any]:
         """Perform file operations like read, list, or directory navigation"""
         try:
+            import os
+            import aiofiles
+            
             if operation == "list":
-                result = await self.ai_service._list_files(
-                    path, self.dependencies.client_id
-                )
+                # List files in directory
+                if not path:
+                    path = self.dependencies.workspace_path
+                
+                if os.path.exists(path) and os.path.isdir(path):
+                    items = [f for f in os.listdir(path) if not f.startswith('.')]
+                    files = [f for f in items if os.path.isfile(os.path.join(path, f))]
+                    directories = [f for f in items if os.path.isdir(os.path.join(path, f))]
+                    result = {
+                        "status": "success",
+                        "data": {"files": files, "directories": directories, "path": path},
+                        "message": f"Found {len(directories)} directories and {len(files)} files in {path}"
+                    }
+                else:
+                    result = {"status": "error", "message": f"Directory not found: {path}"}
+                    
             elif operation == "read":
-                result = await self.ai_service._read_file(
-                    path, self.dependencies.client_id
-                )
+                # Read file content
+                if os.path.exists(path) and os.path.isfile(path):
+                    async with aiofiles.open(path, 'r', encoding='utf-8') as f:
+                        content = await f.read()
+                    result = {
+                        "status": "success",
+                        "data": {"content": content, "path": path},
+                        "message": f"Read {len(content)} characters from {path}"
+                    }
+                else:
+                    result = {"status": "error", "message": f"File not found: {path}"}
+                    
             elif operation == "current_dir":
-                result = await self.ai_service._get_current_directory(
-                    "", self.dependencies.client_id
-                )
+                # Get current directory
+                current_dir = os.getcwd()
+                result = {
+                    "status": "success",
+                    "data": {"current_directory": current_dir},
+                    "message": f"Current directory: {current_dir}"
+                }
             else:
                 result = {
                     "status": "error",
@@ -235,9 +299,7 @@ You have access to file analysis, file operations, and confidence assessment too
 
             # Update agent state
             if result["status"] == "success":
-                confidence = self.ai_service._calculate_confidence_score(
-                    result.get("message", ""), "file_operation"
-                )
+                confidence = 0.9  # High confidence for file operations
                 self.state.add_conversation_entry(
                     "system", f"File operation: {operation} on {path}", confidence
                 )
