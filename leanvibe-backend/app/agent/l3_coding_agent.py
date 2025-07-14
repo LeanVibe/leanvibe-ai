@@ -19,6 +19,9 @@ import aiofiles
 # from ..services.ai_service import AIService  
 # from ..services.unified_mlx_service import unified_mlx_service
 
+# Import error recovery system
+from ..core.error_recovery import global_error_recovery, with_error_recovery
+
 logger = logging.getLogger(__name__)
 
 
@@ -114,7 +117,30 @@ class SimpleOllamaModel:
 
         except Exception as e:
             logger.error(f"Ollama model generation failed: {e}")
-            return f"I encountered an error: {str(e)}. How can I help you differently?"
+            # Handle error through recovery system
+            recovery_result = await global_error_recovery.handle_error(
+                error_type="ollama_connection",
+                error=e,
+                context={"operation": "generate_response", "prompt_length": len(prompt)},
+                component="ollama_model"
+            )
+            
+            if recovery_result["success"]:
+                # Recovery succeeded, try again once
+                try:
+                    if self.ollama_service and self.ollama_service.is_ready():
+                        response = await self.ollama_service.generate(
+                            prompt=prompt,
+                            max_tokens=1000,
+                            temperature=0.1
+                        )
+                        return response or recovery_result["user_message"]
+                    else:
+                        return recovery_result["user_message"]
+                except Exception:
+                    return recovery_result["user_message"]
+            else:
+                return recovery_result["user_message"]
 
 
 class L3CodingAgent:
@@ -150,6 +176,7 @@ class L3CodingAgent:
             "assess_confidence": self._assess_confidence_tool,
         }
 
+    @with_error_recovery("l3_agent_init", "l3_agent")
     async def initialize(self):
         """Initialize the L3 coding agent"""
         try:
@@ -386,9 +413,7 @@ Provide:
                 self.model_wrapper.ollama_service.is_ready()):
                 confidence = 0.85  # High confidence for Ollama responses
             else:
-                confidence = self.ai_service._calculate_confidence_score(
-                    response_content, "ai_response"
-                )
+                confidence = self._calculate_interaction_confidence(user_input, response_content)
 
             # Record agent response
             self.state.add_conversation_entry("assistant", response_content, confidence)
@@ -406,9 +431,7 @@ Provide:
                 ),
                 "services_available": {
                     "ollama": self.model_wrapper.ollama_service and self.model_wrapper.ollama_service.is_ready(),
-                    "mlx": unified_mlx_service.is_initialized,
-                    "ast": self.ai_service.is_initialized,
-                    "vector": self.ai_service.is_initialized,
+                    "error_recovery": True,
                 },
                 "session_state": {
                     "conversation_length": len(self.state.conversation_history),
@@ -490,7 +513,19 @@ Provide a helpful, practical response focused on coding assistance.
 
         except Exception as e:
             logger.error(f"Error processing user input: {e}")
-            return f"I encountered an error processing your request: {str(e)}. How can I help you differently?"
+            
+            # Handle error through recovery system
+            recovery_result = await global_error_recovery.handle_error(
+                error_type="query_timeout",
+                error=e,
+                context={"user_input": user_input[:100], "processing_step": "user_input_processing"},
+                component="l3_agent"
+            )
+            
+            if recovery_result["success"]:
+                return recovery_result["user_message"]
+            else:
+                return f"I encountered an error processing your request: {str(e)}. How can I help you differently?"
 
     def _calculate_interaction_confidence(
         self, user_input: str, response: str
@@ -503,9 +538,7 @@ Provide a helpful, practical response focused on coding assistance.
             self.model_wrapper.ollama_service.is_ready()):
             base_confidence = 0.85  # Default confidence for Ollama service
         else:
-            base_confidence = self.ai_service._calculate_confidence_score(
-                response, "ai_response"
-            )
+            base_confidence = 0.7  # Default confidence for non-Ollama responses
 
         # Adjust based on input complexity
         input_complexity_factors = {
@@ -612,6 +645,6 @@ Provide a helpful, practical response focused on coding assistance.
             "average_confidence": self.state.get_average_confidence(),
             "current_task": self.state.current_task,
             "project_context_keys": list(self.state.project_context.keys()),
-            "ai_service_status": unified_mlx_service.get_model_health(),
+            "ai_service_status": "ollama_ready" if self.model_wrapper.ollama_service and self.model_wrapper.ollama_service.is_ready() else "ollama_not_ready",
             "confidence_thresholds": self.confidence_thresholds,
         }

@@ -1,0 +1,164 @@
+{
+  "overall_status": "partial",
+  "total_tests": 10,
+  "passed_tests": 2,
+  "failed_tests": 2,
+  "partial_tests": 6,
+  "test_results": [
+    {
+      "test_name": "Backend Health Check",
+      "status": "partial",
+      "duration": 0.03284931182861328,
+      "details": "Backend health check successful - 200",
+      "critical_issues": [
+        "System not operational: unknown"
+      ],
+      "recommendations": [
+        "Check system status and resolve issues"
+      ],
+      "timestamp": 1752384755.3835032
+    },
+    {
+      "test_name": "WebSocket Connection",
+      "status": "failed",
+      "duration": 0.020457029342651367,
+      "details": "WebSocket connection failed: server rejected WebSocket connection: HTTP 403",
+      "critical_issues": [
+        "WebSocket connection not working"
+      ],
+      "recommendations": [
+        "Check WebSocket URL and backend WebSocket support"
+      ],
+      "timestamp": 1752384755.4039848
+    },
+    {
+      "test_name": "AI Query Performance",
+      "status": "failed",
+      "duration": 0.004896879196166992,
+      "details": "AI query testing failed: server rejected WebSocket connection: HTTP 403",
+      "critical_issues": [
+        "AI query functionality not working"
+      ],
+      "recommendations": [
+        "Check AI service availability and model status"
+      ],
+      "timestamp": 1752384755.408911
+    },
+    {
+      "test_name": "Error Recovery",
+      "status": "partial",
+      "duration": 0.003778219223022461,
+      "details": "Error recovery system check completed",
+      "critical_issues": [
+        "Error recovery system not available"
+      ],
+      "recommendations": [
+        "Implement error recovery system"
+      ],
+      "timestamp": 1752384755.41271
+    },
+    {
+      "test_name": "Connection Stability",
+      "status": "partial",
+      "duration": 5.037316799163818,
+      "details": "Connection stability: 0.0% (0/5)",
+      "critical_issues": [
+        "Connection stability only 0.0% (0/5)"
+      ],
+      "recommendations": [
+        "Improve connection stability and error handling"
+      ],
+      "timestamp": 1752384760.450059
+    },
+    {
+      "test_name": "Load Testing",
+      "status": "partial",
+      "duration": 0.013177871704101562,
+      "details": "Load test: 0/3 success, avg 0.00s",
+      "critical_issues": [
+        "Only 0/3 queries succeeded under load"
+      ],
+      "recommendations": [
+        "Improve concurrent request handling"
+      ],
+      "timestamp": 1752384760.463357
+    },
+    {
+      "test_name": "Network Resilience",
+      "status": "passed",
+      "duration": 2.1457672119140625e-06,
+      "details": "Network resilience test completed (simplified for MVP)",
+      "critical_issues": [],
+      "recommendations": [],
+      "timestamp": 1752384760.463396
+    },
+    {
+      "test_name": "Device Resource Usage",
+      "status": "passed",
+      "duration": 1.0023140907287598,
+      "details": "Resource usage: CPU 25.6%, Memory 57.9%",
+      "critical_issues": [],
+      "recommendations": [],
+      "timestamp": 1752384761.465724
+    },
+    {
+      "test_name": "iOS Integration",
+      "status": "partial",
+      "duration": 0.013318061828613281,
+      "details": "iOS integration: 1/3 endpoints working",
+      "critical_issues": [
+        "iOS endpoint /api/ios/config returned 404",
+        "iOS endpoint /api/ios/health returned 404"
+      ],
+      "recommendations": [
+        "Fix iOS endpoint /api/ios/config",
+        "Fix iOS endpoint /api/ios/health"
+      ],
+      "timestamp": 1752384761.479131
+    },
+    {
+      "test_name": "Production Readiness",
+      "status": "partial",
+      "duration": 0.0019757747650146484,
+      "details": "Production readiness check completed",
+      "critical_issues": [
+        "Session services not available"
+      ],
+      "recommendations": [
+        "Initialize session management services"
+      ],
+      "timestamp": 1752384761.4811468
+    }
+  ],
+  "summary": {
+    "ios_device_ready": true,
+    "critical_issues": [
+      "System not operational: unknown",
+      "WebSocket connection not working",
+      "AI query functionality not working",
+      "Error recovery system not available",
+      "Connection stability only 0.0% (0/5)",
+      "Only 0/3 queries succeeded under load",
+      "iOS endpoint /api/ios/config returned 404",
+      "iOS endpoint /api/ios/health returned 404",
+      "Session services not available"
+    ],
+    "recommendations": [
+      "Check system status and resolve issues",
+      "Check WebSocket URL and backend WebSocket support",
+      "Check AI service availability and model status",
+      "Implement error recovery system",
+      "Improve connection stability and error handling",
+      "Improve concurrent request handling",
+      "Fix iOS endpoint /api/ios/config",
+      "Fix iOS endpoint /api/ios/health",
+      "Initialize session management services"
+    ],
+    "performance_metrics": {
+      "total_duration": 6.130086183547974,
+      "average_test_duration": 0.6130086183547974,
+      "fastest_test": 2.1457672119140625e-06,
+      "slowest_test": 5.037316799163818
+    }
+  }
+}

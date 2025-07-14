@@ -14,6 +14,7 @@ from pydantic import BaseModel
 import uvicorn
 
 from app.agent.l3_coding_agent import L3CodingAgent, AgentDependencies
+from app.core.error_recovery import global_error_recovery
 
 app = FastAPI(title="LeanVibe Test Server", version="1.0.0")
 
@@ -103,9 +104,18 @@ async def chat_with_agent(request: QueryRequest):
     
     except Exception as e:
         end_time = time.time()
+        
+        # Handle error through recovery system
+        recovery_result = await global_error_recovery.handle_error(
+            error_type="query_timeout",
+            error=e,
+            context={"message": request.message[:100], "session_id": request.session_id},
+            component="test_server"
+        )
+        
         return QueryResponse(
             status="error",
-            message=f"Error processing request: {str(e)}",
+            message=recovery_result["user_message"],
             response_time=end_time - start_time,
             confidence=0.0
         )

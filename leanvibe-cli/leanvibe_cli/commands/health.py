@@ -190,12 +190,35 @@ async def check_backend_services(client: BackendClient, timeout: int) -> Dict[st
             sessions = health_data.get('sessions', {})
             agent_framework = health_data.get('agent_framework', 'unknown')
             
+            # Check error recovery system status
+            error_recovery = health_data.get('error_recovery', {})
+            system_status = health_data.get('system_status', {})
+            
             service_status = 'healthy'
             issues = []
             
             if not ai_ready:
                 service_status = 'degraded'
                 issues.append('AI services not ready')
+            
+            # Check error recovery system health
+            if error_recovery:
+                recent_errors = error_recovery.get('recent_errors', 0)
+                critical_errors = error_recovery.get('critical_errors_last_hour', 0)
+                
+                if critical_errors > 0:
+                    service_status = 'degraded'
+                    issues.append(f'{critical_errors} critical errors in last hour')
+                elif recent_errors > 10:
+                    service_status = 'degraded'
+                    issues.append(f'{recent_errors} recent errors detected')
+            
+            # Check system status
+            if system_status:
+                status_value = system_status.get('status', 'operational')
+                if status_value != 'operational':
+                    service_status = 'degraded'
+                    issues.append(f'System status: {status_value}')
             
             active_sessions = sessions.get('active_sessions', 0)
             if active_sessions < 0:  # Shouldn't happen, but check for sanity

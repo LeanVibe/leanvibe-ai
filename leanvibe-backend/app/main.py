@@ -27,6 +27,7 @@ from .services.reconnection_service import (
     reconnection_service,
 )
 from .services.task_service import task_service
+from .core.error_recovery import global_error_recovery
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -332,7 +333,7 @@ async def shutdown_event():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint with comprehensive LLM metrics"""
+    """Health check endpoint with comprehensive LLM metrics and error recovery status"""
     session_stats = session_manager.get_stats()
     streaming_stats = event_streaming_service.get_stats()
     
@@ -351,6 +352,10 @@ async def health_check():
                 "message": str(e)
             }
     
+    # Get error recovery system status
+    error_recovery_status = global_error_recovery.get_health_status()
+    user_friendly_status = global_error_recovery.get_user_friendly_status()
+    
     response = {
         "status": "healthy",
         "service": "leanvibe-backend",
@@ -359,6 +364,8 @@ async def health_check():
         "agent_framework": "pydantic.ai",
         "sessions": session_stats,
         "event_streaming": streaming_stats,
+        "error_recovery": error_recovery_status,
+        "system_status": user_friendly_status,
     }
     
     # Add LLM metrics if available
@@ -795,11 +802,21 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                 await websocket.send_text(json.dumps(error_response))
             except Exception as e:
                 logger.error(f"Error processing message for {client_id}: {e}")
+                
+                # Handle error through recovery system
+                recovery_result = await global_error_recovery.handle_error(
+                    error_type="websocket_connection",
+                    error=e,
+                    context={"client_id": client_id, "message_type": message.get("type", "unknown")},
+                    component="websocket_handler"
+                )
+                
                 error_response = {
                     "status": "error",
-                    "message": f"Processing error: {str(e)}",
+                    "message": recovery_result["user_message"],
                     "confidence": 0.0,
                     "timestamp": asyncio.get_event_loop().time(),
+                    "recovery_attempted": recovery_result["success"],
                 }
                 await websocket.send_text(json.dumps(error_response))
 
