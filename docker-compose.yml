@@ -1,68 +1,61 @@
+version: '3.8'
+
 services:
-  neo4j:
-    image: neo4j:5.17-community
-    container_name: leanvibe-neo4j
-    restart: unless-stopped
+  # LeanVibe Backend API
+  backend:
+    build:
+      context: ./leanvibe-backend
+      dockerfile: Dockerfile
     ports:
-      - "7474:7474"  # HTTP
-      - "7687:7687"  # Bolt
+      - "8000:8000"
     environment:
-      NEO4J_AUTH: neo4j/leanvibe123
-      NEO4J_PLUGINS: '["apoc"]'
-      NEO4J_apoc_export_file_enabled: 'true'
-      NEO4J_apoc_import_file_enabled: 'true'
-      NEO4J_apoc_import_file_use__neo4j__config: 'true'
-      NEO4J_ACCEPT_LICENSE_AGREEMENT: 'yes'
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+      - BACKEND_HOST=0.0.0.0
+      - BACKEND_PORT=8000
+      - LOG_LEVEL=INFO
+      - ENVIRONMENT=production
     volumes:
-      - neo4j_data:/data
-      - neo4j_logs:/logs
-      - neo4j_import:/var/lib/neo4j/import
-      - neo4j_plugins:/plugins
+      - ./leanvibe-backend:/app
+      - backend_data:/app/data
+    depends_on:
+      - ollama
     networks:
       - leanvibe-network
-
-  chroma:
-    image: chromadb/chroma:latest
-    container_name: leanvibe-chroma
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Ollama AI Service
+  ollama:
+    image: ollama/ollama:latest
     ports:
-      - "8001:8000"  # Chroma HTTP API (mapped to 8001 to avoid conflict with backend)
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
     environment:
-      CHROMA_SERVER_HOST: 0.0.0.0
-      CHROMA_SERVER_HTTP_PORT: 8000
-      CHROMA_SERVER_CORS_ALLOW_ORIGINS: '["*"]'
-    volumes:
-      - chroma_data:/chroma/chroma
+      - OLLAMA_MODELS=/root/.ollama/models
     networks:
       - leanvibe-network
-
-  # Redis for caching (optional but recommended for production)
-  redis:
-    image: redis:7-alpine
-    container_name: leanvibe-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    networks:
-      - leanvibe-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 volumes:
-  neo4j_data:
+  backend_data:
     driver: local
-  neo4j_logs:
-    driver: local
-  neo4j_import:
-    driver: local
-  neo4j_plugins:
-    driver: local
-  chroma_data:
-    driver: local
-  redis_data:
+  ollama_data:
     driver: local
 
 networks:
   leanvibe-network:
     driver: bridge
+EOF < /dev/null
