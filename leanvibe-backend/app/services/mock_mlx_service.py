@@ -3,14 +3,25 @@ Phase 2.3: Mock MLX Service for L3 Agent Integration
 
 Sophisticated mock service that simulates MLX responses with contextually
 appropriate suggestions based on AST context from L3 agent.
+
+DEPRECATED: Use unified_mlx_service with MOCK strategy instead.
 """
 
 import asyncio
 import logging
 import time
+import warnings
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# DEPRECATION WARNING
+warnings.warn(
+    "mock_mlx_service.py is deprecated. Use unified_mlx_service with MOCK strategy instead. "
+    "This module will be removed in a future version.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 class MockMLXService:

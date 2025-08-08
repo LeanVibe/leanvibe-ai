@@ -3,10 +3,13 @@ Real MLX Service for L3 Agent Integration
 
 Replaces mock_mlx_service.py with actual MLX inference using ProductionModelService.
 Provides the same interface as MockMLXService but with real AI-powered responses.
+
+DEPRECATED: Use unified_mlx_service instead.
 """
 
 import logging
 import time
+import warnings
 from typing import Any, Dict, List, Optional
 
 
@@ -16,6 +19,14 @@ from .phi3_mini_service import Phi3MiniService
 from .pragmatic_mlx_service import pragmatic_mlx_service
 
 logger = logging.getLogger(__name__)
+
+# DEPRECATION WARNING
+warnings.warn(
+    "real_mlx_service.py is deprecated. Use unified_mlx_service instead. "
+    "This module will be removed in a future version.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 class RealMLXService:

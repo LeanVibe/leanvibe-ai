@@ -5,6 +5,7 @@ import AVFoundation
 import SwiftUI
 
 @available(iOS 18.0, macOS 14.0, *)
+@available(*, deprecated, message: "WakePhraseManager is deprecated. Wake phrase detection is now integrated into UnifiedVoiceService. Use VoiceManagerFactory with UnifiedVoiceService instead.")
 @MainActor
 class WakePhraseManager: NSObject, ObservableObject, SFSpeechRecognizerDelegate {
     @Published var isWakeListening = false

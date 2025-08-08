@@ -2,10 +2,19 @@ import asyncio
 import logging
 import os
 import time
+import warnings
 from pathlib import Path
 from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
+
+# DEPRECATION WARNING
+warnings.warn(
+    "ai_service.py is deprecated. Use unified_mlx_service instead. "
+    "This module will be removed in a future version.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 class AIService:

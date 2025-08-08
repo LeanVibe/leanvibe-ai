@@ -2,6 +2,12 @@ import Foundation
 import Combine
 import Speech
 import SwiftUI
+import AVFoundation
+@preconcurrency import Speech
+@preconcurrency import AVFAudio
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Unified voice service that consolidates all voice-related functionality
 /// This replaces the fragmented VoiceManager, GlobalVoiceManager, and related services
@@ -18,6 +24,12 @@ class UnifiedVoiceService: ObservableObject {
     @Published private(set) var audioLevel: Float = 0.0
     @Published private(set) var confidenceScore: Float = 0.0
     
+    // MARK: - Wake Phrase Detection State
+    @Published private(set) var isWakeListening = false
+    @Published private(set) var wakePhraseDetected = false
+    @Published private(set) var lastWakeDetection: WakePhraseDetection?
+    @Published private(set) var wakeAudioLevel: Float = 0.0
+    
     // MARK: - Performance Monitoring
     @Published private(set) var responseTime: TimeInterval = 0.0
     @Published private(set) var averageResponseTime: TimeInterval = 0.0
@@ -25,13 +37,56 @@ class UnifiedVoiceService: ObservableObject {
     private var responseTimes: [TimeInterval] = []
     private var lastVoiceStartTime: Date?
     
+    // MARK: - Performance Optimization from OptimizedVoiceManager
+    @Published private(set) var isOptimized = false
+    @Published private(set) var currentLatency: TimeInterval = 0
+    @Published private(set) var isLowLatencyMode = false
+    
+    // Performance optimization properties
+    private var buffersProcessed: Int = 0
+    private var recognitionAccuracy: Double = 0.95
+    private var errorRate: Double = 0.02
+    private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
+    private let processingQueue = DispatchQueue(
+        label: "voice.processing",
+        qos: .userInitiated,
+        attributes: .concurrent
+    )
+    
     // MARK: - Dependencies
     private let speechRecognitionService: SpeechRecognitionService
     private let audioCoordinator: AudioSessionCoordinator
     private let webSocketService: WebSocketService
-    private let permissionManager: VoicePermissionManager
-    private let wakePhraseManager: WakePhraseManager
     private let voiceProcessor: DashboardVoiceProcessor
+    
+    // MARK: - Integrated Voice Permission Management
+    @Published private(set) var hasMicrophonePermission = false
+    @Published private(set) var hasSpeechRecognitionPermission = false
+    @Published private(set) var permissionStatus: VoicePermissionStatus = .notDetermined
+    @Published private(set) var isFullyAuthorized = false
+    @Published private(set) var permissionError: String?
+    
+    // MARK: - Integrated Wake Phrase Detection
+    private let wakeSpeechRecognizer: SFSpeechRecognizer?
+    private var wakeRecognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var wakeRecognitionTask: SFSpeechRecognitionTask?
+    private let wakeAudioEngine = AVAudioEngine()
+    
+    // Wake phrase configuration
+    private let wakePhrase = "hey leanvibe"
+    private let wakePhraseAlternatives = [
+        "hey lynn vibe",
+        "hey lean vibe", 
+        "hey leen vibe",
+        "hey lee vibe",
+        "a leanvibe",
+        "hey leanvibe"
+    ]
+    
+    // Detection settings
+    private let confidenceThreshold: Float = 0.6
+    private let silenceTimeout: TimeInterval = 3.0
+    private var silenceTask: Task<Void, Never>?
     
     // MARK: - Private State
     private var cancellables = Set<AnyCancellable>()
@@ -73,11 +128,12 @@ class UnifiedVoiceService: ObservableObject {
         print("✅ WebSocketService initialized")
         
         do {
-            self.permissionManager = VoicePermissionManager()
-            print("✅ VoicePermissionManager initialized")
+            // Initialize integrated wake phrase detection
+            self.wakeSpeechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+            print("✅ Wake phrase speech recognizer initialized")
         } catch {
-            print("🚨 Failed to initialize VoicePermissionManager: \(error)")
-            self.permissionManager = VoicePermissionManager()
+            print("🚨 Failed to initialize wake phrase detection: \(error)")
+            self.wakeSpeechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
         }
         
         // Initialize voice processor and wake phrase manager with dependency injection
@@ -102,20 +158,21 @@ class UnifiedVoiceService: ObservableObject {
             )
         }
         
+        // Initialize integrated permissions
         do {
-            self.wakePhraseManager = WakePhraseManager(
-                webSocketService: webSocketService,
-                projectManager: projectManager,
-                voiceProcessor: voiceProcessor
-            )
-            print("✅ WakePhraseManager initialized")
+            checkPermissions()
+            print("✅ Integrated permission checking initialized")
         } catch {
-            print("🚨 Failed to initialize WakePhraseManager: \(error)")
-            self.wakePhraseManager = WakePhraseManager(
-                webSocketService: webSocketService,
-                projectManager: projectManager,
-                voiceProcessor: voiceProcessor
-            )
+            print("🚨 Failed to initialize permission checking: \(error)")
+            // Set safe defaults if permission check fails
+            hasMicrophonePermission = false
+            hasSpeechRecognitionPermission = false
+            permissionStatus = .notDetermined
+            isFullyAuthorized = false
+            permissionError = "Permission check failed: \(error.localizedDescription)"
+            
+            // Emergency disable voice features
+            AppConfiguration.emergencyDisableVoice(reason: "Permission check failure: \(error.localizedDescription)")
         }
         
         // Setup bindings with comprehensive error handling
@@ -150,7 +207,7 @@ class UnifiedVoiceService: ObservableObject {
         }
         
         // Check permissions first
-        guard permissionManager.isFullyAuthorized else {
+        guard isFullyAuthorized else {
             state = .permissionRequired
             return
         }
@@ -180,7 +237,7 @@ class UnifiedVoiceService: ObservableObject {
         guard state.isListening else { return }
         
         speechRecognitionService.stopListening()
-        wakePhraseManager.stopWakeListening()
+        stopWakeListening()
         
         if !recognizedText.isEmpty {
             state = .processing(transcript: recognizedText)
@@ -208,7 +265,7 @@ class UnifiedVoiceService: ObservableObject {
     func requestPermissions() async {
         state = .permissionRequired
         
-        permissionManager.requestFullPermissions { [weak self] success in
+        await requestFullPermissions { [weak self] success in
             Task { @MainActor [weak self] in
                 if success {
                     self?.state = .idle
@@ -226,6 +283,103 @@ class UnifiedVoiceService: ObservableObject {
         audioLevel = 0.0
         confidenceScore = 0.0
         state = .idle
+    }
+    
+    // MARK: - Integrated Wake Phrase Detection
+    
+    /// Start wake phrase detection
+    func startWakeListening() {
+        guard isFullyAuthorized else {
+            permissionError = "Wake listening not available - permissions required"
+            return
+        }
+        
+        guard !isWakeListening else { return }
+        
+        stopWakeListening()
+        isWakeListening = true
+        wakePhraseDetected = false
+        
+        setupWakeRecognition()
+        startWakeAudioEngine()
+        
+        sendWakeStatusUpdate("🎤 Wake phrase listening started")
+    }
+    
+    /// Stop wake phrase detection
+    func stopWakeListening() {
+        isWakeListening = false
+        
+        if wakeAudioEngine.isRunning {
+            wakeAudioEngine.stop()
+            wakeAudioEngine.inputNode.removeTap(onBus: 0)
+        }
+        
+        wakeRecognitionRequest?.endAudio()
+        wakeRecognitionTask?.cancel()
+        wakeRecognitionRequest = nil
+        wakeRecognitionTask = nil
+        
+        silenceTask?.cancel()
+        wakeAudioLevel = 0.0
+        
+        if wakePhraseDetected {
+            sendWakeStatusUpdate("🛑 Wake phrase listening stopped")
+        }
+    }
+    
+    /// Toggle wake phrase listening
+    func toggleWakeListening() {
+        if isWakeListening {
+            stopWakeListening()
+        } else {
+            startWakeListening()
+        }
+    }
+    
+    // MARK: - Integrated Permission Management
+    
+    /// Request full voice permissions
+    func requestFullPermissions(completion: @escaping (Bool) -> Void) async {
+        await requestMicrophonePermission { [weak self] micGranted in
+            guard let self = self else { return }
+            if micGranted {
+                Task {
+                    await self.requestSpeechRecognitionPermission { speechGranted in
+                        let allGranted = micGranted && speechGranted
+                        Task { @MainActor [weak self] in
+                            self?.updateOverallStatus()
+                            completion(allGranted)
+                        }
+                    }
+                }
+            } else {
+                Task { @MainActor [weak self] in
+                    self?.updateOverallStatus()
+                    completion(false)
+                }
+            }
+        }
+    }
+    
+    /// Check current permission status
+    func checkPermissions() {
+        checkMicrophonePermission()
+        checkSpeechRecognitionPermission()
+        updateOverallStatus()
+    }
+    
+    /// Open system settings for permission changes
+    func openSettings() {
+        #if os(iOS)
+        guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else {
+            return
+        }
+        
+        if UIApplication.shared.canOpenURL(settingsUrl) {
+            UIApplication.shared.open(settingsUrl)
+        }
+        #endif
     }
     
     // MARK: - Private Implementation
@@ -463,6 +617,13 @@ class UnifiedVoiceService: ObservableObject {
     func optimizePerformance() async {
         print("🎤 Optimizing voice service performance...")
         
+        await configureOptimalAudioSettings()
+        await optimizeSpeechRecognition()
+        await setupBackgroundVoiceProcessing()
+        
+        isOptimized = true
+        currentLatency = responseTime
+        
         // Pre-warm audio session
         await audioCoordinator.prepareForVoiceRecording()
         
@@ -476,7 +637,424 @@ class UnifiedVoiceService: ObservableObject {
             performanceStatus = .optimal
             print("🎤 Performance history cleared due to critical status")
         }
+        
+        print("🎤 Voice Manager: Performance optimization complete")
     }
+    
+    /// Enable low latency mode for faster response times
+    func enableLowLatencyMode() {
+        isLowLatencyMode = true
+        
+        // Reconfigure with lower latency settings
+        Task {
+            await configureOptimalAudioSettings()
+        }
+        
+        print("🎤 Voice Manager: Low latency mode enabled")
+    }
+    
+    /// Disable low latency mode
+    func disableLowLatencyMode() {
+        isLowLatencyMode = false
+        
+        // Reconfigure with standard settings
+        Task {
+            await configureOptimalAudioSettings()
+        }
+        
+        print("🎤 Voice Manager: Low latency mode disabled")
+    }
+    
+    /// Get comprehensive performance report
+    func getPerformanceReport() -> VoicePerformanceReport {
+        return VoicePerformanceReport(
+            averageResponseTime: averageResponseTime,
+            buffersProcessed: buffersProcessed,
+            recognitionAccuracy: recognitionAccuracy,
+            errorRate: errorRate,
+            isOptimized: isOptimized,
+            isLowLatencyMode: isLowLatencyMode
+        )
+    }
+    
+    /// Check if performance is optimal
+    var isPerformanceOptimal: Bool {
+        return responseTime < 0.5 && // Target: <500ms response
+               averageResponseTime < 0.3 && // Average <300ms
+               errorRate < 0.05 // <5% error rate
+    }
+    
+    // MARK: - Private Wake Phrase Implementation
+    
+    private func setupWakeRecognition() {
+        wakeRecognitionRequest = SFSpeechAudioBufferRecognitionRequest()
+        guard let wakeRecognitionRequest = wakeRecognitionRequest else { return }
+        
+        wakeRecognitionRequest.shouldReportPartialResults = true
+        wakeRecognitionRequest.requiresOnDeviceRecognition = true
+        
+        guard let speechRecognizer = wakeSpeechRecognizer else { return }
+        
+        wakeRecognitionTask = speechRecognizer.recognitionTask(with: wakeRecognitionRequest) { [weak self] result, error in
+            Task { @MainActor in
+                self?.handleWakeRecognitionResult(result: result, error: error)
+            }
+        }
+    }
+    
+    private func startWakeAudioEngine() {
+        let inputNode = wakeAudioEngine.inputNode
+        let recordingFormat = inputNode.outputFormat(forBus: 0)
+        
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+            self?.wakeRecognitionRequest?.append(buffer)
+            self?.calculateWakeAudioLevel(from: buffer)
+        }
+        
+        do {
+            wakeAudioEngine.prepare()
+            try wakeAudioEngine.start()
+        } catch {
+            Task { @MainActor in
+                permissionError = "Wake audio engine failed to start"
+                stopWakeListening()
+            }
+        }
+    }
+    
+    private func calculateWakeAudioLevel(from buffer: AVAudioPCMBuffer) {
+        guard let channelData = buffer.floatChannelData?[0] else { return }
+        
+        let frameLength = Int(buffer.frameLength)
+        var sum: Float = 0.0
+        
+        for i in 0..<frameLength {
+            sum += abs(channelData[i])
+        }
+        
+        let averageLevel = sum / Float(frameLength)
+        let normalizedLevel = min(averageLevel * 15, 1.0) // More sensitive for wake detection
+        
+        Task { @MainActor in
+            wakeAudioLevel = normalizedLevel
+        }
+    }
+    
+    private func handleWakeRecognitionResult(result: SFSpeechRecognitionResult?, error: Error?) {
+        if let error = error {
+            permissionError = "Wake recognition error: \(error.localizedDescription)"
+            return
+        }
+        
+        guard let result = result else { return }
+        
+        let currentTranscription = result.bestTranscription.formattedString.lowercased()
+        let confidence = result.bestTranscription.segments.last?.confidence ?? 0.0
+        
+        // Reset silence timer on any speech
+        if !currentTranscription.isEmpty {
+            resetSilenceTimer()
+        }
+        
+        // Check for wake phrase
+        if detectWakePhrase(in: currentTranscription, confidence: confidence) {
+            let detection = WakePhraseDetection(
+                detectedPhrase: currentTranscription,
+                confidence: Double(confidence),
+                audioLevel: wakeAudioLevel
+            )
+            
+            lastWakeDetection = detection
+            wakePhraseDetected = true
+            
+            handleWakePhraseDetected(detection)
+        }
+        
+        // Keep wake listening active - restart on final results
+        if result.isFinal {
+            startSilenceTimer()
+        }
+    }
+    
+    private func detectWakePhrase(in transcription: String, confidence: Float) -> Bool {
+        guard confidence >= confidenceThreshold else { return false }
+        
+        let cleanedTranscription = transcription
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ".", with: "")
+            .replacingOccurrences(of: ",", with: "")
+            .replacingOccurrences(of: "?", with: "")
+            .replacingOccurrences(of: "!", with: "")
+        
+        // Check exact wake phrase
+        if cleanedTranscription.contains(wakePhrase) {
+            return true
+        }
+        
+        // Check alternative pronunciations
+        for alternative in wakePhraseAlternatives {
+            if cleanedTranscription.contains(alternative) {
+                return true
+            }
+        }
+        
+        // Check for partial matches at the beginning
+        let words = cleanedTranscription.components(separatedBy: " ")
+        if words.count >= 2 {
+            let firstTwoWords = "\(words[0]) \(words[1])"
+            if firstTwoWords.contains("hey") && 
+               (firstTwoWords.contains("leen") || firstTwoWords.contains("lynn") || firstTwoWords.contains("lean")) {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    private func handleWakePhraseDetected(_ detection: WakePhraseDetection) {
+        // Temporarily stop wake listening to process command
+        stopWakeListening()
+        
+        // Provide haptic feedback
+        #if os(iOS)
+        let impact = UIImpactFeedbackGenerator(style: .medium)
+        impact.impactOccurred()
+        #endif
+        
+        // Log the wake phrase detection
+        sendWakeStatusUpdate("✨ Wake phrase detected: \"\(detection.detectedPhrase)\"")
+        
+        // Start voice command processing with a brief delay
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            triggerVoiceCommandSession()
+        }
+        
+        // Restart wake listening after a delay
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            if !isWakeListening {
+                startWakeListening()
+            }
+        }
+    }
+    
+    private func triggerVoiceCommandSession() {
+        // This would trigger the voice command interface
+        // For now, we'll post a notification that the UI can observe
+        NotificationCenter.default.post(
+            name: NSNotification.Name("WakePhraseDetected"),
+            object: lastWakeDetection
+        )
+        
+        sendWakeStatusUpdate("🎤 Voice command session starting...")
+    }
+    
+    private func resetSilenceTimer() {
+        silenceTask?.cancel()
+    }
+    
+    private func startSilenceTimer() {
+        silenceTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(silenceTimeout))
+            guard !Task.isCancelled else { return }
+            handleSilenceTimeout()
+        }
+    }
+    
+    private func handleSilenceTimeout() {
+        // Restart wake recognition after silence
+        if isWakeListening {
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(500))
+                if isWakeListening {
+                    setupWakeRecognition()
+                    if !wakeAudioEngine.isRunning {
+                        startWakeAudioEngine()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func sendWakeStatusUpdate(_ message: String) {
+        let statusMessage = AgentMessage(
+            content: message,
+            isFromUser: false,
+            type: .status
+        )
+        webSocketService.messages.append(statusMessage)
+    }
+    
+    // MARK: - Private Performance Optimization Implementation
+    
+    private func configureOptimalAudioSettings() async {
+        // CRITICAL: Check if another audio engine is already active
+        // This prevents conflicts with SpeechRecognitionService during voice setup
+        guard !wakeAudioEngine.isRunning else {
+            print("🎤 Voice Manager: Audio engine already running, skipping optimization")
+            return
+        }
+        
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            
+            // Use optimal buffer sizes for real-time processing
+            try audioSession.setPreferredIOBufferDuration(isLowLatencyMode ? 0.005 : 0.01) // 5ms or 10ms
+            try audioSession.setPreferredSampleRate(16000) // Optimal for speech
+            
+            print("🎤 Voice Manager: Audio settings optimized")
+            
+        } catch {
+            print("🎤 Voice Manager: Audio configuration failed - \(error)")
+        }
+    }
+    
+    private func optimizeSpeechRecognition() async {
+        guard let speechRecognizer = wakeSpeechRecognizer else { return }
+        
+        // Enable on-device recognition for better performance and privacy
+        if speechRecognizer.supportsOnDeviceRecognition {
+            print("🎤 Voice Manager: On-device recognition enabled")
+        }
+    }
+    
+    private func setupBackgroundVoiceProcessing() async {
+        // Configure background processing for voice commands
+        backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "VoiceProcessing") {
+            self.endBackgroundTask()
+        }
+    }
+    
+    private func endBackgroundTask() {
+        if backgroundTask != .invalid {
+            UIApplication.shared.endBackgroundTask(backgroundTask)
+            backgroundTask = .invalid
+        }
+    }
+    
+    private func processAudioBufferOptimized(_ buffer: AVAudioPCMBuffer, time: AVAudioTime) {
+        // Process on background queue for performance
+        processingQueue.async { [weak self] in
+            DispatchQueue.main.async {
+                self?.analyzeAudioForWakePhrase(buffer)
+            }
+        }
+        
+        buffersProcessed += 1
+    }
+    
+    private func analyzeAudioForWakePhrase(_ buffer: AVAudioPCMBuffer) {
+        // Optimized wake phrase detection
+        let energy = calculateAudioEnergy(buffer)
+        
+        // Only proceed with recognition if sufficient energy
+        guard energy > 0.01 else { return }
+    }
+    
+    private func calculateAudioEnergy(_ buffer: AVAudioPCMBuffer) -> Float {
+        guard let channelData = buffer.floatChannelData?[0] else { return 0 }
+        
+        let frameLength = Int(buffer.frameLength)
+        var sum: Float = 0.0
+        
+        for i in 0..<frameLength {
+            sum += channelData[i] * channelData[i]
+        }
+        
+        return sqrt(sum / Float(frameLength))
+    }
+    
+    // MARK: - Private Permission Implementation
+    
+    private func checkMicrophonePermission() {
+        do {
+            let status = AVAudioSession.sharedInstance().recordPermission
+            hasMicrophonePermission = (status == .granted)
+            print("🎤 Microphone permission status: \(status.description)")
+        } catch {
+            print("🚨 Failed to check microphone permission: \(error)")
+            hasMicrophonePermission = false
+            permissionError = "Failed to check microphone permission: \(error.localizedDescription)"
+        }
+    }
+    
+    private func checkSpeechRecognitionPermission() {
+        do {
+            let status = SFSpeechRecognizer.authorizationStatus()
+            hasSpeechRecognitionPermission = (status == .authorized)
+            print("🗣️ Speech recognition permission status: \(status.description)")
+        } catch {
+            print("🚨 Failed to check speech recognition permission: \(error)")
+            hasSpeechRecognitionPermission = false
+            permissionError = "Failed to check speech recognition permission: \(error.localizedDescription)"
+        }
+    }
+    
+    private func requestMicrophonePermission(completion: @escaping (Bool) -> Void) async {
+        AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            Task { @MainActor [weak self] in
+                self?.hasMicrophonePermission = granted
+                completion(granted)
+            }
+        }
+    }
+    
+    private func requestSpeechRecognitionPermission(completion: @escaping (Bool) -> Void) async {
+        SFSpeechRecognizer.requestAuthorization { status in
+            Task { @MainActor [weak self] in
+                self?.hasSpeechRecognitionPermission = (status == .authorized)
+                completion(status == .authorized)
+            }
+        }
+    }
+    
+    private func updateOverallStatus() {
+        if hasMicrophonePermission && hasSpeechRecognitionPermission {
+            permissionStatus = .granted
+            isFullyAuthorized = true
+        } else {
+            let micStatus = AVAudioSession.sharedInstance().recordPermission
+            let speechStatus = SFSpeechRecognizer.authorizationStatus()
+            
+            if micStatus == .denied || speechStatus == .denied {
+                permissionStatus = .denied
+            } else if micStatus != .granted || speechStatus == .notDetermined {
+                permissionStatus = .notDetermined
+            } else {
+                permissionStatus = .restricted
+            }
+            isFullyAuthorized = false
+        }
+        updatePermissionError()
+    }
+    
+    private func updatePermissionError() {
+        let speechAuthorizationStatus = SFSpeechRecognizer.authorizationStatus()
+        let microphoneAuthorizationStatus = AVAudioSession.sharedInstance().recordPermission
+        
+        switch (speechAuthorizationStatus, microphoneAuthorizationStatus) {
+        case (.denied, _):
+            permissionError = "Speech recognition access denied. Please enable in Settings > Privacy & Security > Speech Recognition"
+        case (_, .denied):
+            permissionError = "Microphone access denied. Please enable in Settings > Privacy & Security > Microphone"
+        case (.restricted, _):
+            permissionError = "Speech recognition is restricted on this device"
+        case (.authorized, .granted):
+            permissionError = nil
+        default:
+            permissionError = "Voice permissions are required for voice commands"
+        }
+    }
+}
+
+// MARK: - Permission Status Management
+
+enum VoicePermissionStatus {
+    case notDetermined
+    case granted
+    case denied
+    case restricted
 }
 
 // MARK: - Voice State Management
@@ -655,6 +1233,48 @@ extension UnifiedVoiceService {
     
     /// Voice command capabilities check
     var canStartVoiceCommand: Bool {
-        permissionManager.isFullyAuthorized && state.canStartListening
+        isFullyAuthorized && state.canStartListening
+    }
+}
+
+// MARK: - Performance Report Model
+
+struct VoicePerformanceReport {
+    let averageResponseTime: TimeInterval
+    let buffersProcessed: Int
+    let recognitionAccuracy: Double
+    let errorRate: Double
+    let isOptimized: Bool
+    let isLowLatencyMode: Bool
+    
+    var status: PerformanceStatus {
+        if averageResponseTime < 0.3 && errorRate < 0.05 {
+            return .excellent
+        } else if averageResponseTime < 0.5 && errorRate < 0.1 {
+            return .good
+        } else {
+            return .needsImprovement
+        }
+    }
+    
+    enum PerformanceStatus {
+        case excellent, good, needsImprovement
+        
+        var description: String {
+            switch self {
+            case .excellent: return "Excellent Performance"
+            case .good: return "Good Performance"
+            case .needsImprovement: return "Needs Improvement"
+            }
+        }
+        
+        @available(iOS 15.0, macOS 12.0, *)
+        var color: Color {
+            switch self {
+            case .excellent: return .green
+            case .good: return .orange
+            case .needsImprovement: return .red
+            }
+        }
     }
 }

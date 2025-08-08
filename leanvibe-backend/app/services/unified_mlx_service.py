@@ -51,48 +51,48 @@ class MLXServiceInterface(ABC):
 
 
 class ProductionMLXStrategy(MLXServiceInterface):
-    """Production MLX implementation using real models with transformers"""
+    """Production MLX implementation using ProductionModelService"""
     
     def __init__(self):
         self.is_initialized = False
-        self._transformers_service = None
+        self._production_service = None
         self._model_warmed_up = False
         self._response_times = []
         self._target_response_time = 2.0  # 2 second target
         
     async def initialize(self) -> bool:
-        """Initialize production MLX service with transformers"""
+        """Initialize production MLX service with ProductionModelService"""
         try:
-            # Import and initialize transformers service
-            from .transformers_phi3_service import transformers_phi3_service
+            # Import and initialize production model service
+            from .production_model_service import ProductionModelService
             
-            self._transformers_service = transformers_phi3_service
-            success = await self._transformers_service.initialize()
+            self._production_service = ProductionModelService()
+            success = await self._production_service.initialize()
             
             if success:
                 self.is_initialized = True
-                logger.info("Production MLX strategy (transformers) initialized successfully")
+                logger.info(f"Production MLX strategy initialized successfully with {self._production_service.deployment_mode} mode")
                 
                 # Start model warm-up for faster response times
                 await self._warm_up_model()
                 
                 return True
             else:
-                logger.error("Failed to initialize transformers service")
+                logger.error("Failed to initialize production model service")
                 return False
             
         except Exception as e:
-            logger.error(f"Failed to initialize Production MLX strategy (transformers): {e}")
+            logger.error(f"Failed to initialize Production MLX strategy: {e}")
             return False
     
     async def generate_code_completion(
         self, context: Dict[str, Any], intent: str = "suggest"
     ) -> Dict[str, Any]:
-        """Generate code completion using transformers models"""
-        if not self.is_initialized or not self._transformers_service:
+        """Generate code completion using production model service"""
+        if not self.is_initialized or not self._production_service:
             return {
                 "status": "error",
-                "error": "Transformers service not initialized",
+                "error": "Production service not initialized",
                 "response": "",
                 "confidence": 0.0
             }
@@ -108,10 +108,10 @@ class ProductionMLXStrategy(MLXServiceInterface):
             # Create a prompt from context and intent
             prompt = self._create_prompt_from_context(context, intent)
             
-            # Use the transformers service's generate_text method with optimizations
-            result = await self._transformers_service.generate_text(
-                prompt,
-                max_new_tokens=100,  # Reduced from 150 for faster response
+            # Use the production service's generate_text method
+            response = await self._production_service.generate_text(
+                prompt=prompt,
+                max_tokens=100,  # Reduced for faster response
                 temperature=0.7
             )
             
@@ -120,30 +120,24 @@ class ProductionMLXStrategy(MLXServiceInterface):
             response_time = end_time - start_time
             self._track_response_time(response_time)
             
-            if result["status"] == "success":
-                return {
-                    "status": "success",
-                    "response": result["response"],
-                    "confidence": 0.9,  # High confidence for real model
-                    "language": self._detect_language(context),
-                    "requires_human_review": False,
-                    "suggestions": ["Generated with Phi-3 real model weights"],
-                    "model": f"phi3-transformers-{result.get('model_name', 'unknown')}",
-                    "context_used": True,
-                    "using_pretrained": result.get("using_pretrained", True),
-                    "generation_time": result.get("generation_time", response_time),
-                    "tokens_per_second": result.get("tokens_per_second", 0),
-                    "response_time": response_time,
-                    "performance_status": self._get_performance_status(response_time)
-                }
-            else:
-                return {
-                    "status": "error",
-                    "error": result.get("error", "Unknown transformers error"),
-                    "response": "",
-                    "confidence": 0.0,
-                    "response_time": response_time
-                }
+            # Get health status for additional metrics
+            health = self._production_service.get_health_status()
+            
+            return {
+                "status": "success",
+                "response": response,
+                "confidence": 0.9,  # High confidence for production model
+                "language": self._detect_language(context),
+                "requires_human_review": False,
+                "suggestions": [f"Generated with {self._production_service.deployment_mode} production model"],
+                "model": self._production_service.config.model_name,
+                "context_used": True,
+                "deployment_mode": self._production_service.deployment_mode,
+                "generation_time": response_time,
+                "response_time": response_time,
+                "performance_status": self._get_performance_status(response_time),
+                "memory_usage_mb": health.get("memory_usage_mb", 0)
+            }
             
         except Exception as e:
             # Calculate response time even for errors
@@ -164,13 +158,14 @@ class ProductionMLXStrategy(MLXServiceInterface):
         """Get production model health"""
         avg_response_time = sum(self._response_times) / len(self._response_times) if self._response_times else 0
         
-        if self._transformers_service:
-            service_health = self._transformers_service.get_health_status()
+        if self._production_service:
+            service_health = self._production_service.get_health_status()
             return {
-                "strategy": "production-transformers",
+                "strategy": "production",
                 "initialized": self.is_initialized,
                 "model_loaded": service_health.get("model_loaded", False),
                 "model_warmed_up": self._model_warmed_up,
+                "deployment_mode": self._production_service.deployment_mode,
                 "status": "healthy" if self.is_initialized else "unavailable",
                 "service_details": service_health,
                 "performance": {
@@ -182,7 +177,7 @@ class ProductionMLXStrategy(MLXServiceInterface):
             }
         else:
             return {
-                "strategy": "production-transformers",
+                "strategy": "production",
                 "initialized": self.is_initialized,
                 "model_loaded": False,
                 "model_warmed_up": False,
@@ -234,25 +229,19 @@ class ProductionMLXStrategy(MLXServiceInterface):
         
         try:
             # Execute a small warm-up request to initialize model caches
-            warmup_context = {
-                "file_path": "warmup.py",
-                "cursor_position": 0,
-                "surrounding_code": "# Warm-up request\nprint('hello world')"
-            }
-            
             start_time = time.time()
-            result = await self._transformers_service.generate_text(
-                "Complete this Python code: print('hello",
-                max_new_tokens=10,
+            response = await self._production_service.generate_text(
+                prompt="Complete this Python code: print('hello",
+                max_tokens=10,
                 temperature=0.1
             )
             warmup_time = time.time() - start_time
             
-            if result.get("status") == "success":
+            if response:
                 self._model_warmed_up = True
                 logger.info(f"Model warm-up completed successfully in {warmup_time:.2f}s")
             else:
-                logger.warning(f"Model warm-up completed with warnings: {result.get('error', 'Unknown')}")
+                logger.warning(f"Model warm-up completed with warnings")
                 
         except Exception as e:
             logger.error(f"Model warm-up failed: {e}")
@@ -1214,7 +1203,51 @@ def _get_strategy_from_config() -> MLXInferenceStrategy:
         logger.warning(f"Failed to load strategy from config: {e}, using AUTO")
         return MLXInferenceStrategy.AUTO
 
+# CONSOLIDATED UNIFIED MLX SERVICE - SINGLE ENTRY POINT
+# This service consolidates all AI services into one unified interface
 unified_mlx_service = UnifiedMLXService(preferred_strategy=_get_strategy_from_config())
 
-# Aliases for backward compatibility
-real_mlx_service = unified_mlx_service
+# DEPRECATION ALIASES - These maintain backward compatibility
+# All services now route through unified_mlx_service with deprecation warnings
+import warnings
+
+def _deprecated_service_warning(service_name: str):
+    """Issue deprecation warning for old service usage"""
+    warnings.warn(
+        f"{service_name} is deprecated. Use unified_mlx_service instead. "
+        f"This alias will be removed in a future version.",
+        DeprecationWarning,
+        stacklevel=3
+    )
+
+class _DeprecatedServiceWrapper:
+    """Wrapper that issues deprecation warnings and delegates to unified service"""
+    def __init__(self, service_name: str):
+        self._service_name = service_name
+    
+    def __getattr__(self, name):
+        _deprecated_service_warning(self._service_name)
+        return getattr(unified_mlx_service, name)
+
+# Backward compatibility aliases with deprecation warnings
+real_mlx_service = _DeprecatedServiceWrapper("real_mlx_service")
+enhanced_ai_service = _DeprecatedServiceWrapper("enhanced_ai_service")
+ai_service = _DeprecatedServiceWrapper("ai_service")
+pragmatic_mlx_service_instance = _DeprecatedServiceWrapper("pragmatic_mlx_service")
+production_model_service_instance = _DeprecatedServiceWrapper("production_model_service")
+mock_mlx_service_instance = _DeprecatedServiceWrapper("mock_mlx_service")
+
+# Export the unified service as the primary interface
+__all__ = [
+    "unified_mlx_service",
+    "UnifiedMLXService", 
+    "MLXInferenceStrategy",
+    "MLXServiceInterface",
+    # Deprecated aliases (with warnings)
+    "real_mlx_service",
+    "enhanced_ai_service", 
+    "ai_service",
+    "pragmatic_mlx_service_instance",
+    "production_model_service_instance",
+    "mock_mlx_service_instance"
+]

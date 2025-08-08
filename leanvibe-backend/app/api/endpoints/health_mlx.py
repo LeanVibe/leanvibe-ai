@@ -27,32 +27,33 @@ async def mlx_health_check() -> Dict[str, Any]:
     - Service availability and errors
     """
     try:
-        # Import MLX service
-        from app.services.phi3_mini_service import Phi3MiniService
+        # Import unified MLX service
+        from app.services.unified_mlx_service import unified_mlx_service
         
-        # Create service instance to check status
-        service = Phi3MiniService()
+        # Get health status from unified service
+        health = unified_mlx_service.get_model_health()
         
-        # Get health status
-        health = service.get_health_status()
-        
-        # Determine overall status
-        if not health.get("model_loaded", False):
+        # Determine overall status based on unified service health
+        status = health.get("status", "unknown")
+        if status == "healthy":
+            overall_status = "healthy"
+        elif status == "uninitialized":
             overall_status = "uninitialized"
-        elif health.get("has_pretrained_weights", False):
-            overall_status = "healthy_pretrained"
         else:
-            overall_status = "degraded_random_weights"
+            overall_status = "degraded"
         
         # Determine inference capability
-        inference_ready = health.get("model_loaded", False)
-        has_real_weights = health.get("has_pretrained_weights", False)
+        inference_ready = health.get("initialized", False)
+        model_loaded = health.get("model_loaded", False)
         
-        # Calculate confidence score
-        if has_real_weights:
-            confidence_score = 0.95
-        elif health.get("model_loaded", False):
-            confidence_score = 0.1  # Low confidence with random weights
+        # Calculate confidence score based on strategy and health
+        strategy = health.get("strategy", "unknown")
+        if strategy in ["production", "pragmatic"] and model_loaded:
+            confidence_score = 0.9
+        elif strategy == "mock":
+            confidence_score = 0.6  # Mock has decent confidence for testing
+        elif strategy == "fallback":
+            confidence_score = 0.3
         else:
             confidence_score = 0.0
         
@@ -82,7 +83,7 @@ async def mlx_health_check() -> Dict[str, Any]:
                 "average_tokens_per_second": None,  # TODO: Add when available
                 "memory_efficiency": "good" if health.get("memory_usage_mb", 0) < 1000 else "moderate",
             },
-            "recommendations": _get_health_recommendations(health),
+            "recommendations": _get_unified_health_recommendations(health),
         }
         
     except ImportError as e:
@@ -108,7 +109,7 @@ async def mlx_health_check() -> Dict[str, Any]:
 
 
 def _get_health_recommendations(health: Dict[str, Any]) -> list[str]:
-    """Generate health recommendations based on service status"""
+    """Generate health recommendations based on service status (legacy)"""
     recommendations = []
     
     if not health.get("has_pretrained_weights", False):
@@ -135,33 +136,77 @@ def _get_health_recommendations(health: Dict[str, Any]) -> list[str]:
     return recommendations
 
 
+def _get_unified_health_recommendations(health: Dict[str, Any]) -> list[str]:
+    """Generate health recommendations for unified MLX service"""
+    recommendations = []
+    
+    strategy = health.get("strategy", "unknown")
+    status = health.get("status", "unknown")
+    service_details = health.get("service_details", {})
+    performance = health.get("performance", {})
+    
+    if status == "uninitialized":
+        recommendations.append("Initialize unified MLX service to begin inference")
+    elif status == "unavailable":
+        recommendations.append("Check service configuration and dependencies")
+    
+    if strategy == "fallback":
+        recommendations.append("Service using fallback strategy - check production dependencies")
+    elif strategy == "mock":
+        recommendations.append("Service in mock mode - switch to PRODUCTION or PRAGMATIC for real inference")
+    
+    # Performance recommendations
+    if not performance.get("within_target", True):
+        recommendations.append("Response time exceeding target - consider optimizing or switching strategies")
+    
+    # Memory recommendations
+    memory_usage = service_details.get("memory_usage_mb", 0)
+    if memory_usage > 2000:
+        recommendations.append("High memory usage detected - consider model optimization")
+    elif memory_usage == 0 and strategy in ["production", "pragmatic"]:
+        recommendations.append("Memory usage not reported - check model loading")
+    
+    # Strategy recommendations
+    available_strategies = len(health.get("dependencies", {}).get("strategies_available", []))
+    if available_strategies == 1:
+        recommendations.append("Only one strategy available - install MLX dependencies for more options")
+    
+    if not recommendations:
+        recommendations.append(f"Unified MLX service operating optimally with {strategy} strategy")
+    
+    return recommendations
+
+
 @router.get("/health/mlx/detailed")
 async def mlx_detailed_health() -> Dict[str, Any]:
     """
     Get detailed MLX health information including model configuration
     """
     try:
-        from app.services.phi3_mini_service import Phi3MiniService
+        from app.services.unified_mlx_service import unified_mlx_service
         
-        service = Phi3MiniService()
-        full_status = service.get_health_status()
+        # Get detailed health from unified service
+        full_status = unified_mlx_service.get_model_health()
+        performance_metrics = unified_mlx_service.get_performance_metrics()
         
         return {
             "service_info": {
-                "name": "Phi3MiniService",
+                "name": "UnifiedMLXService",
                 "version": "1.0.0",
-                "mode": "mlx_native",
+                "mode": "unified_strategy",
+                "current_strategy": full_status.get("strategy", "unknown"),
             },
             "model_info": {
-                "name": full_status.get("model_name"),
-                "config": full_status.get("model_config", {}),
-                "cache_dir": full_status.get("cache_dir"),
+                "strategies_available": unified_mlx_service.get_available_strategies(),
+                "current_strategy_details": full_status.get("service_details", {}),
             },
             "runtime_status": full_status,
+            "performance_metrics": performance_metrics,
             "system_info": {
                 "mlx_available": True,  # If we got here, MLX is available
                 "apple_silicon": True,  # MLX requires Apple Silicon
-                "memory_optimized": full_status.get("memory_usage_mb", 0) < 1000,
+                "unified_service": True,
+                "strategy_switching": len(unified_mlx_service.get_available_strategies()) > 1,
             }
         }
         

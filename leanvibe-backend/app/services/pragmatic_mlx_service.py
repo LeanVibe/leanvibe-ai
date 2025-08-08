@@ -1,14 +1,25 @@
 """
 Pragmatic MLX Service - Simple, reliable inference
+
+DEPRECATED: Use unified_mlx_service with PRAGMATIC strategy instead.
 """
 
 import logging
 import time
+import warnings
 from typing import Dict, Any, List
 
 import mlx.core as mx
 
 logger = logging.getLogger(__name__)
+
+# DEPRECATION WARNING
+warnings.warn(
+    "pragmatic_mlx_service.py is deprecated. Use unified_mlx_service with PRAGMATIC strategy instead. "
+    "This module will be removed in a future version.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 class PragmaticMLXService:
