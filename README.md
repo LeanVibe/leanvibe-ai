@@ -44,18 +44,31 @@ graph TB
     I <--> B
 ```
 
-## 🎉 Current Status: MVP Foundation Complete
+## 🚨 Current Status: Architecture Consolidation Required
 
-### 🚀 **Performance Achievements**
-- **Response Time**: **2.84s average** (target <10s ✅)
-- **Initialization**: **0.04s** L3 agent startup (99.9% improvement)
-- **Core Journey**: Fully validated end-to-end
-- **Service Health**: Comprehensive diagnostics available
+### 🔧 **Critical Issue: Service Fragmentation**
+**🚨 BLOCKING PRODUCTION DEPLOYMENT**: LeanVibe currently has **14 duplicate service implementations** that must be consolidated before production readiness.
 
-### 🗺️ **Roadmap**
+- **Voice Services**: 7 implementations (should be 3)
+- **AI Services**: 7 implementations (should be 3)  
+- **Impact**: Unmaintainable codebase, fragmented testing, inconsistent behavior
+
+### 📊 **Implementation Status**
+- **Core Features**: **60% MVP Complete** ✅
+- **Performance**: **2.84s average response time** ✅
+- **Service Architecture**: **❌ CRITICAL - Needs Consolidation**
+- **Production Readiness**: **❌ BLOCKED** until consolidation complete
+
+### 📋 **Consolidation Documentation**
+- 📘 **[Consolidation Guide](CONSOLIDATION_GUIDE.md)** - Detailed service analysis and strategy
+- 📊 **[Feature Coverage Matrix](FEATURE_COVERAGE_MATRIX.md)** - MVP requirements vs implementation  
+- 🗓️ **[Deprecation Plan](DEPRECATION_PLAN.md)** - 4-week migration timeline
+
+### 🗺️ **Updated Roadmap**
 - **Phase 1**: ✅ MVP Foundation (Complete)
-- **Phase 2**: 🔄 Production Validation (In Progress)
-- **Phase 3**: 🔎 User Testing & Launch (Next)
+- **Phase 2**: 🚨 **Service Consolidation** (4 weeks - CRITICAL)
+- **Phase 3**: 🔄 Production Validation (After consolidation)
+- **Phase 4**: 🔎 User Testing & Launch (Final)
 
 ## 🚀 Quick Start
 
@@ -103,9 +116,12 @@ open LeanVibe.xcodeproj
 
 ## 📦 Project Structure
 
+> ⚠️ **Architecture Warning**: Multiple duplicate services exist and require consolidation. See [Consolidation Guide](CONSOLIDATION_GUIDE.md) for details.
+
 ```
 leanvibe-ai/
 ├── 📁 leanvibe-backend/     # Core AI backend service
+│   ├── app/services/        # ⚠️ 7 AI services (need consolidation)
 │   ├── app/                 # FastAPI application
 │   ├── tests/              # Comprehensive test suite
 │   └── README.md           # Backend-specific documentation
@@ -114,13 +130,33 @@ leanvibe-ai/
 │   ├── tests/              # CLI tests
 │   └── README.md           # CLI-specific documentation
 ├── 📁 leanvibe-ios/        # iOS companion app
+│   ├── LeanVibe/Services/  # ⚠️ 7 voice services (need consolidation)
 │   ├── LeanVibe/           # SwiftUI app source
 │   ├── LeanVibeTests/      # iOS tests
 │   └── README.md           # iOS-specific documentation
 ├── 📁 docs/                # Project documentation
 │   └── archive/            # Historical documentation
+├── 📘 CONSOLIDATION_GUIDE.md   # 🚨 Service consolidation strategy
+├── 📊 FEATURE_COVERAGE_MATRIX.md # MVP vs implementation status  
+├── 🗓️ DEPRECATION_PLAN.md     # 4-week migration timeline
 └── 📁 .claude/             # AI agent configuration
 ```
+
+### 🚨 Critical Architecture Issues
+
+**Before proceeding with development, please review the consolidation documentation:**
+
+| Document | Purpose | Priority |
+|----------|---------|----------|
+| **[CONSOLIDATION_GUIDE.md](CONSOLIDATION_GUIDE.md)** | Complete analysis of 14 duplicate services | 🔴 **URGENT** |
+| **[FEATURE_COVERAGE_MATRIX.md](FEATURE_COVERAGE_MATRIX.md)** | MVP requirements vs actual implementation | 🔴 **URGENT** |
+| **[DEPRECATION_PLAN.md](DEPRECATION_PLAN.md)** | Week-by-week migration timeline | 🔴 **URGENT** |
+
+**Current Issues**:
+- 7 voice service implementations competing for resources  
+- 7 AI service implementations with unclear selection criteria
+- Fragmented test coverage across duplicate services
+- Unmaintainable codebase blocking production deployment
 
 ## 🛠️ Technology Stack
 

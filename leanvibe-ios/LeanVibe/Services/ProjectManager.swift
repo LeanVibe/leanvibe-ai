@@ -422,26 +422,11 @@ class ProjectManager: ObservableObject {
     }
     
     func loadSampleProjects() {
-        // Note: These are fallback samples only used when backend is unavailable
-        // Real data comes from backend APIs with dynamic health score calculation
-        projects = [
-            Project(
-                displayName: "LeanVibe Backend",
-                status: .active,
-                path: "/Users/bogdan/work/leanvibe-backend",
-                language: .python,
-                lastActivity: Date(),
-                metrics: ProjectMetrics(filesCount: 42, linesOfCode: 12345, healthScore: 0.75, issuesCount: 1) // Fallback only - real backend data replaces this
-            ),
-            Project(
-                displayName: "iOS Client",
-                status: .active,
-                path: "/Users/bogdan/work/leanvibe-ios",
-                language: .swift,
-                lastActivity: Date(),
-                metrics: ProjectMetrics(filesCount: 30, linesOfCode: 6789, healthScore: 0.70, issuesCount: 0) // Fallback only - real backend data replaces this
-            )
-        ]
+        // No longer loading hardcoded sample data
+        // All project data must come from backend API
+        // If backend is unavailable, show proper empty state in UI
+        projects = []
+        print("📋 ProjectManager: Sample projects removed - all data must come from backend")
     }
     
     private func fetchProjectsFromBackend() async throws -> [Project]? {

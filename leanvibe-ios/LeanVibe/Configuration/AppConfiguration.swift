@@ -58,13 +58,9 @@ struct AppConfiguration {
     private func autoDiscoverLocalBackend() -> String? {
         // In development, try to discover local backend services
         if isDebugBuild {
-            // This will be implemented to scan for _leanvibe._tcp services
-            // For now, only return localhost if explicitly running in simulator
-            #if targetEnvironment(simulator)
-            return "http://localhost:8000"
-            #else
+            // TODO: Implement Bonjour service discovery to scan for _leanvibe._tcp services
+            // No hardcoded URLs - user must configure backend manually
             return nil
-            #endif
         }
         return nil
     }

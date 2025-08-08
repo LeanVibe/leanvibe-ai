@@ -381,8 +381,8 @@ struct ServerSettingsView: View {
     private func testBackendConnection() async {
         isTestingConnection = true
         
-        // TODO: Fix BackendSettingsService import issue
-        let isAvailable = false // await backendService.pingBackend()
+        // Test backend availability using direct ping method
+        let isAvailable = await pingBackendDirectly()
         
         await MainActor.run {
             if isAvailable {
@@ -400,9 +400,8 @@ struct ServerSettingsView: View {
         isTestingConnection = true
         testResult = nil
         
-        // Test API availability
-        // TODO: Fix BackendSettingsService import issue
-        let apiAvailable = false // await backendService.pingBackend()
+        // Test API availability using direct ping method
+        let apiAvailable = await pingBackendDirectly()
         
         if !apiAvailable {
             await MainActor.run {
@@ -474,6 +473,8 @@ struct ServerSettingsView: View {
 struct QRCodeScannerView: View {
     let onQRCodeScanned: (String) -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var showGeneratedQR = false
+    @State private var generatedQRData = ""
     
     var body: some View {
         VStack {
@@ -501,26 +502,16 @@ struct QRCodeScannerView: View {
                     .multilineTextAlignment(.center)
                     .padding()
                 
-                Button("Test QR Code") {
-                    // For testing - simulate a QR code scan
-                    let testQRData = """
-                    {
-                        "leanvibe": {
-                            "server": {
-                                "host": "localhost",
-                                "port": 8000,
-                                "websocket_path": "/ws"
-                            },
-                            "metadata": {
-                                "server_name": "Local Development",
-                                "network": "development"
-                            }
-                        }
+                if AppConfiguration.shared.isBackendConfigured {
+                    Button("Generate QR Code for Current Config") {
+                        // Generate QR code for current backend configuration
+                        let config = AppConfiguration.shared
+                        let qrData = "{\"url\": \"\(config.apiBaseURL)\", \"websocket\": \"\(config.webSocketURL)\"}"
+                        generatedQRData = qrData
+                        showGeneratedQR = true
                     }
-                    """
-                    onQRCodeScanned(testQRData)
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.bordered)
                 
                 Spacer()
         }
@@ -556,14 +547,25 @@ struct ManualServerEntryView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                Section("Common Configurations") {
-                    Button("Local Development (localhost:8000)") {
-                        manualURL = "http://localhost:8000"
+                Section("Help") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Common URL formats:")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                        
+                        Text("• Local development: http://localhost:8000")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text("• Local network: http://[IP-ADDRESS]:8000")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text("• Remote server: https://your-domain.com")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    
-                    Button("Local Network (192.168.1.x:8000)") {
-                        manualURL = "http://192.168.1.100:8000"
-                    }
+                    .padding(.vertical, 4)
                 }
         }
         .navigationTitle("Manual Entry")

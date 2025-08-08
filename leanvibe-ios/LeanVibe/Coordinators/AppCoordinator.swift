@@ -148,7 +148,9 @@ class AppCoordinator: ObservableObject {
         let connectionSettings = ConnectionSettings(
             host: connection.host,
             port: connection.port,
-            apiKey: connection.apiKey ?? ""
+            websocketPath: connection.websocketPath,
+            serverName: connection.serverName,
+            network: connection.network
         )
         
         print("🔗 Testing WebSocket connection to \(connection.host):\(connection.port)...")
