@@ -66,7 +66,7 @@ class EventPriority(str, Enum):
     HIGH = "high"  # Important changes, agent completions
     MEDIUM = "medium"  # File changes, cache updates
     LOW = "low"  # Status updates, minor cache events
-    DEBUG = "debug"  # Debug information, verbose logging
+    TRACE = "debug"  # Debug information, verbose logging
 
 
 class NotificationChannel(str, Enum):

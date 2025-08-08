@@ -1,0 +1,380 @@
+asyncapi: 2.6.0
+info:
+  title: LeanVibe WebSocket Events API
+  version: 0.2.0
+  description: |
+    Real-time WebSocket API for LeanVibe L3 Coding Agent communication.
+    Supports bidirectional messaging for agent interactions, code completion,
+    and event streaming.
+  contact:
+    name: LeanVibe Development Team
+    url: https://github.com/leanvibe-ai/leanvibe-backend
+
+servers:
+  development:
+    url: ws://localhost:8000
+    protocol: ws
+    description: Development WebSocket server
+  local:
+    url: ws://0.0.0.0:8000
+    protocol: ws
+    description: Local network WebSocket server
+
+channels:
+  /ws/{client_id}:
+    parameters:
+      client_id:
+        description: Unique client identifier
+        schema:
+          type: string
+          pattern: '^[a-zA-Z0-9_-]+$'
+    publish:
+      summary: Send messages to the server
+      operationId: sendMessage
+      message:
+        oneOf:
+          - $ref: '#/components/messages/AgentMessage'
+          - $ref: '#/components/messages/CodeCompletionRequest'
+          - $ref: '#/components/messages/HeartbeatMessage'
+          - $ref: '#/components/messages/CommandMessage'
+    subscribe:
+      summary: Receive messages from the server
+      operationId: receiveMessage
+      message:
+        oneOf:
+          - $ref: '#/components/messages/AgentResponse'
+          - $ref: '#/components/messages/CodeCompletionResponse'
+          - $ref: '#/components/messages/HeartbeatAck'
+          - $ref: '#/components/messages/ReconnectionSync'
+          - $ref: '#/components/messages/EventNotification'
+          - $ref: '#/components/messages/ErrorResponse'
+
+components:
+  messages:
+    AgentMessage:
+      name: AgentMessage
+      title: Natural language agent message
+      summary: Send natural language query to L3 agent
+      payload:
+        $ref: '#/components/schemas/AgentMessagePayload'
+    
+    AgentResponse:
+      name: AgentResponse
+      title: Agent response message
+      summary: Response from L3 agent
+      payload:
+        $ref: '#/components/schemas/AgentResponsePayload'
+
+    CodeCompletionRequest:
+      name: CodeCompletionRequest
+      title: Code completion request
+      summary: Request AI-powered code completion
+      payload:
+        $ref: '#/components/schemas/CodeCompletionRequestPayload'
+
+    CodeCompletionResponse:
+      name: CodeCompletionResponse
+      title: Code completion response
+      summary: AI-generated code completion response
+      payload:
+        $ref: '#/components/schemas/CodeCompletionResponsePayload'
+
+    HeartbeatMessage:
+      name: HeartbeatMessage
+      title: Heartbeat message
+      summary: Keep connection alive
+      payload:
+        $ref: '#/components/schemas/HeartbeatPayload'
+
+    HeartbeatAck:
+      name: HeartbeatAck
+      title: Heartbeat acknowledgment
+      summary: Acknowledge heartbeat from client
+      payload:
+        $ref: '#/components/schemas/HeartbeatAckPayload'
+
+    CommandMessage:
+      name: CommandMessage
+      title: Slash command message
+      summary: Execute slash command through legacy AI service
+      payload:
+        $ref: '#/components/schemas/CommandMessagePayload'
+
+    ReconnectionSync:
+      name: ReconnectionSync
+      title: Reconnection synchronization
+      summary: Synchronize client state after reconnection
+      payload:
+        $ref: '#/components/schemas/ReconnectionSyncPayload'
+
+    EventNotification:
+      name: EventNotification
+      title: Event notification
+      summary: Real-time event notification
+      payload:
+        $ref: '#/components/schemas/EventNotificationPayload'
+
+    ErrorResponse:
+      name: ErrorResponse
+      title: Error response
+      summary: Error response from server
+      payload:
+        $ref: '#/components/schemas/ErrorResponsePayload'
+
+  schemas:
+    AgentMessagePayload:
+      type: object
+      required:
+        - type
+        - content
+      properties:
+        type:
+          type: string
+          const: message
+        content:
+          type: string
+          description: Natural language query for the agent
+          minLength: 1
+        workspace_path:
+          type: string
+          default: "."
+          description: Path to the workspace directory
+
+    AgentResponsePayload:
+      type: object
+      required:
+        - status
+        - message
+        - confidence
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+        message:
+          type: string
+          description: Agent response message
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        timestamp:
+          type: number
+          description: Unix timestamp
+        requires_review:
+          type: boolean
+        suggestions:
+          type: array
+          items:
+            type: string
+
+    CodeCompletionRequestPayload:
+      type: object
+      required:
+        - type
+        - file_path
+      properties:
+        type:
+          type: string
+          const: code_completion
+        file_path:
+          type: string
+          description: Path to the file being edited
+          minLength: 1
+        cursor_position:
+          type: integer
+          minimum: 0
+          default: 0
+        intent:
+          type: string
+          enum: [suggest, explain, refactor, debug, optimize]
+          default: suggest
+        content:
+          type: string
+          description: Optional file content
+        language:
+          type: string
+          description: Programming language
+
+    CodeCompletionResponsePayload:
+      type: object
+      required:
+        - status
+        - type
+        - intent
+        - response
+        - confidence
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+        type:
+          type: string
+          const: code_completion_response
+        intent:
+          type: string
+          enum: [suggest, explain, refactor, debug, optimize]
+        response:
+          type: string
+          description: AI-generated response
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        requires_review:
+          type: boolean
+        suggestions:
+          type: array
+          items:
+            type: string
+        client_id:
+          type: string
+        timestamp:
+          type: number
+          description: Unix timestamp
+        explanation:
+          type: string
+          description: Present when intent is 'explain'
+        refactoring_suggestions:
+          type: string
+          description: Present when intent is 'refactor'
+        debug_analysis:
+          type: string
+          description: Present when intent is 'debug'
+        optimization_suggestions:
+          type: string
+          description: Present when intent is 'optimize'
+
+    HeartbeatPayload:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          const: heartbeat
+        timestamp:
+          type: string
+          format: date-time
+
+    HeartbeatAckPayload:
+      type: object
+      required:
+        - type
+        - timestamp
+      properties:
+        type:
+          type: string
+          const: heartbeat_ack
+        timestamp:
+          type: string
+          format: date-time
+
+    CommandMessagePayload:
+      type: object
+      required:
+        - type
+        - content
+      properties:
+        type:
+          type: string
+          const: command
+        content:
+          type: string
+          pattern: '^/.*'
+          description: Slash command starting with '/'
+        workspace_path:
+          type: string
+          default: "."
+
+    ReconnectionSyncPayload:
+      type: object
+      required:
+        - type
+        - data
+        - timestamp
+      properties:
+        type:
+          type: string
+          const: reconnection_sync
+        data:
+          type: object
+          properties:
+            missed_events_count:
+              type: integer
+            last_sequence_number:
+              type: integer
+            reconnection_id:
+              type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    EventNotificationPayload:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - timestamp
+      properties:
+        event_id:
+          type: string
+        event_type:
+          type: string
+          enum: 
+            - system_ready
+            - task_created
+            - task_updated
+            - task_completed
+            - project_created
+            - project_updated
+            - code_generated
+            - analysis_complete
+            - agent_initialized
+            - connection_established
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+          default: medium
+        channel:
+          type: string
+          enum: [system, development, collaboration, analytics]
+          default: system
+        timestamp:
+          type: string
+          format: date-time
+        source:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ErrorResponsePayload:
+      type: object
+      required:
+        - status
+        - message
+        - timestamp
+      properties:
+        status:
+          type: string
+          const: error
+        message:
+          type: string
+          description: Error message
+        confidence:
+          type: number
+          const: 0
+        timestamp:
+          type: number
+          description: Unix timestamp
+        recovery_attempted:
+          type: boolean
+          description: Whether error recovery was attempted
+        error_code:
+          type: string
+          description: Error code for programmatic handling

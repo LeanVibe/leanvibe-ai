@@ -233,7 +233,7 @@ Based on the name '{symbol_name}', this is likely used for:
 **Debugging Steps**:
 ```{language}
 # Add logging/print statements
-print(f"Debugging {symbol_name}: input={{params}}")
+logger.debug(f"Debugging {symbol_name}: input={{params}}")
 
 # Check variable states
 assert params is not None, "Parameters cannot be None"

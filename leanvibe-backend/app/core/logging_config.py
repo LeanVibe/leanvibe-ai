@@ -116,7 +116,7 @@ def configure_logging(
     Configure structured logging for the application
     
     Args:
-        log_level: Logging level (DEBUG, INFO, WARNING, ERROR)
+        log_level: Logging level (TRACE, INFO, WARNING, ERROR)
         log_file: Optional file path for logging
         enable_json: Whether to use JSON formatting
         enable_console: Whether to log to console

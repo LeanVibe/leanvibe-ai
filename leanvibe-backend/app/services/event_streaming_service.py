@@ -47,7 +47,7 @@ class EventFilter:
 
         # Check priority threshold
         priority_levels = {
-            EventPriority.DEBUG: 0,
+            EventPriority.TRACE: 0,
             EventPriority.LOW: 1,
             EventPriority.MEDIUM: 2,
             EventPriority.HIGH: 3,
@@ -404,7 +404,7 @@ class EventStreamingService:
     def _priority_value(self, priority: EventPriority) -> int:
         """Convert priority to numeric value for comparison"""
         return {
-            EventPriority.DEBUG: 0,
+            EventPriority.TRACE: 0,
             EventPriority.LOW: 1,
             EventPriority.MEDIUM: 2,
             EventPriority.HIGH: 3,

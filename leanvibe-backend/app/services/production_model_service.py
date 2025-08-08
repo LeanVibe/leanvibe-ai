@@ -738,7 +738,7 @@ class ProductionModelService:
 
 # Usage example:
 result = hello_world()
-print(result)"""
+logger.info(result)"""
         elif "class" in prompt.lower():
             mock_response = """class Calculator:
     \"\"\"A simple calculator class\"\"\"

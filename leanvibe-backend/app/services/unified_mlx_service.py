@@ -12,6 +12,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from ..core.circuit_breaker import ai_circuit_breaker, with_circuit_breaker, FallbackResponses
+
 logger = logging.getLogger(__name__)
 
 
@@ -231,7 +233,7 @@ class ProductionMLXStrategy(MLXServiceInterface):
             # Execute a small warm-up request to initialize model caches
             start_time = time.time()
             response = await self._production_service.generate_text(
-                prompt="Complete this Python code: print('hello",
+                prompt="Complete this Python code: return 'hello world'",
                 max_tokens=10,
                 temperature=0.1
             )
@@ -676,6 +678,7 @@ class UnifiedMLXService:
         
         return MLXInferenceStrategy.FALLBACK
     
+    @with_circuit_breaker(ai_circuit_breaker)
     async def generate_code_completion(
         self, context: Dict[str, Any], intent: str = "suggest"
     ) -> Dict[str, Any]:

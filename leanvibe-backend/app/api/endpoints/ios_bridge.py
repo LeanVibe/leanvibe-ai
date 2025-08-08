@@ -9,8 +9,10 @@ import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel
+
+from ...auth import api_key_dependency
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +77,7 @@ ios_state = {
 }
 
 @router.get("/status")
-async def get_ios_status():
+async def get_ios_status(authenticated: bool = Depends(api_key_dependency)):
     """
     Get iOS app connection status
     
@@ -96,7 +98,7 @@ async def get_ios_status():
         return {"connected": False, "error": str(e)}
 
 @router.get("/details")
-async def get_ios_details():
+async def get_ios_details(authenticated: bool = Depends(api_key_dependency)):
     """
     Get detailed iOS connection information
     
@@ -125,7 +127,7 @@ async def get_ios_details():
         raise HTTPException(status_code=500, detail=f"Failed to get iOS details: {str(e)}")
 
 @router.post("/notify")
-async def send_ios_notification(notification: IOSNotificationRequest, background_tasks: BackgroundTasks):
+async def send_ios_notification(notification: IOSNotificationRequest, background_tasks: BackgroundTasks, authenticated: bool = Depends(api_key_dependency)):
     """
     Send notification to iOS app
     
@@ -162,7 +164,7 @@ async def send_ios_notification(notification: IOSNotificationRequest, background
         return {"success": False, "error": str(e)}
 
 @router.get("/projects")
-async def get_ios_projects():
+async def get_ios_projects(authenticated: bool = Depends(api_key_dependency)):
     """
     Get projects from iOS app
     
@@ -199,7 +201,7 @@ async def get_ios_projects():
         return {"projects": [], "total": 0, "error": str(e)}
 
 @router.post("/sync/projects")
-async def sync_ios_projects(request: IOSSyncRequest):
+async def sync_ios_projects(request: IOSSyncRequest, authenticated: bool = Depends(api_key_dependency)):
     """
     Sync projects with iOS app
     
@@ -227,7 +229,7 @@ async def sync_ios_projects(request: IOSSyncRequest):
         return {"success": False, "error": str(e)}
 
 @router.post("/sync/tasks")
-async def sync_ios_tasks(request: IOSSyncRequest):
+async def sync_ios_tasks(request: IOSSyncRequest, authenticated: bool = Depends(api_key_dependency)):
     """
     Sync tasks with iOS app
     
@@ -254,7 +256,7 @@ async def sync_ios_tasks(request: IOSSyncRequest):
         return {"success": False, "error": str(e)}
 
 @router.post("/sync/metrics")
-async def sync_ios_metrics(request: IOSSyncRequest):
+async def sync_ios_metrics(request: IOSSyncRequest, authenticated: bool = Depends(api_key_dependency)):
     """
     Sync metrics with iOS app
     
@@ -276,7 +278,7 @@ async def sync_ios_metrics(request: IOSSyncRequest):
         return {"success": False, "error": str(e)}
 
 @router.post("/projects/push")
-async def push_projects_to_ios(request: IOSProjectPushRequest):
+async def push_projects_to_ios(request: IOSProjectPushRequest, authenticated: bool = Depends(api_key_dependency)):
     """
     Push projects to iOS app
     
@@ -300,7 +302,7 @@ async def push_projects_to_ios(request: IOSProjectPushRequest):
         return {"success": False, "error": str(e)}
 
 @router.post("/projects/pull")
-async def pull_projects_from_ios():
+async def pull_projects_from_ios(authenticated: bool = Depends(api_key_dependency)):
     """
     Pull projects from iOS app
     
@@ -336,7 +338,7 @@ async def pull_projects_from_ios():
         return {"success": False, "error": str(e)}
 
 @router.post("/tasks")
-async def create_ios_task(task: IOSTaskRequest):
+async def create_ios_task(task: IOSTaskRequest, authenticated: bool = Depends(api_key_dependency)):
     """
     Create task on iOS app
     
@@ -367,7 +369,7 @@ async def create_ios_task(task: IOSTaskRequest):
         return {"success": False, "error": str(e)}
 
 @router.put("/tasks/{task_id}")
-async def update_ios_task(task_id: str, update: IOSTaskUpdateRequest):
+async def update_ios_task(task_id: str, update: IOSTaskUpdateRequest, authenticated: bool = Depends(api_key_dependency)):
     """
     Update task on iOS app
     
@@ -405,7 +407,7 @@ async def update_ios_task(task_id: str, update: IOSTaskUpdateRequest):
         return {"success": False, "error": str(e)}
 
 @router.get("/tasks")
-async def get_ios_tasks(status: Optional[str] = None):
+async def get_ios_tasks(status: Optional[str] = None, authenticated: bool = Depends(api_key_dependency)):
     """
     Get tasks from iOS app
     
@@ -445,7 +447,7 @@ async def get_ios_tasks(status: Optional[str] = None):
         return {"tasks": [], "total": 0, "error": str(e)}
 
 @router.post("/launch")
-async def launch_ios_app(request: IOSLaunchRequest):
+async def launch_ios_app(request: IOSLaunchRequest, authenticated: bool = Depends(api_key_dependency)):
     """
     Launch iOS app with specific screen or content
     

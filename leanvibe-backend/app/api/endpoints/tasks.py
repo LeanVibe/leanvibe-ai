@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Depends
 from typing import List, Optional
 import logging
+
+from ...auth import api_key_dependency
 
 from ...models.task_models import (
     Task, TaskCreate, TaskUpdate, TaskStatusUpdate, TaskMoveRequest,
@@ -47,7 +49,7 @@ async def broadcast_task_update(action: str, task: Task, client_id: str = None):
         logger.error(f"Failed to broadcast task update: {e}")
 
 @router.post("/", response_model=Task)
-async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks):
+async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks, authenticated: bool = Depends(api_key_dependency)):
     """Create a new task for the Kanban board"""
     try:
         task = await task_service.create_task(task_data)
@@ -68,7 +70,8 @@ async def list_tasks(
     assigned_to: Optional[str] = Query(None, description="Filter by assignee"),
     tags: Optional[List[str]] = Query(None, description="Filter by tags"),
     limit: int = Query(100, le=1000, description="Maximum number of tasks to return"),
-    offset: int = Query(0, ge=0, description="Number of tasks to skip")
+    offset: int = Query(0, ge=0, description="Number of tasks to skip"),
+    authenticated: bool = Depends(api_key_dependency)
 ):
     """List all tasks with optional filtering"""
     try:
@@ -90,7 +93,7 @@ async def list_tasks(
         raise HTTPException(status_code=500, detail=f"Failed to list tasks: {str(e)}")
 
 @router.get("/project/{project_id}", response_model=List[Task])
-async def get_tasks_by_project(project_id: str):
+async def get_tasks_by_project(project_id: str, authenticated: bool = Depends(api_key_dependency)):
     """Get all tasks for a specific project"""
     try:
         filters = TaskFilters(project_id=project_id)
@@ -101,7 +104,7 @@ async def get_tasks_by_project(project_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to get tasks for project: {str(e)}")
 
 @router.get("/{task_id}", response_model=Task)
-async def get_task(task_id: str):
+async def get_task(task_id: str, authenticated: bool = Depends(api_key_dependency)):
     """Get a specific task by ID"""
     task = await task_service.get_task(task_id)
     if not task:
@@ -109,7 +112,7 @@ async def get_task(task_id: str):
     return task
 
 @router.put("/{task_id}", response_model=Task)
-async def update_task(task_id: str, updates: TaskUpdate, background_tasks: BackgroundTasks):
+async def update_task(task_id: str, updates: TaskUpdate, background_tasks: BackgroundTasks, authenticated: bool = Depends(api_key_dependency)):
     """Update an existing task"""
     task = await task_service.update_task(task_id, updates)
     if not task:
@@ -121,7 +124,7 @@ async def update_task(task_id: str, updates: TaskUpdate, background_tasks: Backg
     return task
 
 @router.put("/{task_id}/status", response_model=Task)
-async def update_task_status(task_id: str, status_update: TaskStatusUpdate, background_tasks: BackgroundTasks):
+async def update_task_status(task_id: str, status_update: TaskStatusUpdate, background_tasks: BackgroundTasks, authenticated: bool = Depends(api_key_dependency)):
     """Update task status (for drag-and-drop operations)"""
     task = await task_service.update_task_status(task_id, status_update)
     if not task:
@@ -133,7 +136,7 @@ async def update_task_status(task_id: str, status_update: TaskStatusUpdate, back
     return task
 
 @router.delete("/{task_id}")
-async def delete_task(task_id: str, background_tasks: BackgroundTasks):
+async def delete_task(task_id: str, background_tasks: BackgroundTasks, authenticated: bool = Depends(api_key_dependency)):
     """Delete a task"""
     # Get task before deletion for broadcast
     task = await task_service.get_task(task_id)
@@ -149,7 +152,7 @@ async def delete_task(task_id: str, background_tasks: BackgroundTasks):
     return {"success": True, "message": f"Task {task_id} deleted"}
 
 @router.post("/{task_id}/move", response_model=Task)
-async def move_task(task_id: str, move_request: TaskMoveRequest, background_tasks: BackgroundTasks):
+async def move_task(task_id: str, move_request: TaskMoveRequest, background_tasks: BackgroundTasks, authenticated: bool = Depends(api_key_dependency)):
     """Move task between Kanban columns"""
     task = await task_service.move_task(task_id, move_request)
     if not task:
@@ -161,7 +164,7 @@ async def move_task(task_id: str, move_request: TaskMoveRequest, background_task
     return task
 
 @router.post("/search", response_model=List[Task])
-async def search_tasks(search_request: TaskSearchRequest):
+async def search_tasks(search_request: TaskSearchRequest, authenticated: bool = Depends(api_key_dependency)):
     """Search tasks with query and filters"""
     try:
         tasks = await task_service.search_tasks(search_request)
@@ -171,7 +174,7 @@ async def search_tasks(search_request: TaskSearchRequest):
         raise HTTPException(status_code=500, detail=f"Failed to search tasks: {str(e)}")
 
 @router.get("/stats/summary", response_model=TaskStats)
-async def get_task_stats():
+async def get_task_stats(authenticated: bool = Depends(api_key_dependency)):
     """Get task statistics for dashboard"""
     try:
         stats = await task_service.get_task_stats()
@@ -182,7 +185,7 @@ async def get_task_stats():
 
 # Kanban Board Endpoints
 @router.get("/kanban/board", response_model=KanbanBoard)
-async def get_kanban_board():
+async def get_kanban_board(authenticated: bool = Depends(api_key_dependency)):
     """Get complete Kanban board with all columns and tasks"""
     try:
         board = await task_service.get_kanban_board()
@@ -192,13 +195,13 @@ async def get_kanban_board():
         raise HTTPException(status_code=500, detail=f"Failed to get Kanban board: {str(e)}")
 
 @router.put("/kanban/tasks/{task_id}/move", response_model=Task)
-async def move_kanban_task(task_id: str, move_request: TaskMoveRequest, background_tasks: BackgroundTasks):
+async def move_kanban_task(task_id: str, move_request: TaskMoveRequest, background_tasks: BackgroundTasks, authenticated: bool = Depends(api_key_dependency)):
     """Move task between Kanban columns (alternative endpoint)"""
     return await move_task(task_id, move_request, background_tasks)
 
 # Bulk Operations
 @router.post("/bulk/create", response_model=List[Task])
-async def bulk_create_tasks(tasks_data: List[TaskCreate], background_tasks: BackgroundTasks):
+async def bulk_create_tasks(tasks_data: List[TaskCreate], background_tasks: BackgroundTasks, authenticated: bool = Depends(api_key_dependency)):
     """Create multiple tasks at once"""
     try:
         created_tasks = []
@@ -220,7 +223,8 @@ async def bulk_create_tasks(tasks_data: List[TaskCreate], background_tasks: Back
 async def bulk_update_status(
     task_ids: List[str], 
     status_update: TaskStatusUpdate, 
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    authenticated: bool = Depends(api_key_dependency)
 ):
     """Update status for multiple tasks"""
     try:
@@ -246,7 +250,7 @@ async def bulk_update_status(
 
 # Utility Endpoints
 @router.post("/cleanup")
-async def cleanup_old_tasks(days: int = Query(90, ge=1, description="Days to keep completed tasks")):
+async def cleanup_old_tasks(days: int = Query(90, ge=1, description="Days to keep completed tasks"), authenticated: bool = Depends(api_key_dependency)):
     """Clean up old completed tasks"""
     try:
         await task_service.cleanup_old_tasks(days)
@@ -257,7 +261,8 @@ async def cleanup_old_tasks(days: int = Query(90, ge=1, description="Days to kee
 
 @router.get("/export/json")
 async def export_tasks_json(
-    status: Optional[TaskStatus] = Query(None, description="Filter by status")
+    status: Optional[TaskStatus] = Query(None, description="Filter by status"),
+    authenticated: bool = Depends(api_key_dependency)
 ):
     """Export tasks as JSON"""
     try:

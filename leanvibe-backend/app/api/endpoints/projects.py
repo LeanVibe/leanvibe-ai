@@ -7,8 +7,9 @@ from datetime import datetime
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, Depends
 
+from ...auth import api_key_dependency
 from ...models.project_models import (
     Project,
     ProjectListResponse,
@@ -35,7 +36,7 @@ project_service = ProjectService()
 
 
 @router.get("/", response_model=ProjectListResponse)
-async def list_projects():
+async def list_projects(authenticated: bool = Depends(api_key_dependency)):
     """Get list of all projects"""
     try:
         projects = await project_service.get_all_projects()
@@ -50,7 +51,8 @@ async def list_projects():
 
 @router.get("/{project_id}", response_model=Project)
 async def get_project(
-    project_id: UUID = Path(..., description="Project UUID")
+    project_id: UUID = Path(..., description="Project UUID"),
+    authenticated: bool = Depends(api_key_dependency)
 ):
     """Get specific project by ID"""
     try:
@@ -67,7 +69,8 @@ async def get_project(
 
 @router.get("/{project_id}/tasks", response_model=ProjectTasksResponse)
 async def get_project_tasks(
-    project_id: UUID = Path(..., description="Project UUID")
+    project_id: UUID = Path(..., description="Project UUID"),
+    authenticated: bool = Depends(api_key_dependency)
 ):
     """Get tasks for a specific project"""
     try:
@@ -91,7 +94,8 @@ async def get_project_tasks(
 
 @router.get("/{project_id}/metrics", response_model=ProjectMetricsResponse)
 async def get_project_metrics(
-    project_id: UUID = Path(..., description="Project UUID")
+    project_id: UUID = Path(..., description="Project UUID"),
+    authenticated: bool = Depends(api_key_dependency)
 ):
     """Get metrics for a specific project"""
     try:
@@ -115,7 +119,8 @@ async def get_project_metrics(
 
 @router.post("/{project_id}/analyze")
 async def analyze_project(
-    project_id: UUID = Path(..., description="Project UUID")
+    project_id: UUID = Path(..., description="Project UUID"),
+    authenticated: bool = Depends(api_key_dependency)
 ):
     """Analyze project and update metrics"""
     try:
@@ -140,7 +145,8 @@ async def analyze_project(
 
 @router.delete("/{project_id}")
 async def delete_project(
-    project_id: UUID = Path(..., description="Project UUID")
+    project_id: UUID = Path(..., description="Project UUID"),
+    authenticated: bool = Depends(api_key_dependency)
 ):
     """Delete a project"""
     try:

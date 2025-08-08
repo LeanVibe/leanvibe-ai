@@ -9,8 +9,10 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+
+from ...auth import api_key_dependency
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ class CLIQueryResponse(BaseModel):
     session_info: Optional[dict] = None
 
 @router.post("/query", response_model=CLIQueryResponse)
-async def process_cli_query(request: CLIQueryRequest) -> CLIQueryResponse:
+async def process_cli_query(request: CLIQueryRequest, authenticated: bool = Depends(api_key_dependency)) -> CLIQueryResponse:
     """
     Process a CLI query using the L3CodingAgent.
     
@@ -103,7 +105,7 @@ async def process_cli_query(request: CLIQueryRequest) -> CLIQueryResponse:
         )
 
 @router.get("/status")
-async def get_cli_query_status():
+async def get_cli_query_status(authenticated: bool = Depends(api_key_dependency)):
     """Get CLI query service status"""
     try:
         # Import global session manager from main app

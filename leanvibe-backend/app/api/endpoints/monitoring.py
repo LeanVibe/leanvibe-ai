@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Any
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 
+from ...auth import api_key_dependency
 from ...core.logging_config import get_logger, set_request_context, generate_request_id
 from ...core.health_monitor import health_monitor, run_health_checks, get_service_health, get_current_alerts
 from ...core.performance_monitor import performance_monitor, get_performance_stats
@@ -37,7 +38,8 @@ async def setup_request_context():
 
 @router.get("/monitoring/health")
 async def get_comprehensive_health(
-    request_id: str = Depends(setup_request_context)
+    request_id: str = Depends(setup_request_context),
+    authenticated: bool = Depends(api_key_dependency)
 ) -> Dict[str, Any]:
     """
     Get comprehensive health status for all services and components

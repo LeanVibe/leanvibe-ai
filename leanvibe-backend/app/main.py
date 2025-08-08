@@ -147,7 +147,28 @@ app = FastAPI(
 # Configure CORS for iOS communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict to local network
+    allow_origins=[
+        "http://localhost:*",
+        "http://127.0.0.1:*", 
+        "http://192.168.*",
+        "http://10.*",
+        "http://172.16.*",
+        "http://172.17.*",
+        "http://172.18.*",
+        "http://172.19.*",
+        "http://172.20.*",
+        "http://172.21.*",
+        "http://172.22.*",
+        "http://172.23.*",
+        "http://172.24.*",
+        "http://172.25.*",
+        "http://172.26.*",
+        "http://172.27.*",
+        "http://172.28.*",
+        "http://172.29.*",
+        "http://172.30.*",
+        "http://172.31.*",
+    ],  # Restrict to localhost and local network ranges
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -833,14 +854,14 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "query":
         # Handle CLI query
         if len(sys.argv) < 3:
-            print("Usage: leanvibe query '<your question>'")
+            logger.info("Usage: leanvibe query '<your question>'")
             sys.exit(1)
             
         query_text = " ".join(sys.argv[2:])
         
         # Run the CLI query handler
         result = asyncio.run(handle_cli_query(query_text))
-        print(result)
+        logger.info(f"CLI Query Result: {result}")
     else:
         # Start the server
         import uvicorn

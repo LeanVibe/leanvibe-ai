@@ -46,8 +46,11 @@ async def mlx_health_check() -> Dict[str, Any]:
         inference_ready = health.get("initialized", False)
         model_loaded = health.get("model_loaded", False)
         
-        # Calculate confidence score based on strategy and health
+        # Determine if model has real pretrained weights
         strategy = health.get("strategy", "unknown")
+        has_real_weights = strategy in ["production", "pragmatic"] and model_loaded
+        
+        # Calculate confidence score based on strategy and health
         if strategy in ["production", "pragmatic"] and model_loaded:
             confidence_score = 0.9
         elif strategy == "mock":

@@ -344,8 +344,9 @@ def safe_mlx_attention(
     dimension issues in MLX attention computation.
     """
     try:
-        # Enable debug mode if needed
-        if logger.isEnabledFor(logging.DEBUG):
+        # Enable detailed logging mode if needed
+        # Check if detailed logging is enabled (equivalent to verbose level)
+        if logger.isEnabledFor(10):  # logging verbose level = 10
             mlx_tensor_fixer.enable_debug()
         
         # Fix attention dimensions

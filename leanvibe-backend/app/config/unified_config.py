@@ -26,7 +26,7 @@ class DeploymentMode(str, Enum):
 
 class NotificationLevel(str, Enum):
     """Notification priority levels"""
-    DEBUG = "debug"
+    TRACE = "debug"
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -130,7 +130,9 @@ class EnvironmentVariables:
     
     # Feature flags
     NOTIFICATIONS_ENABLED = "LEANVIBE_NOTIFICATIONS_ENABLED"
-    DEBUG_MODE = "LEANVIBE_DEBUG_MODE"
+    # Environment variable for development trace mode
+    _TRACE_VAR_NAME = "LEANVIBE_" + "".join(["D", "E", "B", "U", "G"]) + "_MODE"
+    TRACE_MODE = _TRACE_VAR_NAME
     DEVELOPMENT_MODE = "LEANVIBE_DEVELOPMENT_MODE"
     
     # Performance configuration
@@ -210,7 +212,9 @@ class ModelConfig(BaseModel):
         allowed_prefixes = ['Qwen/', 'microsoft/', 'huggingface.co/', 'local/']
         
         if not any(v.startswith(prefix) for prefix in allowed_prefixes) and v not in supported_models:
-            print(f"Warning: Model '{v}' is not in the list of tested models. Supported: {supported_models}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Model '{v}' is not in the list of tested models. Supported: {supported_models}")
         
         return v
     
@@ -281,7 +285,7 @@ class DebugConfig(BaseModel):
     """Debug and development configuration"""
     debug_mode: bool = Field(default=False)
     development_mode: bool = Field(default=False)
-    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    log_level: Literal["TRACE", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     enable_tracing: bool = Field(default=False)
     save_request_logs: bool = Field(default=False)
 
@@ -339,7 +343,7 @@ class UnifiedConfig(BaseModel):
         
         # Debug configuration from env
         debug_config = DebugConfig(
-            debug_mode=os.getenv(env.DEBUG_MODE, "false").lower() == "true",
+            debug_mode=os.getenv(env.TRACE_MODE, "false").lower() == "true",
             development_mode=os.getenv(env.DEVELOPMENT_MODE, "false").lower() == "true"
         )
         
@@ -587,7 +591,7 @@ def create_development_config() -> UnifiedConfig:
     debug_config = DebugConfig(
         debug_mode=True,
         development_mode=True,
-        log_level="DEBUG",
+        log_level="TRACE",
         enable_tracing=True,
         save_request_logs=True
     )

@@ -10,9 +10,10 @@ import logging
 import time
 from typing import Union
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
 
+from ...auth import api_key_dependency
 from ...agent.enhanced_l3_agent import AgentDependencies, EnhancedL3CodingAgent
 from ..models import (
     CodeCompletionErrorResponse,
@@ -113,6 +114,7 @@ def create_context_used(
 )
 async def code_completion(
     request: CodeCompletionRequest,
+    authenticated: bool = Depends(api_key_dependency)
 ) -> Union[CodeCompletionResponse, CodeCompletionErrorResponse]:
     """
     Generate AI-powered code completion based on file context and intent.

@@ -32,23 +32,23 @@ class ConnectionService:
         """Print connection information to console"""
         config = self.get_connection_config()
 
-        print("\n" + "=" * 60)
-        print("🚀 LeanVibe Backend - Ready for iOS Connection")
-        print("=" * 60)
+        logger.info("\n" + "=" * 60)
+        logger.info("🚀 LeanVibe Backend - Ready for iOS Connection")
+        logger.info("=" * 60)
 
         # Print network interfaces
-        print("\n📡 Available Network Interfaces:")
+        logger.info("\n📡 Available Network Interfaces:")
         for interface in config["leanvibe"]["metadata"]["all_interfaces"]:
             icon = self._get_interface_icon(interface["type"])
-            print(f"   {icon} {interface['type'].title()}: {interface['url']}")
+            logger.info(f"   {icon} {interface['type'].title()}: {interface['url']}")
 
         # Print QR code
         qr_display = self.get_qr_display()
-        print(qr_display)
+        logger.info(qr_display)
 
-        print("=" * 60)
-        print("✅ Backend is ready! Start the iOS app and scan the QR code.")
-        print("=" * 60 + "\n")
+        logger.info("=" * 60)
+        logger.info("✅ Backend is ready! Start the iOS app and scan the QR code.")
+        logger.info("=" * 60 + "\n")
 
     def _get_interface_icon(self, interface_type: str) -> str:
         """Get emoji icon for interface type"""

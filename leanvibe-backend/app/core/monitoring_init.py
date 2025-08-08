@@ -121,7 +121,11 @@ class MonitoringSystem:
             logger.info("Structured logging initialized", log_level=log_level, log_directory=str(log_dir))
             
         except Exception as e:
-            print(f"Failed to setup logging: {e}")  # Fallback to print since logger may not be available
+            # Fallback logging setup failed - use basic logging
+            import logging
+            logging.basicConfig(level=logging.ERROR)
+            fallback_logger = logging.getLogger(__name__)
+            fallback_logger.error(f"Failed to setup logging: {e}")
             raise
     
     async def _setup_error_tracking(self):

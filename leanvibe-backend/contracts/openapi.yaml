@@ -1,0 +1,472 @@
+openapi: 3.0.3
+info:
+  title: LeanVibe L3 Coding Agent API
+  description: Advanced AI-powered coding assistant with real-time collaboration and iOS integration
+  version: 0.2.0
+  contact:
+    name: LeanVibe Development Team
+    url: https://github.com/leanvibe-ai/leanvibe-backend
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: http://0.0.0.0:8000
+    description: Local network server
+
+tags:
+  - name: health
+    description: Health check and system status endpoints
+  - name: projects
+    description: Project management endpoints
+  - name: tasks
+    description: Task management and Kanban board endpoints
+  - name: ai
+    description: AI-powered code assistance endpoints
+  - name: websocket
+    description: Real-time WebSocket endpoints
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Health check endpoint
+      description: Comprehensive LLM metrics and error recovery status
+      responses:
+        '200':
+          description: Service health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /health/mlx:
+    get:
+      tags: [health]
+      summary: MLX service health check
+      description: Check MLX service health and model status
+      responses:
+        '200':
+          description: MLX service health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MLXHealthResponse'
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/projects:
+    get:
+      tags: [projects]
+      summary: List all projects
+      description: Get list of all projects with metrics
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/tasks:
+    get:
+      tags: [tasks]
+      summary: List all tasks
+      description: Get list of all tasks with status
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskListResponse'
+
+  /api/code-completion:
+    post:
+      tags: [ai]
+      summary: Code completion request
+      description: Get AI-powered code completions with context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeCompletionRequest'
+      responses:
+        '200':
+          description: Code completion response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeCompletionResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeCompletionErrorResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+        - ai_ready
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        service:
+          type: string
+          example: leanvibe-backend
+        version:
+          type: string
+          example: "0.2.0"
+        ai_ready:
+          type: boolean
+        agent_framework:
+          type: string
+          example: pydantic.ai
+        sessions:
+          type: object
+        event_streaming:
+          type: object
+        error_recovery:
+          type: object
+        system_status:
+          type: object
+        llm_metrics:
+          type: object
+
+    MLXHealthResponse:
+      type: object
+      required:
+        - status
+        - model
+        - model_loaded
+        - inference_ready
+        - confidence_score
+      properties:
+        status:
+          type: string
+          enum: [healthy, uninitialized, degraded]
+        model:
+          type: string
+        model_loaded:
+          type: boolean
+        has_pretrained_weights:
+          type: boolean
+        inference_ready:
+          type: boolean
+        confidence_score:
+          type: number
+          minimum: 0
+          maximum: 1
+        last_inference_time_ms:
+          type: number
+          nullable: true
+        memory_usage_mb:
+          type: number
+        total_inferences:
+          type: integer
+        service_status:
+          type: string
+        dependencies:
+          type: object
+          properties:
+            hf_available:
+              type: boolean
+            mlx_lm_available:
+              type: boolean
+        capabilities:
+          type: object
+          properties:
+            text_generation:
+              type: boolean
+            code_completion:
+              type: boolean
+            chat_interface:
+              type: boolean
+            production_ready:
+              type: boolean
+        performance:
+          type: object
+          properties:
+            last_inference_time_ms:
+              type: number
+              nullable: true
+            average_tokens_per_second:
+              type: number
+              nullable: true
+            memory_efficiency:
+              type: string
+              enum: [good, moderate, poor]
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    ProjectListResponse:
+      type: object
+      required:
+        - projects
+        - total
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        total:
+          type: integer
+
+    Project:
+      type: object
+      required:
+        - id
+        - name
+        - path
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        path:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, archived]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        language:
+          type: string
+        metrics:
+          $ref: '#/components/schemas/ProjectMetrics'
+
+    ProjectMetrics:
+      type: object
+      properties:
+        lines_of_code:
+          type: integer
+        file_count:
+          type: integer
+        complexity_score:
+          type: number
+        test_coverage:
+          type: number
+        maintainability_index:
+          type: number
+
+    TaskListResponse:
+      type: object
+      required:
+        - tasks
+        - total
+      properties:
+        tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        total:
+          type: integer
+
+    Task:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [todo, in_progress, done, cancelled]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        assigned_to:
+          type: string
+        project_id:
+          type: string
+          format: uuid
+
+    CodeCompletionRequest:
+      type: object
+      required:
+        - file_path
+      properties:
+        file_path:
+          type: string
+          description: Path to the file being edited
+          minLength: 1
+        cursor_position:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Cursor position in the file
+        intent:
+          type: string
+          enum: [suggest, explain, refactor, debug, optimize]
+          default: suggest
+          description: Type of completion requested
+        content:
+          type: string
+          nullable: true
+          description: Optional file content
+        language:
+          type: string
+          nullable: true
+          description: Programming language (auto-detected if not provided)
+
+    CodeCompletionResponse:
+      type: object
+      required:
+        - status
+        - intent
+        - response
+        - confidence
+        - requires_review
+        - context_used
+        - processing_time_ms
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+        intent:
+          type: string
+        response:
+          type: string
+          description: AI-generated response
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Confidence score (0.0-1.0)
+        requires_review:
+          type: boolean
+          description: Whether human review is recommended
+        suggestions:
+          type: array
+          items:
+            type: string
+          description: Follow-up suggestions
+        context_used:
+          $ref: '#/components/schemas/ContextUsed'
+        processing_time_ms:
+          type: number
+          minimum: 0
+          description: Processing time in milliseconds
+        explanation:
+          type: string
+          nullable: true
+        refactoring_suggestions:
+          type: string
+          nullable: true
+        debug_analysis:
+          type: string
+          nullable: true
+        optimization_suggestions:
+          type: string
+          nullable: true
+
+    ContextUsed:
+      type: object
+      required:
+        - language
+      properties:
+        language:
+          type: string
+        symbols_found:
+          type: integer
+          default: 0
+        has_context:
+          type: boolean
+          default: false
+        file_path:
+          type: string
+          default: ""
+        has_symbol_context:
+          type: boolean
+          default: false
+        language_detected:
+          type: string
+          default: ""
+
+    CodeCompletionErrorResponse:
+      type: object
+      required:
+        - status
+        - error
+        - processing_time_ms
+      properties:
+        status:
+          type: string
+          enum: [error]
+        error:
+          type: string
+          description: Error message
+        error_code:
+          type: string
+          nullable: true
+          description: Error code for programmatic handling
+        processing_time_ms:
+          type: number
+          minimum: 0
+          description: Processing time in milliseconds
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - error
+        - message
+      properties:
+        status:
+          type: string
+        error:
+          type: string
+        message:
+          type: string
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+security:
+  - ApiKeyAuth: []
