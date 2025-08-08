@@ -1,0 +1,118 @@
+# Coverage Configuration for LeanVibe Backend
+# Optimized for testing with mock infrastructure
+
+[run]
+# Source directories to measure coverage
+source = app
+
+# Include patterns
+include = 
+    app/*
+    app/*/*
+    app/*/*/*
+
+# Exclude patterns
+omit = 
+    */tests/*
+    */test_*
+    */__pycache__/*
+    */venv/*
+    */env/*
+    */migrations/*
+    */settings/*
+    setup.py
+    */conftest.py
+    */mocks/*
+    .pytest_cache/*
+    build/*
+    dist/*
+
+# Branch coverage
+branch = True
+
+# Concurrency support
+concurrency = thread,multiprocessing
+
+# Data file location
+data_file = .coverage
+
+# Parallel mode (for multiprocessing)
+parallel = False
+
+# Coverage context (helps with debugging)
+dynamic_contexts = test_function
+
+# Plugins
+plugins = 
+
+[report]
+# Reporting options
+show_missing = True
+skip_covered = False
+sort = Cover
+precision = 2
+
+# Exclude lines from coverage reporting
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+    
+    # Don't complain about missing debug-only code:
+    def __repr__
+    if self\.debug
+    
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+    
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if False:
+    if __name__ == .__main__.:
+    
+    # Don't complain about abstract methods
+    @(abc\.)?abstractmethod
+    
+    # Don't complain about type checking imports
+    if TYPE_CHECKING:
+    
+    # Don't complain about platform specific code
+    if sys.platform
+    
+    # Don't complain about mock-only code
+    # pragma: mock-only
+    
+    # Don't complain about debug logging
+    logger\.debug
+    
+    # Don't complain about pass statements
+    pass
+
+# Ignore empty files
+skip_empty = True
+
+# Coverage thresholds (fail if below these percentages)
+fail_under = 70
+
+[html]
+# HTML report settings
+directory = test_results/coverage_html
+title = LeanVibe Backend Coverage Report
+show_contexts = True
+
+[xml]
+# XML report settings
+output = test_results/coverage.xml
+
+[json]
+# JSON report settings (if needed)
+output = test_results/coverage.json
+show_contexts = True
+
+[paths]
+# Path mapping for different environments
+source = 
+    app/
+    /app/
+    /Users/*/leanvibe-backend/app/
+    C:\*\leanvibe-backend\app\
