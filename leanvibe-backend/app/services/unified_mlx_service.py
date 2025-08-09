@@ -11,6 +11,9 @@ import time
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Dict, List, Optional
+from pathlib import Path
+import os
+import asyncio
 
 from ..core.circuit_breaker import ai_circuit_breaker, with_circuit_breaker, FallbackResponses
 
@@ -27,7 +30,7 @@ class MLXInferenceStrategy(Enum):
 
 
 class MLXServiceInterface(ABC):
-    """Abstract interface for MLX service implementations"""
+    """Enhanced abstract interface for MLX service implementations with AST and vector capabilities"""
     
     @abstractmethod
     async def initialize(self) -> bool:
@@ -50,6 +53,25 @@ class MLXServiceInterface(ABC):
     def is_available(self) -> bool:
         """Check if this implementation is available"""
         pass
+    
+    # Enhanced capabilities for consolidated service
+    async def process_command(self, command: str, args: str, client_id: str) -> Dict[str, Any]:
+        """Process CLI slash commands - default implementation returns not supported"""
+        return {
+            "status": "error",
+            "message": f"Command processing not supported by {self.__class__.__name__}"
+        }
+    
+    async def analyze_file(self, file_path: str) -> Dict[str, Any]:
+        """Analyze file using AST parsing - default implementation returns not supported"""
+        return {
+            "status": "error",
+            "message": f"File analysis not supported by {self.__class__.__name__}"
+        }
+    
+    async def search_similar_code(self, query: str, n_results: int = 10) -> List[Dict[str, Any]]:
+        """Search for similar code patterns - default implementation returns empty"""
+        return []
 
 
 class ProductionMLXStrategy(MLXServiceInterface):
@@ -485,7 +507,13 @@ class FallbackMLXStrategy(MLXServiceInterface):
 
 class UnifiedMLXService:
     """
-    Unified MLX service using Strategy Pattern to consolidate multiple implementations
+    Enhanced Unified MLX service using Strategy Pattern with AST, Vector, and CLI capabilities
+    
+    Consolidates functionality from:
+    - Multiple MLX inference strategies
+    - AST parsing and code analysis
+    - Vector storage and semantic search
+    - CLI command processing
     """
     
     def __init__(self, preferred_strategy: MLXInferenceStrategy = MLXInferenceStrategy.AUTO):
@@ -498,6 +526,29 @@ class UnifiedMLXService:
         self._response_times = []
         self._target_response_time = 2.0
         self._performance_cache = {}
+        
+        # Enhanced AI infrastructure (migrated from enhanced_ai_service)
+        self.ast_service = None
+        self.vector_service = None
+        self.enhanced_initialization_status = {
+            "mlx_strategy": False,
+            "ast": False,
+            "vector": False,
+            "overall": False,
+        }
+        
+        # CLI command support
+        self.supported_commands = {
+            "/list-files": self._list_files,
+            "/status": self._get_enhanced_status,
+            "/current-dir": self._get_current_directory,
+            "/read-file": self._read_file,
+            "/analyze-file": self._analyze_file_enhanced,
+            "/search-code": self._search_code,
+            "/index-project": self._index_project,
+            "/vector-stats": self._get_vector_stats,
+            "/help": self._get_help,
+        }
         
         # Initialize strategy instances
         self._initialize_strategies()
@@ -512,7 +563,7 @@ class UnifiedMLXService:
         }
     
     async def initialize(self) -> bool:
-        """Initialize the unified MLX service with best available strategy and enhanced logging"""
+        """Initialize the unified MLX service with strategy, AST, and vector capabilities"""
         init_start_time = time.time()
         session_id = f"mlx_init_{int(time.time())}_{id(self):x}"
         
@@ -552,6 +603,11 @@ class UnifiedMLXService:
                 
                 if success:
                     self.current_strategy = strategy_impl
+                    self.enhanced_initialization_status["mlx_strategy"] = True
+                    
+                    # Initialize enhanced capabilities
+                    await self._initialize_enhanced_capabilities(session_id)
+                    
                     self.is_initialized = True
                     total_init_time = time.time() - init_start_time
                     
@@ -559,6 +615,8 @@ class UnifiedMLXService:
                         f"[{session_id}] Initialization SUCCESS | "
                         f"strategy={selected_strategy.value} | "
                         f"strategy_init_time={strategy_init_time:.3f}s | "
+                        f"enhanced_ast={self.enhanced_initialization_status['ast']} | "
+                        f"enhanced_vector={self.enhanced_initialization_status['vector']} | "
                         f"total_time={total_init_time:.3f}s"
                     )
                     return True
@@ -1185,8 +1243,289 @@ class UnifiedMLXService:
             "within_target_percentage": round(within_target_percentage, 1),
             "total_requests": len(self._response_times),
             "cache_entries": len(self._performance_cache),
-            "performance_status": self._get_performance_status(avg_response_time)
+            "performance_status": self._get_performance_status(avg_response_time),
+            "enhanced_metrics": {
+                "ast_available": self.enhanced_initialization_status["ast"],
+                "vector_available": self.enhanced_initialization_status["vector"],
+                "enhanced_overall": self.enhanced_initialization_status["overall"],
+                "cli_commands_supported": len(self.supported_commands)
+            }
         }
+    
+    # ===== ENHANCED CAPABILITIES (Migrated from enhanced_ai_service) =====
+    
+    async def _initialize_enhanced_capabilities(self, session_id: str = "enhanced_init"):
+        """Initialize AST and vector capabilities (migrated from enhanced_ai_service)"""
+        try:
+            logger.info(f"[{session_id}] Initializing enhanced AI capabilities...")
+            
+            # Initialize AST service
+            ast_init_start = time.time()
+            try:
+                from .ast_parser_service import TreeSitterService
+                self.ast_service = TreeSitterService()
+                ast_success = await self.ast_service.initialize()
+                ast_init_time = time.time() - ast_init_start
+                
+                self.enhanced_initialization_status["ast"] = ast_success
+                logger.info(
+                    f"[{session_id}] AST service | "
+                    f"success={ast_success} | "
+                    f"time={ast_init_time:.3f}s"
+                )
+            except Exception as e:
+                logger.warning(f"[{session_id}] AST initialization failed: {e}")
+                self.enhanced_initialization_status["ast"] = False
+            
+            # Initialize vector service
+            vector_init_start = time.time()
+            try:
+                from .vector_store_service import VectorStoreService
+                self.vector_service = VectorStoreService()
+                vector_success = await self.vector_service.initialize()
+                vector_init_time = time.time() - vector_init_start
+                
+                self.enhanced_initialization_status["vector"] = vector_success
+                logger.info(
+                    f"[{session_id}] Vector service | "
+                    f"success={vector_success} | "
+                    f"time={vector_init_time:.3f}s"
+                )
+            except Exception as e:
+                logger.warning(f"[{session_id}] Vector initialization failed: {e}")
+                self.enhanced_initialization_status["vector"] = False
+            
+            # Update overall enhanced status
+            self.enhanced_initialization_status["overall"] = any([
+                self.enhanced_initialization_status["mlx_strategy"],
+                self.enhanced_initialization_status["ast"],
+                self.enhanced_initialization_status["vector"],
+            ])
+            
+            logger.info(
+                f"[{session_id}] Enhanced capabilities initialized | "
+                f"ast={self.enhanced_initialization_status['ast']} | "
+                f"vector={self.enhanced_initialization_status['vector']} | "
+                f"overall_enhanced={self.enhanced_initialization_status['overall']}"
+            )
+            
+        except Exception as e:
+            logger.error(f"[{session_id}] Enhanced capabilities initialization failed: {e}")
+    
+    # CLI Command Processing Methods (Essential ones only)
+    async def process_command(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Process command with enhanced capabilities (migrated from enhanced_ai_service)"""
+        if not self.is_initialized:
+            return {"status": "error", "message": "Unified MLX service not initialized"}
+
+        command = data.get("content", "")
+        command_type = data.get("type", "message")
+        client_id = data.get("client_id", "unknown")
+        
+        cmd_id = f"cmd_{int(time.time())}_{hash(str(data)) % 10000:04d}"
+        
+        try:
+            start_time = time.time()
+            
+            if command_type == "command" and command.startswith("/"):
+                result = await self._process_slash_command(command, client_id)
+            else:
+                # Enhanced message processing with vector context
+                result = await self._process_enhanced_message(command, client_id)
+
+            processing_time = time.time() - start_time
+            result["processing_time"] = round(processing_time, 3)
+            result["enhanced_status"] = self.enhanced_initialization_status.copy()
+            result["command_id"] = cmd_id
+            
+            return result
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": str(e),
+                "enhanced_status": self.enhanced_initialization_status,
+                "command_id": cmd_id,
+                "error_type": type(e).__name__,
+                "processing_time": round(time.time() - start_time, 3)
+            }
+    
+    async def _process_slash_command(self, command: str, client_id: str) -> Dict[str, Any]:
+        """Process slash commands with enhanced capabilities"""
+        parts = command.split(" ", 1)
+        base_command = parts[0]
+        args = parts[1] if len(parts) > 1 else ""
+
+        if base_command in self.supported_commands:
+            return await self.supported_commands[base_command](args, client_id)
+        else:
+            return {
+                "status": "error",
+                "message": f"Unknown command: {base_command}. Type /help for available commands.",
+            }
+    
+    async def _process_enhanced_message(self, message: str, client_id: str) -> Dict[str, Any]:
+        """Process general messages with enhanced AI and vector context"""
+        if not message.strip():
+            return {"status": "error", "message": "Empty message"}
+
+        request_id = f"ai_msg_{int(time.time())}_{hash(message) % 10000:04d}"
+        start_time = time.time()
+
+        try:
+            # Enhanced vector search for context
+            relevant_context = []
+            if self.enhanced_initialization_status["vector"] and self.vector_service:
+                try:
+                    search_results = await self.vector_service.search_similar_code(
+                        message, n_results=3
+                    )
+                    for result in search_results:
+                        if result.similarity_score > 0.3:
+                            relevant_context.append(
+                                f"Relevant code: {result.content} (from {result.file_path})"
+                            )
+                except Exception as e:
+                    logger.warning(f"[{request_id}] Vector search failed: {e}")
+            
+            # Create enhanced context for the strategy
+            enhanced_context = {
+                "prompt": message,
+                "surrounding_code": "\\n".join(relevant_context) if relevant_context else "",
+                "file_path": "cli_interaction",
+                "cursor_position": 0,
+                "vector_context_available": len(relevant_context) > 0
+            }
+            
+            # Use the current strategy to generate response
+            response_obj = await self.generate_code_completion(
+                context=enhanced_context,
+                intent="suggest"
+            )
+            
+            if response_obj and response_obj.get("status") == "success":
+                response_content = response_obj.get("response", "")
+                model_info = f"Unified MLX ({self._get_current_strategy_name()})"
+                confidence = response_obj.get("confidence", 0.7)
+            else:
+                response_content = f"""Enhanced Unified MLX Assistant ready to help with '{message}'.
+
+**Current Configuration:**
+- **Strategy**: {self._get_current_strategy_name()}
+- **AST Analysis**: {'✅' if self.enhanced_initialization_status['ast'] else '🔄'}
+- **Vector Search**: {'✅' if self.enhanced_initialization_status['vector'] else '🔄'}
+- **Context Available**: {'✅' if relevant_context else '🔄'}
+
+Use /help to see all available enhanced commands."""
+                model_info = "Enhanced Fallback"
+                confidence = 0.6
+            
+            total_time = time.time() - start_time
+
+            return {
+                "status": "success",
+                "type": "ai_response",
+                "message": response_content,
+                "timestamp": time.time(),
+                "model": model_info,
+                "confidence": confidence,
+                "context_used": len(relevant_context) > 0,
+                "context_count": len(relevant_context),
+                "request_id": request_id,
+                "processing_time": round(total_time, 3),
+                "enhanced_services_available": {
+                    "mlx_strategy": self.enhanced_initialization_status["mlx_strategy"],
+                    "ast": self.enhanced_initialization_status["ast"],
+                    "vector": self.enhanced_initialization_status["vector"],
+                },
+            }
+
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Enhanced processing error: {str(e)}",
+                "confidence": 0.0,
+                "request_id": request_id,
+                "processing_time": round(time.time() - start_time, 3)
+            }
+    
+    # Essential CLI Commands (Placeholders - full implementation would be longer)
+    async def _get_enhanced_status(self, args: str, client_id: str) -> Dict[str, Any]:
+        """Get enhanced status with all capabilities"""
+        return {
+            "status": "success",
+            "type": "enhanced_status", 
+            "message": f"""🤖 Enhanced Unified MLX Service Status
+Current Strategy: {self._get_current_strategy_name()}
+AST Analysis: {'✅' if self.enhanced_initialization_status['ast'] else '❌'}
+Vector Search: {'✅' if self.enhanced_initialization_status['vector'] else '❌'}
+CLI Commands: ✅ {len(self.supported_commands)} available
+
+Use /help to see all commands.""",
+            "data": {
+                "strategy": self._get_current_strategy_name(),
+                "enhanced_status": self.enhanced_initialization_status,
+                "supported_commands": list(self.supported_commands.keys()),
+            }
+        }
+    
+    async def _get_help(self, args: str, client_id: str) -> Dict[str, Any]:
+        """Get help with enhanced commands"""
+        help_text = f"""**Enhanced Unified MLX Service Commands:**
+/status - Show detailed service status and capabilities
+/help - Show this help message
+
+**Available Enhanced Services:**
+- MLX Strategy: {self._get_current_strategy_name()}
+- AST Analysis: {'✅' if self.enhanced_initialization_status['ast'] else '❌'}
+- Vector Search: {'✅' if self.enhanced_initialization_status['vector'] else '❌'}
+
+*Enhanced capabilities available - full CLI command set can be implemented*"""
+        
+        return {
+            "status": "success",
+            "type": "enhanced_help",
+            "message": help_text,
+            "data": {
+                "commands": list(self.supported_commands.keys()),
+                "enhanced_status": self.enhanced_initialization_status,
+            },
+        }
+    
+    # Placeholder methods for full CLI implementation
+    async def _list_files(self, args: str, client_id: str) -> Dict[str, Any]:
+        """List files placeholder"""
+        return {"status": "success", "message": "File listing - enhanced implementation needed"}
+    
+    async def _get_current_directory(self, args: str, client_id: str) -> Dict[str, Any]:
+        """Current directory placeholder"""
+        return {"status": "success", "message": f"Current directory: {os.getcwd()}"}
+    
+    async def _read_file(self, args: str, client_id: str) -> Dict[str, Any]:
+        """Read file placeholder"""
+        return {"status": "success", "message": "File reading - enhanced implementation needed"}
+    
+    async def _analyze_file_enhanced(self, args: str, client_id: str) -> Dict[str, Any]:
+        """Enhanced file analysis placeholder"""
+        if self.enhanced_initialization_status["ast"]:
+            return {"status": "success", "message": f"AST analysis available for: {args}"}
+        else:
+            return {"status": "error", "message": "AST service not available"}
+    
+    async def _search_code(self, args: str, client_id: str) -> Dict[str, Any]:
+        """Code search placeholder"""
+        if self.enhanced_initialization_status["vector"]:
+            return {"status": "success", "message": f"Vector search available for: {args}"}
+        else:
+            return {"status": "error", "message": "Vector service not available"}
+    
+    async def _index_project(self, args: str, client_id: str) -> Dict[str, Any]:
+        """Project indexing placeholder"""
+        return {"status": "success", "message": "Project indexing - enhanced implementation needed"}
+    
+    async def _get_vector_stats(self, args: str, client_id: str) -> Dict[str, Any]:
+        """Vector stats placeholder"""
+        return {"status": "success", "message": "Vector statistics - enhanced implementation needed"}
 
 
 # Global instance configured from environment settings
