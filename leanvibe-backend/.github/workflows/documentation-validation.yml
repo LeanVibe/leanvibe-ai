@@ -1,0 +1,458 @@
+name: Documentation Pull Request Validation
+
+on:
+  pull_request:
+    paths:
+      - '**.md'
+      - 'docs/**/*'
+      - 'contracts/**/*'
+      - 'app/api/**/*.py'
+      - 'app/models/**/*.py'
+
+env:
+  PYTHON_VERSION: '3.11'
+  MIN_QUALITY_SCORE: 75
+
+jobs:
+  validate-documentation-changes:
+    name: Validate Documentation Changes
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for comparison
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pydantic fastapi pyyaml requests aiohttp
+          # Install additional dependencies if available
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          fi
+      
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Get list of changed documentation files
+          git diff --name-only origin/${{ github.base_ref }}...HEAD > changed_files.txt
+          
+          # Filter for documentation files
+          grep -E '\.(md|yaml|yml|json)$' changed_files.txt > changed_docs.txt || true
+          
+          if [ -s changed_docs.txt ]; then
+            echo "docs_changed=true" >> $GITHUB_OUTPUT
+            echo "Changed documentation files:"
+            cat changed_docs.txt
+          else
+            echo "docs_changed=false" >> $GITHUB_OUTPUT
+            echo "No documentation files changed"
+          fi
+      
+      - name: Validate changed documentation
+        if: steps.changed-files.outputs.docs_changed == 'true'
+        run: |
+          echo "🔍 Validating changed documentation files..."
+          
+          # Create temporary validation script for changed files only
+          cat > validate_changed.py << 'EOF'
+          import asyncio
+          import sys
+          from pathlib import Path
+          sys.path.append('.')
+          from docs.automation.validate_docs import DocumentationValidator
+          
+          async def validate_changed_files():
+              validator = DocumentationValidator()
+              
+              # Read changed files
+              with open('changed_docs.txt', 'r') as f:
+                  changed_files = [line.strip() for line in f if line.strip()]
+              
+              if not changed_files:
+                  print("No documentation files to validate")
+                  return True
+              
+              all_results = []
+              for file_path in changed_files:
+                  if Path(file_path).exists():
+                      print(f"Validating {file_path}...")
+                      await validator._validate_document(Path(file_path))
+              
+              # Check results
+              failed_checks = [r for r in validator.results if r.status == "fail"]
+              
+              if failed_checks:
+                  print(f"❌ {len(failed_checks)} validation failures found:")
+                  for check in failed_checks[:10]:  # Show first 10 failures
+                      print(f"  - {check.file_path}: {check.message}")
+                  return False
+              else:
+                  print(f"✅ All validation checks passed ({len(validator.results)} checks)")
+                  return True
+          
+          if __name__ == "__main__":
+              success = asyncio.run(validate_changed_files())
+              sys.exit(0 if success else 1)
+          EOF
+          
+          python validate_changed.py
+      
+      - name: Check documentation quality
+        if: steps.changed-files.outputs.docs_changed == 'true'
+        run: |
+          echo "📊 Checking quality of changed documentation..."
+          
+          # Create quality checker for changed files only
+          cat > check_changed_quality.py << 'EOF'
+          import sys
+          from pathlib import Path
+          sys.path.append('.')
+          from docs.automation.quality_checker import DocumentationQualityChecker
+          
+          def check_changed_files_quality():
+              checker = DocumentationQualityChecker()
+              
+              # Read changed files
+              with open('changed_docs.txt', 'r') as f:
+                  changed_files = [line.strip() for line in f if line.strip()]
+              
+              if not changed_files:
+                  print("No documentation files to check")
+                  return True
+              
+              total_score = 0
+              file_count = 0
+              issues = []
+              
+              for file_path in changed_files:
+                  if Path(file_path).exists() and file_path.endswith('.md'):
+                      print(f"Analyzing quality of {file_path}...")
+                      report = checker.check_document_quality(Path(file_path))
+                      
+                      total_score += report.overall_score
+                      file_count += 1
+                      
+                      print(f"  Score: {report.overall_score:.1f}/100")
+                      
+                      if report.overall_score < float(os.environ.get('MIN_QUALITY_SCORE', 75)):
+                          issues.append(f"{file_path}: {report.overall_score:.1f}/100")
+              
+              if file_count == 0:
+                  print("No markdown files to analyze")
+                  return True
+              
+              avg_score = total_score / file_count
+              min_score = float(os.environ.get('MIN_QUALITY_SCORE', 75))
+              
+              print(f"\n📊 Quality Summary:")
+              print(f"Average Score: {avg_score:.1f}/100")
+              print(f"Minimum Required: {min_score}/100")
+              
+              if issues:
+                  print(f"\n❌ Files below quality threshold:")
+                  for issue in issues:
+                      print(f"  - {issue}")
+                  return False
+              else:
+                  print(f"\n✅ All files meet quality standards")
+                  return True
+          
+          if __name__ == "__main__":
+              import os
+              success = check_changed_files_quality()
+              sys.exit(0 if success else 1)
+          EOF
+          
+          python check_changed_quality.py
+      
+      - name: Check API documentation sync
+        if: contains(github.event.pull_request.changed_files, 'app/api/') || contains(github.event.pull_request.changed_files, 'app/models/')
+        run: |
+          echo "🔄 Checking if API documentation needs updates..."
+          
+          # Check if API files changed but documentation wasn't updated
+          api_changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E 'app/(api|models)/' || true)
+          docs_updated=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '(API\.md|contracts/openapi\.yaml)' || true)
+          
+          if [ -n "$api_changed" ] && [ -z "$docs_updated" ]; then
+            echo "⚠️ API code changed but documentation not updated"
+            echo "Changed API files:"
+            echo "$api_changed"
+            echo ""
+            echo "Consider updating:"
+            echo "- API.md"
+            echo "- contracts/openapi.yaml"
+            echo "- API_ENTERPRISE.md"
+            
+            # Create a comment on PR
+            cat > pr_comment.md << 'EOF'
+          ## 📝 Documentation Update Needed
+          
+          API or model changes detected but documentation not updated. Please consider updating:
+          
+          - [ ] `API.md` - Main API documentation
+          - [ ] `contracts/openapi.yaml` - OpenAPI specification  
+          - [ ] `API_ENTERPRISE.md` - Enterprise API features
+          
+          **Changed Files:**
+          ```
+          EOF
+            echo "$api_changed" >> pr_comment.md
+            echo '```' >> pr_comment.md
+            echo "" >> pr_comment.md
+            echo "You can also run the documentation generator to auto-update:" >> pr_comment.md
+            echo '```bash' >> pr_comment.md
+            echo 'python docs/automation/generate_api_docs.py' >> pr_comment.md
+            echo '```' >> pr_comment.md
+            
+            echo "PR comment created in pr_comment.md"
+          else
+            echo "✅ API documentation appears to be in sync"
+          fi
+      
+      - name: Generate documentation preview
+        if: steps.changed-files.outputs.docs_changed == 'true'
+        run: |
+          echo "📖 Generating documentation preview..."
+          
+          # Create a simple documentation preview
+          mkdir -p docs/preview
+          
+          # Copy changed docs to preview directory
+          while IFS= read -r file; do
+            if [[ -f "$file" && "$file" == *.md ]]; then
+              preview_file="docs/preview/$(basename "$file")"
+              cp "$file" "$preview_file"
+              echo "Added $file to preview"
+            fi
+          done < changed_docs.txt
+          
+          echo "📖 Documentation preview generated in docs/preview/"
+      
+      - name: Run spell check
+        if: steps.changed-files.outputs.docs_changed == 'true'
+        run: |
+          echo "🔤 Running spell check on changed documentation..."
+          
+          # Install aspell if available
+          if command -v aspell >/dev/null 2>&1; then
+            while IFS= read -r file; do
+              if [[ -f "$file" && "$file" == *.md ]]; then
+                echo "Checking spelling in $file"
+                # Basic spell check (this would need proper dictionary setup)
+                aspell --lang=en --mode=markdown check "$file" || true
+              fi
+            done < changed_docs.txt
+          else
+            echo "aspell not available, skipping spell check"
+          fi
+          
+          # Alternative: Basic word check for common typos
+          echo "Checking for common typos..."
+          typos_found=false
+          
+          # Common technical typos
+          declare -A typo_corrections=(
+            ["api"]="API"
+            ["http"]="HTTP"
+            ["json"]="JSON"
+            ["url"]="URL"
+            ["sql"]="SQL"
+            ["oauth"]="OAuth"
+            ["jwt"]="JWT"
+          )
+          
+          for file in $(cat changed_docs.txt); do
+            if [[ -f "$file" && "$file" == *.md ]]; then
+              for typo in "${!typo_corrections[@]}"; do
+                correction="${typo_corrections[$typo]}"
+                # Check for standalone lowercase technical terms
+                if grep -qi "\\b$typo\\b" "$file" && ! grep -q "\\b$correction\\b" "$file"; then
+                  echo "⚠️ Potential typo in $file: '$typo' should be '$correction'"
+                  typos_found=true
+                fi
+              done
+            fi
+          done
+          
+          if [ "$typos_found" = true ]; then
+            echo "⚠️ Potential typos found - please review"
+          else
+            echo "✅ No obvious typos detected"
+          fi
+      
+      - name: Check for broken internal links
+        if: steps.changed-files.outputs.docs_changed == 'true'
+        run: |
+          echo "🔗 Checking for broken internal links..."
+          
+          broken_links=false
+          
+          while IFS= read -r file; do
+            if [[ -f "$file" && "$file" == *.md ]]; then
+              echo "Checking links in $file"
+              
+              # Extract markdown links
+              grep -oE '\[[^\]]*\]\([^)]+\)' "$file" | while IFS= read -r link; do
+                # Extract URL from markdown link format
+                url=$(echo "$link" | sed -n 's/.*](\([^)]*\)).*/\1/p')
+                
+                # Skip external URLs and anchors
+                if [[ "$url" =~ ^https?:// ]] || [[ "$url" =~ ^# ]]; then
+                  continue
+                fi
+                
+                # Check if relative path exists
+                if [[ "$url" =~ ^\.\.?/ ]]; then
+                  # Resolve relative path
+                  target_file=$(realpath -m "$(dirname "$file")/$url" 2>/dev/null)
+                else
+                  target_file="$url"
+                fi
+                
+                if [[ ! -f "$target_file" ]]; then
+                  echo "❌ Broken link in $file: $url -> $target_file"
+                  broken_links=true
+                fi
+              done
+            fi
+          done < changed_docs.txt
+          
+          if [ "$broken_links" = true ]; then
+            echo "❌ Broken internal links found"
+            exit 1
+          else
+            echo "✅ All internal links appear valid"
+          fi
+      
+      - name: Upload validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation-validation-results
+          path: |
+            changed_docs.txt
+            docs/preview/
+            pr_comment.md
+          retention-days: 7
+      
+      - name: Comment on PR with results
+        if: always() && steps.changed-files.outputs.docs_changed == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Check if PR comment file exists
+            let comment = '## 📝 Documentation Validation Results\n\n';
+            
+            // Add validation status
+            const jobStatus = '${{ job.status }}';
+            if (jobStatus === 'success') {
+              comment += '✅ **All documentation validation checks passed**\n\n';
+            } else {
+              comment += '❌ **Documentation validation issues found**\n\n';
+            }
+            
+            comment += '### Validation Summary\n';
+            comment += '- Link validation: ${{ steps.validate-changed-documentation.outcome || "Skipped" }}\n';
+            comment += '- Quality check: ${{ steps.check-documentation-quality.outcome || "Skipped" }}\n';
+            comment += '- API sync check: ${{ steps.check-api-documentation-sync.outcome || "Skipped" }}\n';
+            comment += '- Spell check: ${{ steps.run-spell-check.outcome || "Skipped" }}\n\n';
+            
+            // Add API documentation reminder if file exists
+            if (fs.existsSync('pr_comment.md')) {
+              const apiComment = fs.readFileSync('pr_comment.md', 'utf8');
+              comment += apiComment + '\n\n';
+            }
+            
+            comment += '### Next Steps\n';
+            if (jobStatus === 'success') {
+              comment += '- ✅ Documentation is ready for review\n';
+              comment += '- 📖 Preview available in workflow artifacts\n';
+            } else {
+              comment += '- 🔧 Please address validation issues above\n';
+              comment += '- 📋 Check workflow logs for detailed error information\n';
+              comment += '- 🔄 Push updates to re-run validation\n';
+            }
+            
+            // Post comment
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  check-enterprise-standards:
+    name: Verify Enterprise Documentation Standards
+    runs-on: ubuntu-latest
+    if: github.base_ref == 'main'  # Only run for main branch PRs
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check enterprise compliance
+        run: |
+          echo "🏢 Checking enterprise documentation standards..."
+          
+          compliance_issues=()
+          
+          # Check for required enterprise sections
+          required_docs=(
+            "ENTERPRISE.md:Enterprise features documentation"
+            "SECURITY_AUDIT_RESULTS.md:Security audit documentation" 
+            "SSO_SETUP.md:Single sign-on setup guide"
+            "MULTI_TENANCY_GUIDE.md:Multi-tenancy documentation"
+          )
+          
+          for req in "${required_docs[@]}"; do
+            file=$(echo "$req" | cut -d: -f1)
+            desc=$(echo "$req" | cut -d: -f2)
+            
+            if [[ ! -f "$file" ]]; then
+              compliance_issues+=("Missing required enterprise documentation: $file ($desc)")
+            fi
+          done
+          
+          # Check for enterprise-specific content in main docs
+          if [[ -f "API.md" ]]; then
+            if ! grep -qi "enterprise\|sso\|saml\|multi-tenant" API.md; then
+              compliance_issues+=("API.md missing enterprise feature documentation")
+            fi
+          fi
+          
+          # Check for proper security documentation
+          security_keywords=("authentication" "authorization" "encryption" "compliance")
+          security_found=false
+          
+          for keyword in "${security_keywords[@]}"; do
+            if grep -rqi "$keyword" *.md; then
+              security_found=true
+              break
+            fi
+          done
+          
+          if [ "$security_found" = false ]; then
+            compliance_issues+=("Insufficient security documentation for enterprise customers")
+          fi
+          
+          # Report results
+          if [ ${#compliance_issues[@]} -eq 0 ]; then
+            echo "✅ All enterprise documentation standards met"
+          else
+            echo "❌ Enterprise compliance issues found:"
+            for issue in "${compliance_issues[@]}"; do
+              echo "  - $issue"
+            done
+            exit 1
+          fi

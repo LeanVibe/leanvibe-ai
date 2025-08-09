@@ -192,6 +192,7 @@ class TestTenantMiddleware:
             organization_name="Test",
             slug="test",
             admin_email="test@example.com",
+            status=TenantStatus.ACTIVE,  # Required for is_valid() to return True
             quotas=DEFAULT_QUOTAS[TenantPlan.DEVELOPER]
         )
         

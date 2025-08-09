@@ -75,13 +75,26 @@ start_services() {
     cd "$BACKEND_DIR"
 }
 
-# Check if --skip-services flag is provided
+# Parse command line arguments
 SKIP_SERVICES=false
+ENTERPRISE_DEMO=false
+AUTONOMOUS_MODE=false
+
 for arg in "$@"; do
-    if [ "$arg" = "--skip-services" ]; then
-        SKIP_SERVICES=true
-        break
-    fi
+    case $arg in
+        --skip-services)
+            SKIP_SERVICES=true
+            ;;
+        --enterprise-demo)
+            ENTERPRISE_DEMO=true
+            ;;
+        --autonomous)
+            AUTONOMOUS_MODE=true
+            ;;
+        *)
+            # Unknown argument
+            ;;
+    esac
 done
 
 # Start Docker services unless skipped
@@ -205,9 +218,69 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo "🌟 Starting FastAPI server with MLX AI support..."
-echo "📱 Scan the QR code above with the LeanVibe iOS app to connect"
-echo "🖥️  Or connect manually to: http://localhost:8000"
+# Setup enterprise demo data if requested
+if [ "$ENTERPRISE_DEMO" = true ]; then
+    echo "🏢 Setting up Enterprise Demo Environment..."
+    uv run python -c "
+import sys
+import os
+sys.path.insert(0, os.path.join(os.getcwd(), 'app'))
+
+from scripts.setup_enterprise_demo import setup_enterprise_demo_data
+
+try:
+    setup_enterprise_demo_data()
+    print('✅ Enterprise demo data configured successfully!')
+    print('🏢 Demo Tenants: Acme Corp, TechStart Inc, Global Enterprises')
+    print('🔐 Demo Users: admin@acme-corp.com (password: enterprise_demo)')
+    print('💳 Demo Billing: All plans configured with Stripe test mode')
+    print('🤖 Demo AI Tasks: Sample development tasks ready for processing')
+except Exception as e:
+    print(f'⚠️  Demo setup encountered an issue: {e}')
+    print('✅ Platform will still start - demo data may be limited')
+"
+fi
+
+# Display startup information based on mode
+if [ "$ENTERPRISE_DEMO" = true ]; then
+    echo "🏢 Starting LeanVibe Enterprise SaaS Demo..."
+    echo "📱 Scan the QR code above with the LeanVibe iOS app to connect"
+    echo "🖥️  Or connect manually to: http://localhost:8000"
+    echo ""
+    echo "🎯 Enterprise Demo Features Available:"
+    echo "   📊 Admin Dashboard: http://localhost:8000/admin"
+    echo "   💳 Billing Dashboard: http://localhost:8000/billing"
+    echo "   👥 Multi-Tenant Management: http://localhost:8000/tenants"
+    echo "   🔐 SSO Configuration: http://localhost:8000/auth/sso"
+    echo "   🤖 AI Development Tasks: http://localhost:8000/tasks"
+    echo ""
+    echo "🏢 Demo Tenants (login with X-Tenant-ID header or subdomain):"
+    echo "   • Acme Corp (acme-corp): Enterprise plan with all features"
+    echo "   • TechStart Inc (techstart): Professional plan with team features"
+    echo "   • Global Enterprises (global-ent): Custom enterprise setup"
+    echo ""
+    echo "🔑 Demo Credentials:"
+    echo "   admin@acme-corp.com / enterprise_demo"
+    echo "   user@techstart.com / professional_demo"
+    echo "   enterprise@global.com / custom_demo"
+    echo ""
+elif [ "$AUTONOMOUS_MODE" = true ]; then
+    echo "🤖 Starting LeanVibe Autonomous Development Platform..."
+    echo "📱 Scan the QR code above with the LeanVibe iOS app to connect"
+    echo "🖥️  Or connect manually to: http://localhost:8000"
+    echo ""
+    echo "🎯 Autonomous Development Features:"
+    echo "   🔧 Developer Shortcuts: source scripts/dev_shortcuts.sh"
+    echo "   🧪 Quality Ratchet: Continuous quality improvement"
+    echo "   📋 Contract-First APIs: Auto-generation from OpenAPI"
+    echo "   🚀 Auto-Merge Deployments: 85%+ automated deployments"
+    echo ""
+else
+    echo "🌟 Starting LeanVibe Backend with MLX AI support..."
+    echo "📱 Scan the QR code above with the LeanVibe iOS app to connect"
+    echo "🖥️  Or connect manually to: http://localhost:8000"
+fi
+
 echo ""
 echo "🐳 External Services:"
 echo "   Neo4j:  http://localhost:7474 (neo4j/password123)"
@@ -219,7 +292,11 @@ echo "💾 Expected memory usage: ~8GB for Phi-3-Mini, <1GB for fallback"
 echo "🎯 High-quality AI responses with real MLX optimization"
 echo "🚀 Model downloads on first use - then cached locally"
 echo ""
-echo "💡 Use --skip-services flag to start without Docker services"
+echo "💡 Available startup modes:"
+echo "   ./start.sh                    # Standard mode"
+echo "   ./start.sh --autonomous       # Development-focused with shortcuts"
+echo "   ./start.sh --enterprise-demo  # Enterprise SaaS demonstration"
+echo "   ./start.sh --skip-services    # Skip Docker services"
 echo "Press Ctrl+C to stop the server"
 echo ""
 

@@ -33,10 +33,14 @@ class ProjectService:
     
     def _initialize_sample_data(self):
         """Initialize with sample project data"""
+        # Default tenant ID for sample data
+        default_tenant_id = UUID("00000000-0000-0000-0000-000000000001")
+        
         # Sample project 1: LeanVibe Backend
         backend_id = UUID("E892771D-2D70-480C-B6AF-AB06980117C0")  # Fixed UUID for iOS app compatibility
         backend_project = Project(
             id=backend_id,
+            tenant_id=default_tenant_id,  # Required multi-tenant field
             display_name="LeanVibe Backend",
             description="AI-powered backend with MLX integration",
             status=ProjectStatus.ACTIVE,
@@ -63,6 +67,7 @@ class ProjectService:
         ios_id = UUID("B8C9A1E2-4F7D-4A8B-9C5E-1F2E3D4C5B6A")
         ios_project = Project(
             id=ios_id,
+            tenant_id=default_tenant_id,  # Required multi-tenant field
             display_name="iOS Client",
             description="Swift iOS app with real-time backend integration",
             status=ProjectStatus.ACTIVE,
