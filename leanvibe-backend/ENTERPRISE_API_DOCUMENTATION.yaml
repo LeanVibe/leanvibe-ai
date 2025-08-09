@@ -1,0 +1,2860 @@
+openapi: 3.0.3
+info:
+  title: LeanVibe Enterprise API
+  description: |
+    # LeanVibe Enterprise API Documentation
+    
+    The LeanVibe Enterprise API provides comprehensive programmatic access to all platform features including:
+    
+    - **Multi-tenant Architecture**: Complete tenant isolation and management
+    - **Enterprise Authentication**: SSO, SAML, MFA, and RBAC support
+    - **Advanced Billing**: Subscription management, usage-based billing, and invoicing
+    - **AI Development Services**: Autonomous code generation and project management
+    - **Real-time Collaboration**: WebSocket-based updates and monitoring
+    - **Enterprise Security**: Audit logging, compliance, and data governance
+    
+    ## Base URLs
+    - **Production**: `https://api.leanvibe.ai/v1`
+    - **Staging**: `https://staging-api.leanvibe.ai/v1`
+    
+    ## Authentication
+    All API requests require authentication via JWT Bearer tokens:
+    ```
+    Authorization: Bearer <your_jwt_token>
+    ```
+    
+    ## Rate Limiting
+    Rate limits are enforced based on your subscription plan:
+    - **Developer**: 100 requests/minute
+    - **Team**: 1,000 requests/minute  
+    - **Enterprise**: 10,000 requests/minute
+    
+    ## Support
+    - **Enterprise Support**: enterprise@leanvibe.ai
+    - **API Documentation**: https://docs.leanvibe.ai
+    - **Status Page**: https://status.leanvibe.ai
+  version: 1.0.0
+  contact:
+    name: LeanVibe Enterprise Support
+    email: enterprise@leanvibe.ai
+    url: https://leanvibe.ai/enterprise
+  license:
+    name: Commercial License
+    url: https://leanvibe.ai/terms
+
+servers:
+  - url: https://api.leanvibe.ai/v1
+    description: Production server
+  - url: https://staging-api.leanvibe.ai/v1
+    description: Staging server
+  - url: http://localhost:8000
+    description: Development server
+
+tags:
+  - name: Authentication
+    description: Login, SSO, MFA, and session management
+  - name: User Management
+    description: User CRUD operations and role management
+  - name: Multi-Tenancy
+    description: Tenant management and isolation
+  - name: Billing & Subscriptions
+    description: Subscription management and payment processing
+  - name: Usage Tracking
+    description: Metered billing and quota management
+  - name: Projects
+    description: AI development project management
+  - name: Tasks
+    description: Task management and Kanban boards
+  - name: AI Services
+    description: Code completion and AI-powered development
+  - name: Real-time Updates
+    description: WebSocket connections and live updates
+  - name: Analytics
+    description: Usage analytics and reporting
+  - name: Administration
+    description: Platform administration and monitoring
+  - name: Webhooks
+    description: Event notifications and integrations
+
+paths:
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User authentication
+      description: |
+        Authenticate users with multiple methods:
+        - **Local**: Email/password authentication
+        - **OAuth2**: Google, Microsoft, Okta providers
+        - **SAML**: Enterprise SSO integration
+        
+        Returns JWT tokens or MFA challenge if required.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              localLogin:
+                summary: Local email/password login
+                value:
+                  email: "user@company.com"
+                  password: "SecurePassword123!"
+                  provider: "local"
+              googleOAuth:
+                summary: Google OAuth login
+                value:
+                  email: "user@company.com"
+                  provider: "google"
+                  auth_code: "oauth_authorization_code"
+              mfaLogin:
+                summary: Login with MFA
+                value:
+                  email: "user@company.com"
+                  password: "SecurePassword123!"
+                  provider: "local"
+                  mfa_code: "123456"
+                  mfa_method: "totp"
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                successfulLogin:
+                  summary: Successful login with tokens
+                  value:
+                    success: true
+                    access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    refresh_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    expires_in: 3600
+                    user:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      email: "user@company.com"
+                      role: "developer"
+                      tenant_id: "550e8400-e29b-41d4-a716-446655440001"
+                mfaChallenge:
+                  summary: MFA challenge required
+                  value:
+                    success: false
+                    mfa_required: true
+                    mfa_methods: ["totp", "sms"]
+                    mfa_challenge_id: "mfa_challenge_123"
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      description: Exchange refresh token for new access token
+      operationId: refreshToken
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: New tokens generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: New JWT access token
+                  refresh_token:
+                    type: string
+                    description: New JWT refresh token
+                  expires_in:
+                    type: integer
+                    description: Token expiration in seconds
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: User logout
+      description: Revoke session and invalidate tokens
+      operationId: logout
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out successfully"
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user
+      description: Retrieve authenticated user's profile information
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/mfa/setup:
+    post:
+      tags: [Authentication]
+      summary: Setup multi-factor authentication
+      description: |
+        Configure MFA for the authenticated user. Supports:
+        - **TOTP**: Time-based One-Time Password (Google Authenticator)
+        - **SMS**: SMS-based verification
+        - **Email**: Email-based verification
+      operationId: setupMFA
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MFASetupRequest'
+            examples:
+              totpSetup:
+                summary: Setup TOTP MFA
+                value:
+                  method: "totp"
+              smsSetup:
+                summary: Setup SMS MFA
+                value:
+                  method: "sms"
+                  phone_number: "+1234567890"
+      responses:
+        '200':
+          description: MFA setup response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MFASetupResponse'
+              examples:
+                totpSetup:
+                  summary: TOTP setup with QR code
+                  value:
+                    method: "totp"
+                    secret: "JBSWY3DPEHPK3PXP"
+                    qr_code: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                    backup_codes: ["12345678", "23456789", "34567890"]
+
+  /auth/sso/{provider}:
+    get:
+      tags: [Authentication]
+      summary: Initiate SSO authentication
+      description: |
+        Redirect to SSO provider for authentication. Supported providers:
+        - **google**: Google OAuth2
+        - **microsoft**: Microsoft Azure AD
+        - **okta**: Okta SAML/OAuth2
+        - **saml**: Generic SAML provider
+      operationId: initiateSSO
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, microsoft, okta, saml]
+          description: SSO provider name
+      responses:
+        '302':
+          description: Redirect to SSO provider
+        '400':
+          description: Unsupported provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/providers:
+    get:
+      tags: [Authentication]
+      summary: Get available authentication providers
+      description: List configured authentication providers for current tenant
+      operationId: getAuthProviders
+      responses:
+        '200':
+          description: Available authentication providers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  local:
+                    type: object
+                    properties:
+                      enabled:
+                        type: boolean
+                      name:
+                        type: string
+                  sso_providers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SSOProvider'
+
+  # Multi-Tenancy Endpoints
+  /tenants:
+    get:
+      tags: [Multi-Tenancy]
+      summary: List all tenants (Admin only)
+      description: Retrieve paginated list of all tenants with filtering options
+      operationId: listTenants
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TenantStatus'
+          description: Filter by tenant status
+        - name: plan
+          in: query
+          schema:
+            $ref: '#/components/schemas/TenantPlan'
+          description: Filter by subscription plan
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+          description: Maximum number of tenants to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of tenants to skip
+      responses:
+        '200':
+          description: List of tenants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tenant'
+        '403':
+          description: Admin privileges required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags: [Multi-Tenancy]
+      summary: Create new tenant (Admin only)
+      description: Create a new tenant with default configuration and trial period
+      operationId: createTenant
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantCreate'
+            example:
+              organization_name: "Enterprise Corp"
+              slug: "enterprise-corp"
+              admin_email: "admin@enterprise-corp.com"
+              plan: "enterprise"
+              data_residency: "us"
+      responses:
+        '201':
+          description: Tenant created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        '400':
+          description: Invalid tenant data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tenants/{tenantId}:
+    get:
+      tags: [Multi-Tenancy]
+      summary: Get tenant details
+      description: Retrieve detailed information about a specific tenant
+      operationId: getTenant
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      responses:
+        '200':
+          description: Tenant details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        '404':
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags: [Multi-Tenancy]
+      summary: Update tenant
+      description: Update tenant information and configuration
+      operationId: updateTenant
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantUpdate'
+      responses:
+        '200':
+          description: Tenant updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        '404':
+          description: Tenant not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /tenants/{tenantId}/suspend:
+    post:
+      tags: [Multi-Tenancy]
+      summary: Suspend tenant (Admin only)
+      description: Suspend tenant access while preserving data
+      operationId: suspendTenant
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TenantId'
+        - name: reason
+          in: query
+          schema:
+            type: string
+          description: Reason for suspension
+      responses:
+        '200':
+          description: Tenant suspended successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  tenant_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+
+  /tenants/me/info:
+    get:
+      tags: [Multi-Tenancy]
+      summary: Get current tenant information
+      description: Retrieve information about the authenticated user's tenant
+      operationId: getCurrentTenantInfo
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current tenant information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+
+  /tenants/me/usage:
+    get:
+      tags: [Multi-Tenancy]
+      summary: Get current tenant usage
+      description: Retrieve current resource usage against quotas
+      operationId: getCurrentTenantUsage
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current tenant usage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantUsage'
+
+  # Billing & Subscription Endpoints
+  /billing/plans:
+    get:
+      tags: [Billing & Subscriptions]
+      summary: List available plans
+      description: Retrieve all available subscription plans with pricing and features
+      operationId: listPlans
+      parameters:
+        - name: include_inactive
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include inactive plans in response
+      responses:
+        '200':
+          description: List of available plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plan'
+              example:
+                - id: "550e8400-e29b-41d4-a716-446655440000"
+                  name: "Enterprise"
+                  slug: "enterprise"
+                  base_price: 80000
+                  currency: "USD"
+                  billing_interval: "monthly"
+                  features:
+                    max_users: 999999
+                    max_projects: 999999
+                    ai_requests_per_day: 10000
+                    storage_gb: 1000
+                    sso_support: true
+                    saml_support: true
+                    dedicated_support: true
+                  trial_period_days: 30
+
+  /billing/plans/{planId}:
+    get:
+      tags: [Billing & Subscriptions]
+      summary: Get specific plan details
+      description: Retrieve detailed information about a specific subscription plan
+      operationId: getPlan
+      parameters:
+        - name: planId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Plan identifier
+      responses:
+        '200':
+          description: Plan details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+        '404':
+          description: Plan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /billing/account:
+    get:
+      tags: [Billing & Subscriptions]
+      summary: Get billing account
+      description: Retrieve billing account information for current tenant
+      operationId: getBillingAccount
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Billing account information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingAccount'
+        '404':
+          description: Billing account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags: [Billing & Subscriptions]
+      summary: Create billing account
+      description: Set up billing and payment infrastructure for tenant
+      operationId: createBillingAccount
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - company_name
+                - billing_email
+              properties:
+                company_name:
+                  type: string
+                  description: Company name for billing
+                billing_email:
+                  type: string
+                  format: email
+                  description: Billing contact email
+                billing_address:
+                  type: object
+                  description: Billing address information
+                tax_id:
+                  type: string
+                  description: Tax identification number
+      responses:
+        '201':
+          description: Billing account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingAccount'
+
+  /billing/subscription:
+    get:
+      tags: [Billing & Subscriptions]
+      summary: Get current subscription
+      description: Retrieve active subscription for current tenant
+      operationId: getSubscription
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '404':
+          description: No active subscription found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    post:
+      tags: [Billing & Subscriptions]
+      summary: Create subscription
+      description: Subscribe tenant to a plan with optional trial period
+      operationId: createSubscription
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSubscriptionRequest'
+            example:
+              tenant_id: "550e8400-e29b-41d4-a716-446655440000"
+              plan_id: "550e8400-e29b-41d4-a716-446655440001"
+              payment_method_id: "pm_stripe_payment_method_id"
+              trial_period_days: 30
+      responses:
+        '201':
+          description: Subscription created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '400':
+          description: Invalid subscription request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    patch:
+      tags: [Billing & Subscriptions]
+      summary: Update subscription
+      description: Modify plan, billing settings, or cancellation status
+      operationId: updateSubscription
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubscriptionRequest'
+      responses:
+        '200':
+          description: Subscription updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        '404':
+          description: Subscription not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags: [Billing & Subscriptions]
+      summary: Cancel subscription
+      description: Cancel subscription immediately or at period end
+      operationId: cancelSubscription
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: immediately
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Cancel immediately vs at period end
+      responses:
+        '200':
+          description: Subscription cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  subscription_id:
+                    type: string
+                    format: uuid
+                  cancelled_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+
+  # Usage Tracking Endpoints
+  /billing/usage:
+    post:
+      tags: [Usage Tracking]
+      summary: Record usage for metered billing
+      description: Track usage metrics for billing calculation
+      operationId: recordUsage
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - metric_type
+                - quantity
+              properties:
+                metric_type:
+                  $ref: '#/components/schemas/UsageMetricType'
+                quantity:
+                  type: integer
+                  minimum: 1
+                  description: Usage quantity
+            example:
+              metric_type: "api_calls"
+              quantity: 100
+      responses:
+        '201':
+          description: Usage recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageRecord'
+        '400':
+          description: Invalid usage data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    get:
+      tags: [Usage Tracking]
+      summary: Get usage summary
+      description: Retrieve usage metrics for current billing period
+      operationId: getUsage
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Usage summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscription_id:
+                    type: string
+                    format: uuid
+                  billing_period:
+                    type: object
+                    properties:
+                      start:
+                        type: string
+                        format: date-time
+                      end:
+                        type: string
+                        format: date-time
+                  usage_metrics:
+                    type: object
+                    additionalProperties:
+                      type: integer
+                  projected_cost:
+                    type: number
+                    format: decimal
+                  currency:
+                    type: string
+
+  /billing/analytics:
+    get:
+      tags: [Usage Tracking]
+      summary: Get billing analytics
+      description: Retrieve comprehensive billing and usage analytics
+      operationId: getBillingAnalytics
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Billing analytics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingAnalytics'
+
+  # Payment Methods
+  /billing/payment-methods:
+    post:
+      tags: [Billing & Subscriptions]
+      summary: Add payment method
+      description: Add new payment method for subscription billing
+      operationId: createPaymentMethod
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentMethodRequest'
+            example:
+              type: "card"
+              card_token: "tok_stripe_card_token"
+      responses:
+        '201':
+          description: Payment method created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment_method_id:
+                    type: string
+                  type:
+                    type: string
+                  status:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+
+  # Invoice Management
+  /billing/invoices:
+    get:
+      tags: [Billing & Subscriptions]
+      summary: List invoices
+      description: Retrieve paginated list of invoices for tenant
+      operationId: listInvoices
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invoices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        status:
+                          type: string
+                        total:
+                          type: integer
+                        issue_date:
+                          type: string
+                          format: date-time
+                  total_count:
+                    type: integer
+                  has_more:
+                    type: boolean
+
+  /billing/invoice/{invoiceId}:
+    get:
+      tags: [Billing & Subscriptions]
+      summary: Get invoice details
+      description: Retrieve detailed invoice information and download links
+      operationId: getInvoice
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  tenant_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  total:
+                    type: integer
+                    description: Total amount in cents
+                  currency:
+                    type: string
+                  issue_date:
+                    type: string
+                    format: date-time
+                  due_date:
+                    type: string
+                    format: date-time
+                  paid_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+                  pdf_url:
+                    type: string
+                    format: uri
+
+  # Webhook Endpoints
+  /billing/webhooks/stripe:
+    post:
+      tags: [Webhooks]
+      summary: Stripe webhook handler
+      description: Process subscription and payment events from Stripe
+      operationId: stripeWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Stripe webhook event payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+        '400':
+          description: Invalid webhook signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Project Management Endpoints
+  /projects:
+    get:
+      tags: [Projects]
+      summary: List all projects
+      description: Retrieve list of AI development projects
+      operationId: listProjects
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /projects/{projectId}:
+    get:
+      tags: [Projects]
+      summary: Get project details
+      description: Retrieve detailed information about a specific project
+      operationId: getProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    delete:
+      tags: [Projects]
+      summary: Delete project
+      description: Delete a project and all associated data
+      operationId: deleteProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  project_id:
+                    type: string
+                    format: uuid
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /projects/{projectId}/analyze:
+    post:
+      tags: [Projects]
+      summary: Analyze project
+      description: Run comprehensive analysis on project codebase
+      operationId: analyzeProject
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Analysis completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  project_id:
+                    type: string
+                    format: uuid
+                  analysis:
+                    type: object
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /projects/{projectId}/metrics:
+    get:
+      tags: [Projects]
+      summary: Get project metrics
+      description: Retrieve comprehensive metrics for a project
+      operationId: getProjectMetrics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMetricsResponse'
+
+  # Task Management Endpoints
+  /tasks:
+    get:
+      tags: [Tasks]
+      summary: List tasks
+      description: Retrieve paginated list of tasks with filtering options
+      operationId: listTasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: project_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by project ID
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+          description: Filter by task status
+        - name: priority
+          in: query
+          schema:
+            $ref: '#/components/schemas/TaskPriority'
+          description: Filter by task priority
+        - name: assigned_to
+          in: query
+          schema:
+            type: string
+          description: Filter by assignee
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+    
+    post:
+      tags: [Tasks]
+      summary: Create task
+      description: Create a new development task for AI processing
+      operationId: createTask
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+            example:
+              title: "Implement user authentication API"
+              description: "Create REST endpoints for user registration, login, and password reset with JWT token support"
+              priority: "high"
+              project_id: "550e8400-e29b-41d4-a716-446655440000"
+              requirements:
+                frameworks: ["FastAPI", "SQLAlchemy"]
+                security_requirements: ["JWT", "bcrypt", "rate_limiting"]
+                testing_requirements: ["unit_tests", "integration_tests"]
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /tasks/{taskId}:
+    get:
+      tags: [Tasks]
+      summary: Get task details
+      description: Retrieve detailed information about a specific task
+      operationId: getTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    put:
+      tags: [Tasks]
+      summary: Update task
+      description: Update task information and status
+      operationId: updateTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+    
+    delete:
+      tags: [Tasks]
+      summary: Delete task
+      description: Delete a task and notify connected clients
+      operationId: deleteTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  # AI Services Endpoints
+  /code-completion:
+    post:
+      tags: [AI Services]
+      summary: AI-powered code completion
+      description: |
+        Generate AI-powered code suggestions, explanations, refactoring advice, 
+        debugging help, or optimization recommendations.
+        
+        Supports 5 types of completion:
+        - **suggest**: Code suggestions and improvements
+        - **explain**: Code explanation and analysis  
+        - **refactor**: Refactoring recommendations
+        - **debug**: Debugging analysis and tips
+        - **optimize**: Performance optimization suggestions
+      operationId: codeCompletion
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeCompletionRequest'
+            examples:
+              codeSuggestion:
+                summary: Code suggestion request
+                value:
+                  file_path: "/src/main.py"
+                  cursor_position: 150
+                  intent: "suggest"
+                  content: "def authenticate_user(email, password):\n    # Complete this function"
+                  language: "python"
+              codeExplanation:
+                summary: Code explanation request
+                value:
+                  file_path: "/src/utils.py"
+                  cursor_position: 75
+                  intent: "explain"
+                  content: "lambda x: x**2 if x > 0 else 0"
+                  language: "python"
+      responses:
+        '200':
+          description: AI completion response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeCompletionResponse'
+              examples:
+                suggestionResponse:
+                  summary: Code suggestion response
+                  value:
+                    status: "success"
+                    intent: "suggest"
+                    response: "Here's a secure implementation of user authentication..."
+                    confidence: 0.92
+                    requires_review: false
+                    suggestions: ["Add input validation", "Implement rate limiting"]
+                    context_used:
+                      language: "python"
+                      symbols_found: 3
+                      has_context: true
+                    processing_time_ms: 1250
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeCompletionErrorResponse'
+        '500':
+          description: AI service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeCompletionErrorResponse'
+
+  # Real-time WebSocket Endpoints (documented for reference)
+  /ws/tasks/{taskId}:
+    get:
+      tags: [Real-time Updates]
+      summary: WebSocket connection for task updates
+      description: |
+        Establish WebSocket connection to receive real-time task updates.
+        
+        **WebSocket URL Format:** `wss://api.leanvibe.ai/v1/ws/tasks/{taskId}`
+        
+        **Message Types:**
+        - `task_update`: Task status or content changes
+        - `progress`: Progress percentage updates
+        - `completion`: Task completion notifications
+        - `error`: Error notifications
+        
+        **Example Usage (JavaScript):**
+        ```javascript
+        const ws = new WebSocket('wss://api.leanvibe.ai/v1/ws/tasks/550e8400-e29b-41d4-a716-446655440000');
+        
+        ws.onmessage = function(event) {
+            const update = JSON.parse(event.data);
+            console.log('Task Update:', update);
+        };
+        ```
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '101':
+          description: WebSocket connection established
+        '404':
+          description: Task not found
+
+  # Administration Endpoints
+  /admin/health:
+    get:
+      tags: [Administration]
+      summary: Platform health check
+      description: Comprehensive health check of all platform services
+      operationId: platformHealth
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Platform health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, degraded, unhealthy]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  services:
+                    type: object
+                    properties:
+                      api:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          response_time_ms:
+                            type: number
+                      database:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          connection_pool:
+                            type: string
+                      cache:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          hit_rate:
+                            type: number
+                      ai_services:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          queue_depth:
+                            type: integer
+                      billing:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          stripe_connectivity:
+                            type: string
+                  metrics:
+                    type: object
+                    properties:
+                      requests_per_minute:
+                        type: integer
+                      average_response_time:
+                        type: number
+                      error_rate:
+                        type: number
+                      uptime_percentage:
+                        type: number
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT Bearer token authentication. Include the token in the Authorization header:
+        ```
+        Authorization: Bearer <your_jwt_token>
+        ```
+
+  parameters:
+    TenantId:
+      name: tenantId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Tenant unique identifier
+
+  schemas:
+    # Authentication Schemas
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - provider
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+        password:
+          type: string
+          description: Password for local authentication
+          minLength: 8
+        provider:
+          $ref: '#/components/schemas/AuthProvider'
+        auth_code:
+          type: string
+          description: OAuth authorization code
+        state:
+          type: string
+          description: OAuth state parameter
+        saml_response:
+          type: string
+          description: SAML response
+        relay_state:
+          type: string
+          description: SAML relay state
+        mfa_code:
+          type: string
+          description: MFA verification code
+          pattern: '^[0-9]{6}$'
+        mfa_method:
+          $ref: '#/components/schemas/MFAMethod'
+        remember_me:
+          type: boolean
+          default: false
+          description: Extended session duration
+        ip_address:
+          type: string
+          format: ipv4
+          description: Client IP address
+        user_agent:
+          type: string
+          description: Client user agent
+
+    LoginResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: Login success status
+        access_token:
+          type: string
+          description: JWT access token
+        refresh_token:
+          type: string
+          description: JWT refresh token
+        expires_in:
+          type: integer
+          description: Token expiry in seconds
+        user:
+          $ref: '#/components/schemas/User'
+        mfa_required:
+          type: boolean
+          default: false
+          description: MFA verification required
+        mfa_methods:
+          type: array
+          items:
+            $ref: '#/components/schemas/MFAMethod'
+          description: Available MFA methods
+        mfa_challenge_id:
+          type: string
+          description: MFA challenge identifier
+        error:
+          type: string
+          description: Error code
+        error_description:
+          type: string
+          description: Error description
+
+    User:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - email
+        - first_name
+        - last_name
+        - role
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User unique identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Associated tenant identifier
+        email:
+          type: string
+          format: email
+          description: User email address
+        first_name:
+          type: string
+          description: User first name
+          maxLength: 50
+        last_name:
+          type: string
+          description: User last name
+          maxLength: 50
+        display_name:
+          type: string
+          nullable: true
+          description: Display name
+          maxLength: 100
+        auth_provider:
+          $ref: '#/components/schemas/AuthProvider'
+        external_id:
+          type: string
+          nullable: true
+          description: External provider user ID
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        role:
+          $ref: '#/components/schemas/UserRole'
+        permissions:
+          type: array
+          items:
+            type: string
+          description: Additional permissions
+        mfa_enabled:
+          type: boolean
+          description: MFA enabled flag
+        mfa_methods:
+          type: array
+          items:
+            $ref: '#/components/schemas/MFAMethod'
+          description: Enabled MFA methods
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        last_login_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last login timestamp
+        profile:
+          type: object
+          additionalProperties: true
+          description: Additional profile data
+        preferences:
+          type: object
+          additionalProperties: true
+          description: User preferences
+
+    AuthProvider:
+      type: string
+      enum:
+        - local
+        - google
+        - microsoft
+        - okta
+        - auth0
+        - saml
+        - ldap
+      description: Supported authentication providers
+
+    UserStatus:
+      type: string
+      enum:
+        - active
+        - inactive
+        - suspended
+        - pending_activation
+        - pending_password_reset
+      description: User account status
+
+    UserRole:
+      type: string
+      enum:
+        - owner
+        - admin
+        - manager
+        - developer
+        - viewer
+        - guest
+      description: User roles within a tenant
+
+    MFAMethod:
+      type: string
+      enum:
+        - totp
+        - sms
+        - email
+        - push
+        - hardware
+      description: Multi-factor authentication methods
+
+    MFASetupRequest:
+      type: object
+      required:
+        - method
+      properties:
+        method:
+          $ref: '#/components/schemas/MFAMethod'
+        phone_number:
+          type: string
+          pattern: '^\+[1-9]\d{1,14}$'
+          description: Phone number for SMS (E.164 format)
+
+    MFASetupResponse:
+      type: object
+      required:
+        - method
+      properties:
+        method:
+          $ref: '#/components/schemas/MFAMethod'
+        secret:
+          type: string
+          description: TOTP secret key (for TOTP method)
+        qr_code:
+          type: string
+          description: Base64-encoded QR code image (for TOTP method)
+        backup_codes:
+          type: array
+          items:
+            type: string
+          description: Backup codes for account recovery
+
+    SSOProvider:
+      type: object
+      required:
+        - provider
+        - name
+        - enabled
+      properties:
+        provider:
+          type: string
+          description: Provider identifier
+        name:
+          type: string
+          description: Display name
+        enabled:
+          type: boolean
+          description: Provider enabled status
+        login_url:
+          type: string
+          format: uri
+          description: SSO login URL
+
+    # Multi-Tenancy Schemas
+    Tenant:
+      type: object
+      required:
+        - id
+        - organization_name
+        - slug
+        - status
+        - plan
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Tenant unique identifier
+        organization_name:
+          type: string
+          description: Organization name
+          maxLength: 255
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+          description: URL-safe tenant identifier
+          maxLength: 63
+        status:
+          $ref: '#/components/schemas/TenantStatus'
+        plan:
+          $ref: '#/components/schemas/TenantPlan'
+        data_residency:
+          type: string
+          enum: [us, eu, asia]
+          description: Data residency region
+        quotas:
+          $ref: '#/components/schemas/TenantQuotas'
+        configuration:
+          type: object
+          additionalProperties: true
+          description: Tenant-specific configuration
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        trial_ends_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    TenantCreate:
+      type: object
+      required:
+        - organization_name
+        - slug
+        - admin_email
+      properties:
+        organization_name:
+          type: string
+          description: Organization name
+          maxLength: 255
+        slug:
+          type: string
+          pattern: '^[a-z0-9-]+$'
+          description: URL-safe tenant identifier
+          maxLength: 63
+        admin_email:
+          type: string
+          format: email
+          description: Administrator email
+        plan:
+          $ref: '#/components/schemas/TenantPlan'
+        data_residency:
+          type: string
+          enum: [us, eu, asia]
+          default: us
+
+    TenantUpdate:
+      type: object
+      properties:
+        organization_name:
+          type: string
+          maxLength: 255
+        display_name:
+          type: string
+          maxLength: 255
+        configuration:
+          type: object
+          additionalProperties: true
+
+    TenantStatus:
+      type: string
+      enum:
+        - active
+        - trial
+        - suspended
+        - cancelled
+      description: Tenant status
+
+    TenantPlan:
+      type: string
+      enum:
+        - developer
+        - team
+        - enterprise
+      description: Subscription plan types
+
+    TenantQuotas:
+      type: object
+      properties:
+        max_users:
+          type: integer
+          description: Maximum number of users
+        max_projects:
+          type: integer
+          description: Maximum number of projects
+        max_api_calls_per_month:
+          type: integer
+          description: Monthly API call limit
+        max_storage_mb:
+          type: integer
+          description: Storage limit in MB
+        max_ai_requests_per_day:
+          type: integer
+          description: Daily AI request limit
+        max_concurrent_sessions:
+          type: integer
+          description: Concurrent session limit
+
+    TenantUsage:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        users_count:
+          type: integer
+          description: Current number of users
+        projects_count:
+          type: integer
+          description: Current number of projects
+        api_calls_this_month:
+          type: integer
+          description: API calls this month
+        storage_used_mb:
+          type: integer
+          description: Storage used in MB
+        ai_requests_today:
+          type: integer
+          description: AI requests today
+        concurrent_sessions:
+          type: integer
+          description: Current concurrent sessions
+        last_updated:
+          type: string
+          format: date-time
+
+    # Billing Schemas
+    Plan:
+      type: object
+      required:
+        - id
+        - name
+        - slug
+        - base_price
+        - currency
+        - billing_interval
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Plan unique identifier
+        name:
+          type: string
+          description: Plan display name
+        slug:
+          type: string
+          description: URL-safe plan identifier
+        base_price:
+          type: integer
+          description: Base monthly price in cents
+        currency:
+          type: string
+          default: USD
+          pattern: '^[A-Z]{3}$'
+          description: Currency code (ISO 4217)
+        billing_interval:
+          $ref: '#/components/schemas/BillingInterval'
+        features:
+          type: object
+          additionalProperties: true
+          description: Included features
+        limits:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Usage limits
+        trial_period_days:
+          type: integer
+          minimum: 0
+          maximum: 365
+          default: 14
+          description: Trial period in days
+        usage_prices:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Per-unit pricing for metered usage (in cents)
+        included_usage:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Included usage quotas
+        description:
+          type: string
+          nullable: true
+          description: Plan description
+        is_active:
+          type: boolean
+          default: true
+          description: Plan availability
+        is_enterprise:
+          type: boolean
+          default: false
+          description: Enterprise plan flag
+        stripe_price_id:
+          type: string
+          nullable: true
+          description: Stripe price ID
+        stripe_product_id:
+          type: string
+          nullable: true
+          description: Stripe product ID
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    BillingInterval:
+      type: string
+      enum:
+        - monthly
+        - yearly
+        - quarterly
+      description: Billing frequency
+
+    BillingAccount:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - company_name
+        - billing_email
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Billing account identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Associated tenant
+        company_name:
+          type: string
+          description: Company name for billing
+        billing_email:
+          type: string
+          format: email
+          description: Billing contact email
+        billing_address:
+          type: object
+          properties:
+            line1:
+              type: string
+            line2:
+              type: string
+            city:
+              type: string
+            state:
+              type: string
+            postal_code:
+              type: string
+            country:
+              type: string
+        tax_id:
+          type: string
+          nullable: true
+          description: Tax identification number
+        tax_type:
+          $ref: '#/components/schemas/TaxType'
+        status:
+          $ref: '#/components/schemas/BillingStatus'
+        default_payment_method_id:
+          type: string
+          nullable: true
+          description: Default payment method
+        stripe_customer_id:
+          type: string
+          nullable: true
+          description: Stripe customer ID
+        account_balance:
+          type: integer
+          default: 0
+          description: Account balance in cents
+        available_credits:
+          type: integer
+          default: 0
+          description: Available credits in cents
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    BillingStatus:
+      type: string
+      enum:
+        - active
+        - past_due
+        - suspended
+        - cancelled
+        - trial
+      description: Billing account status
+
+    TaxType:
+      type: string
+      enum:
+        - vat
+        - gst
+        - sales_tax
+        - none
+      description: Tax types for compliance
+
+    Subscription:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - billing_account_id
+        - plan_id
+        - status
+        - current_period_start
+        - current_period_end
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Subscription identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Associated tenant
+        billing_account_id:
+          type: string
+          format: uuid
+          description: Associated billing account
+        plan_id:
+          type: string
+          format: uuid
+          description: Subscribed plan
+        status:
+          $ref: '#/components/schemas/SubscriptionStatus'
+        custom_price:
+          type: integer
+          nullable: true
+          description: Custom price override in cents
+        discount_percentage:
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 100
+          default: 0
+          description: Discount percentage
+        current_period_start:
+          type: string
+          format: date-time
+          description: Current billing period start
+        current_period_end:
+          type: string
+          format: date-time
+          description: Current billing period end
+        trial_start:
+          type: string
+          format: date-time
+          nullable: true
+          description: Trial start date
+        trial_end:
+          type: string
+          format: date-time
+          nullable: true
+          description: Trial end date
+        cancelled_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Cancellation timestamp
+        cancel_at_period_end:
+          type: boolean
+          default: false
+          description: Cancel at period end flag
+        stripe_subscription_id:
+          type: string
+          nullable: true
+          description: Stripe subscription ID
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional metadata
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SubscriptionStatus:
+      type: string
+      enum:
+        - trialing
+        - active
+        - past_due
+        - cancelled
+        - unpaid
+        - incomplete
+        - incomplete_expired
+      description: Subscription status
+
+    CreateSubscriptionRequest:
+      type: object
+      required:
+        - tenant_id
+        - plan_id
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+          description: Target tenant
+        plan_id:
+          type: string
+          format: uuid
+          description: Selected plan
+        payment_method_id:
+          type: string
+          nullable: true
+          description: Payment method for subscription
+        trial_period_days:
+          type: integer
+          minimum: 0
+          maximum: 365
+          nullable: true
+          description: Custom trial period
+        coupon_code:
+          type: string
+          nullable: true
+          description: Coupon code for discount
+
+    UpdateSubscriptionRequest:
+      type: object
+      properties:
+        plan_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: New plan ID
+        cancel_at_period_end:
+          type: boolean
+          nullable: true
+          description: Cancel at period end
+
+    UsageRecord:
+      type: object
+      required:
+        - id
+        - tenant_id
+        - subscription_id
+        - metric_type
+        - quantity
+        - usage_date
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Usage record identifier
+        tenant_id:
+          type: string
+          format: uuid
+          description: Associated tenant
+        subscription_id:
+          type: string
+          format: uuid
+          description: Associated subscription
+        metric_type:
+          $ref: '#/components/schemas/UsageMetricType'
+        quantity:
+          type: integer
+          minimum: 1
+          description: Usage quantity
+        unit_price:
+          type: integer
+          nullable: true
+          description: Price per unit in cents
+        usage_date:
+          type: string
+          format: date-time
+          description: Date of usage
+        billing_period_start:
+          type: string
+          format: date-time
+          description: Billing period start
+        billing_period_end:
+          type: string
+          format: date-time
+          description: Billing period end
+        aggregation_key:
+          type: string
+          nullable: true
+          description: Aggregation grouping key
+        stripe_usage_record_id:
+          type: string
+          nullable: true
+          description: Stripe usage record ID
+        created_at:
+          type: string
+          format: date-time
+
+    UsageMetricType:
+      type: string
+      enum:
+        - api_calls
+        - storage_gb
+        - ai_requests
+        - active_users
+        - projects
+        - concurrent_sessions
+      description: Usage metric types for metered billing
+
+    CreatePaymentMethodRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          $ref: '#/components/schemas/PaymentMethod'
+        card_token:
+          type: string
+          nullable: true
+          description: Card token from Stripe
+        bank_account_token:
+          type: string
+          nullable: true
+          description: Bank account token
+
+    PaymentMethod:
+      type: string
+      enum:
+        - card
+        - bank_account
+        - paypal
+        - wire_transfer
+      description: Payment method types
+
+    BillingAnalytics:
+      type: object
+      required:
+        - tenant_id
+        - monthly_recurring_revenue
+        - annual_recurring_revenue
+        - usage_metrics
+        - projected_monthly_cost
+        - calculated_at
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+          description: Associated tenant
+        monthly_recurring_revenue:
+          type: integer
+          description: MRR in cents
+        annual_recurring_revenue:
+          type: integer
+          description: ARR in cents
+        usage_metrics:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Current usage by metric type
+        usage_trends:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: integer
+          description: Usage trends over time
+        overdue_amount:
+          type: integer
+          default: 0
+          description: Overdue amount in cents
+        next_invoice_amount:
+          type: integer
+          default: 0
+          description: Next invoice amount in cents
+        payment_health_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Payment health score
+        projected_monthly_cost:
+          type: integer
+          description: Projected monthly cost in cents
+        calculated_at:
+          type: string
+          format: date-time
+
+    # Project Schemas
+    Project:
+      type: object
+      required:
+        - id
+        - name
+        - path
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Project unique identifier
+        name:
+          type: string
+          description: Project name
+        path:
+          type: string
+          description: Project file system path
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        language:
+          type: string
+          description: Primary programming language
+        metrics:
+          $ref: '#/components/schemas/ProjectMetrics'
+
+    ProjectStatus:
+      type: string
+      enum:
+        - active
+        - inactive
+        - archived
+      description: Project status
+
+    ProjectMetrics:
+      type: object
+      properties:
+        lines_of_code:
+          type: integer
+          description: Total lines of code
+        file_count:
+          type: integer
+          description: Number of files
+        complexity_score:
+          type: number
+          format: float
+          description: Code complexity score
+        test_coverage:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Test coverage percentage
+        maintainability_index:
+          type: number
+          format: float
+          description: Maintainability index
+
+    ProjectListResponse:
+      type: object
+      required:
+        - projects
+        - total
+      properties:
+        projects:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        total:
+          type: integer
+          description: Total number of projects
+
+    ProjectMetricsResponse:
+      type: object
+      required:
+        - metrics
+        - project_id
+        - updated_at
+      properties:
+        metrics:
+          $ref: '#/components/schemas/ProjectMetrics'
+        project_id:
+          type: string
+          format: uuid
+        updated_at:
+          type: string
+          format: date-time
+
+    # Task Schemas
+    Task:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - priority
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Task unique identifier
+        title:
+          type: string
+          description: Task title
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          description: Task description
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Associated project
+        assigned_to:
+          type: string
+          nullable: true
+          description: User assigned to task
+        tags:
+          type: array
+          items:
+            type: string
+          description: Task tags
+        estimated_hours:
+          type: number
+          format: float
+          nullable: true
+          description: Estimated hours to complete
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Due date
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    TaskStatus:
+      type: string
+      enum:
+        - todo
+        - in_progress
+        - done
+        - cancelled
+      description: Task status
+
+    TaskPriority:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+        - urgent
+      description: Task priority levels
+
+    TaskCreate:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          description: Task title
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+          description: Task description
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        project_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Associated project
+        assigned_to:
+          type: string
+          nullable: true
+          description: User to assign task to
+        tags:
+          type: array
+          items:
+            type: string
+          description: Task tags
+        estimated_hours:
+          type: number
+          format: float
+          nullable: true
+          description: Estimated hours to complete
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: Due date
+        requirements:
+          type: object
+          additionalProperties: true
+          description: Task-specific requirements
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          $ref: '#/components/schemas/TaskPriority'
+        assigned_to:
+          type: string
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        estimated_hours:
+          type: number
+          format: float
+          nullable: true
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+
+    # AI Services Schemas
+    CodeCompletionRequest:
+      type: object
+      required:
+        - file_path
+      properties:
+        file_path:
+          type: string
+          description: Path to the file being edited
+          minLength: 1
+          maxLength: 2048
+        cursor_position:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Cursor position in the file
+        intent:
+          type: string
+          enum: [suggest, explain, refactor, debug, optimize]
+          default: suggest
+          description: Type of completion requested
+        content:
+          type: string
+          nullable: true
+          maxLength: 100000
+          description: Optional file content
+        language:
+          type: string
+          nullable: true
+          maxLength: 50
+          description: Programming language (auto-detected if not provided)
+
+    CodeCompletionResponse:
+      type: object
+      required:
+        - status
+        - intent
+        - response
+        - confidence
+        - requires_review
+        - context_used
+        - processing_time_ms
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+        intent:
+          type: string
+          description: Completion intent that was processed
+        response:
+          type: string
+          description: AI-generated response
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Confidence score (0.0-1.0)
+        requires_review:
+          type: boolean
+          description: Whether human review is recommended
+        suggestions:
+          type: array
+          items:
+            type: string
+          description: Follow-up suggestions
+        context_used:
+          $ref: '#/components/schemas/ContextUsed'
+        processing_time_ms:
+          type: number
+          format: float
+          minimum: 0
+          description: Processing time in milliseconds
+        explanation:
+          type: string
+          nullable: true
+          description: Code explanation (for explain intent)
+        refactoring_suggestions:
+          type: string
+          nullable: true
+          description: Refactoring suggestions (for refactor intent)
+        debug_analysis:
+          type: string
+          nullable: true
+          description: Debug analysis (for debug intent)
+        optimization_suggestions:
+          type: string
+          nullable: true
+          description: Optimization suggestions (for optimize intent)
+
+    ContextUsed:
+      type: object
+      required:
+        - language
+      properties:
+        language:
+          type: string
+          description: Programming language detected/used
+        symbols_found:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Number of symbols found in context
+        has_context:
+          type: boolean
+          default: false
+          description: Whether contextual information was available
+        file_path:
+          type: string
+          default: ""
+          description: File path that was analyzed
+        has_symbol_context:
+          type: boolean
+          default: false
+          description: Whether symbol context was available
+        language_detected:
+          type: string
+          default: ""
+          description: Detected programming language
+
+    CodeCompletionErrorResponse:
+      type: object
+      required:
+        - status
+        - error
+        - processing_time_ms
+      properties:
+        status:
+          type: string
+          enum: [error]
+        error:
+          type: string
+          description: Error message
+        error_code:
+          type: string
+          nullable: true
+          description: Error code for programmatic handling
+          enum:
+            - AGENT_PARSE_ERROR
+            - AGENT_ERROR
+            - INTERNAL_ERROR
+            - VALIDATION_ERROR
+            - TIMEOUT_ERROR
+        processing_time_ms:
+          type: number
+          format: float
+          minimum: 0
+          description: Processing time in milliseconds
+
+    # Common Schemas
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: Additional error details
+        request_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Request ID for tracking
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+
+security:
+  - BearerAuth: []

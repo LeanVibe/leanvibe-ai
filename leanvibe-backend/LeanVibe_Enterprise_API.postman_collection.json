@@ -1,0 +1,1308 @@
+{
+  "info": {
+    "name": "LeanVibe Enterprise API",
+    "description": "Comprehensive API collection for LeanVibe Enterprise platform including authentication, multi-tenancy, billing, AI services, and real-time features.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.leanvibe.ai/v1",
+      "type": "string"
+    },
+    {
+      "key": "stagingUrl",
+      "value": "https://staging-api.leanvibe.ai/v1",
+      "type": "string"
+    },
+    {
+      "key": "localUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenantId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "User authentication endpoints including SSO, MFA, and token management",
+      "item": [
+        {
+          "name": "Login - Local Auth",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.access_token) {",
+                  "        pm.collectionVariables.set('accessToken', response.access_token);",
+                  "        pm.collectionVariables.set('refreshToken', response.refresh_token);",
+                  "        pm.collectionVariables.set('tenantId', response.user.tenant_id);",
+                  "        console.log('Tokens saved to collection variables');",
+                  "    }",
+                  "}",
+                  "",
+                  "pm.test('Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(pm.response.json()).to.have.property('success', true);",
+                  "    pm.expect(pm.response.json()).to.have.property('access_token');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@enterprise.com\",\n  \"password\": \"SecurePassword123!\",\n  \"provider\": \"local\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate user with email and password"
+          },
+          "response": [
+            {
+              "name": "Successful Login",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@enterprise.com\",\n  \"password\": \"SecurePassword123!\",\n  \"provider\": \"local\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"success\": true,\n  \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"expires_in\": 3600,\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"email\": \"admin@enterprise.com\",\n    \"role\": \"owner\",\n    \"tenant_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login - OAuth2 (Google)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@enterprise.com\",\n  \"provider\": \"google\",\n  \"auth_code\": \"google_oauth_authorization_code\",\n  \"state\": \"enterprise-corp\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate user with Google OAuth2"
+          }
+        },
+        {
+          "name": "Login - MFA Required",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@enterprise.com\",\n  \"password\": \"SecurePassword123!\",\n  \"provider\": \"local\",\n  \"mfa_code\": \"123456\",\n  \"mfa_method\": \"totp\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate user with MFA verification"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.access_token) {",
+                  "        pm.collectionVariables.set('accessToken', response.access_token);",
+                  "        pm.collectionVariables.set('refreshToken', response.refresh_token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{refreshToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current authenticated user information"
+          }
+        },
+        {
+          "name": "Setup MFA - TOTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"method\": \"totp\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/mfa/setup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "mfa", "setup"]
+            },
+            "description": "Setup TOTP MFA with QR code"
+          }
+        },
+        {
+          "name": "Verify MFA Setup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"123456\",\n  \"method\": \"totp\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/mfa/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "mfa", "verify"]
+            },
+            "description": "Verify MFA setup with test code"
+          }
+        },
+        {
+          "name": "Get Auth Providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/providers",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "providers"]
+            },
+            "description": "Get available authentication providers"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout and revoke tokens"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Multi-Tenancy",
+      "description": "Tenant management and multi-tenancy operations",
+      "item": [
+        {
+          "name": "Create Tenant (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('tenantId', response.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organization_name\": \"Enterprise Corp\",\n  \"slug\": \"enterprise-corp\",\n  \"admin_email\": \"admin@enterprise-corp.com\",\n  \"plan\": \"enterprise\",\n  \"data_residency\": \"us\",\n  \"configuration\": {\n    \"branding\": {\n      \"primary_color\": \"#1f2937\",\n      \"logo_url\": \"https://cdn.enterprise-corp.com/logo.png\"\n    },\n    \"features\": {\n      \"advanced_ai_features\": true,\n      \"custom_workflows\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenants",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants"]
+            },
+            "description": "Create new enterprise tenant (requires admin privileges)"
+          }
+        },
+        {
+          "name": "List All Tenants (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tenants?status=active&limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active",
+                  "description": "Filter by tenant status"
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Maximum number of results"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of results to skip"
+                }
+              ]
+            },
+            "description": "List all tenants with filtering options"
+          }
+        },
+        {
+          "name": "Get Tenant Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenantId}}"]
+            },
+            "description": "Get detailed information about specific tenant"
+          }
+        },
+        {
+          "name": "Update Tenant",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organization_name\": \"Enterprise Corp - Updated\",\n  \"configuration\": {\n    \"branding\": {\n      \"primary_color\": \"#2563eb\",\n      \"logo_url\": \"https://cdn.enterprise-corp.com/new-logo.png\"\n    },\n    \"features\": {\n      \"advanced_ai_features\": true,\n      \"custom_workflows\": true,\n      \"premium_support\": true\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tenants/{{tenantId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "{{tenantId}}"]
+            },
+            "description": "Update tenant configuration"
+          }
+        },
+        {
+          "name": "Get Current Tenant Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/me/info",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "me", "info"]
+            },
+            "description": "Get information about current user's tenant"
+          }
+        },
+        {
+          "name": "Get Tenant Usage",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/me/usage",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "me", "usage"]
+            },
+            "description": "Get current tenant resource usage"
+          }
+        },
+        {
+          "name": "Check Quota Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tenants/me/quota-check/api_calls?amount=1000",
+              "host": ["{{baseUrl}}"],
+              "path": ["tenants", "me", "quota-check", "api_calls"],
+              "query": [
+                {
+                  "key": "amount",
+                  "value": "1000",
+                  "description": "Amount to check availability for"
+                }
+              ]
+            },
+            "description": "Check if tenant can consume specified amount of resource"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Billing & Subscriptions",
+      "description": "Subscription management, payment processing, and billing operations",
+      "item": [
+        {
+          "name": "List Available Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/billing/plans?include_inactive=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "plans"],
+              "query": [
+                {
+                  "key": "include_inactive",
+                  "value": "false",
+                  "description": "Include inactive plans"
+                }
+              ]
+            },
+            "description": "Get all available subscription plans"
+          }
+        },
+        {
+          "name": "Get Specific Plan",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/billing/plans/550e8400-e29b-41d4-a716-446655440000",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "plans", "550e8400-e29b-41d4-a716-446655440000"]
+            },
+            "description": "Get detailed information about specific plan"
+          }
+        },
+        {
+          "name": "Create Billing Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"Enterprise Corp\",\n  \"billing_email\": \"billing@enterprise-corp.com\",\n  \"billing_address\": {\n    \"line1\": \"123 Enterprise Ave\",\n    \"city\": \"San Francisco\",\n    \"state\": \"CA\",\n    \"postal_code\": \"94105\",\n    \"country\": \"US\"\n  },\n  \"tax_id\": \"12-3456789\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/billing/account",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "account"]
+            },
+            "description": "Create billing account for tenant"
+          }
+        },
+        {
+          "name": "Get Billing Account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/billing/account",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "account"]
+            },
+            "description": "Get billing account information"
+          }
+        },
+        {
+          "name": "Create Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant_id\": \"{{tenantId}}\",\n  \"plan_id\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"payment_method_id\": \"pm_stripe_payment_method_id\",\n  \"trial_period_days\": 30,\n  \"coupon_code\": \"ENTERPRISE_LAUNCH\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/billing/subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "subscription"]
+            },
+            "description": "Create new subscription for tenant"
+          }
+        },
+        {
+          "name": "Get Current Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/billing/subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "subscription"]
+            },
+            "description": "Get active subscription for current tenant"
+          }
+        },
+        {
+          "name": "Update Subscription",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_id\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/billing/subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "subscription"]
+            },
+            "description": "Update subscription (upgrade/downgrade plan)"
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/billing/subscription?immediately=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "subscription"],
+              "query": [
+                {
+                  "key": "immediately",
+                  "value": "false",
+                  "description": "Cancel immediately vs at period end"
+                }
+              ]
+            },
+            "description": "Cancel subscription"
+          }
+        },
+        {
+          "name": "Record Usage",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"metric_type\": \"api_calls\",\n  \"quantity\": 100\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/billing/usage",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "usage"]
+            },
+            "description": "Record usage for metered billing"
+          }
+        },
+        {
+          "name": "Get Usage Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/billing/usage",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "usage"]
+            },
+            "description": "Get usage summary for current billing period"
+          }
+        },
+        {
+          "name": "Get Billing Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/billing/analytics",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "analytics"]
+            },
+            "description": "Get comprehensive billing analytics"
+          }
+        },
+        {
+          "name": "Add Payment Method",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"card\",\n  \"card_token\": \"tok_stripe_card_token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/billing/payment-methods",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "payment-methods"]
+            },
+            "description": "Add new payment method"
+          }
+        },
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/billing/invoices?limit=10&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "invoices"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of invoices to return"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of invoices to skip"
+                }
+              ]
+            },
+            "description": "List invoices for tenant"
+          }
+        },
+        {
+          "name": "Get Invoice Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/billing/invoice/550e8400-e29b-41d4-a716-446655440002",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "invoice", "550e8400-e29b-41d4-a716-446655440002"]
+            },
+            "description": "Get detailed invoice information"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "description": "AI development project management",
+      "item": [
+        {
+          "name": "List Projects",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.projects && response.projects.length > 0) {",
+                  "        pm.collectionVariables.set('projectId', response.projects[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            },
+            "description": "Get list of all AI development projects"
+          }
+        },
+        {
+          "name": "Get Project Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}"]
+            },
+            "description": "Get detailed information about specific project"
+          }
+        },
+        {
+          "name": "Analyze Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"analysis_type\": \"comprehensive\",\n  \"include_metrics\": [\"complexity\", \"security\", \"performance\", \"maintainability\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/analyze",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "analyze"]
+            },
+            "description": "Run comprehensive analysis on project codebase"
+          }
+        },
+        {
+          "name": "Get Project Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "metrics"]
+            },
+            "description": "Get comprehensive metrics for project"
+          }
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}"]
+            },
+            "description": "Delete project and all associated data"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "description": "Task management and autonomous development",
+      "item": [
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('taskId', response.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Implement secure payment processing with Stripe\",\n  \"description\": \"Create complete payment flow with card processing, webhooks, and fraud detection\",\n  \"priority\": \"high\",\n  \"project_id\": \"{{projectId}}\",\n  \"requirements\": {\n    \"frameworks\": [\"FastAPI\", \"SQLAlchemy\", \"Stripe\"],\n    \"security_requirements\": [\n      \"PCI_DSS_compliance\",\n      \"payment_encryption\",\n      \"fraud_detection\",\n      \"3d_secure\"\n    ],\n    \"testing_requirements\": [\n      \"unit_tests\",\n      \"integration_tests\",\n      \"security_tests\",\n      \"load_tests\"\n    ],\n    \"compliance\": [\"PCI_DSS\", \"GDPR\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"]
+            },
+            "description": "Create new development task for AI processing"
+          }
+        },
+        {
+          "name": "List Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks?project_id={{projectId}}&status=in_progress&priority=high&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks"],
+              "query": [
+                {
+                  "key": "project_id",
+                  "value": "{{projectId}}",
+                  "description": "Filter by project ID"
+                },
+                {
+                  "key": "status",
+                  "value": "in_progress",
+                  "description": "Filter by task status"
+                },
+                {
+                  "key": "priority",
+                  "value": "high",
+                  "description": "Filter by priority"
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "description": "Maximum number of tasks"
+                }
+              ]
+            },
+            "description": "List tasks with filtering options"
+          }
+        },
+        {
+          "name": "Get Task Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/550e8400-e29b-41d4-a716-446655440004",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "550e8400-e29b-41d4-a716-446655440004"]
+            },
+            "description": "Get detailed information about specific task"
+          }
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"priority\": \"urgent\",\n  \"assigned_to\": \"l3-agent-enterprise-001\",\n  \"estimated_hours\": 8\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks/550e8400-e29b-41d4-a716-446655440004",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "550e8400-e29b-41d4-a716-446655440004"]
+            },
+            "description": "Update task information and status"
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/550e8400-e29b-41d4-a716-446655440004",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "550e8400-e29b-41d4-a716-446655440004"]
+            },
+            "description": "Delete task"
+          }
+        },
+        {
+          "name": "Get Task by Project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/project/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "project", "{{projectId}}"]
+            },
+            "description": "Get all tasks for specific project"
+          }
+        },
+        {
+          "name": "Search Tasks",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"payment processing stripe\",\n  \"filters\": {\n    \"status\": \"in_progress\",\n    \"priority\": [\"high\", \"urgent\"],\n    \"project_id\": \"{{projectId}}\"\n  },\n  \"limit\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks/search",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "search"]
+            },
+            "description": "Search tasks with query and filters"
+          }
+        },
+        {
+          "name": "Get Task Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/stats/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "stats", "summary"]
+            },
+            "description": "Get task statistics for dashboard"
+          }
+        },
+        {
+          "name": "Get Kanban Board",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tasks/kanban/board",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "kanban", "board"]
+            },
+            "description": "Get complete Kanban board with all columns and tasks"
+          }
+        },
+        {
+          "name": "Bulk Create Tasks",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"title\": \"User Authentication Service\",\n    \"description\": \"Implement JWT-based authentication with OAuth2\",\n    \"priority\": \"high\",\n    \"project_id\": \"{{projectId}}\"\n  },\n  {\n    \"title\": \"Payment Gateway Integration\",\n    \"description\": \"Integrate Stripe payment processing\",\n    \"priority\": \"high\",\n    \"project_id\": \"{{projectId}}\"\n  },\n  {\n    \"title\": \"Email Notification System\",\n    \"description\": \"Build email notification service\",\n    \"priority\": \"medium\",\n    \"project_id\": \"{{projectId}}\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tasks/bulk/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["tasks", "bulk", "create"]
+            },
+            "description": "Create multiple tasks at once"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Services",
+      "description": "AI-powered code completion and development services",
+      "item": [
+        {
+          "name": "Code Suggestion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_path\": \"/src/payment/stripe_service.py\",\n  \"cursor_position\": 150,\n  \"intent\": \"suggest\",\n  \"content\": \"def process_payment(amount, currency, customer_id, payment_method_id):\\n    # Complete this secure payment processing function\",\n  \"language\": \"python\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/code-completion",
+              "host": ["{{baseUrl}}"],
+              "path": ["code-completion"]
+            },
+            "description": "Get AI-powered code suggestions"
+          },
+          "response": [
+            {
+              "name": "Successful Code Suggestion",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"file_path\": \"/src/payment/stripe_service.py\",\n  \"cursor_position\": 150,\n  \"intent\": \"suggest\",\n  \"content\": \"def process_payment(amount, currency, customer_id, payment_method_id):\\n    # Complete this secure payment processing function\",\n  \"language\": \"python\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/code-completion",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["code-completion"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"success\",\n  \"intent\": \"suggest\",\n  \"response\": \"def process_payment(amount, currency, customer_id, payment_method_id):\\n    # Validate input parameters\\n    if amount <= 0:\\n        raise ValueError(\\\"Amount must be positive\\\")\\n    \\n    try:\\n        # Create payment intent with security features\\n        payment_intent = stripe.PaymentIntent.create(\\n            amount=amount,\\n            currency=currency,\\n            customer=customer_id,\\n            payment_method=payment_method_id,\\n            confirmation_method='manual',\\n            capture_method='manual'\\n        )\\n        \\n        return {\\n            'status': 'success',\\n            'payment_intent_id': payment_intent.id\\n        }\\n        \\n    except stripe.error.StripeError as e:\\n        return {\\n            'status': 'error',\\n            'message': str(e)\\n        }\",\n  \"confidence\": 0.94,\n  \"requires_review\": false,\n  \"suggestions\": [\n    \"Add input validation for currency codes\",\n    \"Implement fraud detection scoring\",\n    \"Add webhook handling for payment updates\"\n  ],\n  \"context_used\": {\n    \"language\": \"python\",\n    \"symbols_found\": 8,\n    \"has_context\": true,\n    \"file_path\": \"/src/payment/stripe_service.py\"\n  },\n  \"processing_time_ms\": 1850\n}"
+            }
+          ]
+        },
+        {
+          "name": "Code Explanation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_path\": \"/src/auth/jwt_middleware.py\",\n  \"cursor_position\": 75,\n  \"intent\": \"explain\",\n  \"content\": \"@functools.lru_cache(maxsize=1000)\\ndef verify_jwt_signature(token: str, public_key: str) -> bool:\\n    try:\\n        jwt.decode(token, public_key, algorithms=[\\\"RS256\\\"])\\n        return True\\n    except jwt.InvalidTokenError:\\n        return False\",\n  \"language\": \"python\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/code-completion",
+              "host": ["{{baseUrl}}"],
+              "path": ["code-completion"]
+            },
+            "description": "Get AI-powered code explanation"
+          }
+        },
+        {
+          "name": "Code Refactoring",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_path\": \"/src/user/service.py\",\n  \"intent\": \"refactor\",\n  \"content\": \"def get_user_data(user_id):\\n    user = db.query(User).filter(User.id == user_id).first()\\n    if user:\\n        profile = db.query(Profile).filter(Profile.user_id == user_id).first()\\n        permissions = db.query(Permission).filter(Permission.user_id == user_id).all()\\n        return {\\n            \\\"user\\\": user,\\n            \\\"profile\\\": profile,\\n            \\\"permissions\\\": permissions\\n        }\\n    return None\",\n  \"language\": \"python\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/code-completion",
+              "host": ["{{baseUrl}}"],
+              "path": ["code-completion"]
+            },
+            "description": "Get refactoring suggestions for code"
+          }
+        },
+        {
+          "name": "Code Debugging",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_path\": \"/src/api/endpoints.py\",\n  \"intent\": \"debug\",\n  \"content\": \"@app.route('/api/users', methods=['POST'])\\ndef create_user():\\n    data = request.json\\n    user = User(\\n        email=data['email'],\\n        password=data['password']\\n    )\\n    db.session.add(user)\\n    db.session.commit()\\n    return jsonify({'id': user.id})\",\n  \"language\": \"python\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/code-completion",
+              "host": ["{{baseUrl}}"],
+              "path": ["code-completion"]
+            },
+            "description": "Get debugging analysis and suggestions"
+          }
+        },
+        {
+          "name": "Code Optimization",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_path\": \"/src/data/queries.py\",\n  \"intent\": \"optimize\",\n  \"content\": \"def get_user_orders(user_id):\\n    orders = []\\n    for order in db.query(Order).filter(Order.user_id == user_id).all():\\n        order_items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()\\n        for item in order_items:\\n            product = db.query(Product).filter(Product.id == item.product_id).first()\\n            item.product = product\\n        order.items = order_items\\n        orders.append(order)\\n    return orders\",\n  \"language\": \"python\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/code-completion",
+              "host": ["{{baseUrl}}"],
+              "path": ["code-completion"]
+            },
+            "description": "Get performance optimization suggestions"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Administration",
+      "description": "Platform administration and monitoring endpoints",
+      "item": [
+        {
+          "name": "Platform Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "health"]
+            },
+            "description": "Comprehensive health check of all platform services"
+          }
+        },
+        {
+          "name": "Basic Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Basic service health check"
+          }
+        },
+        {
+          "name": "MLX Service Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/mlx",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "mlx"]
+            },
+            "description": "Check MLX AI service health"
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-refresh token if expired",
+          "const accessToken = pm.collectionVariables.get('accessToken');",
+          "const refreshToken = pm.collectionVariables.get('refreshToken');",
+          "",
+          "if (accessToken && refreshToken) {",
+          "    // Check if token is close to expiration (simplified)",
+          "    // In production, you'd decode JWT and check exp claim",
+          "    const tokenParts = accessToken.split('.');",
+          "    if (tokenParts.length === 3) {",
+          "        try {",
+          "            const payload = JSON.parse(atob(tokenParts[1]));",
+          "            const exp = payload.exp * 1000; // Convert to milliseconds",
+          "            const now = Date.now();",
+          "            const timeUntilExpiry = exp - now;",
+          "            ",
+          "            // Refresh if token expires within 5 minutes",
+          "            if (timeUntilExpiry < 300000) {",
+          "                console.log('Token expiring soon, refreshing...');",
+          "                // This would trigger token refresh",
+          "                // Implementation depends on your auth setup",
+          "            }",
+          "        } catch (e) {",
+          "            console.log('Could not parse token for expiry check');",
+          "        }",
+          "    }",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script for rate limiting and error handling",
+          "const responseCode = pm.response.code;",
+          "",
+          "// Handle rate limiting",
+          "if (responseCode === 429) {",
+          "    const retryAfter = pm.response.headers.get('Retry-After');",
+          "    console.log(`Rate limited. Retry after: ${retryAfter} seconds`);",
+          "    ",
+          "    pm.test('Rate limit handled', function() {",
+          "        pm.expect(pm.response.headers.has('X-RateLimit-Limit')).to.be.true;",
+          "        pm.expect(pm.response.headers.has('X-RateLimit-Remaining')).to.be.true;",
+          "    });",
+          "}",
+          "",
+          "// Handle authentication errors",
+          "if (responseCode === 401) {",
+          "    console.log('Authentication failed - token may need refresh');",
+          "    ",
+          "    pm.test('Authentication error handled', function() {",
+          "        const response = pm.response.json();",
+          "        pm.expect(response).to.have.property('error');",
+          "    });",
+          "}",
+          "",
+          "// Handle quota exceeded",
+          "if (responseCode === 402 || (responseCode === 429 && pm.response.json().error === 'quota_exceeded')) {",
+          "    console.log('Quota exceeded - consider upgrading plan');",
+          "    ",
+          "    pm.test('Quota exceeded handled', function() {",
+          "        const response = pm.response.json();",
+          "        pm.expect(response).to.have.property('details');",
+          "        pm.expect(response.details).to.have.property('quota_type');",
+          "    });",
+          "}",
+          "",
+          "// Log response time for performance monitoring",
+          "const responseTime = pm.response.responseTime;",
+          "console.log(`Response time: ${responseTime}ms`);",
+          "",
+          "pm.test('Response time is acceptable', function() {",
+          "    pm.expect(responseTime).to.be.below(5000); // 5 second timeout",
+          "});"
+        ]
+      }
+    }
+  ]
+}
