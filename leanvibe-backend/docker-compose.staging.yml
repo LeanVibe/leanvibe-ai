@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  app:
+    image: leanvibe-backend:${COMMIT_SHA:-staging-latest}
+    container_name: leanvibe-staging-app-1
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=staging
+      - DATABASE_URL=neo4j://staging-db:7687
+      - REDIS_URL=redis://staging-redis:6379
+      - LOG_LEVEL=DEBUG
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - staging-db
+      - staging-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  staging-db:
+    image: neo4j:5.0
+    container_name: leanvibe-staging-db
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/stagingpassword
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_MEMORY_HEAP_INITIAL_SIZE=512m
+      - NEO4J_MEMORY_HEAP_MAX_SIZE=1G
+    volumes:
+      - staging_neo4j_data:/data
+      - staging_neo4j_logs:/logs
+      - staging_neo4j_import:/var/lib/neo4j/import
+      - staging_neo4j_plugins:/plugins
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "stagingpassword", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  staging-redis:
+    image: redis:7-alpine
+    container_name: leanvibe-staging-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - staging_redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  staging_neo4j_data:
+  staging_neo4j_logs:
+  staging_neo4j_import:
+  staging_neo4j_plugins:
+  staging_redis_data:
+
+networks:
+  default:
+    name: leanvibe-staging
+    driver: bridge

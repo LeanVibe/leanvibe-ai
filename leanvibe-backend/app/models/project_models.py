@@ -48,7 +48,7 @@ class ProjectMetrics(BaseModel):
 
 
 class Project(BaseModel):
-    """Project model"""
+    """Project model with multi-tenant support"""
     id: UUID = Field(description="Project unique identifier")
     display_name: str = Field(description="Project display name")
     description: Optional[str] = Field(default=None, description="Project description")
@@ -62,7 +62,11 @@ class Project(BaseModel):
     language: ProjectLanguage = Field(description="Primary programming language")
     last_activity: datetime = Field(description="Last activity timestamp")
     metrics: ProjectMetrics = Field(description="Project metrics")
-    client_id: Optional[str] = Field(default=None, description="Associated client ID")
+    
+    # Multi-tenant fields
+    tenant_id: UUID = Field(description="Tenant identifier for data isolation")
+    client_id: Optional[str] = Field(default=None, description="Associated client ID (legacy)")
+    created_by: Optional[UUID] = Field(default=None, description="User who created the project")
     
     class Config:
         extra = "ignore"

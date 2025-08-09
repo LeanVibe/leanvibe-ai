@@ -1,0 +1,437 @@
+name: Nightly Quality Assurance
+# Tier 2 tests: Mutation testing, performance regression, flaky test detection
+# Runs nightly and generates quality reports (non-blocking)
+
+on:
+  schedule:
+    # Run at 2 AM UTC daily
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_mutation:
+        description: 'Skip mutation testing (faster run)'
+        required: false
+        default: 'false'
+      performance_threshold:
+        description: 'Performance regression threshold (%)'
+        required: false
+        default: '10'
+
+env:
+  PYTHON_VERSION: "3.11"
+  UV_CACHE_DIR: /tmp/.uv-cache
+
+jobs:
+  # E2E and Integration Tests
+  e2e-workflows:
+    name: "End-to-End Workflow Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    strategy:
+      matrix:
+        workflow: [project-creation, task-management, ai-integration, websocket-events]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    
+    - name: Install dependencies
+      run: uv sync --frozen
+    
+    - name: Start full services stack
+      run: |
+        docker compose -f docker-compose.test.yml up -d
+        sleep 20  # Allow services to fully initialize
+    
+    - name: Run E2E Tests - ${{ matrix.workflow }}
+      run: |
+        uv run pytest \
+          -m "e2e" \
+          -k "${{ matrix.workflow }}" \
+          --tb=long \
+          --capture=no \
+          --timeout=600
+    
+    - name: Collect E2E Logs
+      if: always()
+      run: |
+        mkdir -p test_results/e2e_logs
+        docker compose -f docker-compose.test.yml logs > test_results/e2e_logs/${{ matrix.workflow }}.log
+    
+    - name: Upload E2E Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: e2e-results-${{ matrix.workflow }}
+        path: test_results/
+
+  # Performance Regression Detection
+  performance-regression:
+    name: "Performance Regression Detection"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Need full history for regression comparison
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Install dependencies
+      run: uv sync --frozen
+    
+    - name: Setup baseline services
+      run: |
+        docker compose -f docker-compose.test.yml up -d
+        sleep 15
+    
+    - name: Run Performance Benchmarks
+      run: |
+        uv run python tools/perf_regression.py \
+          --baseline-commit=$(git rev-parse HEAD~10) \
+          --current-commit=${{ github.sha }} \
+          --threshold=${{ github.event.inputs.performance_threshold || '10' }} \
+          --output=test_results/performance_report.json
+    
+    - name: Performance Benchmark Tests
+      run: |
+        uv run pytest \
+          -m "performance" \
+          --benchmark-json=test_results/benchmarks.json \
+          --timeout=300
+    
+    - name: Analyze Performance Trends
+      run: |
+        uv run python tools/perf_regression.py analyze \
+          --report-file=test_results/performance_report.json \
+          --benchmarks=test_results/benchmarks.json \
+          --history-file=test_results/metrics/performance.json
+    
+    - name: Upload Performance Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: test_results/
+
+  # Mutation Testing Sample (5% coverage for speed)
+  mutation-testing:
+    name: "Mutation Testing (Sample)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: github.event.inputs.skip_mutation != 'true'
+    
+    strategy:
+      matrix:
+        module: [services, api, core]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Install dependencies
+      run: |
+        uv sync --frozen
+        uv add mutmut
+    
+    - name: Run Mutation Testing - ${{ matrix.module }}
+      run: |
+        # Sample 5% of files for nightly mutation testing
+        uv run mutmut run \
+          --paths-to-mutate=app/${{ matrix.module }} \
+          --tests-dir=tests \
+          --runner='python -m pytest -m "unit or integration" --tb=no -q' \
+          --use-coverage \
+          --percentage-to-mutate=5
+    
+    - name: Generate Mutation Report
+      run: |
+        uv run mutmut results > test_results/mutation_${{ matrix.module }}.txt
+        uv run mutmut html --directory test_results/mutation_html_${{ matrix.module }}
+    
+    - name: Upload Mutation Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: mutation-results-${{ matrix.module }}
+        path: test_results/
+
+  # Flaky Test Detection
+  flaky-test-detection:
+    name: "Flaky Test Detection"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Install dependencies
+      run: uv sync --frozen
+    
+    - name: Setup test services
+      run: |
+        docker compose -f docker-compose.test.yml up -d
+        sleep 15
+    
+    - name: Run Flaky Test Detection
+      run: |
+        # Run test suite 10 times to detect flaky tests
+        uv run python tools/flaky_detector.py \
+          --iterations=10 \
+          --parallel=4 \
+          --output=test_results/flaky_tests.json \
+          --markers="not slow and not mlx_real_inference"
+    
+    - name: Quarantine Flaky Tests
+      run: |
+        uv run python tools/flaky_detector.py quarantine \
+          --flaky-report=test_results/flaky_tests.json \
+          --quarantine-file=pytest_quarantine.ini \
+          --threshold=0.2  # Tests that fail >20% of the time
+    
+    - name: Update Flaky Test History
+      run: |
+        uv run python tools/flaky_detector.py update-history \
+          --current-report=test_results/flaky_tests.json \
+          --history-file=test_results/metrics/flaky_tests.json
+    
+    - name: Upload Flaky Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: flaky-test-results
+        path: test_results/
+
+  # Security and Dependency Scanning
+  security-scanning:
+    name: "Security Scanning"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Install dependencies
+      run: |
+        uv sync --frozen
+        uv add safety bandit semgrep
+    
+    - name: Dependency Security Scan
+      run: |
+        uv run safety check --json --output test_results/safety_report.json || true
+    
+    - name: Code Security Scan (Bandit)
+      run: |
+        uv run bandit -r app -f json -o test_results/bandit_report.json || true
+    
+    - name: SAST Scan (Semgrep)
+      run: |
+        uv run semgrep --config=auto --json --output=test_results/semgrep_report.json app/ || true
+    
+    - name: Generate Security Summary
+      run: |
+        uv run python scripts/security_audit.py \
+          --safety-report=test_results/safety_report.json \
+          --bandit-report=test_results/bandit_report.json \
+          --semgrep-report=test_results/semgrep_report.json \
+          --output=test_results/security_summary.json
+    
+    - name: Upload Security Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-scan-results
+        path: test_results/
+
+  # Load Testing (Light)
+  load-testing:
+    name: "Load Testing"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Install dependencies
+      run: |
+        uv sync --frozen
+        uv add locust
+    
+    - name: Start application
+      run: |
+        docker compose -f docker-compose.test.yml up -d
+        sleep 20
+        # Start the application in background
+        uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+        sleep 10
+    
+    - name: Run Load Tests
+      run: |
+        uv run pytest \
+          -m "load" \
+          --tb=short \
+          --timeout=600
+    
+    - name: Light Locust Load Test
+      run: |
+        uv run locust \
+          -f tests/load_tests/basic_load.py \
+          --host=http://localhost:8000 \
+          --users=10 \
+          --spawn-rate=2 \
+          --run-time=300s \
+          --html=test_results/load_test_report.html \
+          --headless
+    
+    - name: Upload Load Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: load-test-results
+        path: test_results/
+
+  # Generate Comprehensive Quality Report
+  quality-report:
+    name: "Generate Quality Report"
+    runs-on: ubuntu-latest
+    needs: [e2e-workflows, performance-regression, mutation-testing, flaky-test-detection, security-scanning, load-testing]
+    if: always()
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts/
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v3
+    
+    - name: Install dependencies
+      run: uv sync --frozen
+    
+    - name: Generate Consolidated Quality Report
+      run: |
+        uv run python tools/quality_reporter.py \
+          --artifacts-dir=artifacts/ \
+          --output=nightly_quality_report.md \
+          --json-output=test_results/nightly_metrics.json \
+          --date="$(date -u +%Y-%m-%d)"
+    
+    - name: Update Quality Metrics History
+      run: |
+        mkdir -p test_results/metrics/
+        uv run python tools/quality_reporter.py update-history \
+          --current-metrics=test_results/nightly_metrics.json \
+          --history-file=test_results/metrics/nightly_history.json
+    
+    - name: Post Quality Report
+      run: |
+        echo "## 🌙 Nightly Quality Report" >> $GITHUB_STEP_SUMMARY
+        cat nightly_quality_report.md >> $GITHUB_STEP_SUMMARY
+    
+    - name: Upload Quality Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: nightly-quality-report
+        path: |
+          nightly_quality_report.md
+          test_results/nightly_metrics.json
+          test_results/metrics/
+
+  # Cleanup
+  cleanup:
+    name: "Cleanup Test Environment"
+    runs-on: ubuntu-latest
+    needs: [e2e-workflows, performance-regression, mutation-testing, flaky-test-detection, security-scanning, load-testing]
+    if: always()
+    
+    steps:
+    - name: Cleanup Docker
+      run: |
+        docker system prune -af
+        docker volume prune -f
+    
+    - name: Cleanup Artifacts (keep last 30 days)
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { repo, owner } = context.repo;
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          
+          const artifacts = await github.rest.actions.listArtifactsForRepo({
+            owner,
+            repo,
+            per_page: 100
+          });
+          
+          for (const artifact of artifacts.data.artifacts) {
+            if (new Date(artifact.created_at) < thirtyDaysAgo) {
+              await github.rest.actions.deleteArtifact({
+                owner,
+                repo,
+                artifact_id: artifact.id
+              });
+            }
+          }

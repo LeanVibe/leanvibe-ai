@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  app:
+    image: leanvibe-backend:${COMMIT_SHA:-production-latest}
+    container_name: leanvibe-production-app-1
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=neo4j://prod-db:7687
+      - REDIS_URL=redis://prod-redis:6379
+      - LOG_LEVEL=INFO
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - prod-db
+      - prod-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+
+  prod-db:
+    image: neo4j:5.0
+    container_name: leanvibe-production-db
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/${PROD_DB_PASSWORD}
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_MEMORY_HEAP_INITIAL_SIZE=2G
+      - NEO4J_MEMORY_HEAP_MAX_SIZE=4G
+    volumes:
+      - prod_neo4j_data:/data
+      - prod_neo4j_logs:/logs
+      - prod_neo4j_import:/var/lib/neo4j/import
+      - prod_neo4j_plugins:/plugins
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "${PROD_DB_PASSWORD}", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+          cpus: '2.0'
+        reservations:
+          memory: 4G
+          cpus: '1.0'
+
+  prod-redis:
+    image: redis:7-alpine
+    container_name: leanvibe-production-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru --requirepass ${PROD_REDIS_PASSWORD}
+    volumes:
+      - prod_redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${PROD_REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+          cpus: '0.5'
+        reservations:
+          memory: 1G
+          cpus: '0.25'
+
+volumes:
+  prod_neo4j_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/leanvibe/neo4j/data
+  prod_neo4j_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/leanvibe/neo4j/logs
+  prod_neo4j_import:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/leanvibe/neo4j/import
+  prod_neo4j_plugins:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/leanvibe/neo4j/plugins
+  prod_redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/leanvibe/redis/data
+
+networks:
+  default:
+    name: leanvibe-production
+    driver: bridge

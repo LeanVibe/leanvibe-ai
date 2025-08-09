@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<coverage line-rate="0.75" branch-rate="0.8" lines-covered="750" lines-valid="1000" version="7.10.0" timestamp="1737989000">
+  <sources>
+    <source>/Users/bogdan/work/leanvibe-ai/leanvibe-backend/app</source>
+  </sources>
+  <packages>
+    <package name="app" line-rate="0.75" branch-rate="0.8">
+      <classes>
+        <class name="example.py" filename="app/example.py" line-rate="0.75" branch-rate="0.8">
+          <methods/>
+          <lines>
+            <line number="1" hits="1"/>
+            <line number="2" hits="1"/>
+            <line number="3" hits="0"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>

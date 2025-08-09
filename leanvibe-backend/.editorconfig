@@ -1,0 +1,67 @@
+# EditorConfig - LeanVibe Backend
+# Ensures consistent coding style across different editors and IDEs
+# https://editorconfig.org/
+
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Python files
+[*.py]
+indent_size = 4
+max_line_length = 88
+quote_type = double
+
+# Python configuration files
+[*.{cfg,ini}]
+indent_size = 4
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 120
+
+# Docker files
+[Dockerfile*]
+indent_size = 4
+
+# Shell scripts
+[*.sh]
+indent_size = 2
+
+# Makefile
+[Makefile]
+indent_style = tab
+indent_size = 4
+
+# TypeScript files (for contract generation)
+[*.ts]
+indent_size = 2
+quote_type = single
+
+# Configuration files
+[.{gitignore,gitattributes,dockerignore}]
+indent_size = 2
+
+# Requirements files
+[requirements*.txt]
+indent_size = 2
+
+# Python setup files
+[{pyproject.toml,setup.py,setup.cfg,tox.ini,pytest.ini}]
+indent_size = 4

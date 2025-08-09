@@ -17,6 +17,7 @@ from .api.endpoints.debug_cli import router as debug_cli_router
 from .api.endpoints.projects import router as projects_router
 from .api.endpoints.ios_bridge import router as ios_bridge_router
 from .api.endpoints.config import router as config_router
+from .api.endpoints.synthetic_monitoring import router as synthetic_monitoring_router
 from .api.models import CodeCompletionRequest
 from .core.connection_manager import ConnectionManager
 from .models.event_models import ClientPreferences, EventType
@@ -184,6 +185,7 @@ app.include_router(debug_cli_router)  # Debug endpoint for direct Ollama testing
 app.include_router(projects_router)
 app.include_router(ios_bridge_router)
 app.include_router(config_router)  # Configuration API for iOS app integration
+app.include_router(synthetic_monitoring_router)  # Synthetic probes and observability monitoring
 
 
 # Code completion WebSocket handler

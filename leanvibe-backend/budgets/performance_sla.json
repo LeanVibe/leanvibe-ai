@@ -1,0 +1,254 @@
+{
+  "version": "1.0",
+  "description": "LeanVibe Backend Performance Service Level Agreements and Budgets",
+  "last_updated": "2025-01-13",
+  "budgets": {
+    "api_endpoints": {
+      "description": "REST API endpoint performance budgets",
+      "metrics": {
+        "p50_response_time_ms": {
+          "target": 200,
+          "warning": 300,
+          "critical": 500,
+          "unit": "milliseconds"
+        },
+        "p95_response_time_ms": {
+          "target": 400,
+          "warning": 600,
+          "critical": 1000,
+          "unit": "milliseconds"
+        },
+        "p99_response_time_ms": {
+          "target": 800,
+          "warning": 1200,
+          "critical": 2000,
+          "unit": "milliseconds"
+        },
+        "error_rate_percent": {
+          "target": 0.1,
+          "warning": 1.0,
+          "critical": 5.0,
+          "unit": "percentage"
+        },
+        "throughput_requests_per_second": {
+          "target": 100,
+          "warning": 50,
+          "critical": 25,
+          "unit": "requests/second"
+        }
+      },
+      "endpoints": {
+        "/health": {
+          "p95_response_time_ms": 100,
+          "description": "Health check endpoint must be very fast"
+        },
+        "/api/projects": {
+          "p95_response_time_ms": 300,
+          "description": "Project listing with caching"
+        },
+        "/api/projects/{id}/ast": {
+          "p95_response_time_ms": 1000,
+          "description": "AST parsing can be slower but bounded"
+        },
+        "/api/ai/completion": {
+          "p95_response_time_ms": 2000,
+          "description": "AI completions may take longer"
+        }
+      }
+    },
+    "websocket_connections": {
+      "description": "WebSocket real-time communication budgets",
+      "metrics": {
+        "handshake_time_ms": {
+          "target": 500,
+          "warning": 1000,
+          "critical": 2000,
+          "unit": "milliseconds"
+        },
+        "message_latency_ms": {
+          "target": 50,
+          "warning": 100,
+          "critical": 200,
+          "unit": "milliseconds"
+        },
+        "connection_success_rate_percent": {
+          "target": 99.5,
+          "warning": 98.0,
+          "critical": 95.0,
+          "unit": "percentage"
+        },
+        "concurrent_connections": {
+          "target": 1000,
+          "warning": 500,
+          "critical": 100,
+          "unit": "connections"
+        }
+      }
+    },
+    "test_suite_performance": {
+      "description": "Test execution time budgets for developer productivity",
+      "tier_0_tests": {
+        "target_time_seconds": 45,
+        "warning_time_seconds": 60,
+        "critical_time_seconds": 90,
+        "description": "Pre-commit tests must be very fast"
+      },
+      "tier_1_tests": {
+        "target_time_seconds": 180,
+        "warning_time_seconds": 300,
+        "critical_time_seconds": 450,
+        "description": "PR gate tests should complete in 3-5 minutes"
+      },
+      "tier_2_tests": {
+        "target_time_seconds": 900,
+        "warning_time_seconds": 1800,
+        "critical_time_seconds": 2700,
+        "description": "Nightly tests can take up to 30 minutes"
+      },
+      "individual_test_limits": {
+        "unit_test_max_ms": 100,
+        "integration_test_max_ms": 5000,
+        "e2e_test_max_ms": 30000
+      }
+    },
+    "resource_utilization": {
+      "description": "System resource usage budgets",
+      "memory": {
+        "application_heap_mb": {
+          "target": 256,
+          "warning": 400,
+          "critical": 500,
+          "unit": "megabytes"
+        },
+        "test_execution_peak_mb": {
+          "target": 400,
+          "warning": 600,
+          "critical": 800,
+          "unit": "megabytes"
+        }
+      },
+      "cpu": {
+        "average_utilization_percent": {
+          "target": 60,
+          "warning": 80,
+          "critical": 95,
+          "unit": "percentage"
+        }
+      },
+      "storage": {
+        "log_files_mb_per_day": {
+          "target": 100,
+          "warning": 250,
+          "critical": 500,
+          "unit": "megabytes"
+        },
+        "cache_size_mb": {
+          "target": 200,
+          "warning": 400,
+          "critical": 600,
+          "unit": "megabytes"
+        }
+      }
+    },
+    "ai_services": {
+      "description": "AI service performance budgets",
+      "llm_inference": {
+        "first_token_latency_ms": {
+          "target": 200,
+          "warning": 500,
+          "critical": 1000,
+          "unit": "milliseconds"
+        },
+        "tokens_per_second": {
+          "target": 50,
+          "warning": 25,
+          "critical": 10,
+          "unit": "tokens/second"
+        },
+        "model_loading_time_seconds": {
+          "target": 5,
+          "warning": 10,
+          "critical": 20,
+          "unit": "seconds"
+        }
+      },
+      "embeddings": {
+        "embedding_generation_ms": {
+          "target": 100,
+          "warning": 250,
+          "critical": 500,
+          "unit": "milliseconds"
+        }
+      }
+    },
+    "future_frontend": {
+      "description": "Planned frontend performance budgets",
+      "bundle_sizes": {
+        "main_bundle_kb": {
+          "target": 5120,
+          "warning": 7680,
+          "critical": 10240,
+          "unit": "kilobytes",
+          "note": "5-10MB bundle size limit"
+        },
+        "vendor_bundle_kb": {
+          "target": 2048,
+          "warning": 3072,
+          "critical": 4096,
+          "unit": "kilobytes"
+        }
+      },
+      "load_times": {
+        "first_contentful_paint_ms": {
+          "target": 1500,
+          "warning": 2500,
+          "critical": 4000,
+          "unit": "milliseconds"
+        },
+        "largest_contentful_paint_ms": {
+          "target": 2500,
+          "warning": 4000,
+          "critical": 6000,
+          "unit": "milliseconds"
+        }
+      }
+    }
+  },
+  "monitoring": {
+    "measurement_intervals": {
+      "real_time_metrics_seconds": 30,
+      "performance_snapshots_minutes": 5,
+      "trend_analysis_hours": 1,
+      "sla_reporting_hours": 24
+    },
+    "alerting_thresholds": {
+      "consecutive_warning_violations": 3,
+      "critical_violation_immediate": 1,
+      "recovery_confirmation_cycles": 2
+    }
+  },
+  "quality_gates": {
+    "description": "Performance gates for deployment decisions",
+    "pre_deployment": {
+      "required_checks": [
+        "api_p95_under_target",
+        "test_suite_under_warning",
+        "memory_under_warning",
+        "no_critical_violations"
+      ]
+    },
+    "production_monitoring": {
+      "auto_rollback_triggers": [
+        "api_p95_exceeds_critical_for_5_minutes",
+        "error_rate_exceeds_critical_for_2_minutes",
+        "memory_exceeds_critical"
+      ]
+    }
+  },
+  "regression_detection": {
+    "comparison_baseline": "last_7_days_p95",
+    "regression_threshold_percent": 15,
+    "improvement_threshold_percent": 5,
+    "minimum_sample_size": 100
+  }
+}

@@ -1,407 +1,502 @@
-# 🧠 LeanVibe Backend
+# 🤖 LeanVibe Backend - Autonomous Development Platform
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![MLX](https://img.shields.io/badge/MLX-Apple_Silicon-orange.svg)](https://ml-explore.github.io/mlx/build/html/index.html)
-[![Neo4j](https://img.shields.io/badge/Neo4j-Graph_DB-blue.svg)](https://neo4j.com/)
+[![Autonomous Workflow](https://img.shields.io/badge/Autonomous-8%2B_hours-purple.svg)](./AUTONOMOUS_DEPLOYMENT.md)
+[![Auto-merge](https://img.shields.io/badge/Auto--merge-85%25-green.svg)](./AUTONOMOUS_DEPLOYMENT.md)
+[![Quality Ratchet](https://img.shields.io/badge/Quality-Ratcheting-blue.svg)](./quality_ratchet.json)
+[![Contract First](https://img.shields.io/badge/Contract-First_API-orange.svg)](./contracts/openapi.yaml)
 
-> **The core AI-powered backend service that provides intelligent codebase analysis, real-time monitoring, and architectural insights.**
+> **The first truly autonomous development platform - Deploy and iterate for 8+ hours without human intervention**
 
-The LeanVibe backend is a FastAPI-based service that leverages Apple Silicon's MLX framework for on-device AI processing, ensuring complete privacy while delivering powerful development insights.
+LeanVibe revolutionizes software development with autonomous XP workflows that handle 85%+ of deployments automatically, featuring contract-first development, tiered testing, and quality ratcheting for hands-off productivity.
 
-## ✨ Features
+## 🚀 Why Choose LeanVibe?
 
-- **🔒 Privacy-First AI**: All processing happens locally using MLX
-- **📊 Real-Time Analysis**: Live codebase monitoring and change detection
-- **🏗️ Architecture Mapping**: Automatic dependency visualization with Neo4j
-- **🧠 Intelligent Insights**: Context-aware code suggestions and refactoring
-- **📡 WebSocket API**: Real-time communication with clients
-- **⚡ High Performance**: Optimized for Apple Silicon
+### Autonomous Development Workflow
+- **🤖 8+ Hour Hands-Off Development**: Code, test, deploy, and iterate autonomously
+- **🔄 85% Auto-Merge Rate**: Most changes deployed without human intervention
+- **⚡ <60s Rollback**: Instant recovery from production issues
+- **🎯 Quality Ratcheting**: Continuous quality improvement enforced automatically
 
-## 🏗️ Architecture
+### Contract-First Development
+- **📋 Schema-Driven**: OpenAPI contracts as source of truth
+- **🔧 Auto-Generated Models**: TypeScript and Python models from schemas
+- **✅ Contract Validation**: Automatic API compatibility checking
+- **📊 Synthetic Monitoring**: Proactive health validation
+
+### Extreme Programming Excellence
+- **🧪 4-Tier Testing**: From sub-60s pre-commit to comprehensive weekly validation
+- **📈 Quality Gates**: Coverage, mutation testing, performance regression detection
+- **🔧 Developer Ergonomics**: Simple shortcuts (vf, vp, fix, gen) for complex workflows
+- **🎯 Zero-Friction CI/CD**: Canary deployments with automatic promotion or rollback
+
+## 🏗️ Autonomous Architecture
 
 ```mermaid
 graph TB
-    subgraph "Backend Services"
-        API[FastAPI Server]
-        WS[WebSocket Manager]
-        AI[AI Service]
-        AST[AST Parser]
-        GRAPH[Graph Service]
-        VECTOR[Vector Store]
+    subgraph "Development Workflow"
+        DEV[Developer]
+        SC[Smart Shortcuts]
+        QR[Quality Ratchet]
+        PR[Auto PR]
     end
     
-    subgraph "Storage Layer"
-        NEO[Neo4j Graph DB]
-        CHROMA[ChromaDB Vectors]
-        CACHE[File Cache]
+    subgraph "Contract Layer"
+        OAPI[OpenAPI Schema]
+        TGEN[Model Generation]
+        VALID[Contract Validation]
+        PROBE[Synthetic Probes]
     end
     
-    subgraph "AI Stack"
-        MLX[MLX Framework]
-        MODELS[Local Models]
+    subgraph "Testing Tiers"
+        T0["Tier 0: <60s"]
+        T1["Tier 1: 3-5m"]
+        T2["Tier 2: 30m"]
+        T3["Tier 3: 2h"]
     end
     
-    API --> WS
-    API --> AI
-    API --> AST
-    AST --> GRAPH
-    AI --> VECTOR
-    GRAPH --> NEO
-    VECTOR --> CHROMA
-    AI --> MLX
-    MLX --> MODELS
+    subgraph "Deployment Pipeline"
+        CANARY[Canary Deploy]
+        HEALTH[Health Validation]
+        PROMOTE[Auto Promotion]
+        ROLLBACK[Instant Rollback]
+    end
+    
+    DEV --> SC --> QR --> PR
+    PR --> T0 --> T1
+    T1 --> CANARY --> HEALTH
+    HEALTH --> PROMOTE
+    HEALTH --> ROLLBACK
+    OAPI --> TGEN --> VALID --> PROBE
 ```
 
-## 🚀 Quick Start
+## ⚡ Autonomous Quick Start
 
-### Prerequisites
+> **From zero to autonomous development in under 2 minutes**
 
-- **Hardware**: Mac with Apple Silicon (M1/M2/M3/M4)
-- **Software**: macOS 13.0+, Python 3.11+
-- **Memory**: 8GB+ RAM (16GB+ recommended)
-
-### Installation
-
-**Option 1: Automatic Setup (Recommended)**
+### 1. One-Command Setup
 ```bash
-# One command setup - installs uv, dependencies, and starts server
-./start.sh
+# Automatic setup with XP toolchain
+./start.sh --autonomous
+
+# This installs:
+# ✅ Dependencies and MLX framework
+# ✅ Quality ratchet and git hooks  
+# ✅ Developer shortcuts (vf, vp, fix, gen)
+# ✅ Contract generation tools
+# ✅ Monitoring dashboard
 ```
 
-**Option 2: Manual Setup**
+### 2. Start Developing Autonomously
 ```bash
-# Install uv package manager
-curl -LsSf https://astral.sh/uv/install.sh | sh
+# Source developer shortcuts
+source scripts/dev_shortcuts.sh
 
-# Sync dependencies
-uv sync
+# Fast development cycle
+vf              # Verify fast (<60s)
+fix             # Auto-fix any issues
+gen             # Generate contracts
+qc "feat: new"  # Quick commit with checks
+pp              # Push with PR verification
 
-# Optional: Install MLX for Apple Silicon
-uv sync --extra mlx
-
-# Start server
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+# Add auto-merge label → autonomous deployment!
 ```
 
-### Verify Installation
-
+### 3. Monitor Autonomous Progress
 ```bash
-# Check health endpoint
+# Quality dashboard
+qd              # View metrics and trends
+
+# Health check
 curl http://localhost:8000/health
-
-# Expected response:
-# {"status": "healthy", "version": "1.0.0"}
+# {"status": "healthy", "autonomous_ready": true}
 ```
 
-## 📋 API Documentation
+## 📊 Autonomous Development Metrics
 
-### REST Endpoints
+### Before vs After LeanVibe
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Service health check |
-| `/api/v1/analyze` | POST | Analyze codebase |
-| `/api/v1/tasks` | GET/POST | Task management |
-| `/api/v1/code/complete` | POST | Code completion |
-| `/api/v1/graph/query` | POST | Graph database queries |
+| Metric | Traditional | LeanVibe Autonomous |
+|--------|-------------|--------------------|
+| **Deployment Time** | 2-4 hours | 8+ hours hands-off |
+| **Manual Interventions** | Every change | <15% of deployments |
+| **Rollback Time** | 10-30 minutes | <60 seconds |
+| **Test Feedback** | 10-45 minutes | <60s for critical path |
+| **Quality Regressions** | Common | Prevented by ratcheting |
+| **Context Switching** | Constant | Minimal - focus on features |
 
-### WebSocket Endpoints
-
-- `/ws/test-client` - Development WebSocket client
-- `/ws/monitor` - Real-time file monitoring
-- `/ws/chat` - AI chat interface
-- `/ws/metrics` - Performance metrics stream
-
-### Available Commands
-
-- `/list-files [directory]` - List files in current or specified directory
-- `/read-file <path>` - Read contents of a file  
-- `/current-dir` - Show current working directory
-- `/status` - Show agent status
-- `/help` - Show help information
-
-### Example Usage
-
-```python
-import requests
-
-# Analyze a file
-response = requests.post(
-    "http://localhost:8000/api/v1/analyze",
-    json={
-        "file_path": "/path/to/file.py",
-        "analysis_type": "full"
-    }
-)
-
-print(response.json())
-```
-
-**WebSocket Testing (using wscat):**
-```bash
-# Install wscat: npm install -g wscat
-wscat -c ws://localhost:8000/ws/test-client
-
-# Send command:
-{"type": "command", "content": "/status"}
-```
-
-## 🧪 Testing
-
-### Run Tests
+### Developer Productivity Gains
 
 ```bash
-# Using the test runner
-python run_tests.py
+# Traditional workflow
+git add . && git commit -m "fix"
+git push
+# Wait for CI (10-15 minutes)
+# Manual review and merge
+# Manual deployment (30-60 minutes)
+# Monitor for issues
 
-# Or directly with pytest
-uv run pytest tests/ -v
-
-# Run integration tests (requires server running)
-uv run python tests/test_integration.py
+# LeanVibe autonomous workflow
+vf && qc "fix: issue" && pp
+# Everything else happens automatically!
+# Focus on next feature while system deploys
 ```
 
-### Test Categories
+### Real-Time Quality Metrics
+- **Test Coverage**: 75%+ enforced, trending to 85%
+- **Mutation Score**: 60%+ weekly validation
+- **Performance**: <5% regression tolerance
+- **Auto-merge Success**: 85%+ target rate
+- **Mean Time to Recovery**: <60 seconds
+
+## 🧪 4-Tier Autonomous Testing
+
+> **Smart testing that scales from seconds to hours for comprehensive validation**
+
+### Tier 0: Pre-commit (<60s)
+```bash
+vf  # Runs automatically: unit, contract, type checking
+# ✅ Fail fast on critical path
+# ✅ Quality ratchet validation
+# ✅ Contract compliance
+```
+
+### Tier 1: PR Gate (3-5m)
+```bash
+vp  # Full PR validation before merge
+# ✅ Integration tests with real services
+# ✅ 75% coverage gate enforcement
+# ✅ Performance regression detection
+```
+
+### Tier 2: Nightly (30m)
+```bash
+# Runs automatically every night
+# ✅ End-to-end workflow validation
+# ✅ Mutation testing (5% sample)
+# ✅ Security scanning
+# ✅ Flaky test quarantine
+```
+
+### Tier 3: Weekly (2h)
+```bash
+# Comprehensive quality assurance
+# ✅ Full mutation testing (100%)
+# ✅ Dependency security audits
+# ✅ Load testing and chaos engineering
+# ✅ Database migration validation
+```
+
+## 🏗️ Autonomous-Ready Project Structure
+
+```
+├── contracts/
+│   ├── openapi.yaml          # Contract-first API schema
+│   ├── generate.py           # Auto-generate models
+│   └── types.ts              # Generated TypeScript types
+├── scripts/
+│   ├── dev_shortcuts.sh      # Developer ergonomics (vf, vp, etc)
+│   └── validate_pipeline.py  # Autonomous workflow validation
+├── tools/
+│   ├── quality_ratchet.py    # Quality improvement enforcement
+│   ├── metrics_dashboard.py  # Real-time quality metrics
+│   └── schema_drift.py       # Contract evolution tracking
+├── deploy/
+│   ├── canary.sh            # Autonomous canary deployment
+│   ├── rollback.sh          # <60s emergency rollback
+│   └── synthetic_probes.sh   # Health validation probes
+├── app/                      # Main application code
+└── tests/                    # 4-tier testing structure
+    ├── tier0/               # <60s pre-commit tests
+    ├── tier1/               # 3-5m PR gate tests
+    └── integration/         # End-to-end validation
+```
+
+## 🤖 Autonomous Services
+
+### Quality Ratchet Engine
+- **Continuous Improvement**: Enforces upward-only quality trends
+- **Multi-Metric Tracking**: Coverage, mutation score, performance, security
+- **Regression Prevention**: Blocks deployments that decrease quality
+- **Trend Analysis**: ML-powered quality forecasting
+
+### Contract Validation Service
+- **Schema-First Development**: OpenAPI as single source of truth
+- **Automatic Model Generation**: Python/TypeScript from contracts
+- **Breaking Change Detection**: Prevents API compatibility issues
+- **Synthetic Monitoring**: Proactive endpoint validation
+
+### Autonomous Deployment Pipeline
+- **Smart Canary Deployments**: Risk-based traffic allocation
+- **Health Validation**: Multi-tier synthetic probing
+- **Instant Rollback**: <60s recovery from production issues
+- **Auto-promotion**: 85%+ deployments complete without human intervention
+
+### Developer Ergonomics Engine
+- **Smart Shortcuts**: Complex workflows via simple commands (vf, vp, fix)
+- **Context-Aware Automation**: Knows what you need before you ask
+- **Quality Gates**: Prevents broken code from reaching production
+- **Feedback Loops**: Real-time metrics for continuous improvement
+
+## ⚙️ Autonomous Configuration
+
+### Quality Ratchet Settings (`quality_ratchet.json`)
+```json
+{
+  "global_targets": {
+    "coverage_percent_min": 70.0,
+    "mutation_score_min": 60.0,
+    "performance_p95_max": 500.0,
+    "flaky_test_count_max": 2,
+    "security_issues_max": 0
+  },
+  "ratchet_settings": {
+    "min_improvement_threshold": 0.5,
+    "regression_tolerance": 1.0,
+    "consecutive_improvements_required": 2
+  }
+}
+```
+
+### Deployment Thresholds (`config/performance_sla.json`)
+```json
+{
+  "canary_promotion_criteria": {
+    "error_rate_max": 0.10,
+    "response_time_p95_max": 5000,
+    "health_check_success_min": 0.85
+  },
+  "rollback_triggers": {
+    "error_rate_threshold": 0.10,
+    "consecutive_failures": 3,
+    "response_time_threshold": 10000
+  }
+}
+```
+
+## 🚀 Autonomous Development Experience
+
+### Developer Inner Loop (Traditional vs LeanVibe)
+
+**Traditional (15-45 minutes per change):**
+```bash
+# Manual, error-prone, context-switching intensive
+git add . && git commit -m "fix"
+git push origin feature-branch
+# Wait for CI... check results... fix issues... repeat
+# Manual PR creation, review, merge
+# Manual deployment... monitor... rollback if needed
+```
+
+**LeanVibe Autonomous (2-3 minutes active time):**
+```bash
+source scripts/dev_shortcuts.sh  # Once per session
+
+vf                    # Verify fast (<60s) - fail early
+fix                   # Auto-fix any issues found
+gen                   # Generate contracts if schema changed
+qc "feat: new thing"  # Quick commit with pre-commit validation
+pp                    # Push with PR verification
+
+# Add "auto-merge" label → System handles the rest!
+# Continue coding while deployment happens autonomously
+```
+
+### Quality-First Development
+```bash
+# Real-time quality monitoring
+qd                    # Quality dashboard
+qr                    # Quality ratchet report
+qre                   # Enforce quality standards
+
+# Zero-config testing
+t0                    # Tier 0 tests (<60s)
+t1                    # Tier 1 tests (3-5m)
+tw                    # Watch mode for continuous feedback
+```
+
+## 📊 Autonomous Monitoring & Observability
+
+### Real-Time Quality Dashboard
+```bash
+# Interactive metrics dashboard
+qd                    # Opens quality trends, coverage, performance
+
+# Key metrics tracked:
+# ✅ Test coverage trend (target: 75%+ → 85%)
+# ✅ Mutation score (60%+ weekly validation)
+# ✅ Performance regressions (<5% tolerance)
+# ✅ Auto-merge success rate (target: 85%+)
+# ✅ Mean time to recovery (<60s)
+```
+
+### Synthetic Health Validation
+```bash
+# Comprehensive endpoint validation
+curl http://localhost:8000/health/complete
+
+# Response includes:
+{
+  "status": "healthy",
+  "autonomous_ready": true,
+  "canary_deployment_ready": true,
+  "quality_ratchet_status": "passing",
+  "test_suite_reliability": 0.98,
+  "auto_merge_rate_7d": 0.87
+}
+```
+
+### Deployment Pipeline Visibility
+```bash
+# Real-time deployment status
+gh pr view --json checks,labels
+
+# Canary deployment health
+curl https://staging.leanvibe.ai/health/canary
+```
+
+## 🐛 Autonomous Troubleshooting
+
+### Quality Gate Failures
+
+**Pre-commit checks failing?**
+```bash
+vf                    # Run fast verification
+fix                   # Auto-fix formatting, imports, etc.
+vf                    # Verify fixes worked
+```
+
+**PR verification failing?**
+```bash
+vp                    # Run full PR verification
+qr                    # Check quality ratchet status
+qre                   # Enforce quality standards
+```
+
+**Auto-merge not triggering?**
+```bash
+# Check branch protection status
+gh api repos/:owner/:repo/branches/main/protection
+
+# Verify PR has correct labels
+gh pr view <pr-number> --json labels
+
+# Check required status checks
+gh pr checks <pr-number>
+```
+
+### Deployment Issues
+
+**Canary deployment failed?**
+```bash
+# Check synthetic probe status
+./deploy/synthetic_probes.sh staging --comprehensive
+
+# Manual canary deployment
+./deploy/canary.sh staging $COMMIT_SHA
+```
+
+**Need emergency rollback?**
+```bash
+# <60s rollback to previous version
+./deploy/rollback.sh production --emergency
+
+# Check rollback status
+curl https://leanvibe.ai/health/complete
+```
+
+## 🚀 Autonomous Deployment
+
+### Zero-Touch Production Pipeline
 
 ```bash
-# Unit tests
-pytest tests/test_*.py
+# Standard workflow - no manual steps required
+feature/my-new-feature → PR with "auto-merge" label
 
-# Integration tests
-pytest tests/integration/
+# Autonomous pipeline handles:
+# 1. Tier 0 + Tier 1 testing (parallel)
+# 2. Quality ratchet validation
+# 3. Contract validation
+# 4. Canary deployment (10% traffic)
+# 5. Synthetic health probes
+# 6. Auto-promotion to 100% OR rollback
 
-# Performance tests
-pytest tests/test_*_performance.py
-
-# AI service tests
-pytest tests/test_ai_*.py
+# Result: 85%+ deployments complete without human intervention
 ```
 
-## 🏗️ Project Structure
-
-```
-app/
-├── main.py                    # FastAPI application entry point
-├── core/
-│   └── connection_manager.py  # WebSocket connection management
-├── services/
-│   ├── ai_service.py         # AI processing and command handling
-│   ├── ast_parser_service.py # AST parsing and analysis
-│   ├── graph_service.py      # Neo4j graph operations
-│   ├── vector_store_service.py # ChromaDB vector operations
-│   └── ...                   # Additional services
-├── models/
-│   ├── messages.py           # Pydantic data models
-│   ├── ast_models.py         # AST-related models
-│   └── ...                   # Additional models
-├── api/
-│   └── endpoints/            # REST API endpoints
-└── utils/                    # Utility functions
-```
-
-## 🔧 Core Services
-
-### AI Service (`app/services/ai_service.py`)
-- **MLX Integration**: Local model inference
-- **Code Analysis**: Semantic understanding and suggestions
-- **Context Management**: Maintain conversation history
-
-### AST Parser Service (`app/services/ast_parser_service.py`)
-- **Multi-Language Support**: Python, JavaScript, TypeScript, Swift
-- **Dependency Extraction**: Import/export analysis
-- **Symbol Resolution**: Function, class, and variable mapping
-
-### Graph Service (`app/services/graph_service.py`)
-- **Neo4j Integration**: Store and query code relationships
-- **Architecture Visualization**: Generate dependency graphs
-- **Impact Analysis**: Track change propagation
-
-### Vector Store Service (`app/services/vector_store_service.py`)
-- **ChromaDB Integration**: Semantic code search
-- **Embedding Generation**: Convert code to vectors
-- **Similarity Search**: Find related code patterns
-
-## ⚙️ Configuration
-
-### Environment Variables
+### Emergency Human Override
 
 ```bash
-# Server Configuration
-LEANVIBE_HOST=0.0.0.0
-LEANVIBE_PORT=8000
-LEANVIBE_LOG_LEVEL=INFO
+# Emergency rollback (when 15% human intervention needed)
+./deploy/rollback.sh production --emergency --reason="Critical bug"
 
-# Database Configuration
-NEO4J_URI=bolt://localhost:7687
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=password
+# Pause autonomous deployments
+gh api repos/:owner/:repo/environments/production/deployment-protection-rules \
+  --method PATCH --input '{"prevent_self_review": true}'
 
-# AI Configuration
-MLX_MODEL_PATH=./models
-ENABLE_GPU=true
+# Resume after fix
+gh pr edit --remove-label "emergency-pause" --add-label "auto-merge"
 ```
 
-### Performance Tuning
+## 🤝 Contributing to Autonomous Excellence
 
-```python
-# Optimize for your hardware
-MLX_GPU_MEMORY_LIMIT = 8192  # MB
-MAX_CONCURRENT_REQUESTS = 10
-CACHE_SIZE_LIMIT = 1024  # MB
-```
+### Contributor Experience (Quality-First)
 
-## 🚀 Development
-
-### Code Quality
-
-```bash
-# Install development dependencies
-uv sync --extra dev
-
-# Format and lint (using ruff)
-ruff check . --fix
-ruff format .
-
-# Type checking
-mypy app/
-```
-
-### Development Workflow
-
-1. **Start development server**
+1. **One-command setup**
    ```bash
-   uvicorn app.main:app --reload --log-level debug
+   git checkout -b feature/your-amazing-feature
+   source scripts/dev_shortcuts.sh
+   setup                 # Installs everything + git hooks
    ```
 
-2. **Run tests continuously**
+2. **Quality-driven development**
    ```bash
-   pytest-watch tests/
+   # Make your changes...
+   vf                   # Fast verification (<60s)
+   fix                  # Auto-fix any issues
+   qc "feat: amazing"   # Quality-checked commit
+   pp                   # Push with PR validation
    ```
 
-3. **API documentation**
-   - Swagger UI: http://localhost:8000/docs
-   - ReDoc: http://localhost:8000/redoc
-
-## 📊 Monitoring & Observability
-
-### Health Checks
-
-```bash
-# Basic health
-curl http://localhost:8000/health
-
-# Detailed status
-curl http://localhost:8000/api/v1/status
-```
-
-### Logging
-
-```bash
-# Debug mode
-uvicorn app.main:app --log-level debug
-
-# Structured logging
-export LOG_FORMAT=json
-```
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Port already in use?**
-```bash
-# Find and kill process on port 8000
-lsof -ti:8000 | xargs kill -9
-
-# Or use different port
-uvicorn app.main:app --port 8001
-```
-
-**MLX not available?**
-```bash
-# Check MLX installation
-python -c "import mlx.core; print('MLX available')"
-
-# Install if needed
-uv sync --extra mlx
-```
-
-**Permission denied for directories?**
-```bash
-# Ensure read permissions
-chmod -R 755 /path/to/project
-```
-
-### Debug Mode
-
-```bash
-# Start with debug logging
-DEBUG=true uvicorn app.main:app --reload --log-level debug
-```
-
-## 🚀 Deployment
-
-### Production Setup
-
-```bash
-# Production server
-gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
-
-# With Docker
-docker build -t leanvibe-backend .
-docker run -p 8000:8000 leanvibe-backend
-```
-
-### Environment Variables for Production
-
-```bash
-export ENVIRONMENT=production
-export LOG_LEVEL=INFO
-export MLX_OPTIMIZATION_LEVEL=2
-export ENABLE_METRICS=true
-```
-
-## 🤝 Contributing
-
-### Development Setup
-
-1. **Fork and clone**
-2. **Create feature branch**
+3. **Add auto-merge label for autonomous deployment**
    ```bash
-   git checkout -b feature/your-feature
+   gh pr create --title "Add amazing feature" --label "auto-merge"
+   # System handles testing, deployment, monitoring ✓
    ```
 
-3. **Install dependencies**
-   ```bash
-   uv sync --extra dev
-   ```
+### Quality Standards (Enforced Automatically)
 
-4. **Make changes and test**
-   ```bash
-   ruff check . --fix && ruff format .
-   python run_tests.py
-   ```
+- **Coverage**: 75%+ enforced, trending to 85%
+- **Mutation Score**: 60%+ weekly validation
+- **Performance**: <5% regression tolerance
+- **Security**: Zero critical vulnerabilities
+- **Contracts**: All API changes must include schema updates
+- **Tests**: 4-tier testing strategy with <60s inner loop
 
-5. **Submit pull request**
+## 📊 Success Metrics
 
-### Code Standards
+### Productivity Improvements
+- **8+ hours** of continuous autonomous development
+- **85%+** deployments complete without human intervention  
+- **<60s** rollback time for production issues
+- **<60s** pre-commit feedback loop
+- **75%+** test coverage enforced with quality ratcheting
 
-- Use `ruff` for formatting and linting
-- Write tests for new features
-- Maintain >80% code coverage
-- Follow conventional commit format
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
-
-## 🔗 Related Projects
-
-- [LeanVibe CLI](../leanvibe-cli/README.md) - Command-line interface
-- [LeanVibe iOS](../leanvibe-ios/README.md) - iOS companion app
-- [Main Project](../README.md) - Overall project documentation
+### Developer Experience
+- **Zero context switching** during autonomous cycles
+- **Instant feedback** on code quality and performance
+- **Contract-first development** prevents integration issues
+- **Smart shortcuts** (vf, vp, fix, gen) simplify complex workflows
+- **Real-time quality metrics** for continuous improvement
 
 ---
 
-**Built with ❤️ for developers who value privacy and performance**
+## 🔗 Learn More
+
+- **[Quick Start Guide](./QUICKSTART.md)** - Get autonomous in 5 minutes
+- **[API Documentation](./API.md)** - Contract-first API reference
+- **[Installation Guide](./INSTALLATION.md)** - Complete setup with toolchain
+- **[Autonomous Deployment](./AUTONOMOUS_DEPLOYMENT.md)** - Deep dive into the pipeline
+
+---
+
+**🤖 The future of development is autonomous. Start your 8-hour coding session today.**

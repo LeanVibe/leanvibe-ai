@@ -1,0 +1,29 @@
+{
+  "global_targets": {
+    "coverage_percent_min": 70.0,
+    "mutation_score_min": 60.0,
+    "test_execution_time_max": 60.0,
+    "performance_p95_max": 500.0,
+    "memory_usage_mb_max": 500.0,
+    "flaky_test_count_max": 2,
+    "security_issues_max": 0,
+    "technical_debt_ratio_max": 0.05
+  },
+  "per_module_targets": {
+    "app/api": {
+      "coverage_percent_min": 80.0
+    },
+    "app/core": {
+      "coverage_percent_min": 85.0
+    },
+    "app/services": {
+      "coverage_percent_min": 75.0
+    }
+  },
+  "ratchet_settings": {
+    "min_improvement_threshold": 0.5,
+    "regression_tolerance": 1.0,
+    "consecutive_improvements_required": 2,
+    "grace_period_hours": 24
+  }
+}

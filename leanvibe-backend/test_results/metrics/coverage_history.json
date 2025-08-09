@@ -1,0 +1,19 @@
+{
+  "entries": [
+    {
+      "timestamp": "2025-08-09T09:28:25.878750",
+      "coverage": 75.0,
+      "change": 5.0,
+      "previous": 70.0,
+      "meets_gate": true
+    },
+    {
+      "timestamp": "2025-08-09T09:28:48.705176",
+      "coverage": 75.0,
+      "change": 0.0,
+      "previous": 75.0,
+      "meets_gate": true
+    }
+  ],
+  "baseline": 70.0
+}

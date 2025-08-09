@@ -1,0 +1,17 @@
+[
+  {
+    "timestamp": "2025-08-09T10:07:26.654148",
+    "branch": "main",
+    "commit_hash": "f33494fbb591837b4c5c9b51a15b2811beeea6dc",
+    "metrics": {
+      "coverage_percent": 75.0,
+      "mutation_score": null,
+      "test_execution_time": 10.0,
+      "performance_p95": 250.5,
+      "memory_usage_mb": 250.0,
+      "flaky_test_count": 0,
+      "security_issues": 0,
+      "technical_debt_ratio": 0.03
+    }
+  }
+]

@@ -1,0 +1,30 @@
+[Unit]
+Description=LeanVibe AI Backend Service
+After=network.target
+
+[Service]
+Type=exec
+User=leanvibe
+Group=leanvibe
+WorkingDirectory=/opt/leanvibe/leanvibe-backend
+Environment="PATH=/opt/leanvibe/.venv/bin:/usr/local/bin:/usr/bin"
+Environment="PYTHONPATH=/opt/leanvibe/leanvibe-backend"
+ExecStart=/opt/leanvibe/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+Restart=always
+RestartSec=10
+
+# Security
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/leanvibe/logs
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=512
+MemoryLimit=2G
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target

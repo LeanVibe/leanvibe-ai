@@ -25,7 +25,7 @@ class TaskPriority(str, Enum):
     CRITICAL = "urgent"  # Map to urgent for compatibility
 
 class Task(BaseModel):
-    """Core task model for Kanban board - aligned with iOS LeanVibeTask"""
+    """Core task model for Kanban board - aligned with iOS LeanVibeTask and multi-tenant"""
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str = Field(..., max_length=255, description="Task title")
     description: Optional[str] = Field(None, description="Detailed task description")
@@ -35,12 +35,16 @@ class Task(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     
+    # Multi-tenant fields
+    tenant_id: str = Field(..., description="Tenant identifier for data isolation")
+    
     # AI-related fields
     confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="AI confidence score")
     agent_decision: Optional[Dict[str, Any]] = Field(None, description="Agent decision data")
     
     # Assignment and tracking
-    client_id: str = Field(..., description="Client ID that created the task")
+    client_id: str = Field(..., description="Client ID that created the task (legacy)")
+    created_by: Optional[str] = Field(None, description="User who created the task")
     assigned_to: Optional[str] = Field(None, description="Agent or human assigned")
     estimated_effort: Optional[float] = Field(None, ge=0, description="Estimated effort in hours")
     actual_effort: Optional[float] = Field(None, ge=0, description="Actual time spent in hours")

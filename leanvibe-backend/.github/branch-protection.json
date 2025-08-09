@@ -1,0 +1,175 @@
+{
+  "branch_protection_rules": {
+    "main": {
+      "required_status_checks": {
+        "strict": true,
+        "contexts": [
+          "Tier 0: Pre-commit (<60s)",
+          "Tier 1: PR Gate (3-5m) (integration)",
+          "Tier 1: PR Gate (3-5m) (websocket)",
+          "Tier 1: PR Gate (3-5m) (smoke)",
+          "Coverage Gate (75%)",
+          "Canary Deployment"
+        ]
+      },
+      "enforce_admins": false,
+      "required_pull_request_reviews": {
+        "required_approving_review_count": 1,
+        "dismiss_stale_reviews": true,
+        "require_code_owner_reviews": true,
+        "require_last_push_approval": false
+      },
+      "restrictions": {
+        "users": [],
+        "teams": ["maintainers"],
+        "apps": ["github-actions"]
+      },
+      "allow_deletions": false,
+      "allow_force_pushes": false,
+      "allow_fork_syncing": false,
+      "block_creations": false,
+      "required_conversation_resolution": true,
+      "lock_branch": false,
+      "allow_auto_merge": true
+    },
+    "develop": {
+      "required_status_checks": {
+        "strict": true,
+        "contexts": [
+          "Tier 0: Pre-commit (<60s)"
+        ]
+      },
+      "enforce_admins": false,
+      "required_pull_request_reviews": {
+        "required_approving_review_count": 1,
+        "dismiss_stale_reviews": false,
+        "require_code_owner_reviews": false,
+        "require_last_push_approval": false
+      },
+      "restrictions": null,
+      "allow_deletions": false,
+      "allow_force_pushes": false,
+      "allow_fork_syncing": true,
+      "block_creations": false,
+      "required_conversation_resolution": false,
+      "lock_branch": false,
+      "allow_auto_merge": true
+    }
+  },
+  "auto_merge_conditions": {
+    "main": {
+      "required_labels": ["auto-merge"],
+      "prohibited_labels": ["do-not-merge", "work-in-progress", "blocked"],
+      "required_checks_passing": true,
+      "required_reviews_approved": true,
+      "branch_up_to_date": true,
+      "conversations_resolved": true,
+      "canary_deployment_successful": true,
+      "synthetic_probes_passed": true
+    },
+    "develop": {
+      "required_labels": ["auto-merge"],
+      "prohibited_labels": ["do-not-merge", "work-in-progress"],
+      "required_checks_passing": true,
+      "required_reviews_approved": true,
+      "branch_up_to_date": true,
+      "conversations_resolved": false
+    }
+  },
+  "deployment_environments": {
+    "staging": {
+      "protection_rules": {
+        "reviewers": [
+          {
+            "type": "User",
+            "id": "deployment-reviewer"
+          }
+        ],
+        "deployment_branch_policy": {
+          "protected_branches": true,
+          "custom_branch_policies": false
+        }
+      },
+      "wait_timer": 0,
+      "prevent_self_review": true
+    },
+    "production": {
+      "protection_rules": {
+        "reviewers": [
+          {
+            "type": "Team",
+            "id": "production-approvers"
+          }
+        ],
+        "deployment_branch_policy": {
+          "protected_branches": true,
+          "custom_branch_policies": false
+        }
+      },
+      "wait_timer": 300,
+      "prevent_self_review": true
+    }
+  },
+  "autonomous_deployment_settings": {
+    "max_auto_deployments_per_day": 10,
+    "min_time_between_deployments": 1800,
+    "quality_gate_thresholds": {
+      "test_coverage_minimum": 75,
+      "mutation_score_minimum": 70,
+      "performance_regression_threshold": 10,
+      "error_rate_maximum": 5,
+      "synthetic_probe_success_rate_minimum": 85
+    },
+    "emergency_stop_conditions": [
+      "critical_test_failures",
+      "security_vulnerability_detected",
+      "production_incident_active",
+      "manual_deployment_lock"
+    ],
+    "rollback_triggers": {
+      "error_rate_threshold": 10,
+      "response_time_threshold": 5000,
+      "health_check_failure_threshold": 3,
+      "synthetic_probe_failure_threshold": 2
+    }
+  },
+  "notification_settings": {
+    "deployment_success": {
+      "channels": ["slack-deployments"],
+      "include_metrics": true
+    },
+    "deployment_failure": {
+      "channels": ["slack-alerts", "pagerduty"],
+      "escalation_timeout": 300
+    },
+    "auto_merge_blocked": {
+      "channels": ["slack-dev"],
+      "include_blocking_reason": true
+    },
+    "rollback_initiated": {
+      "channels": ["slack-critical", "pagerduty"],
+      "severity": "high"
+    }
+  },
+  "setup_instructions": {
+    "description": "GitHub CLI commands to configure branch protection rules",
+    "commands": [
+      {
+        "description": "Apply main branch protection",
+        "command": "gh api repos/:owner/:repo/branches/main/protection --method PUT --input .github/branch-protection-main.json"
+      },
+      {
+        "description": "Apply develop branch protection",
+        "command": "gh api repos/:owner/:repo/branches/develop/protection --method PUT --input .github/branch-protection-develop.json"
+      },
+      {
+        "description": "Configure staging environment protection",
+        "command": "gh api repos/:owner/:repo/environments/staging --method PUT --input .github/environment-staging.json"
+      },
+      {
+        "description": "Configure production environment protection",
+        "command": "gh api repos/:owner/:repo/environments/production --method PUT --input .github/environment-production.json"
+      }
+    ]
+  }
+}

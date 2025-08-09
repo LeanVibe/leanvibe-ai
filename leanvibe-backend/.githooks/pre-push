@@ -1,0 +1,126 @@
+#!/bin/bash
+#
+# LeanVibe Pre-push Hook - Tier 1 Quality Gate
+# Runs comprehensive checks before push (warns but allows push)
+#
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+echo -e "${BLUE}🚀 LeanVibe Pre-push Quality Gate${NC}"
+echo "================================="
+
+# Read the input from stdin (remote info)
+while read local_ref local_sha remote_ref remote_sha; do
+    if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
+        # Handle delete
+        echo -e "${YELLOW}⚠️  Branch deletion detected, skipping quality checks${NC}"
+        exit 0
+    fi
+    
+    echo -e "${BLUE}📡 Pushing ${local_ref##*/} to ${remote_ref##*/}${NC}"
+    
+    # Check if we're on main branch
+    if [[ "$remote_ref" == *"main"* ]] || [[ "$remote_ref" == *"master"* ]]; then
+        echo -e "${RED}🚫 Direct push to main/master branch detected!${NC}"
+        echo -e "${RED}   Use pull requests for main branch changes${NC}"
+        exit 1
+    fi
+done
+
+# Track start time
+start_time=$(date +%s)
+
+# Function to run command with warning instead of failure
+run_check_warn() {
+    local name="$1"
+    local command="$2"
+    local timeout_sec="${3:-300}"
+    
+    echo ""
+    echo -e "${BLUE}🔄 $name${NC}"
+    
+    # Run with timeout
+    if timeout $timeout_sec bash -c "$command"; then
+        echo -e "${GREEN}✅ $name passed${NC}"
+        return 0
+    else
+        echo -e "${YELLOW}⚠️  $name failed (warning only)${NC}"
+        return 1
+    fi
+}
+
+# 1. Full test suite (Tier 1)
+warnings=0
+
+if ! run_check_warn "Integration tests" "python -m pytest -m 'integration' --tb=short -q --disable-warnings" 180; then
+    warnings=$((warnings + 1))
+fi
+
+if ! run_check_warn "WebSocket tests" "python -m pytest -m 'websocket' --tb=short -q --disable-warnings" 60; then
+    warnings=$((warnings + 1))
+fi
+
+if ! run_check_warn "Smoke tests" "python -m pytest -m 'smoke' --tb=short -q --disable-warnings" 30; then
+    warnings=$((warnings + 1))
+fi
+
+# 2. Coverage check
+if ! run_check_warn "Coverage check" "python -m pytest --cov=app --cov-branch --cov-report=term --cov-fail-under=70 -q --disable-warnings" 120; then
+    warnings=$((warnings + 1))
+fi
+
+# 3. Quality ratchet enforcement (warn only for pre-push)
+if [ -f "tools/quality_ratchet.py" ]; then
+    echo ""
+    echo -e "${BLUE}🎯 Quality Ratchet Enforcement${NC}"
+    if python tools/quality_ratchet.py --enforce; then
+        echo -e "${GREEN}✅ Quality ratchet enforcement passed${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Quality ratchet enforcement failed${NC}"
+        echo -e "${YELLOW}   Consider improving metrics before merging PR${NC}"
+        warnings=$((warnings + 1))
+    fi
+fi
+
+# 4. Flaky test detection
+if [ -f "tools/flaky_detector.py" ]; then
+    if ! run_check_warn "Flaky test detection" "python tools/flaky_detector.py --analyze" 30; then
+        warnings=$((warnings + 1))
+    fi
+fi
+
+# Calculate elapsed time
+end_time=$(date +%s)
+duration=$((end_time - start_time))
+
+echo ""
+echo "================================="
+
+if [ $warnings -eq 0 ]; then
+    echo -e "${GREEN}🎉 All pre-push checks passed in ${duration}s!${NC}"
+    echo -e "${GREEN}   Ready for pull request creation${NC}"
+elif [ $warnings -le 2 ]; then
+    echo -e "${YELLOW}⚠️  Pre-push completed with $warnings warnings in ${duration}s${NC}"
+    echo -e "${YELLOW}   Push allowed, but consider fixing issues before PR review${NC}"
+else
+    echo -e "${YELLOW}🔥 Pre-push completed with $warnings warnings in ${duration}s${NC}"
+    echo -e "${YELLOW}   Multiple issues detected - please review before creating PR${NC}"
+    echo ""
+    echo -e "${BLUE}💡 Recommended actions:${NC}"
+    echo "   • Run 'make test-tier1' locally to reproduce issues"
+    echo "   • Fix failing tests and quality issues"
+    echo "   • Consider running 'make fix' for automatic fixes"
+    echo "   • Update tests if business logic changed"
+    echo ""
+    echo -e "${YELLOW}   Continuing with push (warnings only)...${NC}"
+fi
+
+# Allow push regardless of warnings (this is pre-push, not PR gate)
+exit 0

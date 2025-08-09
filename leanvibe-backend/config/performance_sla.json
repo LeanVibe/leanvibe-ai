@@ -1,0 +1,70 @@
+{
+  "performance_thresholds": {
+    "baseline": {
+      "avg_response_time_ms": 500,
+      "p95_response_time_ms": 2000,
+      "p99_response_time_ms": 5000,
+      "throughput_rps": 100,
+      "error_rate_percent": 1.0,
+      "memory_usage_percent": 70,
+      "cpu_usage_percent": 60
+    },
+    "spike": {
+      "avg_response_time_ms": 1000,
+      "p95_response_time_ms": 5000,
+      "p99_response_time_ms": 10000,
+      "throughput_rps": 200,
+      "error_rate_percent": 5.0,
+      "memory_usage_percent": 85,
+      "cpu_usage_percent": 80
+    },
+    "soak": {
+      "avg_response_time_ms": 600,
+      "p95_response_time_ms": 3000,
+      "p99_response_time_ms": 7000,
+      "throughput_rps": 80,
+      "error_rate_percent": 2.0,
+      "memory_usage_percent": 75,
+      "cpu_usage_percent": 65,
+      "memory_growth_rate_mb_per_hour": 50
+    },
+    "breakpoint": {
+      "max_users_before_degradation": 300,
+      "max_rps_before_errors": 500,
+      "graceful_degradation": true,
+      "circuit_breaker_threshold_ms": 10000
+    }
+  },
+  "critical_endpoints": {
+    "/health": {
+      "max_response_time_ms": 100,
+      "availability_percent": 99.9
+    },
+    "/api/projects": {
+      "max_response_time_ms": 1000,
+      "availability_percent": 99.5
+    },
+    "/api/tasks": {
+      "max_response_time_ms": 1500,
+      "availability_percent": 99.0
+    },
+    "/api/ai/generate": {
+      "max_response_time_ms": 5000,
+      "availability_percent": 95.0
+    }
+  },
+  "infrastructure_limits": {
+    "staging": {
+      "max_memory_gb": 2,
+      "max_cpu_cores": 1,
+      "max_disk_usage_gb": 10,
+      "max_network_mbps": 100
+    },
+    "production": {
+      "max_memory_gb": 8,
+      "max_cpu_cores": 4,
+      "max_disk_usage_gb": 50,
+      "max_network_mbps": 1000
+    }
+  }
+}

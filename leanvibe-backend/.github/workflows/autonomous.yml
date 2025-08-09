@@ -1,0 +1,294 @@
+name: Autonomous CI/CD Pipeline
+# Extreme Programming CI/CD with Tier 0 (Pre-commit <60s) and Tier 1 (PR Gate <5m) tests
+# Auto-merge when all checks pass + "auto-merge" label
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+  UV_CACHE_DIR: /tmp/.uv-cache
+  PYTEST_MARKERS: "-m 'not slow and not mlx_real_inference and not real_services'"
+
+jobs:
+  # TIER 0: Pre-commit tests (<60s) - Run on every push
+  tier0-pre-commit:
+    name: "Tier 0: Pre-commit (<60s)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    
+    - name: Install dependencies (fast)
+      run: |
+        uv sync --frozen --no-dev
+    
+    - name: Static Analysis (parallel)
+      run: |
+        # Run all static checks in parallel for speed
+        uv run black --check --diff . &
+        uv run isort --check-only --diff . &
+        uv run flake8 . &
+        wait
+    
+    - name: Type Checking
+      run: |
+        uv run mypy app --ignore-missing-imports
+    
+    - name: Tier 0 Unit Tests (contract + type_check + unit)
+      run: |
+        uv run pytest \
+          -m "unit or contract or type_check" \
+          --maxfail=1 \
+          --tb=no \
+          --quiet \
+          --disable-warnings \
+          --timeout=50
+    
+    - name: Fail Fast Check
+      if: failure()
+      run: |
+        echo "::error::Tier 0 tests failed - blocking all subsequent workflows"
+        exit 1
+
+  # TIER 1: PR Gate tests (3-5m) - Run on PRs only
+  tier1-pr-gate:
+    name: "Tier 1: PR Gate (3-5m)"
+    runs-on: ubuntu-latest
+    needs: tier0-pre-commit
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 6
+    
+    strategy:
+      fail-fast: true
+      matrix:
+        test-group: [integration, websocket, smoke]
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+    
+    - name: Install dependencies with dev tools
+      run: |
+        uv sync --frozen
+    
+    - name: Start mock services
+      run: |
+        # Start lightweight mock services for integration tests
+        docker run -d --name redis-test -p 6379:6379 redis:alpine
+        docker run -d --name neo4j-test -p 7474:7474 -p 7687:7687 \
+          -e NEO4J_AUTH=neo4j/testpassword \
+          -e NEO4J_PLUGINS='["apoc"]' \
+          neo4j:latest
+        # Wait for services to be ready
+        sleep 10
+    
+    - name: Run Tier 1 Tests (${{ matrix.test-group }})
+      run: |
+        uv run pytest \
+          -m "${{ matrix.test-group }}" \
+          --cov=app \
+          --cov-branch \
+          --cov-report=xml:coverage-${{ matrix.test-group }}.xml \
+          --maxfail=3 \
+          --timeout=300 \
+          ${{ env.PYTEST_MARKERS }}
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage-${{ matrix.test-group }}.xml
+        flags: tier1-${{ matrix.test-group }}
+        fail_ci_if_error: false
+
+  # Coverage Gate - Aggregate coverage from all Tier 1 tests
+  coverage-gate:
+    name: "Coverage Gate (75%)"
+    runs-on: ubuntu-latest
+    needs: tier1-pr-gate
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install UV
+      uses: astral-sh/setup-uv@v3
+      with:
+        enable-cache: true
+    
+    - name: Install dependencies
+      run: uv sync --frozen
+    
+    - name: Run full test suite for coverage
+      run: |
+        uv run pytest \
+          -m "not slow and not mlx_real_inference and not real_services and not load" \
+          --cov=app \
+          --cov-branch \
+          --cov-report=xml \
+          --cov-report=term \
+          --cov-fail-under=75 \
+          --maxfail=5
+    
+    - name: Generate Coverage Report
+      run: |
+        echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+        uv run coverage report --format=markdown >> $GITHUB_STEP_SUMMARY
+
+  # Canary Deployment to Staging
+  canary-deployment:
+    name: "Canary Deployment"
+    runs-on: ubuntu-latest
+    needs: [tier0-pre-commit, tier1-pr-gate, coverage-gate]
+    if: |
+      github.event_name == 'pull_request' && 
+      contains(github.event.pull_request.labels.*.name, 'auto-merge')
+    environment:
+      name: staging
+      url: https://staging.leanvibe.ai
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to Staging
+      run: |
+        chmod +x ./deploy/canary.sh
+        ./deploy/canary.sh staging ${{ github.sha }}
+    
+    - name: Run Synthetic Probes
+      run: |
+        chmod +x ./deploy/synthetic_probes.sh
+        ./deploy/synthetic_probes.sh staging
+    
+    - name: Health Check Validation
+      run: |
+        # Wait for deployment to stabilize
+        sleep 30
+        
+        # Run comprehensive health checks
+        ./deploy/synthetic_probes.sh staging --comprehensive
+        
+        # If health checks pass, deployment is successful
+        echo "✅ Canary deployment successful"
+    
+    - name: Rollback on Failure
+      if: failure()
+      run: |
+        echo "❌ Canary deployment failed - initiating rollback"
+        chmod +x ./deploy/rollback.sh
+        ./deploy/rollback.sh staging
+
+  # Auto-merge when all checks pass
+  auto-merge:
+    name: "Auto-merge PR"
+    runs-on: ubuntu-latest
+    needs: [tier0-pre-commit, tier1-pr-gate, coverage-gate, canary-deployment]
+    if: |
+      github.event_name == 'pull_request' && 
+      contains(github.event.pull_request.labels.*.name, 'auto-merge') &&
+      success()
+    
+    steps:
+    - name: Auto-merge PR
+      uses: pascalgn/merge-action@v0.15.6
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        merge_method: squash
+        merge_commit_message: pull-request-title-and-description
+
+  # Deployment to Production (only on main branch)
+  production-deployment:
+    name: "Production Deployment"
+    runs-on: ubuntu-latest
+    needs: tier0-pre-commit
+    if: |
+      github.ref == 'refs/heads/main' && 
+      github.event_name == 'push'
+    environment:
+      name: production
+      url: https://leanvibe.ai
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to Production
+      run: |
+        chmod +x ./deploy/canary.sh
+        ./deploy/canary.sh production ${{ github.sha }}
+    
+    - name: Production Health Checks
+      run: |
+        sleep 60  # Longer stabilization for production
+        ./deploy/synthetic_probes.sh production --comprehensive --critical
+    
+    - name: Rollback on Production Failure
+      if: failure()
+      run: |
+        echo "🚨 Production deployment failed - emergency rollback"
+        ./deploy/rollback.sh production --emergency
+
+  # Notification and Metrics
+  notify-results:
+    name: "Notify Results"
+    runs-on: ubuntu-latest
+    needs: [tier0-pre-commit, tier1-pr-gate, coverage-gate, canary-deployment, auto-merge, production-deployment]
+    if: always()
+    
+    steps:
+    - name: Calculate Success Rate
+      run: |
+        # Calculate autonomous deployment success rate
+        TOTAL_JOBS=6
+        SUCCESSFUL_JOBS=$(echo '${{ toJson(needs) }}' | jq '[.[] | select(.result == "success")] | length')
+        SUCCESS_RATE=$(( $SUCCESSFUL_JOBS * 100 / $TOTAL_JOBS ))
+        
+        echo "## Autonomous CI/CD Results" >> $GITHUB_STEP_SUMMARY
+        echo "- Success Rate: ${SUCCESS_RATE}%" >> $GITHUB_STEP_SUMMARY
+        echo "- Tier 0 (Pre-commit): ${{ needs.tier0-pre-commit.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Tier 1 (PR Gate): ${{ needs.tier1-pr-gate.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Coverage Gate: ${{ needs.coverage-gate.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Canary Deployment: ${{ needs.canary-deployment.result }}" >> $GITHUB_STEP_SUMMARY
+        
+        # Store metrics for trend analysis
+        echo "{\"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"success_rate\": $SUCCESS_RATE, \"commit\": \"${{ github.sha }}\"}" > autonomous_metrics.json
+    
+    - name: Store Metrics
+      uses: actions/upload-artifact@v3
+      with:
+        name: autonomous-metrics
+        path: autonomous_metrics.json
