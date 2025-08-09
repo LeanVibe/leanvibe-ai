@@ -1,0 +1,614 @@
+# LeanVibe Enterprise Disaster Recovery Configuration
+# Production-ready disaster recovery procedures and automation
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: disaster-recovery-procedures
+  namespace: leanvibe-backup
+  labels:
+    app.kubernetes.io/name: disaster-recovery
+    app.kubernetes.io/component: procedures
+data:
+  dr-config.yaml: |
+    # LeanVibe Enterprise Disaster Recovery Configuration
+    disaster_recovery:
+      rpo_targets:
+        enterprise_tier: 5    # 5 minutes
+        team_tier: 60        # 60 minutes
+        developer_tier: 240   # 4 hours
+      
+      rto_targets:
+        enterprise_tier: 60   # 1 hour
+        team_tier: 240       # 4 hours  
+        developer_tier: 480   # 8 hours
+      
+      backup_regions:
+        primary: "us-east-1"
+        secondary: "us-west-2"
+        tertiary: "eu-west-1"
+      
+      recovery_scenarios:
+        - name: "database_corruption"
+          severity: "critical"
+          auto_recovery: true
+          max_data_loss: "5m"
+          
+        - name: "application_failure"
+          severity: "high"
+          auto_recovery: true
+          max_data_loss: "0m"
+          
+        - name: "region_outage"
+          severity: "critical"
+          auto_recovery: false
+          max_data_loss: "15m"
+          
+        - name: "complete_infrastructure_loss"
+          severity: "disaster"
+          auto_recovery: false
+          max_data_loss: "1h"
+  
+  # Database recovery procedures
+  neo4j-recovery.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    # Neo4j Database Recovery Script
+    # Usage: neo4j-recovery.sh [backup-name] [target-namespace] [recovery-type]
+    
+    BACKUP_NAME=${1:-""}
+    TARGET_NAMESPACE=${2:-"leanvibe-production"}
+    RECOVERY_TYPE=${3:-"full"}  # full, point-in-time, partial
+    
+    if [ -z "$BACKUP_NAME" ]; then
+      echo "Error: Backup name is required"
+      echo "Usage: $0 <backup-name> [target-namespace] [recovery-type]"
+      exit 1
+    fi
+    
+    echo "Starting Neo4j recovery process..."
+    echo "Backup: $BACKUP_NAME"
+    echo "Target Namespace: $TARGET_NAMESPACE"
+    echo "Recovery Type: $RECOVERY_TYPE"
+    
+    # Step 1: Stop Neo4j service
+    echo "Stopping Neo4j service..."
+    kubectl scale statefulset neo4j --replicas=0 -n "$TARGET_NAMESPACE"
+    
+    # Wait for pod to terminate
+    echo "Waiting for Neo4j pod to terminate..."
+    kubectl wait --for=delete pod -l app.kubernetes.io/name=neo4j -n "$TARGET_NAMESPACE" --timeout=300s
+    
+    # Step 2: Download backup from S3
+    echo "Downloading backup from S3..."
+    aws s3 cp "s3://${S3_BACKUP_BUCKET}/neo4j/${BACKUP_NAME}.tar.gz" "/tmp/${BACKUP_NAME}.tar.gz"
+    
+    # Extract backup
+    cd /tmp
+    tar -xzf "${BACKUP_NAME}.tar.gz"
+    
+    # Step 3: Restore database
+    echo "Restoring Neo4j database..."
+    
+    # Create temporary pod for restoration
+    cat << EOF | kubectl apply -f -
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: neo4j-recovery
+      namespace: $TARGET_NAMESPACE
+      labels:
+        app.kubernetes.io/name: neo4j-recovery
+        app.kubernetes.io/component: recovery
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: neo4j-recovery
+        image: neo4j:5.0-enterprise
+        command: ["/bin/bash", "-c", "sleep 3600"]
+        env:
+        - name: NEO4J_AUTH
+          value: "none"
+        volumeMounts:
+        - name: neo4j-data
+          mountPath: /data
+        - name: recovery-data
+          mountPath: /recovery
+      volumes:
+      - name: neo4j-data
+        persistentVolumeClaim:
+          claimName: neo4j-data-neo4j-0
+      - name: recovery-data
+        emptyDir: {}
+    EOF
+    
+    # Wait for recovery pod to be ready
+    kubectl wait --for=condition=Ready pod/neo4j-recovery -n "$TARGET_NAMESPACE" --timeout=300s
+    
+    # Copy backup data to recovery pod
+    kubectl cp "/tmp/${BACKUP_NAME}/neo4j.dump" "$TARGET_NAMESPACE/neo4j-recovery:/recovery/neo4j.dump"
+    
+    # Restore the database
+    kubectl exec neo4j-recovery -n "$TARGET_NAMESPACE" -- neo4j-admin load \
+      --from=/recovery/neo4j.dump \
+      --database=neo4j \
+      --force
+    
+    # Step 4: Restart Neo4j service
+    echo "Restarting Neo4j service..."
+    kubectl delete pod neo4j-recovery -n "$TARGET_NAMESPACE"
+    kubectl scale statefulset neo4j --replicas=1 -n "$TARGET_NAMESPACE"
+    
+    # Wait for Neo4j to be ready
+    echo "Waiting for Neo4j to be ready..."
+    kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=neo4j -n "$TARGET_NAMESPACE" --timeout=600s
+    
+    # Step 5: Verify recovery
+    echo "Verifying database recovery..."
+    NEO4J_POD=$(kubectl get pod -l app.kubernetes.io/name=neo4j -n "$TARGET_NAMESPACE" -o jsonpath='{.items[0].metadata.name}')
+    
+    # Test database connectivity
+    kubectl exec "$NEO4J_POD" -n "$TARGET_NAMESPACE" -- cypher-shell -u neo4j -p "$NEO4J_PASSWORD" "RETURN 'Database is accessible' as status"
+    
+    # Get basic statistics
+    kubectl exec "$NEO4J_POD" -n "$TARGET_NAMESPACE" -- cypher-shell -u neo4j -p "$NEO4J_PASSWORD" "CALL db.stats() YIELD section, data RETURN section, data"
+    
+    # Clean up
+    rm -rf "/tmp/${BACKUP_NAME}.tar.gz" "/tmp/${BACKUP_NAME}/"
+    
+    echo "Neo4j recovery completed successfully!"
+    echo "Recovery Summary:"
+    echo "  - Backup: $BACKUP_NAME"
+    echo "  - Target: $TARGET_NAMESPACE"
+    echo "  - Type: $RECOVERY_TYPE"
+    echo "  - Status: Success"
+  
+  # Redis recovery procedures
+  redis-recovery.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    # Redis Recovery Script
+    BACKUP_NAME=${1:-""}
+    TARGET_NAMESPACE=${2:-"leanvibe-production"}
+    
+    if [ -z "$BACKUP_NAME" ]; then
+      echo "Error: Backup name is required"
+      echo "Usage: $0 <backup-name> [target-namespace]"
+      exit 1
+    fi
+    
+    echo "Starting Redis recovery process..."
+    echo "Backup: $BACKUP_NAME"
+    echo "Target Namespace: $TARGET_NAMESPACE"
+    
+    # Step 1: Stop Redis service
+    echo "Stopping Redis service..."
+    kubectl scale deployment redis --replicas=0 -n "$TARGET_NAMESPACE"
+    
+    # Wait for pods to terminate
+    kubectl wait --for=delete pod -l app.kubernetes.io/name=redis -n "$TARGET_NAMESPACE" --timeout=300s
+    
+    # Step 2: Download and extract backup
+    echo "Downloading backup from S3..."
+    aws s3 cp "s3://${S3_BACKUP_BUCKET}/redis/${BACKUP_NAME}.tar.gz" "/tmp/${BACKUP_NAME}.tar.gz"
+    
+    cd /tmp
+    tar -xzf "${BACKUP_NAME}.tar.gz"
+    
+    # Step 3: Create recovery pod
+    cat << EOF | kubectl apply -f -
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: redis-recovery
+      namespace: $TARGET_NAMESPACE
+      labels:
+        app.kubernetes.io/name: redis-recovery
+        app.kubernetes.io/component: recovery
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: redis-recovery
+        image: redis:7-alpine
+        command: ["/bin/sh", "-c", "sleep 3600"]
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: recovery-data
+          mountPath: /recovery
+      volumes:
+      - name: redis-data
+        emptyDir: {}
+      - name: recovery-data
+        emptyDir: {}
+    EOF
+    
+    kubectl wait --for=condition=Ready pod/redis-recovery -n "$TARGET_NAMESPACE" --timeout=300s
+    
+    # Step 4: Copy backup data and restore
+    kubectl cp "/tmp/${BACKUP_NAME}/dump.rdb" "$TARGET_NAMESPACE/redis-recovery:/data/dump.rdb"
+    
+    # Step 5: Restart Redis service
+    echo "Restarting Redis service..."
+    kubectl delete pod redis-recovery -n "$TARGET_NAMESPACE"
+    kubectl scale deployment redis --replicas=2 -n "$TARGET_NAMESPACE"
+    
+    # Wait for Redis to be ready
+    kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=redis -n "$TARGET_NAMESPACE" --timeout=300s
+    
+    # Step 6: Verify recovery
+    echo "Verifying Redis recovery..."
+    REDIS_POD=$(kubectl get pod -l app.kubernetes.io/name=redis -n "$TARGET_NAMESPACE" -o jsonpath='{.items[0].metadata.name}')
+    
+    kubectl exec "$REDIS_POD" -n "$TARGET_NAMESPACE" -- redis-cli -a "$REDIS_PASSWORD" ping
+    kubectl exec "$REDIS_POD" -n "$TARGET_NAMESPACE" -- redis-cli -a "$REDIS_PASSWORD" info stats
+    
+    # Clean up
+    rm -rf "/tmp/${BACKUP_NAME}.tar.gz" "/tmp/${BACKUP_NAME}/"
+    
+    echo "Redis recovery completed successfully!"
+  
+  # Cross-region failover procedures
+  cross-region-failover.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    # Cross-Region Failover Script for Regional Disaster Recovery
+    PRIMARY_REGION=${1:-"us-east-1"}
+    FAILOVER_REGION=${2:-"us-west-2"}
+    FAILOVER_TYPE=${3:-"manual"}  # manual, automatic
+    
+    echo "Starting cross-region failover..."
+    echo "Primary Region: $PRIMARY_REGION"
+    echo "Failover Region: $FAILOVER_REGION"
+    echo "Failover Type: $FAILOVER_TYPE"
+    
+    # Step 1: Health check of primary region
+    echo "Checking primary region health..."
+    PRIMARY_HEALTH=$(kubectl get nodes --context="${PRIMARY_REGION}" 2>/dev/null | grep Ready | wc -l || echo "0")
+    
+    if [ "$PRIMARY_HEALTH" -eq 0 ] || [ "$FAILOVER_TYPE" = "forced" ]; then
+      echo "Primary region is unhealthy or forced failover requested"
+      
+      # Step 2: Activate secondary region
+      echo "Activating secondary region..."
+      
+      # Update DNS to point to secondary region
+      aws route53 change-resource-record-sets --hosted-zone-id "$HOSTED_ZONE_ID" --change-batch '{
+        "Changes": [{
+          "Action": "UPSERT",
+          "ResourceRecordSet": {
+            "Name": "api.leanvibe.ai",
+            "Type": "CNAME",
+            "TTL": 300,
+            "ResourceRecords": [{"Value": "api-'$FAILOVER_REGION'.leanvibe.ai"}]
+          }
+        }]
+      }'
+      
+      # Step 3: Scale up services in secondary region
+      echo "Scaling up services in secondary region..."
+      kubectl scale deployment leanvibe-backend --replicas=3 --context="${FAILOVER_REGION}"
+      kubectl scale statefulset neo4j --replicas=1 --context="${FAILOVER_REGION}"
+      kubectl scale deployment redis --replicas=2 --context="${FAILOVER_REGION}"
+      
+      # Step 4: Restore from latest backup
+      echo "Restoring from latest backup..."
+      LATEST_NEO4J_BACKUP=$(aws s3 ls s3://${S3_BACKUP_BUCKET}/neo4j/ | sort | tail -n 1 | awk '{print $4}' | sed 's/.tar.gz//')
+      LATEST_REDIS_BACKUP=$(aws s3 ls s3://${S3_BACKUP_BUCKET}/redis/ | sort | tail -n 1 | awk '{print $4}' | sed 's/.tar.gz//')
+      
+      # Restore databases
+      ./neo4j-recovery.sh "$LATEST_NEO4J_BACKUP" "leanvibe-production"
+      ./redis-recovery.sh "$LATEST_REDIS_BACKUP" "leanvibe-production"
+      
+      # Step 5: Verify services
+      echo "Verifying services in secondary region..."
+      kubectl wait --for=condition=Ready pod -l app.kubernetes.io/name=leanvibe --context="${FAILOVER_REGION}" --timeout=600s
+      
+      # Health check API
+      for i in {1..30}; do
+        if curl -f -s "https://api-${FAILOVER_REGION}.leanvibe.ai/health" > /dev/null; then
+          echo "API health check passed"
+          break
+        fi
+        echo "Waiting for API to be ready... attempt $i/30"
+        sleep 10
+      done
+      
+      echo "Cross-region failover completed successfully!"
+      
+      # Send alert
+      aws sns publish --topic-arn "$SNS_TOPIC_ARN" --message "Cross-region failover to $FAILOVER_REGION completed successfully. Primary region $PRIMARY_REGION is now inactive."
+      
+    else
+      echo "Primary region is healthy. No failover needed."
+    fi
+  
+  # Application recovery procedures
+  application-recovery.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    # Application Recovery Script
+    RECOVERY_TYPE=${1:-"rolling"}  # rolling, blue-green, canary
+    TARGET_NAMESPACE=${2:-"leanvibe-production"}
+    
+    echo "Starting application recovery..."
+    echo "Recovery Type: $RECOVERY_TYPE"
+    echo "Target Namespace: $TARGET_NAMESPACE"
+    
+    case $RECOVERY_TYPE in
+      "rolling")
+        echo "Performing rolling restart..."
+        kubectl rollout restart deployment/leanvibe-backend -n "$TARGET_NAMESPACE"
+        kubectl rollout status deployment/leanvibe-backend -n "$TARGET_NAMESPACE" --timeout=600s
+        ;;
+        
+      "blue-green")
+        echo "Performing blue-green deployment recovery..."
+        
+        # Create green deployment
+        kubectl patch deployment leanvibe-backend -n "$TARGET_NAMESPACE" -p '{
+          "metadata": {"labels": {"version": "green"}},
+          "spec": {"selector": {"matchLabels": {"version": "green"}}}
+        }'
+        
+        # Wait for green to be ready
+        kubectl wait --for=condition=Ready pod -l version=green -n "$TARGET_NAMESPACE" --timeout=600s
+        
+        # Switch traffic to green
+        kubectl patch service leanvibe-backend -n "$TARGET_NAMESPACE" -p '{
+          "spec": {"selector": {"version": "green"}}
+        }'
+        
+        echo "Blue-green recovery completed"
+        ;;
+        
+      "canary")
+        echo "Performing canary recovery..."
+        
+        # Scale up new version gradually
+        kubectl scale deployment leanvibe-backend --replicas=1 -n "$TARGET_NAMESPACE"
+        sleep 30
+        kubectl scale deployment leanvibe-backend --replicas=2 -n "$TARGET_NAMESPACE"
+        sleep 30
+        kubectl scale deployment leanvibe-backend --replicas=3 -n "$TARGET_NAMESPACE"
+        
+        kubectl rollout status deployment/leanvibe-backend -n "$TARGET_NAMESPACE" --timeout=600s
+        ;;
+        
+      *)
+        echo "Unknown recovery type: $RECOVERY_TYPE"
+        exit 1
+        ;;
+    esac
+    
+    # Verify application health
+    echo "Verifying application health..."
+    for i in {1..30}; do
+      if kubectl exec deployment/leanvibe-backend -n "$TARGET_NAMESPACE" -- curl -f -s http://localhost:8000/health > /dev/null; then
+        echo "Application health check passed"
+        break
+      fi
+      echo "Waiting for application to be healthy... attempt $i/30"
+      sleep 10
+    done
+    
+    echo "Application recovery completed successfully!"
+  
+  # Validation and testing procedures
+  recovery-validation.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    # Recovery Validation Script
+    TARGET_NAMESPACE=${1:-"leanvibe-production"}
+    VALIDATION_TYPE=${2:-"full"}  # basic, full, comprehensive
+    
+    echo "Starting recovery validation..."
+    echo "Target Namespace: $TARGET_NAMESPACE"
+    echo "Validation Type: $VALIDATION_TYPE"
+    
+    VALIDATION_PASSED=true
+    
+    # Basic health checks
+    echo "Running basic health checks..."
+    
+    # Check pod status
+    UNHEALTHY_PODS=$(kubectl get pods -n "$TARGET_NAMESPACE" --field-selector=status.phase!=Running | tail -n +2 | wc -l)
+    if [ "$UNHEALTHY_PODS" -gt 0 ]; then
+      echo "ERROR: Found $UNHEALTHY_PODS unhealthy pods"
+      kubectl get pods -n "$TARGET_NAMESPACE" --field-selector=status.phase!=Running
+      VALIDATION_PASSED=false
+    else
+      echo "✓ All pods are running"
+    fi
+    
+    # Check service endpoints
+    echo "Checking service endpoints..."
+    for service in leanvibe-backend neo4j redis; do
+      ENDPOINTS=$(kubectl get endpoints "$service" -n "$TARGET_NAMESPACE" -o jsonpath='{.subsets[*].addresses[*].ip}' | wc -w)
+      if [ "$ENDPOINTS" -eq 0 ]; then
+        echo "ERROR: Service $service has no endpoints"
+        VALIDATION_PASSED=false
+      else
+        echo "✓ Service $service has $ENDPOINTS endpoint(s)"
+      fi
+    done
+    
+    if [ "$VALIDATION_TYPE" != "basic" ]; then
+      # Database connectivity tests
+      echo "Testing database connectivity..."
+      
+      # Neo4j test
+      NEO4J_POD=$(kubectl get pod -l app.kubernetes.io/name=neo4j -n "$TARGET_NAMESPACE" -o jsonpath='{.items[0].metadata.name}')
+      if kubectl exec "$NEO4J_POD" -n "$TARGET_NAMESPACE" -- cypher-shell -u neo4j -p "$NEO4J_PASSWORD" "RETURN 1" > /dev/null 2>&1; then
+        echo "✓ Neo4j connectivity test passed"
+      else
+        echo "ERROR: Neo4j connectivity test failed"
+        VALIDATION_PASSED=false
+      fi
+      
+      # Redis test
+      REDIS_POD=$(kubectl get pod -l app.kubernetes.io/name=redis -n "$TARGET_NAMESPACE" -o jsonpath='{.items[0].metadata.name}')
+      if kubectl exec "$REDIS_POD" -n "$TARGET_NAMESPACE" -- redis-cli -a "$REDIS_PASSWORD" ping > /dev/null 2>&1; then
+        echo "✓ Redis connectivity test passed"
+      else
+        echo "ERROR: Redis connectivity test failed"
+        VALIDATION_PASSED=false
+      fi
+      
+      # Application API tests
+      echo "Testing application API..."
+      APP_POD=$(kubectl get pod -l app.kubernetes.io/name=leanvibe -n "$TARGET_NAMESPACE" -o jsonpath='{.items[0].metadata.name}')
+      
+      # Health endpoint
+      if kubectl exec "$APP_POD" -n "$TARGET_NAMESPACE" -- curl -f -s http://localhost:8000/health > /dev/null; then
+        echo "✓ Application health endpoint test passed"
+      else
+        echo "ERROR: Application health endpoint test failed"
+        VALIDATION_PASSED=false
+      fi
+      
+      # Readiness endpoint
+      if kubectl exec "$APP_POD" -n "$TARGET_NAMESPACE" -- curl -f -s http://localhost:8000/health/ready > /dev/null; then
+        echo "✓ Application readiness endpoint test passed"
+      else
+        echo "ERROR: Application readiness endpoint test failed"
+        VALIDATION_PASSED=false
+      fi
+    fi
+    
+    if [ "$VALIDATION_TYPE" = "comprehensive" ]; then
+      # End-to-end tests
+      echo "Running comprehensive end-to-end tests..."
+      
+      # Tenant creation test
+      TENANT_ID="recovery-test-$(date +%s)"
+      if kubectl exec "$APP_POD" -n "$TARGET_NAMESPACE" -- curl -X POST -H "Content-Type: application/json" -d "{\"name\":\"$TENANT_ID\",\"tier\":\"team\"}" http://localhost:8000/api/v1/tenants > /dev/null 2>&1; then
+        echo "✓ Tenant creation test passed"
+        
+        # Clean up test tenant
+        kubectl exec "$APP_POD" -n "$TARGET_NAMESPACE" -- curl -X DELETE "http://localhost:8000/api/v1/tenants/$TENANT_ID" > /dev/null 2>&1
+      else
+        echo "ERROR: Tenant creation test failed"
+        VALIDATION_PASSED=false
+      fi
+      
+      # Database write/read test
+      TEST_KEY="recovery-test-$(date +%s)"
+      if kubectl exec "$REDIS_POD" -n "$TARGET_NAMESPACE" -- redis-cli -a "$REDIS_PASSWORD" set "$TEST_KEY" "recovery-test-value" > /dev/null 2>&1; then
+        if kubectl exec "$REDIS_POD" -n "$TARGET_NAMESPACE" -- redis-cli -a "$REDIS_PASSWORD" get "$TEST_KEY" | grep -q "recovery-test-value"; then
+          echo "✓ Database write/read test passed"
+          kubectl exec "$REDIS_POD" -n "$TARGET_NAMESPACE" -- redis-cli -a "$REDIS_PASSWORD" del "$TEST_KEY" > /dev/null 2>&1
+        else
+          echo "ERROR: Database read test failed"
+          VALIDATION_PASSED=false
+        fi
+      else
+        echo "ERROR: Database write test failed"
+        VALIDATION_PASSED=false
+      fi
+    fi
+    
+    # Final validation result
+    if [ "$VALIDATION_PASSED" = true ]; then
+      echo "✓ All validation tests passed successfully!"
+      exit 0
+    else
+      echo "✗ Validation tests failed!"
+      exit 1
+    fi
+---
+# Disaster Recovery Job Template
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: disaster-recovery-template
+  namespace: leanvibe-backup
+  labels:
+    app.kubernetes.io/name: disaster-recovery
+    app.kubernetes.io/component: recovery-job
+spec:
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: disaster-recovery
+        app.kubernetes.io/component: recovery-job
+    spec:
+      serviceAccountName: backup-operator
+      restartPolicy: Never
+      
+      containers:
+      - name: disaster-recovery
+        image: amazon/aws-cli:latest
+        imagePullPolicy: Always
+        
+        command: ["/bin/bash"]
+        args: ["-c", "echo 'Disaster recovery job template - customize for specific scenario'"]
+        
+        env:
+        - name: S3_BACKUP_BUCKET
+          value: "leanvibe-backups-prod-us-east-1"
+        - name: NEO4J_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: leanvibe-database-secrets
+              key: NEO4J_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: leanvibe-secrets
+              key: REDIS_PASSWORD
+        - name: AWS_DEFAULT_REGION
+          value: "us-east-1"
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: backup-aws-credentials
+              key: aws_access_key_id
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backup-aws-credentials
+              key: aws_secret_access_key
+        - name: HOSTED_ZONE_ID
+          value: "Z123456789"
+        - name: SNS_TOPIC_ARN
+          value: "arn:aws:sns:us-east-1:123456789012:leanvibe-alerts"
+        
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+        
+        volumeMounts:
+        - name: recovery-procedures
+          mountPath: /scripts
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+      
+      volumes:
+      - name: recovery-procedures
+        configMap:
+          name: disaster-recovery-procedures
+          defaultMode: 0755
+      - name: tmp
+        emptyDir: {}
+      
+      activeDeadlineSeconds: 3600  # 1 hour timeout
+      backoffLimit: 3

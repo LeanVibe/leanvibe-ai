@@ -1,0 +1,491 @@
+# LeanVibe Enterprise Prometheus Configuration
+# Production-ready metrics collection and storage
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/instance: production
+    environment: production
+  annotations:
+    description: "LeanVibe Enterprise Monitoring Stack"
+---
+# Prometheus ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: config
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'leanvibe-production'
+        environment: 'production'
+    
+    rule_files:
+      - "/etc/prometheus/rules/*.yml"
+    
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets:
+          - alertmanager:9093
+    
+    scrape_configs:
+    # Prometheus itself
+    - job_name: 'prometheus'
+      static_configs:
+      - targets: ['localhost:9090']
+    
+    # Kubernetes API server
+    - job_name: 'kubernetes-apiservers'
+      kubernetes_sd_configs:
+      - role: endpoints
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: default;kubernetes;https
+    
+    # Kubernetes nodes
+    - job_name: 'kubernetes-nodes'
+      kubernetes_sd_configs:
+      - role: node
+      scheme: https
+      tls_config:
+        ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)
+    
+    # Kubernetes pods
+    - job_name: 'kubernetes-pods'
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+    
+    # LeanVibe Backend Application
+    - job_name: 'leanvibe-backend'
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - leanvibe-production
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+        action: keep
+        regex: leanvibe
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component]
+        action: keep
+        regex: backend
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_container_port_number]
+        action: keep
+        regex: 8000
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        target_label: kubernetes_pod_name
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_version]
+        target_label: version
+    
+    # Neo4j Database Metrics
+    - job_name: 'neo4j'
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - leanvibe-production
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+        action: keep
+        regex: neo4j
+      - source_labels: [__meta_kubernetes_pod_container_port_number]
+        action: keep
+        regex: 2004
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+    
+    # Redis Metrics
+    - job_name: 'redis'
+      kubernetes_sd_configs:
+      - role: pod
+        namespaces:
+          names:
+          - leanvibe-production
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+        action: keep
+        regex: redis
+      - source_labels: [__meta_kubernetes_pod_container_port_number]
+        action: keep
+        regex: 6379
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+    
+    # Business Metrics Collection
+    - job_name: 'business-metrics'
+      kubernetes_sd_configs:
+      - role: service
+        namespaces:
+          names:
+          - leanvibe-production
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape_business]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_service_label_(.+)
+  
+  # Alert Rules
+  alert_rules.yml: |
+    groups:
+    - name: leanvibe.enterprise.rules
+      rules:
+      # High-level application alerts
+      - alert: LeanVibeHighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: leanvibe-backend
+        annotations:
+          summary: "LeanVibe high error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.instance }}"
+      
+      - alert: LeanVibeHighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          service: leanvibe-backend
+        annotations:
+          summary: "LeanVibe high response time detected"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.instance }}"
+      
+      # Database alerts
+      - alert: Neo4jDown
+        expr: up{job="neo4j"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: neo4j
+        annotations:
+          summary: "Neo4j database is down"
+          description: "Neo4j instance {{ $labels.instance }} is down"
+      
+      - alert: Neo4jHighMemoryUsage
+        expr: neo4j_memory_pool_used_bytes / neo4j_memory_pool_total_bytes > 0.90
+        for: 5m
+        labels:
+          severity: warning
+          service: neo4j
+        annotations:
+          summary: "Neo4j high memory usage"
+          description: "Neo4j memory usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+      
+      # Redis alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis instance {{ $labels.instance }} is down"
+      
+      # Business metrics alerts
+      - alert: LowTenantSignupRate
+        expr: rate(tenant_signups_total[1h]) < 1
+        for: 30m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "Low tenant signup rate detected"
+          description: "Tenant signup rate is {{ $value }} per hour"
+      
+      - alert: HighTenantChurnRate
+        expr: rate(tenant_cancellations_total[24h]) / rate(tenant_signups_total[24h]) > 0.1
+        for: 1h
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "High tenant churn rate detected"
+          description: "Tenant churn rate is {{ $value | humanizePercentage }}"
+      
+      # Infrastructure alerts
+      - alert: KubernetesNodeNotReady
+        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Kubernetes node not ready"
+          description: "Node {{ $labels.node }} is not ready"
+      
+      - alert: KubernetesPodCrashLooping
+        expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Kubernetes pod crash looping"
+          description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is crash looping"
+---
+# Prometheus Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/component: metrics
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+      app.kubernetes.io/component: metrics
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prometheus
+        app.kubernetes.io/component: metrics
+        app.kubernetes.io/version: "2.45.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: prometheus
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+      
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v2.45.0
+        imagePullPolicy: Always
+        
+        args:
+        - '--config.file=/etc/prometheus/prometheus.yml'
+        - '--storage.tsdb.path=/prometheus/'
+        - '--web.console.libraries=/etc/prometheus/console_libraries'
+        - '--web.console.templates=/etc/prometheus/consoles'
+        - '--storage.tsdb.retention.time=90d'
+        - '--storage.tsdb.retention.size=50GB'
+        - '--web.enable-lifecycle'
+        - '--web.enable-admin-api'
+        - '--log.level=info'
+        
+        ports:
+        - name: prometheus
+          containerPort: 9090
+          protocol: TCP
+        
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"  
+            cpu: "2"
+        
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: prometheus
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: prometheus
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65534
+          capabilities:
+            drop:
+            - ALL
+        
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus
+          readOnly: true
+        - name: prometheus-storage
+          mountPath: /prometheus
+        - name: tmp
+          mountPath: /tmp
+      
+      volumes:
+      - name: config-volume
+        configMap:
+          name: prometheus-config
+          defaultMode: 0644
+      - name: tmp
+        emptyDir: {}
+      - name: prometheus-storage
+        persistentVolumeClaim:
+          claimName: prometheus-storage-pvc
+      
+      terminationGracePeriodSeconds: 30
+---
+# Prometheus Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: metrics
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+spec:
+  type: ClusterIP
+  ports:
+  - name: prometheus
+    port: 9090
+    targetPort: prometheus
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: metrics
+---
+# Prometheus Storage PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-storage-pvc
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+---
+# Prometheus ServiceAccount and RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: metrics
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: metrics
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: leanvibe-monitoring

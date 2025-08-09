@@ -1,0 +1,267 @@
+# LeanVibe Enterprise Service Configuration
+# Load balancer and service discovery for production
+apiVersion: v1
+kind: Service
+metadata:
+  name: leanvibe-backend
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/component: backend
+    environment: production
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:region:account-id:certificate/cert-id"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics"
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: http
+    protocol: TCP
+  - name: metrics
+    port: 8080
+    targetPort: http
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: backend
+    environment: production
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours
+---
+# Headless Service for Internal Communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: leanvibe-backend-headless
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: backend
+    environment: production
+  annotations:
+    description: "Headless service for internal pod-to-pod communication"
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 8000
+    targetPort: http
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: backend
+    environment: production
+---
+# Neo4j Database Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: neo4j
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: neo4j
+    app.kubernetes.io/component: database
+    environment: production
+  annotations:
+    description: "Neo4j database service for graph operations"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "2004"
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 7474
+    targetPort: http
+    protocol: TCP
+  - name: bolt
+    port: 7687
+    targetPort: bolt
+    protocol: TCP
+  - name: backup
+    port: 6362
+    targetPort: backup
+    protocol: TCP
+  - name: metrics
+    port: 2004
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: neo4j
+    app.kubernetes.io/component: database
+    environment: production
+---
+# Neo4j Headless Service for StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: neo4j-headless
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: neo4j
+    app.kubernetes.io/component: database
+    environment: production
+  annotations:
+    description: "Headless service for Neo4j StatefulSet"
+spec:
+  clusterIP: None
+  ports:
+  - name: http
+    port: 7474
+    targetPort: http
+    protocol: TCP
+  - name: bolt
+    port: 7687
+    targetPort: bolt
+    protocol: TCP
+  - name: cluster
+    port: 7688
+    targetPort: cluster
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: neo4j
+    app.kubernetes.io/component: database
+    environment: production
+---
+# Redis Cache Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache
+    environment: production
+  annotations:
+    description: "Redis cache service for session and application caching"
+spec:
+  type: ClusterIP
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: redis
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/component: cache
+    environment: production
+---
+# Redis Sentinel Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-sentinel
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: redis-sentinel
+    app.kubernetes.io/component: cache-sentinel
+    environment: production
+  annotations:
+    description: "Redis Sentinel service for high availability"
+spec:
+  type: ClusterIP
+  ports:
+  - name: sentinel
+    port: 26379
+    targetPort: sentinel
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: redis-sentinel
+    app.kubernetes.io/component: cache-sentinel
+    environment: production
+---
+# Enterprise API Gateway Service (Optional)
+apiVersion: v1
+kind: Service
+metadata:
+  name: leanvibe-api-gateway
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: api-gateway
+    environment: production
+  annotations:
+    description: "API Gateway for enterprise features like rate limiting, authentication"
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  type: LoadBalancer
+  ports:
+  - name: https
+    port: 443
+    targetPort: 8443
+    protocol: TCP
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: api-gateway
+    environment: production
+---
+# Internal Metrics Service for Monitoring
+apiVersion: v1
+kind: Service
+metadata:
+  name: leanvibe-metrics
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: metrics
+    environment: production
+  annotations:
+    description: "Internal service for metrics collection"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+  - name: metrics
+    port: 9090
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: backend
+    environment: production
+---
+# Health Check Service for Load Balancer
+apiVersion: v1
+kind: Service
+metadata:
+  name: leanvibe-health
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: health
+    environment: production
+  annotations:
+    description: "Health check service for load balancer health monitoring"
+spec:
+  type: ClusterIP
+  ports:
+  - name: health
+    port: 8080
+    targetPort: 8000
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: backend
+    environment: production

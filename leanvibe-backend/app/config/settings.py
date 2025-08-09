@@ -64,6 +64,20 @@ class LeanVibeSettings(BaseSettings):
     database_url: Optional[str] = Field(default=None)
     redis_url: Optional[str] = Field(default=None)
     
+    # Stripe Configuration
+    stripe_secret_key: str = Field(
+        default="sk_test_mock_key_for_development",
+        description="Stripe secret key for payment processing"
+    )
+    stripe_publishable_key: str = Field(
+        default="pk_test_mock_key_for_development", 
+        description="Stripe publishable key for client-side"
+    )
+    stripe_webhook_secret: str = Field(
+        default="whsec_mock_webhook_secret",
+        description="Stripe webhook endpoint secret"
+    )
+    
     # MLX AI Configuration
     mlx_model: str = Field(default="microsoft/Phi-3.5-mini-instruct")
     mlx_strategy: MLXStrategy = Field(default=MLXStrategy.MOCK)
@@ -144,6 +158,12 @@ class LeanVibeSettings(BaseSettings):
             
         if not self.database_url:
             errors.append("LEANVIBE_DATABASE_URL must be set for production")
+            
+        if self.stripe_secret_key == "sk_test_mock_key_for_development":
+            errors.append("LEANVIBE_STRIPE_SECRET_KEY must be set for production")
+            
+        if self.stripe_webhook_secret == "whsec_mock_webhook_secret":
+            errors.append("LEANVIBE_STRIPE_WEBHOOK_SECRET must be set for production")
             
         if self.mlx_strategy == MLXStrategy.MOCK:
             errors.append("MLX_STRATEGY should not be MOCK in production")

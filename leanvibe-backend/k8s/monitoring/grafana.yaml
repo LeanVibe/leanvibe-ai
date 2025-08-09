@@ -1,0 +1,624 @@
+# LeanVibe Enterprise Grafana Configuration
+# Production-ready dashboards and visualization
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: config
+data:
+  grafana.ini: |
+    [analytics]
+    check_for_updates = false
+    
+    [grafana_net]
+    url = https://grafana.net
+    
+    [log]
+    mode = console
+    level = info
+    
+    [paths]
+    data = /var/lib/grafana/
+    logs = /var/log/grafana
+    plugins = /var/lib/grafana/plugins
+    provisioning = /etc/grafana/provisioning
+    
+    [server]
+    protocol = http
+    http_port = 3000
+    domain = grafana.leanvibe.ai
+    enforce_domain = false
+    root_url = https://grafana.leanvibe.ai
+    
+    [database]
+    type = sqlite3
+    path = grafana.db
+    
+    [session]
+    provider = memory
+    
+    [security]
+    admin_user = admin
+    admin_password = $__file{/etc/grafana-secrets/admin-password}
+    secret_key = $__file{/etc/grafana-secrets/secret-key}
+    disable_gravatar = true
+    
+    [snapshots]
+    external_enabled = false
+    
+    [dashboards]
+    default_home_dashboard_path = /etc/grafana/dashboards/leanvibe-overview.json
+    
+    [auth]
+    disable_login_form = false
+    
+    [auth.anonymous]
+    enabled = false
+    
+    [auth.ldap]
+    enabled = false
+    
+    [smtp]
+    enabled = true
+    host = $__file{/etc/grafana-secrets/smtp-host}
+    user = $__file{/etc/grafana-secrets/smtp-user}
+    password = $__file{/etc/grafana-secrets/smtp-password}
+    from_address = alerts@leanvibe.ai
+    from_name = LeanVibe Monitoring
+    
+    [alerting]
+    enabled = true
+    execute_alerts = true
+    
+    [unified_alerting]
+    enabled = true
+    
+    [metrics]
+    enabled = true
+    
+    [feature_toggles]
+    enable = ngalert
+  
+  # Dashboard provisioning  
+  dashboard-provider.yaml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: 'LeanVibe'
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /etc/grafana/dashboards
+  
+  # Data source provisioning
+  datasource.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus:9090
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: false
+      jsonData:
+        httpMethod: POST
+        queryTimeout: 60s
+        timeInterval: 15s
+    
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki:3100
+      basicAuth: false
+      version: 1
+      editable: false
+      jsonData:
+        httpMethod: POST
+        queryTimeout: 60s
+---
+# Grafana Dashboard ConfigMaps
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: dashboards
+data:
+  leanvibe-overview.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "LeanVibe Enterprise Overview",
+        "tags": ["leanvibe", "enterprise", "overview"],
+        "timezone": "utc",
+        "panels": [
+          {
+            "id": 1,
+            "title": "API Request Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=\"leanvibe-backend\"}[5m])",
+                "legendFormat": "{{instance}} - {{status}}"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "Requests/sec",
+                "min": 0
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "id": 2,
+            "title": "Response Time (95th percentile)",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"leanvibe-backend\"}[5m]))",
+                "legendFormat": "{{instance}} - 95th percentile"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "Seconds",
+                "min": 0
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 0
+            }
+          },
+          {
+            "id": 3,
+            "title": "Active Tenants",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "active_tenants_total",
+                "legendFormat": "Active Tenants"
+              }
+            ],
+            "gridPos": {
+              "h": 4,
+              "w": 6,
+              "x": 0,
+              "y": 8
+            }
+          },
+          {
+            "id": 4,
+            "title": "Monthly Recurring Revenue",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "monthly_recurring_revenue_usd",
+                "legendFormat": "MRR (USD)"
+              }
+            ],
+            "gridPos": {
+              "h": 4,
+              "w": 6,
+              "x": 6,
+              "y": 8
+            }
+          },
+          {
+            "id": 5,
+            "title": "Database Connections",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "neo4j_bolt_connections_opened_total",
+                "legendFormat": "Neo4j Connections"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 12
+            }
+          },
+          {
+            "id": 6,
+            "title": "Cache Hit Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total)",
+                "legendFormat": "Cache Hit Rate"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 12
+            }
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+  
+  kubernetes-overview.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "Kubernetes Cluster Overview",
+        "tags": ["kubernetes", "infrastructure"],
+        "timezone": "utc",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Node CPU Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+                "legendFormat": "{{instance}}"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "Percent",
+                "min": 0,
+                "max": 100
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "title": "Node Memory Usage",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "100 * (1 - ((node_memory_MemAvailable_bytes OR node_memory_MemFree_bytes) / node_memory_MemTotal_bytes))",
+                "legendFormat": "{{instance}}"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "Percent",
+                "min": 0,
+                "max": 100
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Pod Status",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum by(phase) (kube_pod_status_phase{namespace=\"leanvibe-production\"})",
+                "legendFormat": "{{phase}}"
+              }
+            ]
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "30s"
+      }
+    }
+
+  business-metrics.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "LeanVibe Business Metrics",
+        "tags": ["business", "revenue", "tenants"],
+        "timezone": "utc",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Tenant Signups (24h)",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "increase(tenant_signups_total[24h])",
+                "legendFormat": "New Signups"
+              }
+            ],
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "steps": [
+                    {"color": "red", "value": 0},
+                    {"color": "yellow", "value": 10},
+                    {"color": "green", "value": 50}
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 2,
+            "title": "Monthly Recurring Revenue Trend",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "monthly_recurring_revenue_usd",
+                "legendFormat": "MRR"
+              }
+            ],
+            "yAxes": [
+              {
+                "label": "USD",
+                "min": 0
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "title": "Tenant Distribution by Tier",
+            "type": "piechart",
+            "targets": [
+              {
+                "expr": "sum by(tier) (tenants_by_tier)",
+                "legendFormat": "{{tier}}"
+              }
+            ]
+          },
+          {
+            "id": 4,
+            "title": "API Usage by Tenant Tier",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(api_requests_total{job=\"leanvibe-backend\"}[5m]) by (tenant_tier)",
+                "legendFormat": "{{tenant_tier}}"
+              }
+            ]
+          }
+        ],
+        "time": {
+          "from": "now-24h",
+          "to": "now"
+        },
+        "refresh": "5m"
+      }
+    }
+---
+# Grafana Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-secrets
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: secrets
+type: Opaque
+data:
+  # Base64 encoded secrets - replace with actual values
+  admin-password: YWRtaW4xMjM0NTY=  # admin123456
+  secret-key: c3VwZXItc2VjdXJlLWdyYWZhbmEta2V5  # super-secure-grafana-key
+  smtp-host: c210cC5sZWFudmliZS5haQ==  # smtp.leanvibe.ai
+  smtp-user: YWxlcnRzQGxlYW52aWJlLmFp  # alerts@leanvibe.ai  
+  smtp-password: c210cC1wYXNzd29yZA==  # smtp-password
+---
+# Grafana Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/component: visualization
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+      app.kubernetes.io/component: visualization
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: grafana
+        app.kubernetes.io/component: visualization
+        app.kubernetes.io/version: "10.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: grafana
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
+      
+      containers:
+      - name: grafana
+        image: grafana/grafana:10.0.0
+        imagePullPolicy: Always
+        
+        ports:
+        - name: grafana
+          containerPort: 3000
+          protocol: TCP
+        
+        env:
+        - name: GF_SECURITY_ADMIN_USER
+          value: "admin"
+        - name: GF_SECURITY_ADMIN_PASSWORD__FILE
+          value: "/etc/grafana-secrets/admin-password"
+        - name: GF_INSTALL_PLUGINS
+          value: "grafana-piechart-panel,grafana-worldmap-panel"
+        
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: grafana
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: grafana
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: true
+          runAsUser: 472
+          capabilities:
+            drop:
+            - ALL
+        
+        volumeMounts:
+        - name: grafana-config
+          mountPath: /etc/grafana
+          readOnly: true
+        - name: grafana-dashboards
+          mountPath: /etc/grafana/dashboards
+          readOnly: true
+        - name: grafana-secrets
+          mountPath: /etc/grafana-secrets
+          readOnly: true
+        - name: grafana-storage
+          mountPath: /var/lib/grafana
+        - name: grafana-provisioning-datasources
+          mountPath: /etc/grafana/provisioning/datasources
+          readOnly: true
+        - name: grafana-provisioning-dashboards
+          mountPath: /etc/grafana/provisioning/dashboards
+          readOnly: true
+      
+      volumes:
+      - name: grafana-config
+        configMap:
+          name: grafana-config
+          items:
+          - key: grafana.ini
+            path: grafana.ini
+      - name: grafana-dashboards
+        configMap:
+          name: grafana-dashboards
+      - name: grafana-secrets
+        secret:
+          secretName: grafana-secrets
+          defaultMode: 0600
+      - name: grafana-provisioning-datasources
+        configMap:
+          name: grafana-config
+          items:
+          - key: datasource.yaml
+            path: datasource.yaml
+      - name: grafana-provisioning-dashboards
+        configMap:
+          name: grafana-config
+          items:
+          - key: dashboard-provider.yaml
+            path: dashboard-provider.yaml
+      - name: grafana-storage
+        persistentVolumeClaim:
+          claimName: grafana-storage-pvc
+      
+      terminationGracePeriodSeconds: 30
+---
+# Grafana Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: visualization
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3000"
+spec:
+  type: ClusterIP
+  ports:
+  - name: grafana
+    port: 3000
+    targetPort: grafana
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: visualization
+---
+# Grafana Storage PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-storage-pvc
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd
+---
+# Grafana ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: grafana
+  namespace: leanvibe-monitoring
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: visualization

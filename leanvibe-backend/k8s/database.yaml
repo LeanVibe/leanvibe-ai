@@ -1,0 +1,383 @@
+# LeanVibe Enterprise Neo4j Database Deployment
+# Production-ready Neo4j cluster with persistent storage
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: neo4j
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: neo4j
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/component: database
+    app.kubernetes.io/version: "5.0"
+    environment: production
+spec:
+  serviceName: neo4j-headless
+  replicas: 1  # Start with single instance, can be scaled to cluster
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: neo4j
+      app.kubernetes.io/component: database
+      environment: production
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: neo4j
+        app.kubernetes.io/component: database
+        app.kubernetes.io/version: "5.0"
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "2004"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: leanvibe-neo4j
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 7474
+        runAsGroup: 7474
+        fsGroup: 7474
+      
+      containers:
+      - name: neo4j
+        image: neo4j:5.0-enterprise
+        imagePullPolicy: Always
+        
+        ports:
+        - name: http
+          containerPort: 7474
+          protocol: TCP
+        - name: bolt
+          containerPort: 7687
+          protocol: TCP
+        - name: backup
+          containerPort: 6362
+          protocol: TCP
+        - name: cluster
+          containerPort: 7688
+          protocol: TCP
+        - name: metrics
+          containerPort: 2004
+          protocol: TCP
+        
+        # Environment Variables
+        env:
+        - name: NEO4J_AUTH
+          valueFrom:
+            secretKeyRef:
+              name: leanvibe-database-secrets
+              key: NEO4J_PASSWORD
+        - name: NEO4J_ACCEPT_LICENSE_AGREEMENT
+          value: "yes"
+        - name: NEO4J_EDITION
+          value: "enterprise"
+        
+        envFrom:
+        - configMapRef:
+            name: leanvibe-database-config
+        
+        # Resource Limits for Enterprise Performance
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1"
+          limits:
+            memory: "8Gi"
+            cpu: "2"
+        
+        # Health Checks
+        livenessProbe:
+          tcpSocket:
+            port: bolt
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 5
+        
+        readinessProbe:
+          httpGet:
+            path: /db/data/
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        startupProbe:
+          httpGet:
+            path: /db/data/
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+        
+        # Security Context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # Neo4j needs to write to filesystem
+          runAsNonRoot: true
+          runAsUser: 7474
+          capabilities:
+            drop:
+            - ALL
+        
+        # Volume Mounts
+        volumeMounts:
+        - name: neo4j-data
+          mountPath: /data
+        - name: neo4j-logs
+          mountPath: /logs
+        - name: neo4j-import
+          mountPath: /var/lib/neo4j/import
+        - name: neo4j-plugins
+          mountPath: /plugins
+        - name: neo4j-conf
+          mountPath: /var/lib/neo4j/conf
+          readOnly: true
+      
+      volumes:
+      - name: neo4j-conf
+        configMap:
+          name: leanvibe-database-config
+  
+  # Persistent Volume Claims for Data Persistence
+  volumeClaimTemplates:
+  - metadata:
+      name: neo4j-data
+      labels:
+        app.kubernetes.io/name: neo4j
+        app.kubernetes.io/component: database
+        environment: production
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "fast-ssd"
+      resources:
+        requests:
+          storage: 100Gi
+  - metadata:
+      name: neo4j-logs
+      labels:
+        app.kubernetes.io/name: neo4j
+        app.kubernetes.io/component: database
+        environment: production
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "fast-ssd"
+      resources:
+        requests:
+          storage: 20Gi
+  - metadata:
+      name: neo4j-import
+      labels:
+        app.kubernetes.io/name: neo4j
+        app.kubernetes.io/component: database
+        environment: production
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 50Gi
+  - metadata:
+      name: neo4j-plugins
+      labels:
+        app.kubernetes.io/name: neo4j
+        app.kubernetes.io/component: database
+        environment: production
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "standard"
+      resources:
+        requests:
+          storage: 10Gi
+---
+# Redis Cache Deployment for Enterprise Caching
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/component: cache
+    app.kubernetes.io/version: "7.0"
+    environment: production
+spec:
+  replicas: 2  # Master-Replica setup
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+      app.kubernetes.io/component: cache
+      environment: production
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/component: cache
+        app.kubernetes.io/version: "7.0"
+        environment: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "6379"
+    spec:
+      serviceAccountName: leanvibe-redis
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        imagePullPolicy: Always
+        
+        command:
+        - redis-server
+        - /etc/redis/redis.conf
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        
+        ports:
+        - name: redis
+          containerPort: 6379
+          protocol: TCP
+        
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: leanvibe-secrets
+              key: REDIS_PASSWORD
+        
+        # Resource Limits for Enterprise Caching
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "500m"
+        
+        # Health Checks
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - -a
+            - $(REDIS_PASSWORD)
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - -a
+            - $(REDIS_PASSWORD)
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        # Security Context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 999
+          capabilities:
+            drop:
+            - ALL
+        
+        # Volume Mounts
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config
+          mountPath: /etc/redis
+          readOnly: true
+      
+      volumes:
+      - name: redis-data
+        emptyDir:
+          sizeLimit: 2Gi
+      - name: redis-config
+        configMap:
+          name: leanvibe-redis-config
+---
+# Redis Sentinel for High Availability
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-sentinel
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: redis-sentinel
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/component: cache-sentinel
+    environment: production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis-sentinel
+      app.kubernetes.io/component: cache-sentinel
+      environment: production
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis-sentinel
+        app.kubernetes.io/component: cache-sentinel
+        environment: production
+    spec:
+      serviceAccountName: leanvibe-redis
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+      
+      containers:
+      - name: redis-sentinel
+        image: redis:7-alpine
+        command:
+        - redis-sentinel
+        - /etc/redis-sentinel/sentinel.conf
+        
+        ports:
+        - name: sentinel
+          containerPort: 26379
+          protocol: TCP
+        
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        
+        volumeMounts:
+        - name: sentinel-config
+          mountPath: /etc/redis-sentinel
+          readOnly: true
+      
+      volumes:
+      - name: sentinel-config
+        configMap:
+          name: redis-sentinel-config

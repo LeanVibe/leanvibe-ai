@@ -1,0 +1,728 @@
+# LeanVibe Enterprise Backup CronJobs
+# Automated backup and disaster recovery for production data
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: leanvibe-backup
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/instance: production
+    environment: production
+  annotations:
+    description: "LeanVibe Enterprise Backup and Disaster Recovery"
+---
+# Backup Service Account and RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-operator
+  namespace: leanvibe-backup
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: backup-operator
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: operator
+rules:
+# Pod access for database backups
+- apiGroups: [""]
+  resources: ["pods", "pods/exec"]
+  verbs: ["get", "list", "create"]
+# PVC access for volume snapshots
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get", "list", "watch"]
+# VolumeSnapshot access
+- apiGroups: ["snapshot.storage.k8s.io"]
+  resources: ["volumesnapshots"]
+  verbs: ["get", "list", "create", "delete"]
+# Secret access for credentials
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+# ConfigMap access for scripts
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: backup-operator
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: backup-operator
+subjects:
+- kind: ServiceAccount
+  name: backup-operator
+  namespace: leanvibe-backup
+---
+# Backup Configuration ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-config
+  namespace: leanvibe-backup
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: config
+data:
+  backup-config.yaml: |
+    # LeanVibe Enterprise Backup Configuration
+    backup_policy:
+      retention:
+        daily_snapshots: 7
+        weekly_snapshots: 4  
+        monthly_snapshots: 12
+        yearly_snapshots: 3
+      
+      schedules:
+        neo4j_backup: "0 2 * * *"      # Daily at 2 AM UTC
+        redis_backup: "0 3 * * *"       # Daily at 3 AM UTC
+        volume_snapshots: "0 1 * * *"   # Daily at 1 AM UTC
+        cross_region_sync: "0 4 * * 0"  # Weekly on Sunday at 4 AM UTC
+      
+      storage:
+        primary_bucket: "leanvibe-backups-prod-us-east-1"
+        backup_regions:
+          - region: "us-west-2"
+            bucket: "leanvibe-backups-prod-us-west-2"
+          - region: "eu-west-1"  
+            bucket: "leanvibe-backups-prod-eu-west-1"
+        
+        encryption:
+          kms_key_id: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+          
+    targets:
+      neo4j:
+        namespace: "leanvibe-production"
+        pod_selector: "app.kubernetes.io/name=neo4j"
+        container: "neo4j"
+        backup_command: |
+          neo4j-admin backup \
+            --backup-dir=/tmp/backup \
+            --name=production \
+            --from=localhost:7687
+        
+      redis:
+        namespace: "leanvibe-production"
+        pod_selector: "app.kubernetes.io/name=redis"
+        container: "redis"
+        backup_command: |
+          redis-cli -h localhost -p 6379 -a ${REDIS_PASSWORD} --rdb /tmp/backup/dump.rdb
+        
+      volumes:
+        - name: "neo4j-data"
+          namespace: "leanvibe-production"
+          pvc_name: "neo4j-data-neo4j-0"
+        - name: "prometheus-storage"
+          namespace: "leanvibe-monitoring"
+          pvc_name: "prometheus-storage-pvc"
+  
+  # Neo4j backup script
+  neo4j-backup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    # Configuration
+    BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
+    BACKUP_NAME="neo4j_backup_${BACKUP_DATE}"
+    BACKUP_DIR="/tmp/backup/${BACKUP_NAME}"
+    
+    echo "Starting Neo4j backup: ${BACKUP_NAME}"
+    
+    # Create backup directory
+    mkdir -p "${BACKUP_DIR}"
+    
+    # Execute backup using neo4j-admin
+    neo4j-admin dump \
+      --database=neo4j \
+      --to="${BACKUP_DIR}/neo4j.dump" \
+      --verbose
+    
+    # Create metadata file
+    cat > "${BACKUP_DIR}/metadata.json" << EOF
+    {
+      "backup_name": "${BACKUP_NAME}",
+      "backup_date": "${BACKUP_DATE}",
+      "database": "neo4j",
+      "backup_type": "full",
+      "version": "$(neo4j version)",
+      "size_bytes": $(stat -f%z "${BACKUP_DIR}/neo4j.dump" 2>/dev/null || stat -c%s "${BACKUP_DIR}/neo4j.dump")
+    }
+    EOF
+    
+    # Compress backup
+    cd /tmp/backup
+    tar -czf "${BACKUP_NAME}.tar.gz" "${BACKUP_NAME}/"
+    
+    # Upload to S3 with encryption
+    aws s3 cp "${BACKUP_NAME}.tar.gz" \
+      "s3://${S3_BACKUP_BUCKET}/neo4j/${BACKUP_NAME}.tar.gz" \
+      --server-side-encryption aws:kms \
+      --ssekms-key-id "${BACKUP_KMS_KEY_ID}" \
+      --storage-class STANDARD_IA
+    
+    # Upload to backup regions
+    for region_config in ${BACKUP_REGIONS}; do
+      region=$(echo $region_config | cut -d: -f1)
+      bucket=$(echo $region_config | cut -d: -f2)
+      
+      aws s3 cp "${BACKUP_NAME}.tar.gz" \
+        "s3://${bucket}/neo4j/${BACKUP_NAME}.tar.gz" \
+        --region "${region}" \
+        --server-side-encryption aws:kms \
+        --ssekms-key-id "${BACKUP_KMS_KEY_ID}" \
+        --storage-class STANDARD_IA
+    done
+    
+    # Clean up local files
+    rm -rf "${BACKUP_DIR}" "${BACKUP_NAME}.tar.gz"
+    
+    # Clean up old backups (keep only last 7 days locally)
+    find /tmp/backup -name "neo4j_backup_*.tar.gz" -mtime +7 -delete 2>/dev/null || true
+    
+    echo "Neo4j backup completed successfully: ${BACKUP_NAME}"
+  
+  # Redis backup script
+  redis-backup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
+    BACKUP_NAME="redis_backup_${BACKUP_DATE}"
+    BACKUP_DIR="/tmp/backup/${BACKUP_NAME}"
+    
+    echo "Starting Redis backup: ${BACKUP_NAME}"
+    
+    # Create backup directory
+    mkdir -p "${BACKUP_DIR}"
+    
+    # Trigger background save
+    redis-cli -h localhost -p 6379 -a "${REDIS_PASSWORD}" BGSAVE
+    
+    # Wait for background save to complete
+    echo "Waiting for Redis background save to complete..."
+    while [ "$(redis-cli -h localhost -p 6379 -a "${REDIS_PASSWORD}" LASTSAVE)" -eq "$(redis-cli -h localhost -p 6379 -a "${REDIS_PASSWORD}" LASTSAVE)" ]; do
+      sleep 1
+    done
+    
+    # Copy RDB file
+    cp /data/dump.rdb "${BACKUP_DIR}/dump.rdb"
+    
+    # Get Redis info for metadata
+    redis-cli -h localhost -p 6379 -a "${REDIS_PASSWORD}" INFO > "${BACKUP_DIR}/redis_info.txt"
+    
+    # Create metadata file
+    cat > "${BACKUP_DIR}/metadata.json" << EOF
+    {
+      "backup_name": "${BACKUP_NAME}",
+      "backup_date": "${BACKUP_DATE}",
+      "database": "redis",
+      "backup_type": "rdb",
+      "size_bytes": $(stat -f%z "${BACKUP_DIR}/dump.rdb" 2>/dev/null || stat -c%s "${BACKUP_DIR}/dump.rdb")
+    }
+    EOF
+    
+    # Compress backup
+    cd /tmp/backup
+    tar -czf "${BACKUP_NAME}.tar.gz" "${BACKUP_NAME}/"
+    
+    # Upload to S3 with encryption
+    aws s3 cp "${BACKUP_NAME}.tar.gz" \
+      "s3://${S3_BACKUP_BUCKET}/redis/${BACKUP_NAME}.tar.gz" \
+      --server-side-encryption aws:kms \
+      --ssekms-key-id "${BACKUP_KMS_KEY_ID}" \
+      --storage-class STANDARD_IA
+    
+    # Upload to backup regions  
+    for region_config in ${BACKUP_REGIONS}; do
+      region=$(echo $region_config | cut -d: -f1)
+      bucket=$(echo $region_config | cut -d: -f2)
+      
+      aws s3 cp "${BACKUP_NAME}.tar.gz" \
+        "s3://${bucket}/redis/${BACKUP_NAME}.tar.gz" \
+        --region "${region}" \
+        --server-side-encryption aws:kms \
+        --ssekms-key-id "${BACKUP_KMS_KEY_ID}" \
+        --storage-class STANDARD_IA
+    done
+    
+    # Clean up
+    rm -rf "${BACKUP_DIR}" "${BACKUP_NAME}.tar.gz"
+    
+    echo "Redis backup completed successfully: ${BACKUP_NAME}"
+  
+  # Volume snapshot script
+  volume-snapshot.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
+    
+    echo "Starting volume snapshots: ${BACKUP_DATE}"
+    
+    # Function to create volume snapshot
+    create_volume_snapshot() {
+      local pvc_name=$1
+      local namespace=$2
+      local volume_name=$3
+      
+      local snapshot_name="${volume_name}-snapshot-${BACKUP_DATE}"
+      
+      cat << EOF | kubectl apply -f -
+    apiVersion: snapshot.storage.k8s.io/v1
+    kind: VolumeSnapshot
+    metadata:
+      name: ${snapshot_name}
+      namespace: ${namespace}
+      labels:
+        app.kubernetes.io/name: leanvibe
+        app.kubernetes.io/component: backup
+        backup-date: "${BACKUP_DATE}"
+        volume-name: "${volume_name}"
+    spec:
+      volumeSnapshotClassName: leanvibe-snapshot-class
+      source:
+        persistentVolumeClaimName: ${pvc_name}
+    EOF
+      
+      echo "Created volume snapshot: ${snapshot_name} in namespace ${namespace}"
+    }
+    
+    # Create snapshots for critical volumes
+    create_volume_snapshot "neo4j-data-neo4j-0" "leanvibe-production" "neo4j-data"
+    create_volume_snapshot "prometheus-storage-pvc" "leanvibe-monitoring" "prometheus-storage"
+    create_volume_snapshot "grafana-storage-pvc" "leanvibe-monitoring" "grafana-storage"
+    
+    echo "Volume snapshots completed: ${BACKUP_DATE}"
+  
+  # Backup cleanup script
+  backup-cleanup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    echo "Starting backup cleanup..."
+    
+    # Clean up old volume snapshots
+    kubectl get volumesnapshots -A -o json | jq -r '.items[] | select(.metadata.labels."backup-date" != null) | select((.metadata.creationTimestamp | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) < (now - (7 * 24 * 3600))) | "\(.metadata.namespace) \(.metadata.name)"' | while read namespace name; do
+      if [ -n "$namespace" ] && [ -n "$name" ]; then
+        echo "Deleting old volume snapshot: $name in namespace $namespace"
+        kubectl delete volumesnapshot "$name" -n "$namespace" || true
+      fi
+    done
+    
+    # Clean up old S3 backups (keep daily for 7 days, weekly for 4 weeks, monthly for 12 months)
+    aws s3api list-objects-v2 --bucket "${S3_BACKUP_BUCKET}" --prefix "neo4j/" --query 'Contents[?LastModified<`2023-01-01`].[Key]' --output text | while read key; do
+      if [ -n "$key" ] && [ "$key" != "None" ]; then
+        # Logic to determine if backup should be kept based on retention policy
+        # This is a simplified version - production would need more sophisticated logic
+        backup_date=$(echo "$key" | grep -o '[0-9]\{8\}_[0-9]\{6\}' || echo "")
+        if [ -n "$backup_date" ]; then
+          # Convert to timestamp and check against retention policy
+          days_old=$(( ($(date +%s) - $(date -j -f "%Y%m%d_%H%M%S" "$backup_date" +%s 2>/dev/null || echo 0)) / 86400 ))
+          
+          # Keep daily backups for 7 days, weekly for 28 days, monthly for 365 days
+          should_delete=false
+          if [ $days_old -gt 365 ]; then
+            should_delete=true
+          elif [ $days_old -gt 28 ] && [ $(date -j -f "%Y%m%d_%H%M%S" "$backup_date" +%d 2>/dev/null || echo 1) -ne 1 ]; then
+            should_delete=true  # Keep only monthly (1st of month)
+          elif [ $days_old -gt 7 ] && [ $(date -j -f "%Y%m%d_%H%M%S" "$backup_date" +%w 2>/dev/null || echo 0) -ne 0 ]; then
+            should_delete=true  # Keep only weekly (Sunday)
+          fi
+          
+          if [ "$should_delete" = true ]; then
+            echo "Deleting old backup: $key"
+            aws s3 rm "s3://${S3_BACKUP_BUCKET}/$key" || true
+          fi
+        fi
+      fi
+    done
+    
+    echo "Backup cleanup completed"
+---
+# Neo4j Backup CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: neo4j-backup
+  namespace: leanvibe-backup
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: neo4j-backup
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backup
+        app.kubernetes.io/component: neo4j-backup
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backup
+            app.kubernetes.io/component: neo4j-backup
+        spec:
+          serviceAccountName: backup-operator
+          restartPolicy: OnFailure
+          
+          containers:
+          - name: neo4j-backup
+            image: neo4j:5.0-enterprise
+            imagePullPolicy: Always
+            
+            command: ["/bin/bash"]
+            args: ["/scripts/neo4j-backup.sh"]
+            
+            env:
+            - name: NEO4J_URI
+              value: "neo4j://neo4j.leanvibe-production.svc.cluster.local:7687"
+            - name: NEO4J_USER
+              value: "neo4j"
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: leanvibe-database-secrets
+                  key: NEO4J_PASSWORD
+            - name: S3_BACKUP_BUCKET
+              value: "leanvibe-backups-prod-us-east-1"
+            - name: BACKUP_KMS_KEY_ID
+              value: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+            - name: BACKUP_REGIONS
+              value: "us-west-2:leanvibe-backups-prod-us-west-2 eu-west-1:leanvibe-backups-prod-eu-west-1"
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-aws-credentials
+                  key: aws_access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-aws-credentials
+                  key: aws_secret_access_key
+            
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"
+            
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              runAsNonRoot: true
+              runAsUser: 7474
+              capabilities:
+                drop:
+                - ALL
+            
+            volumeMounts:
+            - name: backup-scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: backup-storage
+              mountPath: /tmp/backup
+          
+          volumes:
+          - name: backup-scripts
+            configMap:
+              name: backup-config
+              defaultMode: 0755
+          - name: backup-storage
+            emptyDir:
+              sizeLimit: 10Gi
+          
+          affinity:
+            podAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 100
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                      - neo4j
+                  topologyKey: kubernetes.io/hostname
+---
+# Redis Backup CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: redis-backup
+  namespace: leanvibe-backup
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: redis-backup
+spec:
+  schedule: "0 3 * * *"  # Daily at 3 AM UTC  
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backup
+        app.kubernetes.io/component: redis-backup
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backup
+            app.kubernetes.io/component: redis-backup
+        spec:
+          serviceAccountName: backup-operator
+          restartPolicy: OnFailure
+          
+          containers:
+          - name: redis-backup
+            image: redis:7-alpine
+            imagePullPolicy: Always
+            
+            command: ["/bin/sh"]
+            args: ["/scripts/redis-backup.sh"]
+            
+            env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: leanvibe-secrets
+                  key: REDIS_PASSWORD
+            - name: S3_BACKUP_BUCKET
+              value: "leanvibe-backups-prod-us-east-1"
+            - name: BACKUP_KMS_KEY_ID
+              value: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+            - name: BACKUP_REGIONS
+              value: "us-west-2:leanvibe-backups-prod-us-west-2 eu-west-1:leanvibe-backups-prod-eu-west-1"
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-aws-credentials
+                  key: aws_access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-aws-credentials
+                  key: aws_secret_access_key
+            
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "200m"
+            
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              runAsNonRoot: true
+              runAsUser: 999
+              capabilities:
+                drop:
+                - ALL
+            
+            volumeMounts:
+            - name: backup-scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: backup-storage
+              mountPath: /tmp/backup
+          
+          volumes:
+          - name: backup-scripts
+            configMap:
+              name: backup-config
+              defaultMode: 0755
+          - name: backup-storage
+            emptyDir:
+              sizeLimit: 2Gi
+---
+# Volume Snapshot CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: volume-snapshots
+  namespace: leanvibe-backup
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: volume-snapshots
+spec:
+  schedule: "0 1 * * *"  # Daily at 1 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backup
+        app.kubernetes.io/component: volume-snapshots
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backup
+            app.kubernetes.io/component: volume-snapshots
+        spec:
+          serviceAccountName: backup-operator
+          restartPolicy: OnFailure
+          
+          containers:
+          - name: volume-snapshots
+            image: bitnami/kubectl:latest
+            imagePullPolicy: Always
+            
+            command: ["/bin/bash"]
+            args: ["/scripts/volume-snapshot.sh"]
+            
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "256Mi"
+                cpu: "200m"
+            
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+              runAsUser: 1001
+              capabilities:
+                drop:
+                - ALL
+            
+            volumeMounts:
+            - name: backup-scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          
+          volumes:
+          - name: backup-scripts
+            configMap:
+              name: backup-config
+              defaultMode: 0755
+          - name: tmp
+            emptyDir: {}
+---
+# Backup Cleanup CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup-cleanup
+  namespace: leanvibe-backup
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: cleanup
+spec:
+  schedule: "0 5 * * 0"  # Weekly on Sunday at 5 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: backup
+        app.kubernetes.io/component: cleanup
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: backup
+            app.kubernetes.io/component: cleanup
+        spec:
+          serviceAccountName: backup-operator
+          restartPolicy: OnFailure
+          
+          containers:
+          - name: backup-cleanup
+            image: amazon/aws-cli:latest
+            imagePullPolicy: Always
+            
+            command: ["/bin/bash"]
+            args: ["/scripts/backup-cleanup.sh"]
+            
+            env:
+            - name: S3_BACKUP_BUCKET
+              value: "leanvibe-backups-prod-us-east-1"
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-aws-credentials
+                  key: aws_access_key_id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-aws-credentials
+                  key: aws_secret_access_key
+            
+            resources:
+              requests:
+                memory: "128Mi"
+                cpu: "100m"
+              limits:
+                memory: "256Mi"
+                cpu: "200m"
+            
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+              runAsUser: 1000
+              capabilities:
+                drop:
+                - ALL
+            
+            volumeMounts:
+            - name: backup-scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          
+          volumes:
+          - name: backup-scripts
+            configMap:
+              name: backup-config
+              defaultMode: 0755
+          - name: tmp
+            emptyDir: {}
+---
+# AWS Credentials Secret (needs to be populated with actual credentials)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backup-aws-credentials
+  namespace: leanvibe-backup
+  labels:
+    app.kubernetes.io/name: backup
+    app.kubernetes.io/component: credentials
+type: Opaque
+data:
+  # Base64 encoded AWS credentials - replace with actual values
+  aws_access_key_id: QUtJQUlPU0ZPRE5ON0VYQU1QTEU=        # AKIAIOSFODNN7EXAMPLE
+  aws_secret_access_key: d0phbHJYVXRuRkVNSS9LN01ERU5HYklrM1dGSU9QMwEx  # wJalrXUtnFEMI/K7MDENG/bPxRfiCY7EXAMPLE

@@ -1,0 +1,327 @@
+# LeanVibe Enterprise Storage Configuration
+# Persistent volumes and storage classes for production data
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: storage
+    environment: production
+  annotations:
+    description: "Fast SSD storage for database and critical data"
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp3
+  iops: "3000"
+  throughput: "125"
+  encrypted: "true"
+  kmsKeyId: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: storage
+    environment: production
+  annotations:
+    description: "Standard storage for general purpose data"
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: gp3
+  encrypted: "true"
+  kmsKeyId: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: backup-storage
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: storage
+    environment: production
+  annotations:
+    description: "Cost-effective storage for backups and archives"
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: kubernetes.io/aws-ebs
+parameters:
+  type: st1  # Throughput Optimized HDD
+  encrypted: "true"
+  kmsKeyId: "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
+# Persistent Volume for Neo4j Database Backup
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: neo4j-backup-pv
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: database-backup
+    environment: production
+  annotations:
+    description: "Dedicated backup storage for Neo4j database"
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: backup-storage
+  awsElasticBlockStore:
+    volumeID: vol-backup123456789abcdef0
+    fsType: ext4
+    encrypted: true
+---
+# Persistent Volume Claim for Application Logs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: leanvibe-logs-pvc
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: logging
+    environment: production
+  annotations:
+    description: "Persistent storage for application logs"
+    volume.beta.kubernetes.io/storage-provisioner: kubernetes.io/aws-ebs
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard
+---
+# Persistent Volume Claim for Shared Application Data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: leanvibe-shared-data-pvc
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: shared-storage
+    environment: production
+  annotations:
+    description: "Shared storage for application data and file uploads"
+    volume.beta.kubernetes.io/storage-provisioner: kubernetes.io/aws-ebs
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 200Gi
+  storageClassName: standard
+---
+# Persistent Volume Claim for Monitoring Data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: leanvibe-monitoring-pvc
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: monitoring
+    environment: production
+  annotations:
+    description: "Storage for Prometheus metrics and monitoring data"
+    volume.beta.kubernetes.io/storage-provisioner: kubernetes.io/aws-ebs
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+---
+# Volume Snapshot Class for Backup Operations
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: leanvibe-snapshot-class
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: backup
+    environment: production
+  annotations:
+    description: "Snapshot class for automated backups"
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: ebs.csi.aws.com
+deletionPolicy: Retain
+parameters:
+  encrypted: "true"
+---
+# Volume Snapshot for Neo4j Database
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: neo4j-daily-snapshot
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: database-backup
+    environment: production
+  annotations:
+    description: "Daily snapshot of Neo4j database"
+    backup-schedule: "daily"
+    retention-days: "30"
+spec:
+  volumeSnapshotClassName: leanvibe-snapshot-class
+  source:
+    persistentVolumeClaimName: neo4j-data-neo4j-0
+---
+# ConfigMap for Backup Scripts and Policies
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-scripts
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: backup
+    environment: production
+data:
+  backup-policy.yaml: |
+    # Backup retention policy
+    daily_snapshots: 7
+    weekly_snapshots: 4
+    monthly_snapshots: 12
+    yearly_snapshots: 3
+    
+    # Backup schedules
+    neo4j_backup: "0 2 * * *"  # Daily at 2 AM
+    redis_backup: "0 3 * * *"   # Daily at 3 AM
+    logs_backup: "0 4 * * 0"    # Weekly on Sunday at 4 AM
+    
+    # Cross-region replication
+    primary_region: "us-east-1"
+    backup_regions:
+      - "us-west-2"
+      - "eu-west-1"
+  
+  neo4j-backup.sh: |
+    #!/bin/bash
+    # Neo4j backup script for enterprise deployment
+    set -euo pipefail
+    
+    BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
+    BACKUP_NAME="neo4j_backup_${BACKUP_DATE}"
+    
+    # Create database backup using Neo4j admin tools
+    neo4j-admin backup \
+      --backup-dir="/backups/${BACKUP_NAME}" \
+      --name="production" \
+      --from="${NEO4J_URI}"
+    
+    # Compress backup
+    tar -czf "/backups/${BACKUP_NAME}.tar.gz" -C "/backups" "${BACKUP_NAME}"
+    
+    # Upload to S3 with encryption
+    aws s3 cp "/backups/${BACKUP_NAME}.tar.gz" \
+      "s3://leanvibe-backups-prod/neo4j/${BACKUP_NAME}.tar.gz" \
+      --server-side-encryption aws:kms \
+      --ssekms-key-id "${BACKUP_KMS_KEY_ID}"
+    
+    # Clean up local backup files older than 7 days
+    find /backups -name "neo4j_backup_*.tar.gz" -mtime +7 -delete
+    
+    echo "Backup completed: ${BACKUP_NAME}"
+  
+  redis-backup.sh: |
+    #!/bin/bash
+    # Redis backup script for enterprise deployment
+    set -euo pipefail
+    
+    BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
+    BACKUP_NAME="redis_backup_${BACKUP_DATE}"
+    
+    # Create Redis backup
+    redis-cli -h redis -p 6379 -a "${REDIS_PASSWORD}" BGSAVE
+    
+    # Wait for background save to complete
+    while [ $(redis-cli -h redis -p 6379 -a "${REDIS_PASSWORD}" LASTSAVE) -eq $(redis-cli -h redis -p 6379 -a "${REDIS_PASSWORD}" LASTSAVE) ]; do
+      sleep 1
+    done
+    
+    # Copy dump.rdb file
+    kubectl cp redis:/data/dump.rdb "/backups/${BACKUP_NAME}.rdb"
+    
+    # Compress and encrypt
+    gzip "/backups/${BACKUP_NAME}.rdb"
+    
+    # Upload to S3
+    aws s3 cp "/backups/${BACKUP_NAME}.rdb.gz" \
+      "s3://leanvibe-backups-prod/redis/${BACKUP_NAME}.rdb.gz" \
+      --server-side-encryption aws:kms \
+      --ssekms-key-id "${BACKUP_KMS_KEY_ID}"
+    
+    # Clean up local backups older than 3 days
+    find /backups -name "redis_backup_*.rdb.gz" -mtime +3 -delete
+    
+    echo "Redis backup completed: ${BACKUP_NAME}"
+  
+  restore-procedures.md: |
+    # LeanVibe Enterprise Restore Procedures
+    
+    ## Neo4j Database Restore
+    
+    1. Stop the Neo4j service:
+       ```bash
+       kubectl scale statefulset neo4j --replicas=0 -n leanvibe-production
+       ```
+    
+    2. Download backup from S3:
+       ```bash
+       aws s3 cp s3://leanvibe-backups-prod/neo4j/BACKUP_NAME.tar.gz ./
+       tar -xzf BACKUP_NAME.tar.gz
+       ```
+    
+    3. Restore the database:
+       ```bash
+       neo4j-admin restore --from=./BACKUP_NAME --database=production
+       ```
+    
+    4. Restart Neo4j service:
+       ```bash
+       kubectl scale statefulset neo4j --replicas=1 -n leanvibe-production
+       ```
+    
+    ## Redis Restore
+    
+    1. Stop Redis service:
+       ```bash
+       kubectl scale deployment redis --replicas=0 -n leanvibe-production
+       ```
+    
+    2. Download and restore backup:
+       ```bash
+       aws s3 cp s3://leanvibe-backups-prod/redis/BACKUP_NAME.rdb.gz ./
+       gunzip BACKUP_NAME.rdb.gz
+       kubectl cp BACKUP_NAME.rdb redis:/data/dump.rdb
+       ```
+    
+    3. Restart Redis service:
+       ```bash
+       kubectl scale deployment redis --replicas=2 -n leanvibe-production
+       ```
+    
+    ## Point-in-Time Recovery
+    
+    1. Identify the desired recovery point
+    2. Use volume snapshots for consistent state recovery
+    3. Follow standard restore procedures
+    4. Validate data integrity post-recovery

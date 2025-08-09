@@ -1,0 +1,135 @@
+# LeanVibe Enterprise Multi-Tenant Namespace Configuration
+# Supports namespace-based tenant isolation with resource quotas
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/instance: production
+    environment: production
+    tier: backend
+    cost-center: leanvibe-backend
+  annotations:
+    description: "LeanVibe Enterprise SaaS Production Environment"
+    contact: "devops@leanvibe.ai"
+    security-level: "high"
+    compliance: "soc2,gdpr,hipaa"
+---
+# Resource Quota for Production Environment
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: leanvibe-production-quota
+  namespace: leanvibe-production
+spec:
+  hard:
+    # Compute Resources
+    requests.cpu: "10"
+    requests.memory: 20Gi
+    limits.cpu: "20"
+    limits.memory: 40Gi
+    
+    # Storage Resources  
+    requests.storage: 100Gi
+    persistentvolumeclaims: "10"
+    
+    # Object Limits
+    pods: "50"
+    services: "20"
+    secrets: "30"
+    configmaps: "30"
+    
+    # Load Balancers
+    services.loadbalancers: "5"
+---
+# Limit Range for Pod-level Resource Constraints
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: leanvibe-production-limits
+  namespace: leanvibe-production
+spec:
+  limits:
+  - default:
+      cpu: "1"
+      memory: "2Gi"
+    defaultRequest:
+      cpu: "250m"
+      memory: "512Mi"
+    max:
+      cpu: "4"
+      memory: "8Gi"
+    min:
+      cpu: "100m"
+      memory: "128Mi"
+    type: Container
+  - default:
+      storage: "10Gi"
+    max:
+      storage: "100Gi"
+    min:
+      storage: "1Gi"
+    type: PersistentVolumeClaim
+---
+# Network Policy for Micro-segmentation
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: leanvibe-production-network-policy
+  namespace: leanvibe-production
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow ingress from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Allow inter-pod communication within namespace
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 8000
+    - protocol: TCP
+      port: 7687  # Neo4j
+    - protocol: TCP
+      port: 6379  # Redis
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  # Allow outbound HTTPS for external API calls
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 80
+  # Allow database connections
+  - to:
+    - podSelector:
+        matchLabels:
+          app: neo4j
+    ports:
+    - protocol: TCP
+      port: 7687
+  # Allow Redis connections
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379

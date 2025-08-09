@@ -1,0 +1,279 @@
+# LeanVibe Enterprise Ingress Configuration
+# SSL termination, routing, and enterprise security features
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: leanvibe-production-ingress
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/instance: production
+    app.kubernetes.io/component: ingress
+    environment: production
+  annotations:
+    # Ingress Controller Configuration
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # SSL/TLS Configuration
+    cert-manager.io/cluster-issuer: "letsencrypt-production"
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    nginx.ingress.kubernetes.io/ssl-ciphers: "ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384"
+    
+    # Security Headers
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+      add_header X-Frame-Options "DENY" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' wss: ws:; frame-ancestors 'none';" always;
+    
+    # Rate Limiting for Enterprise Protection
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/rate-limit-connections: "10"
+    
+    # Load Balancing Configuration
+    nginx.ingress.kubernetes.io/upstream-hash-by: "$remote_addr"
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/affinity-mode: "persistent"
+    nginx.ingress.kubernetes.io/session-cookie-name: "leanvibe-session"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "3600"
+    
+    # Performance Optimizations
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    
+    # WebSocket Support for Real-time Features
+    nginx.ingress.kubernetes.io/websocket-services: "leanvibe-backend"
+    nginx.ingress.kubernetes.io/proxy-set-headers: "leanvibe-production/websocket-headers"
+    
+    # CORS Configuration for Multi-Region Support
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,X-Tenant-ID"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    
+    # WAF Integration (if available)
+    nginx.ingress.kubernetes.io/modsecurity-snippet: |
+      Include /etc/nginx/owasp-modsecurity-crs/nginx-modsecurity.conf
+      SecRuleEngine On
+      SecRequestBodyAccess On
+      SecResponseBodyAccess On
+      SecDebugLog /tmp/modsec_debug.log
+      SecDebugLogLevel 1
+spec:
+  tls:
+  - hosts:
+    - api.leanvibe.ai
+    - leanvibe.ai
+    - *.leanvibe.ai
+    secretName: leanvibe-tls-cert
+  
+  rules:
+  # Main API Domain
+  - host: api.leanvibe.ai
+    http:
+      paths:
+      # Health Check Endpoint (public, no auth required)
+      - path: /health
+        pathType: Prefix
+        backend:
+          service:
+            name: leanvibe-backend
+            port:
+              number: 80
+      
+      # Authentication Endpoints
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: leanvibe-backend
+            port:
+              number: 80
+      
+      # API Endpoints (tenant-specific)
+      - path: /api/v1
+        pathType: Prefix
+        backend:
+          service:
+            name: leanvibe-backend
+            port:
+              number: 80
+      
+      # WebSocket Endpoints for Real-time Features
+      - path: /ws
+        pathType: Prefix
+        backend:
+          service:
+            name: leanvibe-backend
+            port:
+              number: 80
+      
+      # Billing Webhooks (Stripe, etc.)
+      - path: /webhooks
+        pathType: Prefix
+        backend:
+          service:
+            name: leanvibe-backend
+            port:
+              number: 80
+  
+  # Main Domain (redirect to www or app)
+  - host: leanvibe.ai
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: leanvibe-backend
+            port:
+              number: 80
+  
+  # Tenant-specific Subdomains (Multi-tenant Architecture)
+  - host: "*.leanvibe.ai"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: leanvibe-backend
+            port:
+              number: 80
+---
+# WebSocket Headers ConfigMap for Real-time Communication
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: websocket-headers
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: ingress-config
+    environment: production
+data:
+  # WebSocket upgrade headers
+  Upgrade: $http_upgrade
+  Connection: $connection_upgrade
+  Host: $host
+  X-Real-IP: $remote_addr
+  X-Forwarded-For: $proxy_add_x_forwarded_for
+  X-Forwarded-Proto: $scheme
+  X-Forwarded-Port: $server_port
+  X-Request-ID: $request_id
+---
+# Certificate Issuer for Automatic SSL Management
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: issuer
+    environment: production
+spec:
+  acme:
+    # ACME server URL for Let's Encrypt production
+    server: https://acme-v02.api.letsencrypt.org/directory
+    
+    # Email address for ACME registration
+    email: devops@leanvibe.ai
+    
+    # Private key secret name
+    privateKeySecretRef:
+      name: letsencrypt-production-private-key
+    
+    # Challenge solvers
+    solvers:
+    # HTTP-01 challenge solver
+    - http01:
+        ingress:
+          class: nginx
+          podTemplate:
+            spec:
+              nodeSelector:
+                kubernetes.io/os: linux
+    
+    # DNS-01 challenge solver for wildcard certificates
+    - dns01:
+        route53:
+          region: us-east-1
+          accessKeyID: AKIAIOSFODNN7EXAMPLE
+          secretAccessKeySecretRef:
+            name: route53-secret
+            key: secret-access-key
+      selector:
+        dnsNames:
+        - "*.leanvibe.ai"
+        - "leanvibe.ai"
+---
+# Ingress for Administrative Interface (Internal Use)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: leanvibe-admin-ingress
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: admin-ingress
+    environment: production
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    
+    # IP Whitelist for Administrative Access
+    nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,203.0.113.0/24"
+    
+    # Basic Authentication for Admin Interface
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: leanvibe-admin-auth
+    nginx.ingress.kubernetes.io/auth-realm: "LeanVibe Admin Interface"
+    
+    # Additional security for admin endpoints
+    nginx.ingress.kubernetes.io/rate-limit: "10"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+spec:
+  tls:
+  - hosts:
+    - admin.leanvibe.ai
+    secretName: leanvibe-admin-tls-cert
+  
+  rules:
+  - host: admin.leanvibe.ai
+    http:
+      paths:
+      # Database Admin Interface (Neo4j Browser)
+      - path: /db
+        pathType: Prefix
+        backend:
+          service:
+            name: neo4j
+            port:
+              number: 7474
+      
+      # Metrics and Monitoring
+      - path: /metrics
+        pathType: Prefix
+        backend:
+          service:
+            name: leanvibe-metrics
+            port:
+              number: 9090
+      
+      # Administrative API Endpoints
+      - path: /admin
+        pathType: Prefix
+        backend:
+          service:
+            name: leanvibe-backend
+            port:
+              number: 80

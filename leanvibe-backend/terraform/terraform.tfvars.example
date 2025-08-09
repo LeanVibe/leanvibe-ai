@@ -1,0 +1,127 @@
+# LeanVibe Enterprise Terraform Configuration
+# Example configuration file - copy to terraform.tfvars and customize
+
+# Environment Configuration
+environment = "production"
+aws_region  = "us-east-1"
+
+# Network Configuration  
+vpc_cidr = "10.0.0.0/16"
+
+public_subnet_cidrs = [
+  "10.0.1.0/24",   # us-east-1a
+  "10.0.2.0/24",   # us-east-1b  
+  "10.0.3.0/24"    # us-east-1c
+]
+
+private_subnet_cidrs = [
+  "10.0.10.0/24",  # us-east-1a
+  "10.0.20.0/24",  # us-east-1b
+  "10.0.30.0/24"   # us-east-1c
+]
+
+database_subnet_cidrs = [
+  "10.0.100.0/24", # us-east-1a
+  "10.0.200.0/24", # us-east-1b
+  "10.0.300.0/24"  # us-east-1c
+]
+
+# Kubernetes Configuration
+kubernetes_version = "1.28"
+cluster_endpoint_private_access = true
+cluster_endpoint_public_access  = true
+cluster_endpoint_public_access_cidrs = [
+  "0.0.0.0/0" # SECURITY: Restrict this in production
+]
+
+# Database Configuration
+db_instance_class        = "db.r5.large"      # Production: db.r5.xlarge or larger
+db_allocated_storage     = 100                # GB
+db_max_allocated_storage = 1000               # GB  
+db_backup_retention_days = 30                 # Days
+
+# Redis Configuration
+redis_node_type              = "cache.r6g.large" # Production: cache.r6g.xlarge or larger
+redis_num_cache_clusters     = 2                 # For high availability
+redis_parameter_group_name   = "default.redis7"
+
+# Domain Configuration
+domain_name = "leanvibe.ai"
+subdomain_names = [
+  "api",
+  "admin", 
+  "monitoring",
+  "*.tenant"
+]
+
+# Multi-Cloud Configuration
+enable_multi_cloud       = false # Set to true for multi-cloud deployment
+primary_cloud_provider   = "aws"
+
+# Disaster Recovery Configuration  
+enable_cross_region_backup = true
+backup_regions = [
+  "us-west-2",
+  "eu-west-1"
+]
+rpo_minutes = 5  # Enterprise: 5 minutes
+rto_minutes = 60 # Enterprise: 60 minutes
+
+# Enterprise Features
+enable_enterprise_features  = true
+enable_sso_integration     = true  
+enable_audit_logging       = true
+enable_compliance_monitoring = true
+
+# Cost Optimization
+enable_cost_optimization = true
+enable_reserved_instances = false # Enable after workload analysis
+auto_scaling_target_cpu   = 70    # Percentage
+auto_scaling_target_memory = 80   # Percentage
+
+# Monitoring and Alerting
+alert_email_addresses = [
+  "devops@leanvibe.ai",
+  "alerts@leanvibe.ai"
+]
+
+# SENSITIVE: Set this in environment variable or secure vault
+# alert_slack_webhook = "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+
+enable_business_metrics  = true
+metrics_retention_days   = 90 # Enterprise compliance requirement
+
+# Security Configuration  
+enable_waf               = true
+enable_ddos_protection   = false # Expensive - enable based on threat assessment
+enable_secrets_rotation  = true
+secrets_rotation_days    = 90
+
+# Network Security
+allowed_cidr_blocks = [
+  "0.0.0.0/0" # SECURITY: Restrict to known IP ranges in production
+]
+enable_vpc_flow_logs = true
+enable_network_acls  = true
+
+# Backup Configuration
+backup_schedule_cron             = "0 2 * * *" # Daily at 2 AM UTC
+long_term_backup_retention_days  = 2555        # 7 years for compliance
+enable_backup_encryption         = true
+
+# Tenant Configuration
+default_tenant_tier      = "team"
+max_tenants_per_cluster  = 1000
+tenant_isolation_mode    = "namespace" # Options: namespace, cluster, hybrid
+
+# Performance Configuration
+enable_performance_monitoring      = true
+performance_budget_response_time_ms = 200  # Enterprise SLA: 200ms
+performance_budget_throughput_rps   = 1000 # Requests per second
+
+# Development/Testing (Production: set to false)
+enable_debug_logging  = false
+enable_test_endpoints = false
+
+# Maintenance
+maintenance_window = "sun:03:00-sun:04:00" # Sunday 3-4 AM UTC

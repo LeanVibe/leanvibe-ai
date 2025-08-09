@@ -1,0 +1,221 @@
+# LeanVibe Enterprise RBAC Configuration
+# Role-Based Access Control for production security
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: leanvibe-backend
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: service-account
+    environment: production
+  annotations:
+    description: "Service account for LeanVibe backend services"
+    security-level: "high"
+---
+# Role for LeanVibe Backend Services
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: leanvibe-production
+  name: leanvibe-backend-role
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: rbac
+    environment: production
+rules:
+# ConfigMap permissions for configuration management
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+  
+# Secret permissions for credential management
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch"]
+  
+# Pod permissions for health checks and debugging
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+  
+# Service permissions for service discovery
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list", "watch"]
+  
+# Events permissions for monitoring and troubleshooting
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+---
+# RoleBinding to connect ServiceAccount with Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: leanvibe-backend-rolebinding
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: rbac
+    environment: production
+subjects:
+- kind: ServiceAccount
+  name: leanvibe-backend
+  namespace: leanvibe-production
+roleRef:
+  kind: Role
+  name: leanvibe-backend-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Service Account for Neo4j Database
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: leanvibe-neo4j
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: database
+    environment: production
+  annotations:
+    description: "Service account for Neo4j database"
+    security-level: "high"
+---
+# Role for Neo4j Database Operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: leanvibe-production
+  name: leanvibe-neo4j-role
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: database-rbac
+    environment: production
+rules:
+# ConfigMap permissions for database configuration
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+  
+# Secret permissions for database credentials
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch"]
+  
+# PersistentVolumeClaim permissions for storage management
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+  
+# Events permissions for database monitoring
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+---
+# RoleBinding for Neo4j
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: leanvibe-neo4j-rolebinding
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: database-rbac
+    environment: production
+subjects:
+- kind: ServiceAccount
+  name: leanvibe-neo4j
+  namespace: leanvibe-production
+roleRef:
+  kind: Role
+  name: leanvibe-neo4j-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Service Account for Redis Cache
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: leanvibe-redis
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: cache
+    environment: production
+  annotations:
+    description: "Service account for Redis cache"
+    security-level: "medium"
+---
+# Role for Redis Cache Operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: leanvibe-production
+  name: leanvibe-redis-role
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: cache-rbac
+    environment: production
+rules:
+# ConfigMap permissions for Redis configuration
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+  
+# Secret permissions for Redis authentication
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list", "watch"]
+  
+# Events permissions for cache monitoring
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+---
+# RoleBinding for Redis
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: leanvibe-redis-rolebinding
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: cache-rbac
+    environment: production
+subjects:
+- kind: ServiceAccount
+  name: leanvibe-redis
+  namespace: leanvibe-production
+roleRef:
+  kind: Role
+  name: leanvibe-redis-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Pod Security Policy for Enterprise Security
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: leanvibe-production-psp
+  namespace: leanvibe-production
+  labels:
+    app.kubernetes.io/name: leanvibe
+    app.kubernetes.io/component: security
+    environment: production
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
