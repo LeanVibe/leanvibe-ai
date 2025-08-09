@@ -10,39 +10,38 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 class TestEnhancedAIService:
-    """Test enhanced AI service with MLX integration and confidence scoring"""
+    """Test enhanced unified MLX service with AST, vector, and confidence scoring"""
 
     @pytest.mark.asyncio
-    async def test_ai_service_initialization(self):
-        """Test AI service initialization with MLX detection"""
-        from app.services.ai_service import AIService
+    async def test_unified_mlx_service_initialization(self):
+        """Test unified MLX service initialization with enhanced capabilities"""
+        from app.services.unified_mlx_service import unified_mlx_service
 
-        ai_service = AIService()
-        await ai_service.initialize()
+        await unified_mlx_service.initialize()
 
-        assert ai_service.is_initialized is True
-        assert hasattr(ai_service, "mlx_available")
-        assert hasattr(ai_service, "model_health")
-        assert ai_service.model_health["status"] in ["ready", "mock_mode", "error"]
+        assert unified_mlx_service.is_initialized is True
+        assert hasattr(unified_mlx_service, "enhanced_initialization_status")
+        assert hasattr(unified_mlx_service, "current_strategy")
+        assert unified_mlx_service.enhanced_initialization_status["mlx_strategy"] is True
 
     @pytest.mark.asyncio
-    async def test_confidence_scoring(self):
-        """Test confidence scoring system"""
-        from app.services.ai_service import AIService
+    async def test_enhanced_capabilities(self):
+        """Test enhanced capabilities (AST, vector, CLI processing)"""
+        from app.services.unified_mlx_service import unified_mlx_service
 
-        ai_service = AIService()
-        await ai_service.initialize()
+        await unified_mlx_service.initialize()
 
-        # Test different response types
-        high_confidence = ai_service._calculate_confidence_score(
-            "Successfully analyzed the file with detailed insights", "file_operation"
-        )
-        assert high_confidence > 0.7
-
-        low_confidence = ai_service._calculate_confidence_score(
-            "Error occurred", "code_analysis"
-        )
-        assert low_confidence < 0.5
+        # Test enhanced status tracking
+        status = unified_mlx_service.enhanced_initialization_status
+        assert "ast" in status
+        assert "vector" in status
+        assert "mlx_strategy" in status
+        assert "overall" in status
+        
+        # Test CLI command processing capability
+        assert hasattr(unified_mlx_service, "process_command")
+        assert hasattr(unified_mlx_service, "supported_commands")
+        assert len(unified_mlx_service.supported_commands) > 0
 
     @pytest.mark.asyncio
     async def test_enhanced_status_command(self):

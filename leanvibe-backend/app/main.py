@@ -21,7 +21,7 @@ from .api.endpoints.synthetic_monitoring import router as synthetic_monitoring_r
 from .api.models import CodeCompletionRequest
 from .core.connection_manager import ConnectionManager
 from .models.event_models import ClientPreferences, EventType
-from .services.enhanced_ai_service import EnhancedAIService
+from .services.unified_mlx_service import unified_mlx_service
 from .services.event_streaming_service import event_streaming_service
 from .services.reconnection_service import (
     client_heartbeat,
@@ -327,8 +327,8 @@ async def handle_code_completion_websocket(message: dict, client_id: str) -> dic
         }
 
 
-# Initialize services with enhanced AI and event streaming
-ai_service = EnhancedAIService()
+# Initialize services with unified MLX and event streaming
+ai_service = unified_mlx_service  # Use the global enhanced unified MLX service instance
 connection_manager = ConnectionManager()
 session_manager = SessionManager()
 
@@ -360,19 +360,29 @@ async def health_check():
     session_stats = session_manager.get_stats()
     streaming_stats = event_streaming_service.get_stats()
     
-    # Get LLM metrics from production model service
+    # Get enhanced LLM metrics from unified MLX service
     llm_metrics = None
-    if (ai_service.is_initialized and 
-        hasattr(ai_service, 'mlx_service') and 
-        ai_service.mlx_service.production_service):
+    if ai_service.is_initialized:
         try:
-            production_health = ai_service.mlx_service.production_service.get_health_status()
-            llm_metrics = production_health.get("llm_metrics")
-        except Exception as e:
-            logger.warning(f"Failed to get LLM metrics: {e}")
+            # Get comprehensive health from unified service
+            unified_health = ai_service.get_model_health()
             llm_metrics = {
-                "error": "Failed to retrieve LLM metrics",
-                "message": str(e)
+                "unified_service": {
+                    "current_strategy": unified_health.get("current_strategy", {}),
+                    "strategy_availability": unified_health.get("strategy_availability", {}),
+                    "enhanced_metrics": unified_health.get("enhanced_metrics", {}),
+                    "health_score": unified_health.get("health_score", 0),
+                    "capabilities": unified_health.get("capabilities", {}),
+                },
+                "performance": ai_service.get_performance_metrics(),
+                "source": "unified_mlx_service"
+            }
+        except Exception as e:
+            logger.warning(f"Failed to get enhanced LLM metrics: {e}")
+            llm_metrics = {
+                "error": "Failed to retrieve enhanced LLM metrics",
+                "message": str(e),
+                "fallback_available": True
             }
     
     # Get error recovery system status
