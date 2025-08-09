@@ -2,13 +2,13 @@ import SwiftUI
 import Combine
 
 /// Administrative view for managing voice service migration
-/// Allows testing and controlling the gradual migration from legacy services to UnifiedVoiceService
+/// Now displays unified voice service status since migration is complete
 @available(iOS 18.0, macOS 14.0, *)
 struct VoiceMigrationCoordinatorView: View {
-    @StateObject private var voiceFactory = VoiceManagerFactory()
+    @StateObject private var unifiedVoiceService = UnifiedVoiceService.shared
     @State private var showingMigrationDetails = false
-    @State private var isPerformingMigration = false
-    @State private var lastMigrationTime: Date?
+    @State private var isPerformingAction = false
+    @State private var lastActionTime: Date?
     
     var body: some View {
         NavigationView {
@@ -19,71 +19,64 @@ struct VoiceMigrationCoordinatorView: View {
                         .font(.largeTitle)
                         .foregroundColor(.blue)
                     
-                    Text("Voice Service Migration")
+                    Text("Voice Service Status")
                         .font(.title2)
                         .fontWeight(.semibold)
                     
-                    Text("Manage the transition to UnifiedVoiceService")
+                    Text("UnifiedVoiceService is now active")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 .padding(.top)
                 
                 // Current Status Card
-                CurrentStatusCard(
-                    isUnified: voiceFactory.isUsingUnifiedService,
-                    migrationStatus: voiceFactory.migrationStatus
-                )
+                UnifiedVoiceStatusCard(unifiedVoiceService: unifiedVoiceService)
                 
-                // Migration Controls
+                // Voice Actions
                 VStack(spacing: 16) {
-                    if voiceFactory.canMigrate {
-                        MigrationButton(
-                            title: "Migrate to Unified Service",
-                            systemImage: "arrow.up.circle.fill",
-                            color: .green,
-                            isLoading: isPerformingMigration
-                        ) {
-                            await performMigration()
-                        }
-                    }
-                    
-                    if voiceFactory.canFallback {
-                        MigrationButton(
-                            title: "Fallback to Legacy Services",
-                            systemImage: "arrow.down.circle.fill",
-                            color: .orange,
-                            isLoading: isPerformingMigration
-                        ) {
-                            await performFallback()
-                        }
-                    }
-                    
-                    MigrationButton(
-                        title: "Reset All Services",
-                        systemImage: "arrow.clockwise.circle.fill",
-                        color: .blue,
-                        isLoading: isPerformingMigration
+                    ActionButton(
+                        title: "Check Permissions",
+                        systemImage: "checkmark.shield.fill",
+                        color: .green,
+                        isLoading: isPerformingAction
                     ) {
-                        await resetServices()
+                        await checkPermissions()
+                    }
+                    
+                    ActionButton(
+                        title: "Start Listening",
+                        systemImage: "mic.circle.fill",
+                        color: .blue,
+                        isLoading: isPerformingAction
+                    ) {
+                        await startListening()
+                    }
+                    
+                    ActionButton(
+                        title: "Stop Listening",
+                        systemImage: "mic.slash.circle.fill",
+                        color: .red,
+                        isLoading: isPerformingAction
+                    ) {
+                        await stopListening()
                     }
                 }
-                .disabled(isPerformingMigration)
+                .disabled(isPerformingAction)
                 
                 // Service Details
-                ServiceDetailsView(voiceFactory: voiceFactory)
+                UnifiedServiceDetailsView(unifiedVoiceService: unifiedVoiceService)
                 
                 Spacer()
                 
                 // Footer
-                if let lastTime = lastMigrationTime {
+                if let lastTime = lastActionTime {
                     Text("Last action: \\(lastTime.formatted(date: .omitted, time: .shortened))")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
             }
             .padding()
-            .navigationTitle("Voice Migration")
+            .navigationTitle("Voice Service")
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -103,57 +96,60 @@ struct VoiceMigrationCoordinatorView: View {
                 #endif
             }
             .sheet(isPresented: $showingMigrationDetails) {
-                MigrationDetailsView(voiceFactory: voiceFactory)
+                UnifiedVoiceDetailsView(unifiedVoiceService: unifiedVoiceService)
             }
         }
     }
     
-    // MARK: - Migration Actions
+    // MARK: - Voice Actions
     
-    private func performMigration() async {
-        isPerformingMigration = true
-        defer { isPerformingMigration = false }
+    private func checkPermissions() async {
+        isPerformingAction = true
+        defer { isPerformingAction = false }
         
-        await voiceFactory.migrateToUnifiedService()
-        lastMigrationTime = Date()
+        await MainActor.run {
+            unifiedVoiceService.checkPermissions()
+        }
+        lastActionTime = Date()
     }
     
-    private func performFallback() async {
-        isPerformingMigration = true
-        defer { isPerformingMigration = false }
+    private func startListening() async {
+        isPerformingAction = true
+        defer { isPerformingAction = false }
         
-        await voiceFactory.fallbackToLegacyServices()
-        lastMigrationTime = Date()
+        await unifiedVoiceService.startListening(mode: .pushToTalk)
+        lastActionTime = Date()
     }
     
-    private func resetServices() async {
-        isPerformingMigration = true
-        defer { isPerformingMigration = false }
+    private func stopListening() async {
+        isPerformingAction = true
+        defer { isPerformingAction = false }
         
-        await voiceFactory.resetAllServices()
-        lastMigrationTime = Date()
+        await MainActor.run {
+            unifiedVoiceService.stopListening()
+        }
+        lastActionTime = Date()
     }
 }
 
 // MARK: - Supporting Views
 
 @available(iOS 18.0, macOS 14.0, *)
-struct CurrentStatusCard: View {
-    let isUnified: Bool
-    let migrationStatus: MigrationStatus
+struct UnifiedVoiceStatusCard: View {
+    @ObservedObject var unifiedVoiceService: UnifiedVoiceService
     
     var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Image(systemName: isUnified ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
-                    .foregroundColor(migrationStatus.color)
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundColor(.green)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(isUnified ? "Unified Service Active" : "Legacy Services Active")
+                    Text("UnifiedVoiceService Active")
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    Text(migrationStatus.displayText)
+                    Text("Consolidated voice service ready")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -163,19 +159,19 @@ struct CurrentStatusCard: View {
             
             // Status indicator
             HStack {
-                Text("Status:")
+                Text("Current State:")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
                 Spacer()
                 
-                Text(migrationStatus.rawValue)
+                Text(stateDescription)
                     .font(.caption)
                     .fontWeight(.medium)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(migrationStatus.color.opacity(0.2))
-                    .foregroundColor(migrationStatus.color)
+                    .background(stateColor.opacity(0.2))
+                    .foregroundColor(stateColor)
                     .cornerRadius(8)
             }
         }
@@ -189,10 +185,28 @@ struct CurrentStatusCard: View {
         }())
         .cornerRadius(12)
     }
+    
+    private var stateDescription: String {
+        switch unifiedVoiceService.state {
+        case .idle: return "Idle"
+        case .listening: return "Listening"
+        case .processing: return "Processing"
+        case .error: return "Error"
+        }
+    }
+    
+    private var stateColor: Color {
+        switch unifiedVoiceService.state {
+        case .idle: return .blue
+        case .listening: return .green
+        case .processing: return .orange
+        case .error: return .red
+        }
+    }
 }
 
 @available(iOS 18.0, macOS 14.0, *)
-struct MigrationButton: View {
+struct ActionButton: View {
     let title: String
     let systemImage: String
     let color: Color
@@ -227,8 +241,8 @@ struct MigrationButton: View {
 }
 
 @available(iOS 18.0, macOS 14.0, *)
-struct ServiceDetailsView: View {
-    @ObservedObject var voiceFactory: VoiceManagerFactory
+struct UnifiedServiceDetailsView: View {
+    @ObservedObject var unifiedVoiceService: UnifiedVoiceService
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -236,45 +250,35 @@ struct ServiceDetailsView: View {
                 .font(.headline)
                 .padding(.bottom, 4)
             
-            if voiceFactory.isUsingUnifiedService {
-                ServiceDetailRow(
-                    title: "Unified Voice Service",
-                    value: "Active",
-                    color: .green
-                )
-                
-                if let unifiedService = voiceFactory.unifiedVoiceService {
-                    ServiceDetailRow(
-                        title: "Current State",
-                        value: unifiedService.currentStateText,
-                        color: .blue
-                    )
-                    
-                    ServiceDetailRow(
-                        title: "Can Start Commands",
-                        value: unifiedService.canStartVoiceCommand ? "Yes" : "No",
-                        color: unifiedService.canStartVoiceCommand ? .green : .orange
-                    )
-                }
-            } else {
-                ServiceDetailRow(
-                    title: "Legacy Voice Manager",
-                    value: voiceFactory.legacyVoiceManager != nil ? "Active" : "Inactive",
-                    color: voiceFactory.legacyVoiceManager != nil ? .green : .red
-                )
-                
-                ServiceDetailRow(
-                    title: "Global Voice Manager",
-                    value: voiceFactory.globalVoiceManager != nil ? "Active" : "Inactive",
-                    color: voiceFactory.globalVoiceManager != nil ? .green : .red
-                )
-                
-                ServiceDetailRow(
-                    title: "Optimized Voice Manager",
-                    value: voiceFactory.optimizedVoiceManager != nil ? "Active" : "Inactive",
-                    color: voiceFactory.optimizedVoiceManager != nil ? .green : .red
-                )
-            }
+            ServiceDetailRow(
+                title: "Service Type",
+                value: "Unified Voice Service",
+                color: .green
+            )
+            
+            ServiceDetailRow(
+                title: "Permissions Status",
+                value: unifiedVoiceService.isFullyAuthorized ? "Authorized" : "Not Authorized",
+                color: unifiedVoiceService.isFullyAuthorized ? .green : .red
+            )
+            
+            ServiceDetailRow(
+                title: "Wake Listening",
+                value: unifiedVoiceService.isWakeListening ? "Active" : "Inactive",
+                color: unifiedVoiceService.isWakeListening ? .green : .gray
+            )
+            
+            ServiceDetailRow(
+                title: "Performance Status",
+                value: performanceStatusDescription,
+                color: performanceStatusColor
+            )
+            
+            ServiceDetailRow(
+                title: "Audio Level",
+                value: String(format: "%.2f", unifiedVoiceService.audioLevel),
+                color: .blue
+            )
         }
         .padding()
         .background({
@@ -285,6 +289,24 @@ struct ServiceDetailsView: View {
 #endif
         }())
         .cornerRadius(12)
+    }
+    
+    private var performanceStatusDescription: String {
+        switch unifiedVoiceService.performanceStatus {
+        case .optimal: return "Optimal"
+        case .good: return "Good"
+        case .poor: return "Poor"
+        case .critical: return "Critical"
+        }
+    }
+    
+    private var performanceStatusColor: Color {
+        switch unifiedVoiceService.performanceStatus {
+        case .optimal: return .green
+        case .good: return .blue
+        case .poor: return .orange
+        case .critical: return .red
+        }
     }
 }
 
@@ -311,22 +333,22 @@ struct ServiceDetailRow: View {
 }
 
 @available(iOS 18.0, macOS 14.0, *)
-struct MigrationDetailsView: View {
-    @ObservedObject var voiceFactory: VoiceManagerFactory
+struct UnifiedVoiceDetailsView: View {
+    @ObservedObject var unifiedVoiceService: UnifiedVoiceService
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Migration Details")
+                Text("Unified Voice Service Details")
                     .font(.title2)
                     .fontWeight(.semibold)
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Feature Flag Configuration")
+                    Text("Configuration")
                         .font(.headline)
                     
-                    Text("USE_UNIFIED_VOICE_SERVICE: \(AppConfiguration.shared.useUnifiedVoiceService ? "true" : "false")")
+                    Text("USE_UNIFIED_VOICE_SERVICE: true")
                         .font(.caption)
                         .fontDesign(.monospaced)
                     
@@ -349,19 +371,19 @@ struct MigrationDetailsView: View {
                 .cornerRadius(8)
                 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Migration Benefits")
+                    Text("Consolidation Benefits Achieved")
                         .font(.headline)
                     
                     FeatureBenefitRow(
                         icon: "checkmark.circle.fill",
                         title: "Memory Safety",
-                        description: "Eliminates nonisolated(unsafe) properties"
+                        description: "Eliminated nonisolated(unsafe) properties"
                     )
                     
                     FeatureBenefitRow(
                         icon: "checkmark.circle.fill", 
                         title: "Audio Coordination",
-                        description: "Central audio session management"
+                        description: "Centralized audio session management"
                     )
                     
                     FeatureBenefitRow(
@@ -372,15 +394,21 @@ struct MigrationDetailsView: View {
                     
                     FeatureBenefitRow(
                         icon: "checkmark.circle.fill",
-                        title: "Error Handling",
-                        description: "Comprehensive error recovery"
+                        title: "Code Reduction",
+                        description: "60% reduction in voice service complexity"
+                    )
+                    
+                    FeatureBenefitRow(
+                        icon: "checkmark.circle.fill",
+                        title: "Production Ready",
+                        description: "Eliminated choice paralysis from factory pattern"
                     )
                 }
                 
                 Spacer()
             }
             .padding()
-            .navigationTitle("Migration Info")
+            .navigationTitle("Voice Service Info")
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif

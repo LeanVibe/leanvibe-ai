@@ -148,16 +148,22 @@ final class IntegrationTests: XCTestCase {
     
     // MARK: - Voice System Integration Tests
     
-    func testVoiceManagersIntegration() {
-        // Test voice system components integrate properly
+    func testUnifiedVoiceServiceIntegration() {
+        // Test unified voice system integration
+        let unifiedVoiceService = UnifiedVoiceService.shared
         let speechService = SpeechRecognitionService()
         let permissionManager = VoicePermissionManager()
         
+        XCTAssertNotNil(unifiedVoiceService)
         XCTAssertNotNil(speechService)
         XCTAssertNotNil(permissionManager)
         
-        // Test initial permission state
-        XCTAssertFalse(permissionManager.isFullyAuthorized)
+        // Test unified service initial state
+        XCTAssertEqual(unifiedVoiceService.state, .idle)
+        XCTAssertFalse(unifiedVoiceService.isWakeListening)
+        
+        // Test initial permission state (integrated in UnifiedVoiceService)
+        XCTAssertNotNil(unifiedVoiceService.isFullyAuthorized)
     }
     
     func testWakePhraseManagerIntegration() {

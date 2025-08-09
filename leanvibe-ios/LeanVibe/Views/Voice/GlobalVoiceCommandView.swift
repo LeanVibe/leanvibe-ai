@@ -2,7 +2,7 @@ import SwiftUI
 
 @available(iOS 18.0, macOS 14.0, *)
 struct GlobalVoiceCommandView: View {
-    @ObservedObject var globalVoice: GlobalVoiceManager
+    @ObservedObject var unifiedVoice: UnifiedVoiceService
     @State private var animationScale: CGFloat = 0.8
     @State private var pulseOpacity: Double = 0.3
     
@@ -12,7 +12,7 @@ struct GlobalVoiceCommandView: View {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .onTapGesture {
-                    globalVoice.dismissVoiceCommand()
+                    unifiedVoice.stopListening()
                 }
             
             VStack(spacing: 24) {
@@ -53,13 +53,13 @@ struct GlobalVoiceCommandView: View {
                 
                 // Voice command text
                 VStack(spacing: 12) {
-                    if !globalVoice.voiceCommandText.isEmpty {
+                    if !unifiedVoice.recognizedText.isEmpty {
                         VStack(spacing: 8) {
                             Text("You said:")
                                 .font(.caption)
                                 .foregroundColor(.white.opacity(0.7))
                             
-                            Text(globalVoice.voiceCommandText)
+                            Text(unifiedVoice.recognizedText)
                                 .font(.headline)
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
@@ -77,7 +77,7 @@ struct GlobalVoiceCommandView: View {
                 
                 // Cancel button
                 Button(action: {
-                    globalVoice.dismissVoiceCommand()
+                    unifiedVoice.stopListening()
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "xmark.circle.fill")
@@ -112,7 +112,7 @@ struct GlobalVoiceCommandView: View {
             insertion: .scale(scale: 0.8).combined(with: .opacity),
             removal: .scale(scale: 0.9).combined(with: .opacity)
         ))
-        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: globalVoice.isVoiceCommandActive)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: unifiedVoice.state)
     }
 }
 
@@ -120,20 +120,10 @@ struct GlobalVoiceCommandView: View {
     ZStack {
         Color.gray.ignoresSafeArea()
         
-        GlobalVoiceCommandView(globalVoice: {
-            let webSocket = WebSocketService()
-            let projectManager = ProjectManager()
-            let settingsManager = SettingsManager.shared
-            let voiceFactory = VoiceManagerFactory(
-                speechService: nil,
-                webSocketService: webSocket,
-                projectManager: projectManager,
-                settingsManager: settingsManager
-            )
-            let globalVoice = voiceFactory.globalVoiceManager!
-            globalVoice.isVoiceCommandActive = true
-            globalVoice.voiceCommandText = "Show me the project status"
-            return globalVoice
+        GlobalVoiceCommandView(unifiedVoice: {
+            let service = UnifiedVoiceService.shared
+            // Note: In a real preview, the service would be properly initialized
+            return service
         }())
     }
 }

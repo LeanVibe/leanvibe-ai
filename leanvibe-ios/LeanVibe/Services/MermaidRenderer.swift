@@ -299,7 +299,7 @@ extension MermaidRenderer {
                     currentZoom = scale;
                     const diagram = document.getElementById('diagram');
                     if (diagram) {
-                        diagram.style.transform = `scale($\{scale})`;
+                        diagram.style.transform = `scale(${scale})`;
                     }
                 }
                 
