@@ -6,6 +6,7 @@ Extracted from architectural_violation_detector.py to improve modularity.
 """
 
 import logging
+import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -328,11 +329,41 @@ class ViolationReporter:
         return weights.get(severity, 0)
     
     def notify_subscribers(self, file_path: str, violations: List[ViolationInstance]):
-        """Notify subscribers about new violations (placeholder for actual notification)"""
+        """Notify subscribers about new violations via WebSocket"""
         if file_path in self.subscribers:
             subscribers = self.subscribers[file_path]
             logger.info(f"Notifying {len(subscribers)} subscribers about {len(violations)} violations in {file_path}")
-            # TODO: Implement actual notification mechanism (WebSocket, message queue, etc.)
+            
+            # Prepare notification payload
+            violation_data = [
+                {
+                    "rule": v.rule,
+                    "severity": v.severity,
+                    "message": v.message,
+                    "line": v.line,
+                    "column": v.column,
+                    "context": v.context
+                }
+                for v in violations
+            ]
+            
+            # Send WebSocket notifications to connected clients
+            try:
+                from app.core.connection_manager import connection_manager
+                notification = {
+                    "type": "code_violations",
+                    "file_path": file_path,
+                    "violations": violation_data,
+                    "timestamp": time.time()
+                }
+                # Notify all connected clients who are subscribed to this file
+                for client_id in subscribers:
+                    connection_manager.send_notification(client_id, notification)
+                    
+            except ImportError:
+                logger.warning("Connection manager not available for violation notifications")
+            except Exception as e:
+                logger.error(f"Failed to send violation notifications: {e}")
 
 
 # Global violation reporter instance

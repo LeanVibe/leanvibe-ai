@@ -439,8 +439,20 @@ class ConfigurationService:
             self._config = UnifiedConfig.from_env()
             self._env_override = True
         else:
-            # TODO: Implement file-based configuration loading
-            self._config = UnifiedConfig()
+            # Load configuration from file if available
+            try:
+                import os
+                import json
+                config_file = os.getenv('LEANVIBE_CONFIG_FILE', 'leanvibe.config.json')
+                if os.path.exists(config_file):
+                    with open(config_file, 'r') as f:
+                        config_data = json.load(f)
+                    self._config = UnifiedConfig(**config_data)
+                else:
+                    self._config = UnifiedConfig()
+            except Exception:
+                # Fallback to default configuration if file loading fails
+                self._config = UnifiedConfig()
         
         return self._config
     

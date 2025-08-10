@@ -12,6 +12,15 @@ from fastapi import APIRouter, HTTPException
 
 logger = logging.getLogger(__name__)
 
+def _calculate_tokens_per_second(health: Dict[str, Any]) -> float:
+    """Calculate average tokens per second from health metrics"""
+    inference_time = health.get("last_inference_time", 0)
+    tokens_generated = health.get("last_tokens_generated", 0)
+    
+    if inference_time > 0 and tokens_generated > 0:
+        return round(tokens_generated / inference_time, 2)
+    return 0.0
+
 router = APIRouter()
 
 
@@ -83,7 +92,7 @@ async def mlx_health_check() -> Dict[str, Any]:
             },
             "performance": {
                 "last_inference_time_ms": (health.get("last_inference_time", 0) * 1000) if health.get("last_inference_time") else None,
-                "average_tokens_per_second": None,  # TODO: Add when available
+                "average_tokens_per_second": _calculate_tokens_per_second(health),
                 "memory_efficiency": "good" if health.get("memory_usage_mb", 0) < 1000 else "moderate",
             },
             "recommendations": _get_unified_health_recommendations(health),
