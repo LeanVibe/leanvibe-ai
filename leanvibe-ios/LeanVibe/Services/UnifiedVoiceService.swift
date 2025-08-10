@@ -58,6 +58,8 @@ class UnifiedVoiceService: ObservableObject {
     private let audioCoordinator: AudioSessionCoordinator
     private let webSocketService: WebSocketService
     private let voiceProcessor: DashboardVoiceProcessor
+    // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+    // private let voiceFeedbackService = VoiceFeedbackService.shared
     
     // MARK: - Integrated Voice Permission Management
     @Published private(set) var hasMicrophonePermission = false
@@ -198,17 +200,23 @@ class UnifiedVoiceService: ObservableObject {
     func startListening(mode: ListeningMode = .pushToTalk) async {
         guard AppConfiguration.shared.isVoiceEnabled else {
             print("🎤 UnifiedVoiceService: Voice features disabled")
+            // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+            // voiceFeedbackService.speakError("Voice features are currently disabled")
             return
         }
         
         guard state.canStartListening else {
             print("🎤 UnifiedVoiceService: Cannot start listening in current state: \(state)")
+            // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+            // voiceFeedbackService.speakError("Cannot start listening in current state")
             return
         }
         
         // Check permissions first
         guard isFullyAuthorized else {
             state = .permissionRequired
+            // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+            // voiceFeedbackService.speakError("Voice permissions are required")
             return
         }
         
@@ -224,10 +232,16 @@ class UnifiedVoiceService: ObservableObject {
             switch mode {
             case .pushToTalk:
                 try await startPushToTalkListening()
+                // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+                // voiceFeedbackService.provide(.listeningStarted)
             case .wakeWord:
                 try await startWakeWordListening()
+                // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+                // voiceFeedbackService.speakResponse("Wake phrase detection started", priority: .normal)
             }
         } catch {
+            // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+            // voiceFeedbackService.speakError("Failed to start listening: \(error.localizedDescription)")
             handleError(VoiceError.from(error))
         }
     }
@@ -238,6 +252,9 @@ class UnifiedVoiceService: ObservableObject {
         
         speechRecognitionService.stopListening()
         stopWakeListening()
+        
+        // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+        // voiceFeedbackService.provide(.listeningStopped)
         
         if !recognizedText.isEmpty {
             state = .processing(transcript: recognizedText)
@@ -479,6 +496,9 @@ class UnifiedVoiceService: ObservableObject {
     private func handleError(_ error: VoiceError) {
         print("🎤 UnifiedVoiceService: Error occurred - \(error.localizedDescription)")
         
+        // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+        // voiceFeedbackService.provide(.systemError(error.localizedDescription))
+        
         // TODO: Report error to error boundary once module structure is resolved
         // reportVoiceError(error, from: "UnifiedVoiceService")
         
@@ -498,21 +518,33 @@ class UnifiedVoiceService: ObservableObject {
     private func processVoiceCommand(_ command: String) async {
         let processedCommand = preprocessCommand(command)
         
-        // Send to voice processor for advanced processing (async for performance)
-        await voiceProcessor.processVoiceCommand(processedCommand)
+        // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+        // voiceFeedbackService.provide(.processingCommand)
         
-        // Send to WebSocket service (non-blocking)
-        webSocketService.sendCommand(processedCommand)
-        
-        // Create voice message for history
-        let voiceMessage = AgentMessage(
-            content: "🎤 Voice: \(command)",
-            isFromUser: true,
-            type: .command
-        )
-        
-        await MainActor.run {
-            webSocketService.messages.append(voiceMessage)
+        do {
+            // Send to voice processor for advanced processing (async for performance)
+            await voiceProcessor.processVoiceCommand(processedCommand)
+            
+            // Send to WebSocket service (non-blocking)
+            webSocketService.sendCommand(processedCommand)
+            
+            // Create voice message for history
+            let voiceMessage = AgentMessage(
+                content: "🎤 Voice: \(command)",
+                isFromUser: true,
+                type: .command
+            )
+            
+            await MainActor.run {
+                webSocketService.messages.append(voiceMessage)
+            }
+            
+            // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+            // voiceFeedbackService.confirmCommand(processedCommand, success: true)
+            
+        } catch {
+            // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+            // voiceFeedbackService.speakError("Failed to process command: \(error.localizedDescription)")
         }
         
         // Calculate and log response time
@@ -820,6 +852,9 @@ class UnifiedVoiceService: ObservableObject {
         let impact = UIImpactFeedbackGenerator(style: .medium)
         impact.impactOccurred()
         #endif
+        
+        // TODO: Re-enable when VoiceFeedbackService is added to Xcode project
+        // voiceFeedbackService.provide(.wakePhraseDetected)
         
         // Log the wake phrase detection
         sendWakeStatusUpdate("✨ Wake phrase detected: \"\(detection.detectedPhrase)\"")

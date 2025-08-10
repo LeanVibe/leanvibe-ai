@@ -155,6 +155,20 @@ struct SettingsView: View {
                 }
             }
             
+            // TODO: Voice feedback settings - Re-enable when VoiceFeedbackService is added to Xcode project
+            /*
+            if isVoiceFeaturesEnabled {
+                NavigationLink(destination: VoiceFeedbackSettingsView()) {
+                    SettingsRow(
+                        icon: "speaker.3.fill",
+                        iconColor: Color(.systemTeal),
+                        title: "Voice Feedback",
+                        subtitle: VoiceFeedbackService.shared.isEnabled ? "Enabled" : "Disabled"
+                    )
+                }
+            }
+            */
+            
             // Only show voice testing if voice features are enabled and in debug/TestFlight
             if isVoiceFeaturesEnabled && !AppConfiguration.shared.isProductionBuild {
                 NavigationLink(destination: VoiceTestView()) {
