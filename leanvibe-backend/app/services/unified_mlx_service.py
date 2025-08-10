@@ -530,10 +530,12 @@ class UnifiedMLXService:
         # Enhanced AI infrastructure (migrated from enhanced_ai_service)
         self.ast_service = None
         self.vector_service = None
+        self.nlp_service = None  # Enhanced NLP service for voice commands
         self.enhanced_initialization_status = {
             "mlx_strategy": False,
             "ast": False,
             "vector": False,
+            "nlp": False,
             "overall": False,
         }
         
@@ -1247,8 +1249,10 @@ class UnifiedMLXService:
             "enhanced_metrics": {
                 "ast_available": self.enhanced_initialization_status["ast"],
                 "vector_available": self.enhanced_initialization_status["vector"],
+                "nlp_available": self.enhanced_initialization_status["nlp"],
                 "enhanced_overall": self.enhanced_initialization_status["overall"],
-                "cli_commands_supported": len(self.supported_commands)
+                "cli_commands_supported": len(self.supported_commands),
+                "nlp_performance": self.nlp_service.get_performance_metrics() if self.nlp_service else {}
             }
         }
     
@@ -1295,17 +1299,38 @@ class UnifiedMLXService:
                 logger.warning(f"[{session_id}] Vector initialization failed: {e}")
                 self.enhanced_initialization_status["vector"] = False
             
+            # Initialize Enhanced NLP service
+            nlp_init_start = time.time()
+            try:
+                from .enhanced_nlp_service import EnhancedNLPService
+                self.nlp_service = EnhancedNLPService()
+                # NLP service is self-initializing
+                nlp_success = self.nlp_service.is_initialized
+                nlp_init_time = time.time() - nlp_init_start
+                
+                self.enhanced_initialization_status["nlp"] = nlp_success
+                logger.info(
+                    f"[{session_id}] NLP service | "
+                    f"success={nlp_success} | "
+                    f"time={nlp_init_time:.3f}s"
+                )
+            except Exception as e:
+                logger.warning(f"[{session_id}] NLP initialization failed: {e}")
+                self.enhanced_initialization_status["nlp"] = False
+            
             # Update overall enhanced status
             self.enhanced_initialization_status["overall"] = any([
                 self.enhanced_initialization_status["mlx_strategy"],
                 self.enhanced_initialization_status["ast"],
                 self.enhanced_initialization_status["vector"],
+                self.enhanced_initialization_status["nlp"],
             ])
             
             logger.info(
                 f"[{session_id}] Enhanced capabilities initialized | "
                 f"ast={self.enhanced_initialization_status['ast']} | "
                 f"vector={self.enhanced_initialization_status['vector']} | "
+                f"nlp={self.enhanced_initialization_status['nlp']} | "
                 f"overall_enhanced={self.enhanced_initialization_status['overall']}"
             )
             
@@ -1526,6 +1551,418 @@ Use /help to see all commands.""",
     async def _get_vector_stats(self, args: str, client_id: str) -> Dict[str, Any]:
         """Vector stats placeholder"""
         return {"status": "success", "message": "Vector statistics - enhanced implementation needed"}
+    
+    # MARK: - Enhanced Voice Command Processing
+    
+    async def process_voice_command(self, voice_text: str, context: Optional[Dict] = None) -> Dict[str, Any]:
+        """
+        Process voice command using enhanced NLP with intelligent intent recognition
+        
+        Args:
+            voice_text: Natural language voice input
+            context: Optional context (current directory, project, etc.)
+            
+        Returns:
+            Dict with processing result, confidence, and action recommendations
+        """
+        if not self.is_initialized:
+            return {
+                "success": False,
+                "error": "Unified MLX service not initialized",
+                "confidence": 0.0
+            }
+        
+        request_id = f"voice_{int(time.time())}_{hash(voice_text) % 10000:04d}"
+        start_time = time.time()
+        
+        try:
+            logger.info(f"[{request_id}] Processing voice command: '{voice_text[:50]}...'")
+            
+            # Use enhanced NLP service if available
+            if self.enhanced_initialization_status["nlp"] and self.nlp_service:
+                nlp_command = self.nlp_service.process_command(voice_text, context)
+                
+                if nlp_command.confidence < 0.5:
+                    suggestions = self.nlp_service.get_command_suggestions(voice_text)
+                    return {
+                        "success": False,
+                        "error": "Could not understand command",
+                        "suggestions": suggestions,
+                        "confidence": nlp_command.confidence,
+                        "original_text": voice_text,
+                        "processing_time": time.time() - start_time,
+                        "nlp_result": {
+                            "intent": nlp_command.intent.value,
+                            "action": nlp_command.action,
+                            "canonical_form": nlp_command.canonical_form
+                        }
+                    }
+                
+                # Execute the parsed NLP command
+                result = await self._execute_nlp_command(nlp_command, context, request_id)
+                
+                # Enhance result with NLP processing details
+                result.update({
+                    "nlp_processing": {
+                        "intent": nlp_command.intent.value,
+                        "action": nlp_command.action,
+                        "parameters": [
+                            {
+                                "name": p.name,
+                                "value": p.value,
+                                "type": p.type,
+                                "confidence": p.confidence
+                            } for p in nlp_command.parameters
+                        ],
+                        "confidence": nlp_command.confidence,
+                        "canonical_form": nlp_command.canonical_form,
+                        "processing_time": nlp_command.processing_time
+                    },
+                    "total_processing_time": time.time() - start_time
+                })
+                
+                return result
+            
+            else:
+                # Fallback to simple string matching for basic commands
+                logger.warning(f"[{request_id}] NLP service unavailable, using fallback processing")
+                return await self._process_voice_command_fallback(voice_text, context, request_id)
+                
+        except Exception as e:
+            processing_time = time.time() - start_time
+            logger.error(f"[{request_id}] Voice command processing failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "confidence": 0.0,
+                "processing_time": processing_time,
+                "request_id": request_id
+            }
+    
+    async def _execute_nlp_command(self, nlp_command, context: Optional[Dict], request_id: str) -> Dict[str, Any]:
+        """Execute parsed NLP command based on intent and action"""
+        from .enhanced_nlp_service import CommandIntent
+        
+        try:
+            if nlp_command.intent == CommandIntent.SYSTEM_STATUS:
+                return await self._handle_system_status_voice(nlp_command, context)
+                
+            elif nlp_command.intent == CommandIntent.FILE_OPERATIONS:
+                return await self._handle_file_operations_voice(nlp_command, context)
+                
+            elif nlp_command.intent == CommandIntent.PROJECT_NAVIGATION:
+                return await self._handle_project_navigation_voice(nlp_command, context)
+                
+            elif nlp_command.intent == CommandIntent.CODE_ANALYSIS:
+                return await self._handle_code_analysis_voice(nlp_command, context)
+                
+            elif nlp_command.intent == CommandIntent.TASK_MANAGEMENT:
+                return await self._handle_task_management_voice(nlp_command, context)
+                
+            elif nlp_command.intent == CommandIntent.VOICE_CONTROL:
+                return await self._handle_voice_control_voice(nlp_command, context)
+                
+            elif nlp_command.intent == CommandIntent.HELP:
+                return await self._handle_help_voice(nlp_command, context)
+                
+            else:
+                return {
+                    "success": False,
+                    "error": f"Unknown intent: {nlp_command.intent.value}",
+                    "confidence": nlp_command.confidence
+                }
+                
+        except Exception as e:
+            logger.error(f"[{request_id}] NLP command execution failed: {e}")
+            return {
+                "success": False,
+                "error": f"Command execution failed: {str(e)}",
+                "confidence": nlp_command.confidence
+            }
+    
+    async def _process_voice_command_fallback(self, voice_text: str, context: Optional[Dict], request_id: str) -> Dict[str, Any]:
+        """Fallback voice command processing using simple string matching"""
+        voice_lower = voice_text.lower()
+        
+        # Simple command mappings for fallback
+        fallback_mappings = {
+            "status": "/status",
+            "list files": "/list-files", 
+            "help": "/help",
+            "current directory": "/current-dir"
+        }
+        
+        for trigger, command in fallback_mappings.items():
+            if trigger in voice_lower:
+                # Execute the mapped command
+                if command in self.supported_commands:
+                    result = await self.supported_commands[command]("", "voice")
+                    return {
+                        "success": True,
+                        "result": result,
+                        "confidence": 0.6,  # Lower confidence for fallback
+                        "method": "fallback_string_matching",
+                        "mapped_command": command
+                    }
+        
+        return {
+            "success": False,
+            "error": "Command not recognized (NLP service unavailable)",
+            "confidence": 0.0,
+            "method": "fallback_failed",
+            "suggestions": ["Try: 'show status', 'list files', 'help me'"]
+        }
+    
+    # NLP command handlers
+    async def _handle_system_status_voice(self, nlp_command, context: Optional[Dict]) -> Dict[str, Any]:
+        """Handle system status voice commands"""
+        health = self.get_model_health()
+        performance = self.get_performance_metrics()
+        
+        status_message = f"""System Status:
+- Current Strategy: {self._get_current_strategy_name()}
+- Health Score: {health.get('health_score', 0):.1f}/1.0
+- Enhanced NLP: {'✅' if self.enhanced_initialization_status['nlp'] else '❌'}
+- Response Time: {performance.get('avg_response_time', 0):.2f}s average"""
+        
+        return {
+            "success": True,
+            "message": status_message,
+            "data": {
+                "health": health,
+                "performance": performance,
+                "enhanced_status": self.enhanced_initialization_status
+            },
+            "confidence": nlp_command.confidence
+        }
+    
+    async def _handle_file_operations_voice(self, nlp_command, context: Optional[Dict]) -> Dict[str, Any]:
+        """Handle file operations voice commands"""
+        action = nlp_command.action
+        
+        if action in ["list", "default"]:
+            return await self._list_files("", "voice")
+        elif action == "open":
+            # Extract filename from parameters
+            filename = self._get_parameter_value(nlp_command.parameters, "filename")
+            if filename:
+                return {
+                    "success": True,
+                    "message": f"Opening file: {filename}",
+                    "action": "open_file",
+                    "filename": filename,
+                    "confidence": nlp_command.confidence
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": "No filename specified for opening",
+                    "confidence": nlp_command.confidence
+                }
+        else:
+            return {
+                "success": True,
+                "message": f"File operation '{action}' recognized but not fully implemented",
+                "action": action,
+                "confidence": nlp_command.confidence
+            }
+    
+    async def _handle_project_navigation_voice(self, nlp_command, context: Optional[Dict]) -> Dict[str, Any]:
+        """Handle project navigation voice commands"""
+        action = nlp_command.action
+        
+        if action in ["current", "default"]:
+            return await self._get_current_directory("", "voice")
+        elif action == "change":
+            directory = self._get_parameter_value(nlp_command.parameters, "directory", "path")
+            if directory:
+                return {
+                    "success": True,
+                    "message": f"Navigating to: {directory}",
+                    "action": "change_directory",
+                    "directory": directory,
+                    "confidence": nlp_command.confidence
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": "No directory specified for navigation",
+                    "confidence": nlp_command.confidence
+                }
+        else:
+            return {
+                "success": True,
+                "message": f"Navigation action '{action}' recognized",
+                "action": action,
+                "confidence": nlp_command.confidence
+            }
+    
+    async def _handle_code_analysis_voice(self, nlp_command, context: Optional[Dict]) -> Dict[str, Any]:
+        """Handle code analysis voice commands"""
+        action = nlp_command.action
+        
+        if self.enhanced_initialization_status["ast"]:
+            filename = self._get_parameter_value(nlp_command.parameters, "filename")
+            if filename:
+                return {
+                    "success": True,
+                    "message": f"Analyzing {filename} with AST service",
+                    "action": action,
+                    "filename": filename,
+                    "confidence": nlp_command.confidence,
+                    "ast_available": True
+                }
+            else:
+                return {
+                    "success": True,
+                    "message": f"Code analysis '{action}' ready (specify filename)",
+                    "action": action,
+                    "confidence": nlp_command.confidence,
+                    "ast_available": True
+                }
+        else:
+            return {
+                "success": False,
+                "error": "AST service not available for code analysis",
+                "confidence": nlp_command.confidence,
+                "ast_available": False
+            }
+    
+    async def _handle_task_management_voice(self, nlp_command, context: Optional[Dict]) -> Dict[str, Any]:
+        """Handle task management voice commands"""
+        action = nlp_command.action
+        
+        if action == "create":
+            task_text = self._get_parameter_value(nlp_command.parameters, "task_text")
+            if task_text:
+                return {
+                    "success": True,
+                    "message": f"Creating task: {task_text}",
+                    "action": "create_task",
+                    "task_text": task_text,
+                    "confidence": nlp_command.confidence
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": "No task description provided",
+                    "confidence": nlp_command.confidence
+                }
+        elif action in ["list", "default"]:
+            return {
+                "success": True,
+                "message": "Listing tasks",
+                "action": "list_tasks",
+                "confidence": nlp_command.confidence
+            }
+        elif action == "complete":
+            task_id = self._get_parameter_value(nlp_command.parameters, "task_id")
+            if task_id:
+                return {
+                    "success": True,
+                    "message": f"Marking task {task_id} as complete",
+                    "action": "complete_task",
+                    "task_id": task_id,
+                    "confidence": nlp_command.confidence
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": "No task ID specified for completion",
+                    "confidence": nlp_command.confidence
+                }
+        else:
+            return {
+                "success": True,
+                "message": f"Task management action '{action}' recognized",
+                "action": action,
+                "confidence": nlp_command.confidence
+            }
+    
+    async def _handle_voice_control_voice(self, nlp_command, context: Optional[Dict]) -> Dict[str, Any]:
+        """Handle voice control commands"""
+        action = nlp_command.action
+        
+        if action == "volume":
+            volume_level = self._get_parameter_value(nlp_command.parameters, "volume_level")
+            if volume_level:
+                return {
+                    "success": True,
+                    "message": f"Setting volume to {volume_level}",
+                    "action": "set_volume",
+                    "volume": volume_level,
+                    "confidence": nlp_command.confidence
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": "No volume level specified",
+                    "confidence": nlp_command.confidence
+                }
+        elif action in ["activate", "deactivate"]:
+            return {
+                "success": True,
+                "message": f"Voice control {action}",
+                "action": f"voice_{action}",
+                "confidence": nlp_command.confidence
+            }
+        else:
+            return {
+                "success": True,
+                "message": f"Voice control action '{action}' recognized",
+                "action": action,
+                "confidence": nlp_command.confidence
+            }
+    
+    async def _handle_help_voice(self, nlp_command, context: Optional[Dict]) -> Dict[str, Any]:
+        """Handle help voice commands"""
+        if self.nlp_service:
+            suggestions = self.nlp_service.get_command_suggestions("", limit=8)
+            help_message = f"""Enhanced Voice Commands Available:
+
+**System Commands:**
+- "show system status" - Get system health
+- "what's running" - Check service status
+
+**File Operations:**
+- "list files" - Show directory contents
+- "open file [filename]" - Open specific file
+
+**Navigation:**
+- "current directory" - Show current location
+- "go to [directory]" - Change directory
+
+**Code Analysis:**
+- "analyze code" - Review code quality
+- "explain function [name]" - Describe function
+
+**Task Management:**
+- "create task [description]" - Add new task
+- "list tasks" - Show all tasks
+- "complete task [id]" - Mark task done
+
+**Voice Control:**
+- "change volume [level]" - Adjust volume
+- "mute voice" - Disable voice feedback
+
+Enhanced NLP: {'✅ Active' if self.enhanced_initialization_status['nlp'] else '❌ Unavailable'}"""
+            
+            return {
+                "success": True,
+                "message": help_message,
+                "suggestions": suggestions,
+                "confidence": nlp_command.confidence,
+                "enhanced_nlp_available": self.enhanced_initialization_status['nlp']
+            }
+        else:
+            return await self._get_help("", "voice")
+    
+    def _get_parameter_value(self, parameters: List, *param_names: str) -> Optional[str]:
+        """Extract parameter value by name from NLP command parameters"""
+        for param in parameters:
+            if param.name in param_names:
+                return param.value
+        return None
 
 
 # Global instance configured from environment settings
