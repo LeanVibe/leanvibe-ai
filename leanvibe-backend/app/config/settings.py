@@ -54,10 +54,10 @@ class LeanVibeSettings(BaseSettings):
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8001)
     
-    # Security
+    # Security - CRITICAL: NO DEFAULT VALUES for production secrets
     secret_key: str = Field(
-        default="dev-secret-key-change-in-production",
-        description="Secret key for JWT tokens and encryption"
+        env="LEANVIBE_SECRET_KEY",
+        description="Secret key for JWT tokens and encryption (REQUIRED - no default)"
     )
     
     # Database
@@ -75,9 +75,8 @@ class LeanVibeSettings(BaseSettings):
         description="Neo4j username"
     )
     neo4j_password: str = Field(
-        default="leanvibe123",
         env="NEO4J_PASSWORD",
-        description="Neo4j password"
+        description="Neo4j password (REQUIRED - no default for security)"
     )
     neo4j_database: str = Field(
         default="neo4j",
@@ -175,8 +174,7 @@ class LeanVibeSettings(BaseSettings):
             
         errors = []
         
-        if self.secret_key == "dev-secret-key-change-in-production":
-            errors.append("LEANVIBE_SECRET_KEY must be set for production")
+        # Secret key validation removed - now required via env var
             
         if not self.database_url:
             errors.append("LEANVIBE_DATABASE_URL must be set for production")

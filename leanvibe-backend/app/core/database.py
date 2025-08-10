@@ -35,6 +35,22 @@ def get_database_url() -> str:
     return "sqlite+aiosqlite:///./leanvibe.db"
 
 
+def get_sync_database_url() -> str:
+    """Get synchronous database URL for migrations and admin tools"""
+    async_url = get_database_url()
+    
+    # Convert async URLs to sync versions
+    if async_url.startswith("sqlite+aiosqlite:"):
+        return async_url.replace("sqlite+aiosqlite:", "sqlite:")
+    elif async_url.startswith("postgresql+asyncpg:"):
+        return async_url.replace("postgresql+asyncpg:", "postgresql:")
+    else:
+        # Assume it's already a sync URL or we need to convert standard formats
+        if "postgresql://" in async_url:
+            return async_url  # PostgreSQL URLs work with both sync and async
+        return async_url
+
+
 def create_database_engine() -> AsyncEngine:
     """Create database engine with appropriate configuration"""
     database_url = get_database_url()

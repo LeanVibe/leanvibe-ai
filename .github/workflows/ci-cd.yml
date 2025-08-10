@@ -62,7 +62,7 @@ jobs:
         echo "LEANVIBE_ENV=test" >> .env
         echo "LEANVIBE_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/leanvibe_test" >> .env
         echo "LEANVIBE_REDIS_URL=redis://localhost:6379/0" >> .env
-        echo "LEANVIBE_SECRET_KEY=test-secret-key-for-ci" >> .env
+        echo "LEANVIBE_SECRET_KEY=$(openssl rand -hex 32)" >> .env  # Generate random secret for CI
         echo "LEANVIBE_MLX_STRATEGY=MOCK" >> .env
     
     - name: Run backend tests
