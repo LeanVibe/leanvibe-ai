@@ -18,6 +18,7 @@ from .api.endpoints.projects import router as projects_router
 from .api.endpoints.ios_bridge import router as ios_bridge_router
 from .api.endpoints.config import router as config_router
 from .api.endpoints.synthetic_monitoring import router as synthetic_monitoring_router
+from .api.endpoints.graph_analysis import router as graph_analysis_router
 from .api.models import CodeCompletionRequest
 from .core.connection_manager import ConnectionManager
 from .models.event_models import ClientPreferences, EventType
@@ -138,6 +139,10 @@ app = FastAPI(
         {
             "name": "configuration", 
             "description": "Dynamic configuration endpoints for iOS app. Provides theme settings, feature flags, and app configuration to eliminate hardcoded values.",
+        },
+        {
+            "name": "graph-analysis",
+            "description": "Neo4j graph database endpoints for code relationship analysis, architectural insights, and dependency mapping.",
         }
     ],
     openapi_url="/api/v1/openapi.json",
@@ -186,6 +191,7 @@ app.include_router(projects_router)
 app.include_router(ios_bridge_router)
 app.include_router(config_router)  # Configuration API for iOS app integration
 app.include_router(synthetic_monitoring_router)  # Synthetic probes and observability monitoring
+app.include_router(graph_analysis_router)  # Neo4j graph database analysis endpoints
 
 
 # Code completion WebSocket handler

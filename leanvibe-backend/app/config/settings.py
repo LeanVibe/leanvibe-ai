@@ -62,6 +62,28 @@ class LeanVibeSettings(BaseSettings):
     
     # Database
     database_url: Optional[str] = Field(default=None)
+    
+    # Neo4j Graph Database Configuration
+    neo4j_uri: str = Field(
+        default="bolt://localhost:7687",
+        env="NEO4J_URI",
+        description="Neo4j connection URI"
+    )
+    neo4j_user: str = Field(
+        default="neo4j",
+        env="NEO4J_USER", 
+        description="Neo4j username"
+    )
+    neo4j_password: str = Field(
+        default="leanvibe123",
+        env="NEO4J_PASSWORD",
+        description="Neo4j password"
+    )
+    neo4j_database: str = Field(
+        default="neo4j",
+        env="NEO4J_DATABASE",
+        description="Neo4j database name"
+    )
     redis_url: Optional[str] = Field(default=None)
     
     # Stripe Configuration

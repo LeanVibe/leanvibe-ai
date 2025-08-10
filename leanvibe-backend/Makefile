@@ -7,7 +7,7 @@
 # - Tier 2: Nightly (30m) - E2E tests, mutation testing sample, performance regression
 # - Tier 3: Weekly (2h) - Load testing, security scanning, dependency audit
 
-.PHONY: help install test-tier0 test-tier1 test-tier2 test-tier3 lint format type-check coverage clean setup-tools verify-fast verify-pr auto-fix generate-contracts quality-dashboard
+.PHONY: help install test-tier0 test-tier1 test-tier2 test-tier3 lint format type-check coverage clean setup-tools verify-fast verify-pr auto-fix generate-contracts quality-dashboard test-integration integration-all integration-service integration-graph integration-websocket integration-error integration-performance integration-coverage
 
 # Default target
 help:
@@ -25,6 +25,15 @@ help:
 	@echo "  verify-pr    - PR verification (Tier 1 + quality ratchet enforce)"
 	@echo "  auto-fix     - Auto-fix formatting and linting issues"
 	@echo "  generate-contracts - Generate/update API contracts from schemas"
+	@echo ""
+	@echo "Integration Tests:"
+	@echo "  integration-all        - Run all integration tests"
+	@echo "  integration-service    - Run service integration tests"
+	@echo "  integration-graph      - Run graph database integration tests"
+	@echo "  integration-websocket  - Run WebSocket & real-time feature tests"
+	@echo "  integration-error      - Run error handling & recovery tests"
+	@echo "  integration-performance - Run performance & health monitoring tests"
+	@echo "  integration-coverage   - Run integration tests with coverage report"
 	@echo ""
 	@echo "Quality & Monitoring:"
 	@echo "  quality-dashboard - Open quality metrics dashboard"
@@ -265,6 +274,48 @@ quality-dashboard:
 		echo "ℹ️  Dashboard not available, showing quality report:"; \
 		$(PYTHON) $(TOOLS_DIR)/quality_ratchet.py --report; \
 	fi
+
+# =============================================================================
+# Integration Test System
+# =============================================================================
+
+# Run all integration tests
+integration-all:
+	@echo "🔧 Running all integration tests..."
+	@$(PYTHON) scripts/run_integration_tests.py --suite all --verbose
+
+# Run service integration tests
+integration-service:
+	@echo "🔧 Running service integration tests..."
+	@$(PYTHON) scripts/run_integration_tests.py --suite service --verbose
+
+# Run graph database integration tests
+integration-graph:
+	@echo "📊 Running graph database integration tests..."
+	@$(PYTHON) scripts/run_integration_tests.py --suite graph --verbose
+
+# Run WebSocket & real-time feature tests
+integration-websocket:
+	@echo "🌐 Running WebSocket & real-time feature tests..."
+	@$(PYTHON) scripts/run_integration_tests.py --suite websocket --verbose
+
+# Run error handling & recovery tests
+integration-error:
+	@echo "🛡️ Running error handling & recovery tests..."
+	@$(PYTHON) scripts/run_integration_tests.py --suite error --verbose
+
+# Run performance & health monitoring tests
+integration-performance:
+	@echo "⚡ Running performance & health monitoring tests..."
+	@$(PYTHON) scripts/run_integration_tests.py --suite performance --verbose --benchmark
+
+# Run integration tests with coverage report
+integration-coverage:
+	@echo "📊 Running integration tests with coverage..."
+	@$(PYTHON) scripts/run_integration_tests.py --suite all --coverage --html-report --verbose
+
+# Quick integration test alias
+test-integration: integration-all
 
 # =============================================================================
 # Git Hooks Integration
