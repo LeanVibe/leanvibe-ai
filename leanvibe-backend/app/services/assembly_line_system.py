@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class AgentType(str, Enum):
     """Types of AI agents in the assembly line"""
-    BLUEPRINT = "blueprint"        # AI Architect - generates technical blueprints
+    AI_ARCHITECT = "ai_architect"  # AI Architect - converts interviews to blueprints
     BACKEND = "backend"           # Backend Coder - generates FastAPI backend
     FRONTEND = "frontend"         # Frontend Coder - generates React/Lit frontend  
     INFRASTRUCTURE = "infrastructure"  # Infrastructure - Docker, deployment configs
