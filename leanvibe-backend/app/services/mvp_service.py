@@ -1,0 +1,383 @@
+"""
+MVP Service - Integration between Assembly Line System and LeanVibe Platform
+Handles MVP project lifecycle, assembly line orchestration, and tenant management
+"""
+
+import asyncio
+import logging
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any
+from uuid import UUID, uuid4
+
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
+# from ..core.database import get_db  # Will be imported when needed to avoid circular dependencies
+from ..models.mvp_models import MVPProject, MVPStatus, TechnicalBlueprint, FounderInterview
+# from ..models.orm_models import MVPProjectORM, TenantORM  # Will be imported when proper DB integration is added
+from ..models.tenant_models import TenantType, TenantPlan
+from ..services.assembly_line_system import AssemblyLineOrchestrator, AgentType, AgentStatus
+# from ..services.tenant_service import tenant_service  # Will be imported when proper integration is added
+
+logger = logging.getLogger(__name__)
+
+
+class MVPServiceError(Exception):
+    """Custom exception for MVP service errors"""
+    pass
+
+
+class MVPService:
+    """Service for managing MVP projects and assembly line integration"""
+    
+    def __init__(self):
+        self.orchestrator = AssemblyLineOrchestrator()
+        self.orchestrator.register_all_agents()
+        self._generation_progress: Dict[UUID, Dict[str, Any]] = {}
+        # In-memory storage for testing (will be replaced with proper database)
+        self._projects_storage: Dict[UUID, MVPProject] = {}
+        self._projects_by_tenant: Dict[UUID, List[UUID]] = {}
+    
+    async def create_mvp_project(
+        self,
+        tenant_id: UUID,
+        founder_interview: FounderInterview,
+        priority: str = "normal"
+    ) -> MVPProject:
+        """Create a new MVP project from founder interview"""
+        try:
+            # Validate tenant can create MVP projects
+            await self._validate_mvp_creation_quota(tenant_id)
+            
+            # Generate project ID and slug
+            project_id = uuid4()
+            project_name = f"MVP Project {project_id.hex[:8]}"  # Extract name from business idea if needed
+            slug = f"mvp-{project_id.hex[:8]}"
+            
+            # Create MVP project record
+            mvp_project = MVPProject(
+                id=project_id,
+                tenant_id=tenant_id,
+                project_name=project_name,
+                slug=slug,
+                description=founder_interview.business_idea[:200] + "..." if len(founder_interview.business_idea) > 200 else founder_interview.business_idea,
+                status=MVPStatus.BLUEPRINT_PENDING,
+                interview=founder_interview,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            
+            # Save to database
+            await self._save_mvp_project(mvp_project)
+            
+            logger.info(f"Created MVP project {project_id} for tenant {tenant_id}")
+            return mvp_project
+            
+        except Exception as e:
+            logger.error(f"Failed to create MVP project: {e}")
+            raise MVPServiceError(f"MVP project creation failed: {str(e)}")
+    
+    async def start_mvp_generation(
+        self,
+        mvp_project_id: UUID,
+        technical_blueprint: TechnicalBlueprint
+    ) -> bool:
+        """Start the MVP generation process using the assembly line system"""
+        try:
+            # Validate project exists and is in correct state
+            mvp_project = await self._get_mvp_project(mvp_project_id)
+            if not mvp_project:
+                raise MVPServiceError(f"MVP project {mvp_project_id} not found")
+            
+            if mvp_project.status not in [MVPStatus.BLUEPRINT_PENDING, MVPStatus.FAILED]:
+                raise MVPServiceError(f"MVP project is in {mvp_project.status} state, cannot start generation")
+            
+            # Validate tenant quota
+            await self._validate_generation_quota(mvp_project.tenant_id)
+            
+            # Update project status and blueprint
+            mvp_project.status = MVPStatus.GENERATING
+            mvp_project.blueprint = technical_blueprint
+            mvp_project.updated_at = datetime.utcnow()
+            
+            await self._update_mvp_project(mvp_project)
+            
+            # Initialize progress tracking
+            self._generation_progress[mvp_project_id] = {
+                "current_stage": "initializing",
+                "overall_progress": 0.0,
+                "stage_progress": 0.0,
+                "estimated_completion": datetime.utcnow() + timedelta(
+                    hours=technical_blueprint.estimated_generation_time
+                ),
+                "stages_completed": [],
+                "current_stage_details": "Initializing assembly line system..."
+            }
+            
+            # Start assembly line in background
+            asyncio.create_task(self._run_assembly_line(mvp_project_id, technical_blueprint))
+            
+            logger.info(f"Started MVP generation for project {mvp_project_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to start MVP generation: {e}")
+            # Update project status to failed
+            try:
+                mvp_project = await self._get_mvp_project(mvp_project_id)
+                if mvp_project:
+                    mvp_project.status = MVPStatus.FAILED
+                    mvp_project.error_message = str(e)
+                    await self._update_mvp_project(mvp_project)
+            except Exception as update_error:
+                logger.error(f"Failed to update project status after error: {update_error}")
+            
+            raise MVPServiceError(f"Failed to start MVP generation: {str(e)}")
+    
+    async def get_mvp_project(self, mvp_project_id: UUID) -> Optional[MVPProject]:
+        """Get MVP project by ID"""
+        return await self._get_mvp_project(mvp_project_id)
+    
+    async def get_tenant_mvp_projects(
+        self,
+        tenant_id: UUID,
+        limit: int = 50,
+        offset: int = 0
+    ) -> List[MVPProject]:
+        """Get all MVP projects for a tenant"""
+        try:
+            # In-memory storage implementation
+            project_ids = self._projects_by_tenant.get(tenant_id, [])
+            
+            # Apply offset and limit
+            paginated_ids = project_ids[offset:offset + limit]
+            
+            # Get projects
+            projects = []
+            for project_id in paginated_ids:
+                if project_id in self._projects_storage:
+                    projects.append(self._projects_storage[project_id])
+            
+            return projects
+                
+        except Exception as e:
+            logger.error(f"Failed to get tenant MVP projects: {e}")
+            raise MVPServiceError(f"Failed to retrieve MVP projects: {str(e)}")
+    
+    async def get_generation_progress(self, mvp_project_id: UUID) -> Optional[Dict[str, Any]]:
+        """Get real-time generation progress for an MVP project"""
+        if mvp_project_id in self._generation_progress:
+            return self._generation_progress[mvp_project_id].copy()
+        
+        # If not in memory, check if project is completed/failed
+        mvp_project = await self._get_mvp_project(mvp_project_id)
+        if not mvp_project:
+            return None
+            
+        if mvp_project.status == MVPStatus.DEPLOYED:
+            return {
+                "current_stage": "completed",
+                "overall_progress": 100.0,
+                "stage_progress": 100.0,
+                "estimated_completion": mvp_project.completed_at,
+                "stages_completed": ["backend", "frontend", "infrastructure", "observability"],
+                "current_stage_details": "MVP generation completed successfully"
+            }
+        elif mvp_project.status == MVPStatus.FAILED:
+            return {
+                "current_stage": "failed",
+                "overall_progress": 0.0,
+                "stage_progress": 0.0,
+                "estimated_completion": None,
+                "stages_completed": [],
+                "current_stage_details": f"Generation failed: {mvp_project.error_message}"
+            }
+        
+        return None
+    
+    async def cancel_mvp_generation(self, mvp_project_id: UUID) -> bool:
+        """Cancel ongoing MVP generation"""
+        try:
+            mvp_project = await self._get_mvp_project(mvp_project_id)
+            if not mvp_project:
+                return False
+                
+            if mvp_project.status != MVPStatus.GENERATING:
+                return False
+            
+            # Update project status
+            mvp_project.status = MVPStatus.CANCELLED
+            mvp_project.cancelled_at = datetime.utcnow()
+            await self._update_mvp_project(mvp_project)
+            
+            # Clean up progress tracking
+            if mvp_project_id in self._generation_progress:
+                del self._generation_progress[mvp_project_id]
+            
+            logger.info(f"Cancelled MVP generation for project {mvp_project_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to cancel MVP generation: {e}")
+            return False
+    
+    # Private methods
+    
+    async def _run_assembly_line(
+        self,
+        mvp_project_id: UUID,
+        technical_blueprint: TechnicalBlueprint
+    ):
+        """Run the assembly line system for MVP generation"""
+        try:
+            # Set up progress callback
+            async def progress_callback(agent_type: AgentType, status: AgentStatus, progress: float):
+                await self._update_generation_progress(
+                    mvp_project_id, agent_type, status, progress
+                )
+            
+            # Execute assembly line
+            success = await self.orchestrator.start_mvp_generation(
+                mvp_project_id,
+                technical_blueprint,
+                priority="normal"
+            )
+            
+            # Update final status
+            mvp_project = await self._get_mvp_project(mvp_project_id)
+            if mvp_project:
+                if success:
+                    mvp_project.status = MVPStatus.DEPLOYED
+                    mvp_project.completed_at = datetime.utcnow()
+                    mvp_project.generation_duration = (
+                        datetime.utcnow() - mvp_project.generation_started_at
+                    ).total_seconds()
+                else:
+                    mvp_project.status = MVPStatus.FAILED
+                    mvp_project.error_message = "Assembly line execution failed"
+                
+                await self._update_mvp_project(mvp_project)
+            
+            # Clean up progress tracking
+            if mvp_project_id in self._generation_progress:
+                del self._generation_progress[mvp_project_id]
+            
+            logger.info(f"Assembly line completed for project {mvp_project_id} with success: {success}")
+            
+        except Exception as e:
+            logger.error(f"Assembly line execution failed: {e}")
+            
+            # Update project status to failed
+            try:
+                mvp_project = await self._get_mvp_project(mvp_project_id)
+                if mvp_project:
+                    mvp_project.status = MVPStatus.FAILED
+                    mvp_project.error_message = str(e)
+                    await self._update_mvp_project(mvp_project)
+            except Exception as update_error:
+                logger.error(f"Failed to update project after assembly line failure: {update_error}")
+    
+    async def _update_generation_progress(
+        self,
+        mvp_project_id: UUID,
+        agent_type: AgentType,
+        status: AgentStatus,
+        progress: float
+    ):
+        """Update generation progress tracking"""
+        if mvp_project_id not in self._generation_progress:
+            return
+        
+        progress_data = self._generation_progress[mvp_project_id]
+        
+        # Update current stage
+        progress_data["current_stage"] = agent_type.value
+        progress_data["stage_progress"] = progress
+        
+        # Calculate overall progress based on stage
+        stage_weights = {
+            AgentType.BACKEND: 0.30,
+            AgentType.FRONTEND: 0.30, 
+            AgentType.INFRASTRUCTURE: 0.25,
+            AgentType.OBSERVABILITY: 0.15
+        }
+        
+        completed_stages = progress_data["stages_completed"]
+        completed_weight = sum(stage_weights.get(stage, 0) for stage in completed_stages)
+        current_weight = stage_weights.get(agent_type, 0) * (progress / 100.0)
+        
+        progress_data["overall_progress"] = (completed_weight + current_weight) * 100
+        
+        # Update stage details
+        if status == AgentStatus.RUNNING:
+            progress_data["current_stage_details"] = f"Executing {agent_type.value} agent ({progress:.1f}%)"
+        elif status == AgentStatus.COMPLETED:
+            if agent_type not in completed_stages:
+                progress_data["stages_completed"].append(agent_type)
+            progress_data["current_stage_details"] = f"Completed {agent_type.value} agent"
+        elif status == AgentStatus.FAILED:
+            progress_data["current_stage_details"] = f"Failed at {agent_type.value} agent"
+    
+    async def _validate_mvp_creation_quota(self, tenant_id: UUID):
+        """Validate that tenant can create new MVP projects"""
+        # TODO: Replace with proper tenant service integration
+        logger.info(f"Validating MVP creation quota for tenant {tenant_id} (mock implementation)")
+        
+        # Mock validation - assume tenant is valid MVP Factory for testing
+        current_projects = len(await self.get_tenant_mvp_projects(tenant_id))
+        max_projects = 10  # Mock quota
+        
+        if current_projects >= max_projects:
+            raise MVPServiceError(f"MVP project quota exceeded ({current_projects}/{max_projects})")
+    
+    async def _validate_generation_quota(self, tenant_id: UUID):
+        """Validate that tenant can start MVP generation"""
+        # TODO: Replace with proper tenant service integration
+        logger.info(f"Validating generation quota for tenant {tenant_id} (mock implementation)")
+        
+        # Check concurrent generation quota
+        generating_projects = [
+            p for p in await self.get_tenant_mvp_projects(tenant_id) 
+            if p.status == MVPStatus.GENERATING
+        ]
+        
+        max_concurrent = 3  # Mock quota
+        if len(generating_projects) >= max_concurrent:
+            raise MVPServiceError(
+                f"Concurrent generation quota exceeded ({len(generating_projects)}/{max_concurrent})"
+            )
+    
+    async def _save_mvp_project(self, mvp_project: MVPProject):
+        """Save MVP project to database"""
+        # In-memory storage implementation
+        self._projects_storage[mvp_project.id] = mvp_project
+        
+        # Add to tenant index
+        if mvp_project.tenant_id not in self._projects_by_tenant:
+            self._projects_by_tenant[mvp_project.tenant_id] = []
+        
+        if mvp_project.id not in self._projects_by_tenant[mvp_project.tenant_id]:
+            self._projects_by_tenant[mvp_project.tenant_id].append(mvp_project.id)
+        
+        logger.info(f"Saved MVP project {mvp_project.id} to in-memory storage")
+    
+    async def _update_mvp_project(self, mvp_project: MVPProject):
+        """Update MVP project in database"""
+        # In-memory storage implementation
+        if mvp_project.id in self._projects_storage:
+            self._projects_storage[mvp_project.id] = mvp_project
+            logger.info(f"Updated MVP project {mvp_project.id} status to {mvp_project.status}")
+        else:
+            logger.warning(f"Attempted to update non-existent MVP project {mvp_project.id}")
+    
+    async def _get_mvp_project(self, mvp_project_id: UUID) -> Optional[MVPProject]:
+        """Get MVP project from database"""
+        # In-memory storage implementation
+        return self._projects_storage.get(mvp_project_id)
+    
+    # ORM conversion method will be added when proper database integration is implemented
+    # def _orm_to_mvp_project(self, orm_project: MVPProjectORM) -> MVPProject:
+
+
+# Global MVP service instance
+mvp_service = MVPService()
