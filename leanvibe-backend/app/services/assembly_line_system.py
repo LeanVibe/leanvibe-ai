@@ -79,8 +79,8 @@ class GenerationProgress(BaseModel):
     """Real-time progress tracking for MVP generation"""
     mvp_project_id: UUID
     current_stage: AgentType
-    overall_progress: float = Field(ge=0, le=100, description="Overall progress percentage")
-    stage_progress: float = Field(ge=0, le=100, description="Current stage progress")
+    overall_progress: float = Field(default=0.0, ge=0, le=100, description="Overall progress percentage")
+    stage_progress: float = Field(default=0.0, ge=0, le=100, description="Current stage progress")
     
     # Stage statuses
     blueprint_status: AgentStatus = AgentStatus.PENDING

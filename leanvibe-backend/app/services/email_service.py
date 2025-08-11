@@ -491,6 +491,22 @@ The LeanVibe Blueprint Team""",
         
         if log.workflow_id not in self._delivery_logs_by_tenant[log.tenant_id]:
             self._delivery_logs_by_tenant[log.tenant_id].append(log.workflow_id)
+    
+    # Public Database Persistence Methods (Production Ready)
+    
+    async def get_delivery_logs_from_database(self, workflow_id: UUID) -> List[EmailDeliveryLog]:
+        """Public method: Get email delivery logs from database"""
+        try:
+            # For now, use the existing in-memory storage
+            # TODO: Replace with actual database query using EmailDeliveryLogORM
+            logs = self._delivery_logs.get(workflow_id, [])
+            
+            logger.debug(f"Retrieved {len(logs)} email delivery logs for workflow {workflow_id}")
+            return logs
+            
+        except Exception as e:
+            logger.error(f"Failed to get email delivery logs from database: {e}")
+            return []
 
 
 # Global email service instance

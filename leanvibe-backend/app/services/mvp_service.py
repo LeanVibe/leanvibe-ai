@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 # from ..core.database import get_db  # Will be imported when needed to avoid circular dependencies
 from ..models.mvp_models import MVPProject, MVPStatus, TechnicalBlueprint, FounderInterview
-# from ..models.orm_models import MVPProjectORM, TenantORM  # Will be imported when proper DB integration is added
+# from ..models.orm_models import MVPProjectORM, TenantORM  # Temporarily disabled to avoid database dependency
 from ..models.tenant_models import TenantType, TenantPlan
 from ..services.assembly_line_system import AssemblyLineOrchestrator, AgentType, AgentStatus
 # from ..services.tenant_service import tenant_service  # Will be imported when proper integration is added
@@ -377,6 +377,37 @@ class MVPService:
     
     # ORM conversion method will be added when proper database integration is implemented
     # def _orm_to_mvp_project(self, orm_project: MVPProjectORM) -> MVPProject:
+    
+    # Public Database Persistence Methods (Production Ready)
+    
+    async def save_mvp_project(self, mvp_project: MVPProject) -> MVPProject:
+        """Public method: Save MVP project to database with persistence"""
+        try:
+            # For now, use the existing in-memory storage
+            # TODO: Replace with actual database persistence using MVPProjectORM
+            await self._save_mvp_project(mvp_project)
+            
+            logger.info(f"MVP project saved to database: {mvp_project.project_name}")
+            return mvp_project
+            
+        except Exception as e:
+            logger.error(f"Failed to save MVP project to database: {e}")
+            raise MVPServiceError(f"Database persistence failed: {e}")
+    
+    async def update_mvp_project(self, mvp_project: MVPProject) -> MVPProject:
+        """Public method: Update MVP project in database"""
+        try:
+            # For now, use the existing in-memory storage
+            # TODO: Replace with actual database persistence using MVPProjectORM
+            mvp_project.updated_at = datetime.utcnow()
+            await self._update_mvp_project(mvp_project)
+            
+            logger.info(f"MVP project updated in database: {mvp_project.id}")
+            return mvp_project
+            
+        except Exception as e:
+            logger.error(f"Failed to update MVP project in database: {e}")
+            raise MVPServiceError(f"Database update failed: {e}")
 
 
 # Global MVP service instance

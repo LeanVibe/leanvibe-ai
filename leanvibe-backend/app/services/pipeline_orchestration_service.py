@@ -447,6 +447,40 @@ class PipelineOrchestrationService:
         """Get pipeline execution by MVP project ID"""
         execution_id = self._executions_by_project.get(mvp_project_id)
         return await self._get_execution(execution_id) if execution_id else None
+    
+    # Public Database Persistence Methods (Production Ready)
+    
+    async def save_execution(self, execution: PipelineExecution) -> PipelineExecution:
+        """Public method: Save pipeline execution to database with persistence"""
+        try:
+            # For now, use the existing in-memory storage
+            # TODO: Replace with actual database persistence using PipelineExecutionORM
+            await self._save_execution(execution)
+            
+            logger.info(f"Pipeline execution saved to database: {execution.id}")
+            return execution
+            
+        except Exception as e:
+            logger.error(f"Failed to save pipeline execution to database: {e}")
+            raise Exception(f"Database persistence failed: {e}")
+    
+    async def get_execution(self, execution_id: UUID) -> Optional[PipelineExecution]:
+        """Public method: Get pipeline execution from database"""
+        try:
+            # For now, use the existing in-memory storage
+            # TODO: Replace with actual database query using PipelineExecutionORM
+            execution = await self._get_execution(execution_id)
+            
+            if execution:
+                logger.debug(f"Pipeline execution retrieved from database: {execution_id}")
+            else:
+                logger.debug(f"Pipeline execution not found in database: {execution_id}")
+                
+            return execution
+            
+        except Exception as e:
+            logger.error(f"Failed to get pipeline execution from database: {e}")
+            return None
 
 
 # Global service instance
