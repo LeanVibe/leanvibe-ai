@@ -11,7 +11,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, HttpUrl, field_validator, ConfigDict
 
 
 class DeploymentMode(str, Enum):
@@ -224,6 +224,8 @@ class ModelConfig(BaseModel):
         if not v.startswith(('http://', 'https://')):
             raise ValueError('Server URL must start with http:// or https://')
         return v.rstrip('/')
+    
+    model_config = ConfigDict(protected_namespaces=())
 
 
 class DirectoryConfig(BaseModel):

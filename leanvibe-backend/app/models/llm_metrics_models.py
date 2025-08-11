@@ -8,7 +8,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class ModelStatus(str, Enum):
@@ -73,6 +73,8 @@ class ModelInformation(BaseModel):
     model_version: Optional[str] = Field(None, description="Model version")
     deployment_mode: DeploymentMode = Field(..., description="How the model is deployed")
     status: ModelStatus = Field(default=ModelStatus.NOT_INITIALIZED)
+    
+    model_config = ConfigDict(protected_namespaces=())
     
     # Model capabilities
     context_length: Optional[int] = Field(None, description="Maximum context length")
@@ -209,6 +211,8 @@ class LLMHealthStatus(BaseModel):
     # Resource usage
     current_memory_mb: float = Field(default=0.0, description="Current memory usage")
     available_memory_mb: Optional[float] = Field(None, description="Available memory")
+    
+    model_config = ConfigDict(protected_namespaces=())
     
     def add_generation_metrics(self, metrics: GenerationMetrics):
         """Add new generation metrics"""
