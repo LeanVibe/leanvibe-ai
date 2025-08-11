@@ -1,0 +1,437 @@
+name: Production Deployment
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - production-canary
+      force_deploy:
+        description: 'Force deployment even if tests fail'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Pre-deployment validation
+  pre-deployment-validation:
+    name: Pre-deployment Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate release readiness
+      run: |
+        echo "🔍 Validating release readiness..."
+        
+        # Check if this is a valid release tag
+        if [[ "${{ github.event_name }}" == "release" ]]; then
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid release tag format: $TAG_NAME"
+            echo "Expected format: v1.2.3"
+            exit 1
+          fi
+        fi
+        
+        # Check for critical security alerts
+        echo "🔒 Checking for security alerts..."
+        gh api /repos/${{ github.repository }}/dependabot/alerts --jq '.[] | select(.state == "open" and .security_advisory.severity == "critical") | .security_advisory.summary' > critical_alerts.txt
+        
+        if [ -s critical_alerts.txt ]; then
+          echo "❌ Critical security alerts found:"
+          cat critical_alerts.txt
+          if [[ "${{ inputs.force_deploy }}" != "true" ]]; then
+            exit 1
+          fi
+          echo "⚠️ Force deploy enabled, continuing despite security alerts"
+        fi
+        
+        echo "✅ Pre-deployment validation passed"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Canary deployment (10% traffic)
+  deploy-canary:
+    name: Deploy Canary (10% Traffic)
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-validation]
+    if: github.event.release.prerelease == false || inputs.environment == 'production-canary'
+    environment: production-canary
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure kubectl for production
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+    
+    - name: Install kubectl and istioctl
+      run: |
+        # Install kubectl
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+        
+        # Install istioctl for traffic management
+        curl -L https://istio.io/downloadIstio | sh -
+        sudo mv istio-*/bin/istioctl /usr/local/bin/
+    
+    - name: Deploy canary version
+      run: |
+        echo "🐦 Deploying canary version with 10% traffic..."
+        
+        # Get the image tag (release tag or commit SHA)
+        if [[ "${{ github.event_name }}" == "release" ]]; then
+          IMAGE_TAG="${{ github.event.release.tag_name }}"
+        else
+          IMAGE_TAG="${{ github.sha }}"
+        fi
+        
+        # Update canary deployment
+        kubectl set image deployment/leanvibe-backend-canary \
+          backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${IMAGE_TAG} \
+          --namespace=leanvibe-production
+        
+        # Wait for canary rollout
+        kubectl rollout status deployment/leanvibe-backend-canary --namespace=leanvibe-production --timeout=600s
+        
+        # Configure traffic split (10% to canary, 90% to stable)
+        kubectl apply -f - <<EOF
+        apiVersion: networking.istio.io/v1beta1
+        kind: VirtualService
+        metadata:
+          name: leanvibe-backend
+          namespace: leanvibe-production
+        spec:
+          hosts:
+          - leanvibe-backend
+          http:
+          - match:
+            - headers:
+                canary:
+                  exact: "true"
+            route:
+            - destination:
+                host: leanvibe-backend
+                subset: canary
+          - route:
+            - destination:
+                host: leanvibe-backend
+                subset: stable
+              weight: 90
+            - destination:
+                host: leanvibe-backend
+                subset: canary
+              weight: 10
+        EOF
+        
+        echo "✅ Canary deployment completed"
+    
+    - name: Monitor canary metrics
+      run: |
+        echo "📊 Monitoring canary metrics for 5 minutes..."
+        
+        # Wait for metrics to stabilize
+        sleep 300
+        
+        # Get Prometheus endpoint
+        PROMETHEUS_URL=$(kubectl get service prometheus --namespace=monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):9090
+        
+        # Check error rate
+        ERROR_RATE=$(curl -s "${PROMETHEUS_URL}/api/v1/query?query=rate(http_requests_total{job=\"leanvibe-backend\",code=~\"5..\",version=\"canary\"}[5m])")
+        echo "Canary error rate: $ERROR_RATE"
+        
+        # Check response time
+        RESPONSE_TIME=$(curl -s "${PROMETHEUS_URL}/api/v1/query?query=histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"leanvibe-backend\",version=\"canary\"}[5m]))")
+        echo "Canary 95th percentile response time: $RESPONSE_TIME"
+        
+        # Simple threshold check (in production, use more sophisticated analysis)
+        if [[ $(echo "$ERROR_RATE > 0.01" | bc -l) == 1 ]]; then
+          echo "❌ Canary error rate too high"
+          exit 1
+        fi
+        
+        echo "✅ Canary metrics within acceptable range"
+    
+    - name: Run canary health checks
+      run: |
+        echo "🏥 Running canary health checks..."
+        
+        # Get canary endpoint
+        CANARY_URL=$(kubectl get service leanvibe-backend-canary --namespace=leanvibe-production -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # Health checks with canary header
+        for i in {1..10}; do
+          curl -f -H "canary: true" "http://${CANARY_URL}:8000/health" || exit 1
+          curl -f -H "canary: true" "http://${CANARY_URL}:8000/production/health/detailed" || exit 1
+          sleep 2
+        done
+        
+        echo "✅ Canary health checks passed"
+
+  # Full production deployment (100% traffic)
+  deploy-production:
+    name: Deploy to Production (100% Traffic)
+    runs-on: ubuntu-latest
+    needs: [deploy-canary]
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure kubectl for production
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+    
+    - name: Install kubectl and istioctl
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+        curl -L https://istio.io/downloadIstio | sh -
+        sudo mv istio-*/bin/istioctl /usr/local/bin/
+    
+    - name: Deploy to production with zero downtime
+      run: |
+        echo "🚀 Deploying to production with zero downtime..."
+        
+        # Get the image tag
+        if [[ "${{ github.event_name }}" == "release" ]]; then
+          IMAGE_TAG="${{ github.event.release.tag_name }}"
+        else
+          IMAGE_TAG="${{ github.sha }}"
+        fi
+        
+        # Update production deployment
+        kubectl set image deployment/leanvibe-backend-production \
+          backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${IMAGE_TAG} \
+          --namespace=leanvibe-production
+        
+        kubectl set image deployment/leanvibe-cli-production \
+          cli=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${IMAGE_TAG} \
+          --namespace=leanvibe-production
+        
+        # Wait for rolling update to complete
+        kubectl rollout status deployment/leanvibe-backend-production --namespace=leanvibe-production --timeout=900s
+        kubectl rollout status deployment/leanvibe-cli-production --namespace=leanvibe-production --timeout=600s
+        
+        echo "✅ Production deployment completed"
+    
+    - name: Gradually shift traffic to new version
+      run: |
+        echo "🔄 Gradually shifting traffic to new version..."
+        
+        # Shift traffic in stages: 50% -> 80% -> 100%
+        for weight in 50 80 100; do
+          echo "Shifting ${weight}% traffic to new version..."
+          
+          kubectl apply -f - <<EOF
+        apiVersion: networking.istio.io/v1beta1
+        kind: VirtualService
+        metadata:
+          name: leanvibe-backend
+          namespace: leanvibe-production
+        spec:
+          hosts:
+          - leanvibe-backend
+          http:
+          - match:
+            - headers:
+                canary:
+                  exact: "true"
+            route:
+            - destination:
+                host: leanvibe-backend
+                subset: canary
+          - route:
+            - destination:
+                host: leanvibe-backend
+                subset: stable
+              weight: $((100 - weight))
+            - destination:
+                host: leanvibe-backend
+                subset: production
+              weight: ${weight}
+        EOF
+          
+          # Monitor for 2 minutes between shifts
+          sleep 120
+          
+          # Check metrics at each stage
+          PROMETHEUS_URL=$(kubectl get service prometheus --namespace=monitoring -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):9090
+          ERROR_RATE=$(curl -s "${PROMETHEUS_URL}/api/v1/query?query=rate(http_requests_total{job=\"leanvibe-backend\",code=~\"5..\",version=\"production\"}[2m])")
+          
+          if [[ $(echo "$ERROR_RATE > 0.01" | bc -l) == 1 ]]; then
+            echo "❌ Error rate too high during traffic shift"
+            exit 1
+          fi
+        done
+        
+        echo "✅ Traffic shift completed successfully"
+    
+    - name: Run comprehensive production health checks
+      run: |
+        echo "🏥 Running comprehensive production health checks..."
+        
+        # Get production endpoints
+        BACKEND_URL=$(kubectl get service leanvibe-backend-production --namespace=leanvibe-production -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        
+        # Comprehensive health checks
+        curl -f "http://${BACKEND_URL}:8000/health" || exit 1
+        curl -f "http://${BACKEND_URL}:8000/production/health/detailed" || exit 1
+        curl -f "http://${BACKEND_URL}:8000/production/metrics" || exit 1
+        
+        # Performance validation
+        response_time=$(curl -o /dev/null -s -w "%{time_total}" "http://${BACKEND_URL}:8000/health")
+        if (( $(echo "$response_time > 1.0" | bc -l) )); then
+          echo "❌ Production response time too high: ${response_time}s"
+          exit 1
+        fi
+        
+        # Database connectivity
+        curl -f "http://${BACKEND_URL}:8000/health/db" || exit 1
+        
+        echo "✅ All production health checks passed (${response_time}s response time)"
+    
+    - name: Update monitoring and alerts
+      run: |
+        echo "📊 Updating monitoring and alerts for new version..."
+        
+        # Update Grafana dashboards with new version info
+        kubectl apply -f monitoring/grafana/dashboards/production-dashboard.yaml
+        
+        # Update alert rules for new version
+        kubectl apply -f monitoring/prometheus/rules/production-alerts.yaml
+        
+        echo "✅ Monitoring and alerts updated"
+    
+    - name: Notify deployment success
+      run: |
+        echo "🎉 Production deployment successful!"
+        echo "Environment: production"
+        echo "Version: ${{ github.event.release.tag_name || github.sha }}"
+        echo "Commit: ${{ github.sha }}"
+        echo "Actor: ${{ github.actor }}"
+        
+        # Send notification to team (replace with your notification service)
+        curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+          -H 'Content-type: application/json' \
+          --data '{
+            "text": "🚀 LeanVibe Production Deployment Successful",
+            "attachments": [
+              {
+                "color": "good",
+                "fields": [
+                  {"title": "Version", "value": "${{ github.event.release.tag_name || github.sha }}", "short": true},
+                  {"title": "Environment", "value": "production", "short": true},
+                  {"title": "Actor", "value": "${{ github.actor }}", "short": true},
+                  {"title": "Commit", "value": "${{ github.sha }}", "short": true}
+                ]
+              }
+            ]
+          }' || echo "Notification failed (continuing)"
+
+  # Rollback on failure
+  rollback-on-failure:
+    name: Emergency Rollback
+    runs-on: ubuntu-latest
+    needs: [deploy-canary, deploy-production]
+    if: failure()
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure kubectl for production
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+    
+    - name: Install kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+    
+    - name: Emergency rollback
+      run: |
+        echo "🚨 EMERGENCY ROLLBACK INITIATED"
+        
+        # Rollback all deployments to previous version
+        kubectl rollout undo deployment/leanvibe-backend-production --namespace=leanvibe-production
+        kubectl rollout undo deployment/leanvibe-cli-production --namespace=leanvibe-production
+        kubectl rollout undo deployment/leanvibe-backend-canary --namespace=leanvibe-production
+        
+        # Wait for rollback to complete
+        kubectl rollout status deployment/leanvibe-backend-production --namespace=leanvibe-production --timeout=600s
+        kubectl rollout status deployment/leanvibe-cli-production --namespace=leanvibe-production --timeout=300s
+        kubectl rollout status deployment/leanvibe-backend-canary --namespace=leanvibe-production --timeout=300s
+        
+        # Reset traffic to stable version (100% to stable)
+        kubectl apply -f - <<EOF
+        apiVersion: networking.istio.io/v1beta1
+        kind: VirtualService
+        metadata:
+          name: leanvibe-backend
+          namespace: leanvibe-production
+        spec:
+          hosts:
+          - leanvibe-backend
+          http:
+          - route:
+            - destination:
+                host: leanvibe-backend
+                subset: stable
+              weight: 100
+        EOF
+        
+        echo "✅ Emergency rollback completed"
+    
+    - name: Verify rollback health
+      run: |
+        echo "🏥 Verifying rollback health..."
+        
+        # Wait for stabilization
+        sleep 60
+        
+        # Health checks
+        BACKEND_URL=$(kubectl get service leanvibe-backend-production --namespace=leanvibe-production -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        curl -f "http://${BACKEND_URL}:8000/health" || exit 1
+        
+        echo "✅ Rollback health check passed"
+    
+    - name: Notify rollback
+      run: |
+        echo "🚨 PRODUCTION ROLLBACK COMPLETED"
+        
+        # Send critical notification
+        curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+          -H 'Content-type: application/json' \
+          --data '{
+            "text": "🚨 LeanVibe Production Deployment ROLLED BACK",
+            "attachments": [
+              {
+                "color": "danger",
+                "fields": [
+                  {"title": "Status", "value": "Emergency rollback completed", "short": false},
+                  {"title": "Failed Version", "value": "${{ github.event.release.tag_name || github.sha }}", "short": true},
+                  {"title": "Actor", "value": "${{ github.actor }}", "short": true}
+                ]
+              }
+            ]
+          }' || echo "Notification failed"

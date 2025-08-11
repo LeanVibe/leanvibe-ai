@@ -19,6 +19,7 @@ from .api.endpoints.ios_bridge import router as ios_bridge_router
 from .api.endpoints.config import router as config_router
 from .api.endpoints.synthetic_monitoring import router as synthetic_monitoring_router
 from .api.endpoints.graph_analysis import router as graph_analysis_router
+from .api.endpoints.health import router as health_router
 from .api.models import CodeCompletionRequest
 from .core.connection_manager import ConnectionManager
 from .models.event_models import ClientPreferences, EventType
@@ -192,6 +193,7 @@ app.include_router(ios_bridge_router)
 app.include_router(config_router)  # Configuration API for iOS app integration
 app.include_router(synthetic_monitoring_router)  # Synthetic probes and observability monitoring
 app.include_router(graph_analysis_router)  # Neo4j graph database analysis endpoints
+app.include_router(health_router)  # Production health check endpoints
 
 
 # Code completion WebSocket handler

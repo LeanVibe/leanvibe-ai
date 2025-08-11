@@ -74,9 +74,10 @@ class LeanVibeSettings(BaseSettings):
         env="NEO4J_USER", 
         description="Neo4j username"
     )
-    neo4j_password: str = Field(
+    neo4j_password: Optional[str] = Field(
+        default=None,
         env="NEO4J_PASSWORD",
-        description="Neo4j password (REQUIRED - no default for security)"
+        description="Neo4j password (REQUIRED for production - optional for development)"
     )
     neo4j_database: str = Field(
         default="neo4j",
@@ -190,6 +191,9 @@ class LeanVibeSettings(BaseSettings):
             
         if not self.api_url.startswith("https://"):
             errors.append("API_URL must use HTTPS in production")
+        
+        if not self.neo4j_password:
+            errors.append("NEO4J_PASSWORD must be set for production")
             
         if errors:
             raise ValueError(f"Production configuration errors: {', '.join(errors)}")
