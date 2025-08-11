@@ -215,6 +215,9 @@ class MVPProject(BaseModel):
     monitoring_dashboard_url: Optional[str] = Field(default=None, description="Monitoring dashboard URL")
     admin_panel_url: Optional[str] = Field(default=None, description="Admin panel URL")
     
+    # Error handling
+    error_message: Optional[str] = Field(default=None, description="Error message if generation failed")
+    
     # Resource usage
     cpu_hours_used: float = Field(default=0.0, description="CPU hours consumed for generation")
     memory_gb_hours_used: float = Field(default=0.0, description="Memory GB-hours consumed")
