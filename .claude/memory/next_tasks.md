@@ -1,34 +1,183 @@
-# Next Session Tasks - Enterprise Platform Completion
+# Next Session Tasks - Startup Factory Phase 1A Implementation
 
-## Immediate Priorities (Week 1-2)
+## STRATEGIC PIVOT: Enterprise Platform + Autonomous MVP Factory
 
-### 1. Multi-Tenancy Architecture Implementation
-**Priority**: Critical
-**Estimated Effort**: 40 hours
-**Dependencies**: Database design, API refactoring
+**New Vision**: Transform LeanVibe into a hybrid system that generates complete MVPs autonomously while maintaining enterprise capabilities. Capture the unprecedented "startup factory" market.
 
-**Tasks**:
-- [ ] Design tenant isolation strategy (row-level security vs separate schemas)
-- [ ] Implement tenant context middleware for FastAPI
-- [ ] Update all database models with tenant_id fields
-- [ ] Create tenant management API endpoints
+**Market Impact**: $50B → $100B+ TAM expansion (enterprise + entire startup ecosystem)
+
+## Phase 1A: Startup Factory Core (6-8 weeks, 170 hours)
+
+### 1. Enhanced Multi-Tenancy Architecture Implementation  
+**Priority**: Critical Foundation
+**Estimated Effort**: 50 hours (expanded from 40)
+**Dependencies**: Database design, API refactoring, MVP generation support
+
+**Enhanced Tasks**:
+- [ ] Design hybrid tenant model (enterprise orgs + individual MVPs)
+- [ ] Implement MVP generation namespace isolation
+- [ ] Create tenant-aware resource management (CPU/memory quotas per MVP)
+- [ ] Add MVP lifecycle management (active, paused, archived)
+- [ ] Implement cross-tenant analytics and reporting
+- [ ] Create automated cleanup for inactive MVPs  
+- [ ] Add billing integration hooks for dual revenue model
+- [ ] Update all database models with enhanced tenant_id fields
+- [ ] Create tenant management API endpoints (enterprise + MVP)
 - [ ] Add tenant-specific data encryption
 - [ ] Implement tenant-aware authentication
-- [ ] Create database migration scripts
-- [ ] Add comprehensive tenant isolation tests
+- [ ] Create database migration scripts for hybrid model
+- [ ] Add comprehensive tenant isolation tests (both types)
+
+**Enhanced Success Criteria**:
+- 100% data isolation between all tenants (enterprise + MVP)
+- Support 1000+ concurrent MVPs with <10% performance impact
+- Automated MVP provisioning <5 minutes
+- Zero data leakage across any tenant boundary
+- Tenant onboarding <5 minutes for both enterprise and MVP
+
+### 2. Assembly Line System (MVP Generation Engine)
+**Priority**: Critical Innovation
+**Estimated Effort**: 45 hours (evolved from 25-hour scaffolding system)
+**Dependencies**: Multi-tenancy foundation, AI agent orchestration
+
+**Revolutionary Tasks**:
+- [ ] **Blueprint System Architecture**
+  - Founder interview conversation engine
+  - Business requirement → technical blueprint conversion  
+  - API contract generation from business requirements
+  - Data schema generation from user stories
+  
+- [ ] **Specialized AI Agents**
+  - Backend Coder Agent (FastAPI + database models)
+  - Frontend Coder Agent (React/Lit components)
+  - Infrastructure Agent (Docker + deployment configs)
+  - Observability Agent (monitoring + health checks)
+  
+- [ ] **Agent Orchestration System**
+  - Sequential workflow management (blueprint → code → deploy)
+  - Quality gates between agent handoffs
+  - Progress tracking and founder notifications
+  - Error recovery and agent retry logic
 
 **Success Criteria**:
-- 100% data isolation between tenants
-- Zero data leakage in tests
-- Performance impact <10% vs single-tenant
-- Tenant onboarding <5 minutes
+- Generate complete MVP from founder conversation in <2 hours
+- 95% successful MVP generation rate (end-to-end)
+- Quality ratchet compliance for all generated code
+- Automated testing coverage >80% for generated MVPs
 
-### 2. Enterprise Authentication System Design
-**Priority**: Critical  
+### 3. Blueprint System - AI Architect Agent
+**Priority**: Core Differentiation
+**Estimated Effort**: 35 hours
+**Dependencies**: Assembly line foundation, conversation AI
+
+**Revolutionary Tasks**:
+- [ ] **Founder Interview Engine**
+  - Natural language conversation interface
+  - Business requirement extraction algorithms
+  - Market/competition analysis integration
+  - Technical feasibility assessment
+  
+- [ ] **Blueprint Generation**
+  - User story generation from business goals
+  - API endpoint definition from user stories
+  - Database schema design from data requirements
+  - UI/UX wireframe generation
+  
+- [ ] **Human Gate Integration**
+  - Blueprint review and approval workflows
+  - Founder feedback incorporation system
+  - Iterative refinement capabilities
+  - Progress tracking and notifications
+
+**Success Criteria**:
+- 90% founder satisfaction with initial blueprints
+- <30 minutes average blueprint generation time
+- 95% blueprint → working MVP success rate
+- Complete audit trail of all decisions and changes
+
+### 4. Human Gate Workflows
+**Priority**: Critical for Founder Trust
+**Estimated Effort**: 20 hours
+**Dependencies**: Blueprint system, authentication
+
+**Trust-Building Tasks**:
+- [ ] **Blueprint Approval Workflow**
+  - Visual blueprint presentation for founders
+  - Interactive approval/rejection interface
+  - Feedback collection and integration
+  - Revision tracking and management
+  
+- [ ] **Deployment Approval Workflow**
+  - Pre-deployment MVP preview system
+  - Final launch confirmation interface
+  - Rollback capability for founder safety
+  - Launch analytics and success tracking
+
+**Success Criteria**:
+- <5 minutes average approval workflow completion
+- 100% founder approval before any public deployment
+- Complete audit trail of all approval decisions
+- Zero unauthorized deployments
+
+### 5. "Day One" Experience
+**Priority**: Exceptional Founder Experience
+**Estimated Effort**: 20 hours
+**Dependencies**: Full assembly line, deployment automation
+
+**Experience Tasks**:
+- [ ] **Complete MVP Package Generation**
+  - Live deployed MVP with custom domain
+  - Pre-configured monitoring dashboard
+  - Private GitHub repository with complete code
+  - Architecture documentation and extension guide
+  
+- [ ] **Founder Onboarding System**
+  - Personalized MVP tour and training
+  - Business KPI dashboard setup
+  - Next steps and scaling recommendations
+  - Support channel integration
+
+**Success Criteria**:
+- 100% MVP delivery includes all components
+- <60 seconds from completion to founder access
+- 95+ Net Promoter Score for Day One experience
+- Zero technical issues in delivered MVPs
+
+## Phase 1B: Enterprise + Advanced Factory (Deferred to Weeks 9-14)
+
+### 6. Enhanced Billing System (Dual Revenue Model)
+**Priority**: Revenue Critical
+**Estimated Effort**: 45 hours (expanded from 35)
+**Dependencies**: Multi-tenancy, MVP generation system
+
+**Dual Revenue Tasks**:
+- [ ] **Enterprise Subscription Model**
+  - Team/Enterprise plans ($200/month per developer)
+  - Usage-based billing (API calls, storage)
+  - Enterprise invoicing and payment tracking
+  
+- [ ] **MVP Factory Revenue Model**  
+  - $5,000 per generated MVP billing
+  - Founder payment processing integration
+  - MVP success tracking and analytics
+  
+- [ ] **Unified Billing Platform**
+  - Stripe integration for both revenue streams
+  - Customer portal for self-service billing
+  - Financial reporting and analytics
+
+**Success Criteria**:
+- 100% billing accuracy (zero revenue leakage)
+- Support both subscription and per-MVP billing
+- <5 second payment processing time
+- Complete financial reporting across both models
+
+### 7. Enterprise Authentication System
+**Priority**: Enterprise Market Access (moved to Phase 1B)
 **Estimated Effort**: 30 hours
-**Dependencies**: Multi-tenancy foundation
+**Dependencies**: Multi-tenancy, foundational auth system
 
-**Tasks**:
+**Enterprise Auth Tasks**:
 - [ ] Research SSO/SAML providers (Auth0, AWS Cognito, Azure AD)
 - [ ] Design RBAC (Role-Based Access Control) system
 - [ ] Implement OAuth 2.0 / OpenID Connect integration
@@ -43,48 +192,6 @@
 - Support for major enterprise identity providers
 - <2 second authentication response time
 - Complete audit trail for authentication events
-
-### 3. Billing Integration with Stripe
-**Priority**: Critical
-**Estimated Effort**: 35 hours  
-**Dependencies**: Multi-tenancy, authentication
-
-**Tasks**:
-- [ ] Design subscription plans (Developer, Team, Enterprise)
-- [ ] Implement Stripe integration for payment processing
-- [ ] Create usage-based billing system (API calls, storage)
-- [ ] Build customer portal for self-service billing
-- [ ] Add invoice generation and payment tracking
-- [ ] Implement subscription lifecycle management
-- [ ] Create webhook handling for Stripe events
-- [ ] Add billing analytics and reporting
-
-**Success Criteria**:
-- 100% billing accuracy (zero revenue leakage)
-- <5 second payment processing time
-- Automated subscription management
-- Complete financial reporting and analytics
-
-### 4. Project Scaffolding System Development
-**Priority**: High
-**Estimated Effort**: 25 hours
-**Dependencies**: Authentication system
-
-**Tasks**:
-- [ ] Design `leanvibe new-project` command architecture
-- [ ] Create project templates (SaaS, API-only, microservice)
-- [ ] Implement intelligent template recommendation system
-- [ ] Add AI-powered code generation with GPT-4
-- [ ] Create IDE integration (VS Code, IntelliJ)
-- [ ] Build template customization system
-- [ ] Add project health monitoring
-- [ ] Create template marketplace framework
-
-**Success Criteria**:
-- 95% successful project generation rate
-- 80% reduction in manual setup time
-- Support for 12+ project templates
-- <60 second project initialization
 
 ## Medium-Term Goals (Month 1-3)
 

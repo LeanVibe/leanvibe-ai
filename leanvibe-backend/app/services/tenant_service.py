@@ -15,9 +15,9 @@ from sqlalchemy.orm import selectinload
 
 from ..models.tenant_models import (
     TenantCreate, TenantUpdate, TenantUsage, TenantQuotaExceeded,
-    TenantStatus, TenantPlan, DEFAULT_QUOTAS, TenantMember
+    TenantStatus, TenantPlan, TenantType, DEFAULT_QUOTAS, TenantMember
 )
-from ..models.orm_models import TenantORM, TaskORM, ProjectORM, TenantMemberORM
+from ..models.orm_models import TenantORM, TaskORM, ProjectORM, TenantMemberORM, MVPProjectORM
 from ..core.database import get_database_session
 from ..core.exceptions import (
     TenantNotFoundError, TenantQuotaExceededError, TenantSuspendedError,
@@ -41,7 +41,7 @@ class TenantService:
             return db
     
     async def create_tenant(self, tenant_data: TenantCreate) -> TenantORM:
-        """Create a new tenant with default quotas"""
+        """Create a new tenant with default quotas (Enterprise or MVP Factory)"""
         async with self._get_db() as db:
             try:
                 # Check if slug is already taken
@@ -52,8 +52,19 @@ class TenantService:
                 # Set default quotas based on plan
                 quotas = DEFAULT_QUOTAS[tenant_data.plan]
                 
+                # Validate MVP Factory specific fields
+                if tenant_data.tenant_type == TenantType.MVP_FACTORY:
+                    if not tenant_data.founder_name:
+                        raise InvalidTenantError("Founder name is required for MVP Factory tenants")
+                    if tenant_data.plan not in [TenantPlan.MVP_SINGLE, TenantPlan.MVP_BUNDLE]:
+                        raise InvalidTenantError(f"Plan {tenant_data.plan} is not valid for MVP Factory tenants")
+                else:  # Enterprise tenant
+                    if tenant_data.plan in [TenantPlan.MVP_SINGLE, TenantPlan.MVP_BUNDLE]:
+                        raise InvalidTenantError(f"Plan {tenant_data.plan} is only valid for MVP Factory tenants")
+                
                 # Create tenant instance using ORM model
                 tenant = TenantORM(
+                    tenant_type=tenant_data.tenant_type,
                     organization_name=tenant_data.organization_name,
                     display_name=tenant_data.display_name or tenant_data.organization_name,
                     slug=tenant_data.slug,
@@ -61,9 +72,16 @@ class TenantService:
                     plan=tenant_data.plan,
                     data_residency=tenant_data.data_residency,
                     parent_tenant_id=tenant_data.parent_tenant_id,
+                    # MVP Factory specific fields
+                    founder_name=tenant_data.founder_name,
+                    founder_phone=tenant_data.founder_phone,
+                    business_description=tenant_data.business_description,
+                    target_market=tenant_data.target_market,
+                    mvp_count_used=0,
+                    # Standard fields
                     quotas=quotas.model_dump(),  # Convert Pydantic to dict for JSON storage
                     current_usage={},  # Initialize empty usage
-                    trial_ends_at=datetime.utcnow() + timedelta(days=14)  # 14-day trial
+                    trial_ends_at=datetime.utcnow() + timedelta(days=14) if tenant_data.tenant_type == TenantType.ENTERPRISE else None  # No trial for MVP Factory
                 )
                 
                 # Save to database
@@ -212,15 +230,28 @@ class TenantService:
             return result.scalars().all()
     
     async def get_tenant_usage(self, tenant_id: UUID) -> TenantUsage:
-        """Get current resource usage for tenant"""
+        """Get current resource usage for tenant (Enterprise + MVP Factory)"""
         async with self._get_db() as db:
+            # Get tenant to check type
+            tenant = await self.get_by_id(tenant_id)
+            
             # Count actual usage from database
             
-            # Count projects for this tenant
+            # Count projects for this tenant (includes enterprise projects)
             project_result = await db.execute(
                 select(func.count()).where(ProjectORM.tenant_id == tenant_id)
             )
             projects_count = project_result.scalar() or 0
+            
+            # Count MVP projects for this tenant
+            mvp_result = await db.execute(
+                select(func.count()).where(MVPProjectORM.tenant_id == tenant_id)
+            )
+            mvp_count = mvp_result.scalar() or 0
+            
+            # For MVP Factory tenants, MVP projects ARE their projects
+            if tenant.tenant_type == TenantType.MVP_FACTORY:
+                projects_count = mvp_count
             
             # Count tasks for this tenant
             task_result = await db.execute(
@@ -234,12 +265,34 @@ class TenantService:
             )
             users_count = member_result.scalar() or 0
             
+            # Count active MVP generations (concurrent MVPs)
+            active_mvp_result = await db.execute(
+                select(func.count()).where(
+                    and_(
+                        MVPProjectORM.tenant_id == tenant_id,
+                        MVPProjectORM.status.in_(["generating", "testing", "deploying"])
+                    )
+                )
+            )
+            concurrent_mvps = active_mvp_result.scalar() or 0
+            
+            # Sum resource usage for MVP projects
+            resource_result = await db.execute(
+                select(
+                    func.coalesce(func.sum(MVPProjectORM.cpu_hours_used), 0),
+                    func.coalesce(func.sum(MVPProjectORM.memory_gb_hours_used), 0),
+                    func.coalesce(func.sum(MVPProjectORM.storage_mb_used), 0),
+                    func.coalesce(func.sum(MVPProjectORM.ai_tokens_used), 0)
+                ).where(MVPProjectORM.tenant_id == tenant_id)
+            )
+            resource_usage = resource_result.first() or (0, 0, 0, 0)
+            
             return TenantUsage(
                 tenant_id=tenant_id,
                 users_count=users_count,
                 projects_count=projects_count,
                 api_calls_this_month=0,  # TODO: Count from API logs when implemented
-                storage_used_mb=0,  # TODO: Calculate from file storage when implemented
+                storage_used_mb=int(resource_usage[2]),  # From MVP projects
                 ai_requests_today=0,  # TODO: Count from AI request logs when implemented
                 concurrent_sessions=0,  # TODO: Count from active WebSocket connections
             )
@@ -351,6 +404,208 @@ class TenantService:
             )
             
             return result.scalars().all()
+    
+    # ===============================
+    # MVP Factory Specific Methods
+    # ===============================
+    
+    async def create_mvp_factory_tenant(
+        self, 
+        founder_name: str,
+        founder_email: str,
+        business_idea: str,
+        plan: TenantPlan = TenantPlan.MVP_SINGLE
+    ) -> TenantORM:
+        """Simplified method to create MVP Factory tenant"""
+        import re
+        
+        # Generate slug from founder name
+        slug = re.sub(r'[^a-z0-9-]', '', founder_name.lower().replace(' ', '-'))
+        slug = f"mvp-{slug}-{uuid4().hex[:6]}"  # Add unique suffix
+        
+        tenant_data = TenantCreate(
+            tenant_type=TenantType.MVP_FACTORY,
+            organization_name=f"{founder_name}'s MVP Project",
+            slug=slug,
+            admin_email=founder_email,
+            plan=plan,
+            founder_name=founder_name,
+            business_description=business_idea[:2000],  # Truncate if needed
+        )
+        
+        return await self.create_tenant(tenant_data)
+    
+    async def get_mvp_projects(self, tenant_id: UUID) -> List[Dict]:
+        """Get all MVP projects for a tenant"""
+        async with self._get_db() as db:
+            result = await db.execute(
+                select(MVPProjectORM).where(MVPProjectORM.tenant_id == tenant_id)
+                .order_by(MVPProjectORM.created_at.desc())
+            )
+            mvp_projects = result.scalars().all()
+            
+            # Convert to dict for JSON serialization
+            return [
+                {
+                    "id": str(project.id),
+                    "project_name": project.project_name,
+                    "slug": project.slug,
+                    "status": project.status,
+                    "description": project.description,
+                    "created_at": project.created_at.isoformat(),
+                    "deployed_at": project.deployed_at.isoformat() if project.deployed_at else None,
+                    "deployment_url": project.deployment_url,
+                    "generation_progress": project.generation_progress,
+                    "total_cost": project.total_cost,
+                    "founder_satisfaction_score": project.founder_satisfaction_score
+                }
+                for project in mvp_projects
+            ]
+    
+    async def check_mvp_quota(self, tenant_id: UUID, quota_type: str, increment: int = 1) -> bool:
+        """Check MVP-specific quotas"""
+        tenant = await self.get_by_id(tenant_id)
+        
+        # Only check MVP quotas for MVP Factory tenants
+        if tenant.tenant_type != TenantType.MVP_FACTORY:
+            return True
+        
+        usage = await self.get_tenant_usage(tenant_id)
+        from ..models.tenant_models import TenantQuotas
+        quotas = TenantQuotas(**tenant.quotas)
+        
+        # MVP-specific quota checks
+        mvp_quota_checks = {
+            "concurrent_mvps": (self._get_concurrent_mvps(tenant_id), quotas.max_concurrent_mvps),
+            "mvp_generations": (tenant.mvp_count_used + increment, quotas.max_mvp_generations),
+            "cpu_cores": (self._get_current_cpu_usage(tenant_id) + increment, quotas.max_cpu_cores),
+            "memory_gb": (self._get_current_memory_usage(tenant_id) + increment, quotas.max_memory_gb),
+        }
+        
+        if quota_type not in mvp_quota_checks:
+            # Fall back to standard quota check
+            return await self.check_quota(tenant_id, quota_type, increment)
+        
+        current_usage, limit = mvp_quota_checks[quota_type]
+        
+        if current_usage > limit:
+            logger.warning(
+                f"MVP quota exceeded for tenant {tenant.slug}: {quota_type} "
+                f"({current_usage}/{limit})"
+            )
+            return False
+        
+        return True
+    
+    async def increment_mvp_count(self, tenant_id: UUID) -> TenantORM:
+        """Increment the MVP generation count for a tenant"""
+        async with self._get_db() as db:
+            try:
+                await db.execute(
+                    update(TenantORM)
+                    .where(TenantORM.id == tenant_id)
+                    .values(
+                        mvp_count_used=TenantORM.mvp_count_used + 1,
+                        updated_at=datetime.utcnow()
+                    )
+                )
+                
+                await db.commit()
+                return await self.get_by_id(tenant_id)
+                
+            except Exception as e:
+                await db.rollback()
+                logger.error(f"Failed to increment MVP count for tenant {tenant_id}: {e}")
+                raise
+    
+    async def get_mvp_factory_stats(self, tenant_id: UUID) -> Dict[str, Any]:
+        """Get comprehensive stats for MVP Factory tenant"""
+        async with self._get_db() as db:
+            tenant = await self.get_by_id(tenant_id)
+            
+            if tenant.tenant_type != TenantType.MVP_FACTORY:
+                raise InvalidTenantError("Stats are only available for MVP Factory tenants")
+            
+            # Get MVP project stats
+            mvp_stats_result = await db.execute(
+                select(
+                    func.count().label("total_projects"),
+                    func.count().filter(MVPProjectORM.status == "deployed").label("deployed_projects"),
+                    func.count().filter(MVPProjectORM.status.in_(["generating", "testing", "deploying"])).label("active_generations"),
+                    func.avg(MVPProjectORM.founder_satisfaction_score).label("avg_satisfaction"),
+                    func.sum(MVPProjectORM.total_cost).label("total_cost"),
+                    func.sum(MVPProjectORM.cpu_hours_used).label("total_cpu_hours"),
+                    func.sum(MVPProjectORM.memory_gb_hours_used).label("total_memory_gb_hours"),
+                    func.sum(MVPProjectORM.ai_tokens_used).label("total_ai_tokens")
+                ).where(MVPProjectORM.tenant_id == tenant_id)
+            )
+            
+            stats = mvp_stats_result.first()
+            
+            from ..models.tenant_models import TenantQuotas
+            quotas = TenantQuotas(**tenant.quotas)
+            
+            return {
+                "tenant_info": {
+                    "id": str(tenant.id),
+                    "founder_name": tenant.founder_name,
+                    "business_description": tenant.business_description,
+                    "plan": tenant.plan,
+                    "created_at": tenant.created_at.isoformat()
+                },
+                "usage_stats": {
+                    "mvp_generations_used": tenant.mvp_count_used,
+                    "mvp_generations_limit": quotas.max_mvp_generations,
+                    "total_projects": stats.total_projects or 0,
+                    "deployed_projects": stats.deployed_projects or 0,
+                    "active_generations": stats.active_generations or 0,
+                    "success_rate": (stats.deployed_projects / max(stats.total_projects, 1)) * 100,
+                },
+                "satisfaction": {
+                    "average_score": float(stats.avg_satisfaction or 0),
+                    "total_responses": stats.total_projects or 0
+                },
+                "resource_usage": {
+                    "total_cost_usd": float(stats.total_cost or 0),
+                    "cpu_hours_used": float(stats.total_cpu_hours or 0),
+                    "memory_gb_hours_used": float(stats.total_memory_gb_hours or 0),
+                    "ai_tokens_used": int(stats.total_ai_tokens or 0)
+                },
+                "quotas": {
+                    "max_concurrent_mvps": quotas.max_concurrent_mvps,
+                    "max_cpu_cores": quotas.max_cpu_cores,
+                    "max_memory_gb": quotas.max_memory_gb,
+                    "max_deployment_duration_hours": quotas.max_deployment_duration_hours
+                }
+            }
+    
+    # Helper methods for MVP quota checking
+    async def _get_concurrent_mvps(self, tenant_id: UUID) -> int:
+        """Get current number of concurrent MVP generations"""
+        async with self._get_db() as db:
+            result = await db.execute(
+                select(func.count()).where(
+                    and_(
+                        MVPProjectORM.tenant_id == tenant_id,
+                        MVPProjectORM.status.in_(["generating", "testing", "deploying"])
+                    )
+                )
+            )
+            return result.scalar() or 0
+    
+    async def _get_current_cpu_usage(self, tenant_id: UUID) -> int:
+        """Get current CPU core usage for active MVP generations"""
+        # This would integrate with container orchestration (K8s, Docker)
+        # For now, estimate based on concurrent MVPs
+        concurrent_mvps = await self._get_concurrent_mvps(tenant_id)
+        return concurrent_mvps * 2  # Assume 2 cores per active generation
+    
+    async def _get_current_memory_usage(self, tenant_id: UUID) -> int:
+        """Get current memory usage for active MVP generations"""  
+        # This would integrate with container orchestration (K8s, Docker)
+        # For now, estimate based on concurrent MVPs
+        concurrent_mvps = await self._get_concurrent_mvps(tenant_id)
+        return concurrent_mvps * 4  # Assume 4GB per active generation
 
 
 # Singleton service instance

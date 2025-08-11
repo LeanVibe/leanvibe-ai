@@ -16,16 +16,19 @@ from sqlalchemy.orm import relationship, validates
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from ..core.database import Base
-from .tenant_models import TenantStatus, TenantPlan, TenantDataResidency
+from .tenant_models import TenantStatus, TenantPlan, TenantDataResidency, TenantType
 from .task_models import TaskStatus, TaskPriority
 
 
 class TenantORM(Base):
-    """SQLAlchemy ORM model for tenants with enterprise features"""
+    """SQLAlchemy ORM model for hybrid tenants (Enterprise + MVP Factory)"""
     __tablename__ = "tenants"
     
     # Primary key and identification
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
+    
+    # Tenant type and identification
+    tenant_type = Column(SQLEnum(TenantType), nullable=False, index=True)
     organization_name = Column(String(255), nullable=False, index=True)
     display_name = Column(String(255), nullable=True)
     slug = Column(String(50), nullable=False, unique=True, index=True)
@@ -44,6 +47,13 @@ class TenantORM(Base):
     # Contact and billing
     admin_email = Column(String(255), nullable=False, index=True)
     billing_email = Column(String(255), nullable=True)
+    
+    # MVP Factory specific fields
+    founder_name = Column(String(255), nullable=True)
+    founder_phone = Column(String(50), nullable=True)
+    business_description = Column(Text, nullable=True)
+    target_market = Column(String(500), nullable=True)
+    mvp_count_used = Column(Integer, default=0, nullable=False)
     
     # Compliance and security
     data_residency = Column(SQLEnum(TenantDataResidency), default=TenantDataResidency.US, nullable=False)
@@ -272,6 +282,138 @@ class AuditLogORM(Base):
     
     def __repr__(self):
         return f"<AuditLogORM(tenant_id={self.tenant_id}, action={self.action}, timestamp={self.timestamp})>"
+
+
+class MVPProjectORM(Base):
+    """SQLAlchemy ORM model for MVP Factory projects"""
+    __tablename__ = "mvp_projects"
+    
+    # Primary key and identification
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
+    
+    # Multi-tenant isolation
+    tenant_id = Column(PG_UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False, index=True)
+    
+    # Project identification
+    project_name = Column(String(255), nullable=False, index=True)
+    slug = Column(String(50), nullable=False, index=True)
+    description = Column(Text, nullable=False)
+    
+    # Project status and lifecycle
+    status = Column(String(50), nullable=False, index=True, default="blueprint_pending")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+    deployed_at = Column(DateTime, nullable=True)
+    
+    # Core components (stored as JSON for flexibility)
+    interview_data = Column(JSON, nullable=True)
+    blueprint_data = Column(JSON, nullable=True)  
+    generation_progress = Column(JSON, nullable=False, default=dict)
+    
+    # Human approval workflows (stored as JSON)
+    blueprint_approval = Column(JSON, nullable=True)
+    deployment_approval = Column(JSON, nullable=True)
+    
+    # Deployment information
+    deployment_url = Column(String(500), nullable=True)
+    repository_url = Column(String(500), nullable=True) 
+    monitoring_dashboard_url = Column(String(500), nullable=True)
+    admin_panel_url = Column(String(500), nullable=True)
+    
+    # Resource usage tracking
+    cpu_hours_used = Column(Float, default=0.0, nullable=False)
+    memory_gb_hours_used = Column(Float, default=0.0, nullable=False)
+    storage_mb_used = Column(Integer, default=0, nullable=False)
+    ai_tokens_used = Column(Integer, default=0, nullable=False)
+    
+    # Success metrics
+    generation_success_rate = Column(Float, default=0.0, nullable=False)
+    deployment_uptime = Column(Float, default=0.0, nullable=False)
+    founder_satisfaction_score = Column(Integer, nullable=True)
+    
+    # Billing and payment
+    total_cost = Column(Float, default=0.0, nullable=False)
+    payment_status = Column(String(50), default="pending", nullable=False)
+    payment_method = Column(String(50), nullable=True)
+    
+    # Relationships
+    tenant = relationship("TenantORM")
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_mvp_tenant_status', 'tenant_id', 'status'),
+        Index('idx_mvp_tenant_created', 'tenant_id', 'created_at'),
+        Index('idx_mvp_slug_tenant', 'slug', 'tenant_id'),
+        Index('idx_mvp_deployment_status', 'status', 'deployed_at'),
+        CheckConstraint('created_at <= updated_at', name='chk_mvp_timestamps'),
+        CheckConstraint('cpu_hours_used >= 0', name='chk_cpu_hours_positive'),
+        CheckConstraint('memory_gb_hours_used >= 0', name='chk_memory_hours_positive'),
+        CheckConstraint('storage_mb_used >= 0', name='chk_storage_positive'),
+        CheckConstraint('founder_satisfaction_score >= 1 AND founder_satisfaction_score <= 10', 
+                       name='chk_satisfaction_range'),
+    )
+    
+    @hybrid_property
+    def is_deployed(self):
+        """Check if MVP is deployed"""
+        return self.status == "deployed"
+    
+    @hybrid_property
+    def is_generating(self):
+        """Check if MVP is currently being generated"""
+        return self.status in ["generating", "testing", "deploying"]
+    
+    def __repr__(self):
+        return f"<MVPProjectORM(id={self.id}, name={self.project_name}, status={self.status})>"
+
+
+class MVPMetricsORM(Base):
+    """SQLAlchemy ORM model for MVP performance and business metrics"""
+    __tablename__ = "mvp_metrics"
+    
+    # Primary key
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
+    
+    # Multi-tenant isolation via MVP project
+    mvp_project_id = Column(PG_UUID(as_uuid=True), ForeignKey('mvp_projects.id'), nullable=False, index=True)
+    
+    # Performance metrics
+    response_time_ms = Column(Float, nullable=False)
+    uptime_percentage = Column(Float, nullable=False)
+    error_rate = Column(Float, nullable=False)
+    
+    # Business metrics
+    page_views = Column(Integer, default=0, nullable=False)
+    unique_visitors = Column(Integer, default=0, nullable=False)
+    conversion_rate = Column(Float, default=0.0, nullable=False)
+    user_signups = Column(Integer, default=0, nullable=False)
+    
+    # Technical metrics
+    code_quality_score = Column(Float, nullable=False)
+    test_coverage = Column(Float, nullable=False) 
+    security_score = Column(Float, nullable=False)
+    
+    # Collection timestamp
+    collected_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    
+    # Relationships
+    mvp_project = relationship("MVPProjectORM")
+    
+    # Indexes for performance
+    __table_args__ = (
+        Index('idx_metrics_project_time', 'mvp_project_id', 'collected_at'),
+        Index('idx_metrics_collection_time', 'collected_at'),
+        CheckConstraint('response_time_ms >= 0', name='chk_response_time_positive'),
+        CheckConstraint('uptime_percentage >= 0 AND uptime_percentage <= 100', name='chk_uptime_range'),
+        CheckConstraint('error_rate >= 0 AND error_rate <= 100', name='chk_error_rate_range'),
+        CheckConstraint('code_quality_score >= 0 AND code_quality_score <= 100', name='chk_code_quality_range'),
+        CheckConstraint('test_coverage >= 0 AND test_coverage <= 100', name='chk_test_coverage_range'),
+        CheckConstraint('security_score >= 0 AND security_score <= 100', name='chk_security_score_range'),
+    )
+    
+    def __repr__(self):
+        return f"<MVPMetricsORM(mvp_id={self.mvp_project_id}, collected_at={self.collected_at})>"
 
 
 # Row-Level Security Policies (Applied via migrations)
