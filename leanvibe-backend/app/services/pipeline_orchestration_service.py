@@ -5,6 +5,7 @@ Manages the complete autonomous MVP generation pipeline from interview to deploy
 
 import asyncio
 import logging
+import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Callable
 from uuid import UUID, uuid4
@@ -24,6 +25,7 @@ from ..services.human_gate_service import human_gate_service
 from ..services.email_service import email_service
 from ..services.blueprint_refinement_service import blueprint_refinement_service
 from ..services.mvp_service import mvp_service
+from ..services.monitoring_service import monitoring_service
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +109,20 @@ class PipelineOrchestrationService:
     ) -> PipelineExecution:
         """Start the complete autonomous pipeline from founder interview"""
         
+        # Start monitoring this critical operation
+        monitoring_op = await monitoring_service.start_operation(
+            operation_type="autonomous_pipeline_start",
+            tenant_id=tenant_id,
+            context={
+                "project_name": project_name,
+                "founder_email": founder_email,
+                "business_idea": founder_interview.business_idea[:100],  # First 100 chars
+                "industry": str(founder_interview.industry)
+            }
+        )
+        
+        start_time = time.time()
+        
         try:
             logger.info(f"Starting autonomous pipeline for {project_name}")
             
@@ -138,14 +154,53 @@ class PipelineOrchestrationService:
             
             logger.info(f"Started autonomous pipeline {execution.id} for project {mvp_project.id}")
             
+            # Complete monitoring operation with success
+            duration_ms = (time.time() - start_time) * 1000
+            await monitoring_service.complete_operation(
+                operation_id=monitoring_op,
+                status="success", 
+                duration_ms=duration_ms,
+                result_data={
+                    "execution_id": str(execution.id),
+                    "mvp_project_id": str(mvp_project.id),
+                    "pipeline_started": True
+                }
+            )
+            
             return execution
             
         except Exception as e:
+            # Complete monitoring operation with failure
+            duration_ms = (time.time() - start_time) * 1000
+            await monitoring_service.fail_operation(
+                operation_id=monitoring_op,
+                error_type=type(e).__name__,
+                error_message=str(e),
+                duration_ms=duration_ms,
+                error_context={
+                    "project_name": project_name,
+                    "founder_email": founder_email,
+                    "tenant_id": str(tenant_id)
+                }
+            )
             logger.error(f"Failed to start autonomous pipeline: {e}")
             raise
     
     async def _execute_pipeline(self, execution: PipelineExecution, founder_email: str):
         """Execute the complete pipeline"""
+        
+        # Start monitoring the pipeline execution
+        pipeline_op = await monitoring_service.start_operation(
+            operation_type="autonomous_pipeline_execution",
+            tenant_id=execution.tenant_id,
+            context={
+                "execution_id": str(execution.id),
+                "mvp_project_id": str(execution.mvp_project_id),
+                "founder_email": founder_email
+            }
+        )
+        
+        pipeline_start_time = time.time()
         
         try:
             execution.status = PipelineStatus.RUNNING
@@ -160,7 +215,33 @@ class PipelineOrchestrationService:
             # Pipeline will continue based on founder response
             # (approval -> MVP generation, revision -> refinement, etc.)
             
+            # Complete monitoring operation for successful pipeline setup
+            duration_ms = (time.time() - pipeline_start_time) * 1000
+            await monitoring_service.complete_operation(
+                operation_id=pipeline_op,
+                status="success",
+                duration_ms=duration_ms,
+                result_data={
+                    "current_stage": execution.current_stage.value,
+                    "stages_completed": [stage.value for stage in execution.stages_completed]
+                }
+            )
+            
         except Exception as e:
+            # Complete monitoring operation with failure
+            duration_ms = (time.time() - pipeline_start_time) * 1000
+            await monitoring_service.fail_operation(
+                operation_id=pipeline_op,
+                error_type=type(e).__name__,
+                error_message=str(e),
+                duration_ms=duration_ms,
+                error_context={
+                    "execution_id": str(execution.id),
+                    "current_stage": execution.current_stage.value,
+                    "retry_count": execution.retry_count
+                }
+            )
+            
             logger.error(f"Pipeline execution failed: {e}")
             execution.status = PipelineStatus.FAILED
             execution.error_message = str(e)
@@ -320,6 +401,19 @@ class PipelineOrchestrationService:
     async def _execute_mvp_generation_stage(self, execution: PipelineExecution):
         """Execute MVP generation stage using assembly line system"""
         
+        # Start monitoring MVP generation
+        mvp_generation_op = await monitoring_service.start_operation(
+            operation_type="mvp_generation_stage",
+            tenant_id=execution.tenant_id,
+            context={
+                "execution_id": str(execution.id),
+                "mvp_project_id": str(execution.mvp_project_id),
+                "stage": PipelineStage.MVP_GENERATION.value
+            }
+        )
+        
+        mvp_start_time = time.time()
+        
         try:
             await self._transition_to_stage(execution, PipelineStage.MVP_GENERATION)
             
@@ -343,11 +437,39 @@ class PipelineOrchestrationService:
                 execution.completed_at = datetime.utcnow()
                 await self._complete_stage(execution, PipelineStage.COMPLETED)
                 
+                # Complete monitoring operation with success
+                duration_ms = (time.time() - mvp_start_time) * 1000
+                await monitoring_service.complete_operation(
+                    operation_id=mvp_generation_op,
+                    status="success",
+                    duration_ms=duration_ms,
+                    result_data={
+                        "mvp_generation_success": True,
+                        "pipeline_completed": True,
+                        "total_stages_completed": len(execution.stages_completed)
+                    }
+                )
+                
                 logger.info(f"MVP generation completed for pipeline {execution.id}")
             else:
                 raise Exception("Assembly line generation failed")
             
         except Exception as e:
+            # Complete monitoring operation with failure
+            duration_ms = (time.time() - mvp_start_time) * 1000
+            await monitoring_service.fail_operation(
+                operation_id=mvp_generation_op,
+                error_type=type(e).__name__,
+                error_message=str(e),
+                duration_ms=duration_ms,
+                error_context={
+                    "execution_id": str(execution.id),
+                    "mvp_project_id": str(execution.mvp_project_id),
+                    "stage": PipelineStage.MVP_GENERATION.value,
+                    "assembly_line_invoked": "success" in locals()
+                }
+            )
+            
             logger.error(f"MVP generation stage failed: {e}")
             raise
     
