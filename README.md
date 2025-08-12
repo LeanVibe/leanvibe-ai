@@ -44,31 +44,15 @@ graph TB
     I <--> B
 ```
 
-## 🚨 Current Status: Architecture Consolidation Required
+## 📚 Core documentation
 
-### 🔧 **Critical Issue: Service Fragmentation**
-**🚨 BLOCKING PRODUCTION DEPLOYMENT**: LeanVibe currently has **14 duplicate service implementations** that must be consolidated before production readiness.
-
-- **Voice Services**: 7 implementations (should be 3)
-- **AI Services**: 7 implementations (should be 3)  
-- **Impact**: Unmaintainable codebase, fragmented testing, inconsistent behavior
-
-### 📊 **Implementation Status**
-- **Core Features**: **60% MVP Complete** ✅
-- **Performance**: **2.84s average response time** ✅
-- **Service Architecture**: **❌ CRITICAL - Needs Consolidation**
-- **Production Readiness**: **❌ BLOCKED** until consolidation complete
-
-### 📋 **Consolidation Documentation**
-- 📘 **[Consolidation Guide](CONSOLIDATION_GUIDE.md)** - Detailed service analysis and strategy
-- 📊 **[Feature Coverage Matrix](FEATURE_COVERAGE_MATRIX.md)** - MVP requirements vs implementation  
-- 🗓️ **[Deprecation Plan](DEPRECATION_PLAN.md)** - 4-week migration timeline
-
-### 🗺️ **Updated Roadmap**
-- **Phase 1**: ✅ MVP Foundation (Complete)
-- **Phase 2**: 🚨 **Service Consolidation** (4 weeks - CRITICAL)
-- **Phase 3**: 🔄 Production Validation (After consolidation)
-- **Phase 4**: 🔎 User Testing & Launch (Final)
+- Start here: [docs/CORE_INDEX.md](docs/CORE_INDEX.md)
+- Architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
+- Development: [DEVELOPMENT_GUIDE.md](DEVELOPMENT_GUIDE.md)
+- Configuration: [CONFIGURATION.md](CONFIGURATION.md)
+- Testing: [TESTING_GUIDE.md](TESTING_GUIDE.md)
+- Deployment: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
+- Security: [SECURITY.md](SECURITY.md)
 
 ## 🚀 Quick Start
 
@@ -116,7 +100,7 @@ open LeanVibe.xcodeproj
 
 ## 📦 Project Structure
 
-> ⚠️ **Architecture Warning**: Multiple duplicate services exist and require consolidation. See [Consolidation Guide](CONSOLIDATION_GUIDE.md) for details.
+> Note: For deep dives and historical plans, see `docs/organized/**` and `docs/archive/**`.
 
 ```
 leanvibe-ai/

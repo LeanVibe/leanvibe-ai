@@ -28,7 +28,7 @@ echo "====================================="
 
 # 1. System Health Overview
 echo "📊 System Health Status:"
-curl -s http://localhost:8000/health/complete | jq '.status'
+curl -s http://localhost:8765/health/complete | jq '.status'
 
 # 2. Quality Ratchet Status  
 echo "🎯 Quality Metrics:"
@@ -135,7 +135,7 @@ graph TB
 ./deploy/synthetic_probes.sh production --critical --timeout=30
 
 # 2. Check for automatic rollback opportunity
-if [[ $(curl -s http://localhost:8000/health | jq -r '.status') != "healthy" ]]; then
+if [[ $(curl -s http://localhost:8765/health | jq -r '.status') != "healthy" ]]; then
     echo "🚨 System unhealthy - initiating emergency rollback"
     ./deploy/rollback.sh production
 fi
@@ -199,7 +199,7 @@ Database Issues:
 
 ### Canary Deployment Process
 
-**Location**: `/Users/bogdan/work/leanvibe-ai/leanvibe-backend/deploy/canary.sh`
+**Location**: `leanvibe-backend/deploy/canary.sh`
 
 #### Pre-Deployment Checklist
 
@@ -259,7 +259,7 @@ python tests/test_e2e_workflows.py --production
 
 ### Rollback Operations
 
-**Location**: `/Users/bogdan/work/leanvibe-ai/leanvibe-backend/deploy/rollback.sh`
+**Location**: `leanvibe-backend/deploy/rollback.sh`
 
 #### Automated Rollback Triggers
 

@@ -52,7 +52,7 @@ class LeanVibeSettings(BaseSettings):
     
     # Server Configuration  
     host: str = Field(default="0.0.0.0")
-    port: int = Field(default=8001)
+    port: int = Field(default=8765)
     
     # Security - CRITICAL: NO DEFAULT VALUES for production secrets
     secret_key: str = Field(
@@ -105,8 +105,8 @@ class LeanVibeSettings(BaseSettings):
     mlx_strategy: MLXStrategy = Field(default=MLXStrategy.MOCK)
     
     # API Configuration
-    api_url: str = Field(default="http://localhost:8001")
-    api_base_url: str = Field(default="http://localhost:8001", env="API_BASE_URL")
+    api_url: str = Field(default="http://localhost:8765")
+    api_base_url: str = Field(default="http://localhost:8765", env="API_BASE_URL")
     
     # Feature Flags
     enable_logging: bool = Field(default=True)

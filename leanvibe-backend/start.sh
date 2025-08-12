@@ -156,10 +156,10 @@ import os
 sys.path.insert(0, os.path.join(os.getcwd(), 'app'))
 try:
     from utils.connection_service import print_startup_qr
-    print_startup_qr(8000)
+    print_startup_qr(8765)
 except ImportError as e:
     print(f'⚠️  QR code service not available: {e}')
-    print('📱 Backend will start on: http://localhost:8000')
+    print('📱 Backend will start on: http://localhost:8765')
 "
 
 # Test MLX availability before starting server
@@ -245,14 +245,14 @@ fi
 if [ "$ENTERPRISE_DEMO" = true ]; then
     echo "🏢 Starting LeanVibe Enterprise SaaS Demo..."
     echo "📱 Scan the QR code above with the LeanVibe iOS app to connect"
-    echo "🖥️  Or connect manually to: http://localhost:8000"
+    echo "🖥️  Or connect manually to: http://localhost:8765"
     echo ""
     echo "🎯 Enterprise Demo Features Available:"
-    echo "   📊 Admin Dashboard: http://localhost:8000/admin"
-    echo "   💳 Billing Dashboard: http://localhost:8000/billing"
-    echo "   👥 Multi-Tenant Management: http://localhost:8000/tenants"
-    echo "   🔐 SSO Configuration: http://localhost:8000/auth/sso"
-    echo "   🤖 AI Development Tasks: http://localhost:8000/tasks"
+    echo "   📊 Admin Dashboard: http://localhost:8765/admin"
+    echo "   💳 Billing Dashboard: http://localhost:8765/billing"
+    echo "   👥 Multi-Tenant Management: http://localhost:8765/tenants"
+    echo "   🔐 SSO Configuration: http://localhost:8765/auth/sso"
+    echo "   🤖 AI Development Tasks: http://localhost:8765/tasks"
     echo ""
     echo "🏢 Demo Tenants (login with X-Tenant-ID header or subdomain):"
     echo "   • Acme Corp (acme-corp): Enterprise plan with all features"
@@ -267,7 +267,7 @@ if [ "$ENTERPRISE_DEMO" = true ]; then
 elif [ "$AUTONOMOUS_MODE" = true ]; then
     echo "🤖 Starting LeanVibe Autonomous Development Platform..."
     echo "📱 Scan the QR code above with the LeanVibe iOS app to connect"
-    echo "🖥️  Or connect manually to: http://localhost:8000"
+    echo "🖥️  Or connect manually to: http://localhost:8765"
     echo ""
     echo "🎯 Autonomous Development Features:"
     echo "   🔧 Developer Shortcuts: source scripts/dev_shortcuts.sh"
@@ -278,7 +278,7 @@ elif [ "$AUTONOMOUS_MODE" = true ]; then
 else
     echo "🌟 Starting LeanVibe Backend with MLX AI support..."
     echo "📱 Scan the QR code above with the LeanVibe iOS app to connect"
-    echo "🖥️  Or connect manually to: http://localhost:8000"
+    echo "🖥️  Or connect manually to: http://localhost:8765"
 fi
 
 echo ""
@@ -301,4 +301,4 @@ echo "Press Ctrl+C to stop the server"
 echo ""
 
 # Start the server using uv
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8765 --reload

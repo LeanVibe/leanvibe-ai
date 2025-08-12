@@ -49,7 +49,7 @@ class ProjectService:
             issues_count=1,
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            path="/Users/bogdan/work/leanvibe-ai/leanvibe-backend",
+            path=str(Path(__file__).resolve().parents[3]),
             language=ProjectLanguage.PYTHON,
             last_activity=datetime.now(),
             metrics=ProjectMetrics(
@@ -76,7 +76,7 @@ class ProjectService:
             issues_count=2,
             created_at=datetime.now(),
             updated_at=datetime.now(),
-            path="/Users/bogdan/work/leanvibe-ai/leanvibe-ios",
+            path=str(Path(__file__).resolve().parents[3] / "leanvibe-ios"),
             language=ProjectLanguage.SWIFT,
             last_activity=datetime.now(),
             metrics=ProjectMetrics(

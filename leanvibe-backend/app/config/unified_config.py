@@ -46,9 +46,9 @@ class DefaultValues:
     """Centralized default values for all configuration"""
     
     # Network and API defaults
-    DEFAULT_BACKEND_URL = "http://localhost:8000"
+    DEFAULT_BACKEND_URL = "http://localhost:8765"
     DEFAULT_MLX_SERVER_URL = "http://127.0.0.1:8082"
-    DEFAULT_API_PORT = 8000
+    DEFAULT_API_PORT = 8765
     DEFAULT_MLX_PORT = 8082
     
     # Timeout defaults

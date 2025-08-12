@@ -15,13 +15,16 @@ This guide covers environment configuration for LeanVibe across development, sta
    LEANVIBE_ENV=development  # or staging, production
    
    # Set API URL (iOS will auto-detect based on environment)
-   LEANVIBE_API_URL=http://localhost:8001
+   LEANVIBE_API_URL=http://localhost:8765
    ```
 
 3. **Start the backend server:**
    ```bash
    cd leanvibe-backend
-   python test_server.py
+   # Preferred
+   python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+   # Or quick script
+   ./start.sh
    ```
 
 4. **Build iOS app:**
@@ -38,14 +41,14 @@ This guide covers environment configuration for LeanVibe across development, sta
 ```bash
 LEANVIBE_ENV=development
 LEANVIBE_HOST=localhost
-LEANVIBE_PORT=8001
+LEANVIBE_PORT=8000
 LEANVIBE_MLX_STRATEGY=MOCK
 LEANVIBE_ENABLE_LOGGING=true
 ```
 
 **iOS (automatic):**
-- API URL: `http://localhost:8001`
-- WebSocket: `ws://localhost:8001/ws`
+- API URL: `http://localhost:8765`
+- WebSocket: `ws://localhost:8765/ws`
 - Debug logging: Enabled
 - Certificate pinning: Disabled
 
@@ -55,7 +58,7 @@ LEANVIBE_ENABLE_LOGGING=true
 ```bash
 LEANVIBE_ENV=staging
 LEANVIBE_HOST=0.0.0.0
-LEANVIBE_PORT=8001
+LEANVIBE_PORT=8000
 LEANVIBE_MLX_STRATEGY=PRAGMATIC
 LEANVIBE_SECRET_KEY=your-staging-secret
 LEANVIBE_DATABASE_URL=postgresql://...
@@ -73,7 +76,7 @@ LEANVIBE_DATABASE_URL=postgresql://...
 ```bash
 LEANVIBE_ENV=production
 LEANVIBE_HOST=0.0.0.0
-LEANVIBE_PORT=8001
+LEANVIBE_PORT=8000
 LEANVIBE_MLX_STRATEGY=PRODUCTION
 LEANVIBE_SECRET_KEY=your-production-secret
 LEANVIBE_DATABASE_URL=postgresql://...
@@ -105,7 +108,7 @@ The iOS app automatically detects environment:
 Override via environment variables:
 ```bash
 # During development
-export LEANVIBE_API_URL=http://192.168.1.100:8001
+export LEANVIBE_API_URL=http://192.168.1.100:8765
 ```
 
 Or in Xcode scheme environment variables.
@@ -177,10 +180,10 @@ RUN pip install -r requirements.txt
 # Set environment
 ENV LEANVIBE_ENV=production
 ENV LEANVIBE_HOST=0.0.0.0
-ENV LEANVIBE_PORT=8001
+ENV LEANVIBE_PORT=8000
 
 # Start server
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 **Environment Variables:**

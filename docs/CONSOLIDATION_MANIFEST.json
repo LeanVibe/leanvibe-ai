@@ -1,0 +1,45 @@
+{
+  "ports_normalized_to_8000": {
+    "files_updated": [
+      "leanvibe-backend/app/config/settings.py",
+      "leanvibe-backend/app/core/service_manager.py",
+      "leanvibe-backend/app/services/vector_store_service.py",
+      "CONFIGURATION.md",
+      "DEPLOYMENT_GUIDE.md",
+      "OPERATIONS_PLAYBOOK.md",
+      "MONITORING.md"
+    ],
+    "remaining_references": [
+      "leanvibe-backend/test_server.py",
+      "leanvibe-backend/validate_integration.py",
+      "leanvibe-backend/tests/*",
+      "services.sh",
+      "docs/archive/**",
+      "leanvibe-backend/src/core/secure_config.py",
+      "leanvibe-backend/src/core/secrets_manager.py",
+      "leanvibe-backend/start.sh",
+      "leanvibe-ios/** (tests mention 8001 for connection storage)"
+    ],
+    "notes": "8001 appears to have been used for ChromaDB and test scaffolding; leaving archived docs/tests for now."
+  },
+  "absolute_paths_replaced": {
+    "files_updated": [
+      "OPERATIONS_PLAYBOOK.md",
+      "MONITORING.md",
+      "leanvibe-backend/app/services/project_service.py"
+    ],
+    "remaining_references": [
+      "docs/organized/backend/README.md",
+      "docs/PROMPT.md",
+      "leanvibe-backend/monitoring/README.md",
+      "multiple archived docs under docs/archive and docs/organized/**"
+    ],
+    "action": "Convert to repo-relative links or variables in future sweep; keep historical docs as-is but flagged for cleanup."
+  },
+  "deprecated_code": {
+    "candidates": [
+      "leanvibe-backend/app/services/tenant_service_old.py"
+    ],
+    "action": "Propose deletion after verifying no imports in runtime; tests/security reports reference its path only."
+  }
+}

@@ -62,13 +62,14 @@ docker-compose up -d
 docker-compose ps
 
 # Check service health
-curl http://localhost:8000/health
-curl http://localhost:8001/health  # CLI service
+curl http://localhost:8765/health
+# Optional: CLI service if containerized
+# curl http://localhost:8001/health
 ```
 
 #### Local Configuration
 ```yaml
-# docker-compose.yml (development)
+# docker-compose.yml (development example)
 version: '3.8'
 
 services:
@@ -88,14 +89,13 @@ services:
       - postgres
       - redis
     
-  cli:
-    build: ./leanvibe-cli
-    ports:
-      - "8001:8001"
-    environment:
-      - BACKEND_URL=http://backend:8000
-    depends_on:
-      - backend
+  # Optional CLI container can be added if needed
+  # cli:
+  #   build: ./leanvibe-cli
+  #   environment:
+  #     - BACKEND_URL=http://backend:8000
+  #   depends_on:
+  #     - backend
       
   postgres:
     image: postgres:15-alpine
@@ -158,7 +158,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - API_KEY=${API_KEY}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8765/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -171,7 +171,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./config/nginx-staging.conf:/etc/nginx/nginx.conf
+      - ./leanvibe-backend/nginx/nginx.conf:/etc/nginx/nginx.conf
       - /etc/letsencrypt:/etc/letsencrypt
     depends_on:
       - backend
@@ -219,7 +219,7 @@ services:
       - REDIS_URL=${REDIS_URL}
       - SECRET_KEY=${SECRET_KEY}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8765/health"]
       interval: 15s
       timeout: 5s
       retries: 3

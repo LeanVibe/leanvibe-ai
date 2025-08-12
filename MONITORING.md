@@ -53,7 +53,7 @@ graph TB
 
 The synthetic probe system provides continuous validation of system health and functionality:
 
-**Location**: `/Users/bogdan/work/leanvibe-ai/leanvibe-backend/deploy/synthetic_probes.sh`
+**Location**: `leanvibe-backend/deploy/synthetic_probes.sh`
 
 ### Probe Categories
 
@@ -146,7 +146,7 @@ Critical Mode:
 
 ### SLA-Driven Performance Monitoring
 
-**Location**: `/Users/bogdan/work/leanvibe-ai/leanvibe-backend/budgets/performance_sla.json`
+**Location**: `leanvibe-backend/budgets/performance_sla.json`
 
 ### Performance Budgets by Component
 
@@ -213,7 +213,7 @@ Storage:
 
 ### Performance Regression Detection
 
-**Location**: `/Users/bogdan/work/leanvibe-ai/leanvibe-backend/tools/perf_regression.py`
+**Location**: `leanvibe-backend/tools/perf_regression.py`
 
 ```python
 # Automated performance regression detection
@@ -246,7 +246,7 @@ python tools/perf_regression.py --baseline=main
 
 ### Autonomous Quality Enforcement
 
-**Location**: `/Users/bogdan/work/leanvibe-ai/leanvibe-backend/tools/quality_ratchet.py`
+**Location**: `leanvibe-backend/tools/quality_ratchet.py`
 
 The quality ratchet system ensures metrics only improve over time - never regress.
 
@@ -329,7 +329,7 @@ Example Quality Report:
 
 ### Multi-Channel Alert Architecture
 
-**Location**: `/Users/bogdan/work/leanvibe-ai/leanvibe-backend/monitoring/alerts.py`
+**Location**: `leanvibe-backend/monitoring/alerts.py`
 
 ### Alert Conditions and Thresholds
 
@@ -454,7 +454,7 @@ python monitoring/alerts.py --test-resolution
 
 The health dashboard provides a comprehensive view of system status and metrics:
 
-**Location**: `/Users/bogdan/work/leanvibe-ai/leanvibe-backend/monitoring/dashboard.html`
+**Location**: `leanvibe-backend/monitoring/dashboard.html`
 
 ### Dashboard Components
 
@@ -521,7 +521,7 @@ Recent Incidents:
 
 ```bash
 # Development access
-http://localhost:8000/monitoring/dashboard
+http://localhost:8765/monitoring/dashboard
 
 # Production access (authenticated)
 https://leanvibe.ai/monitoring/dashboard
