@@ -452,7 +452,7 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8765)))
 '''
         
         return main_code
@@ -479,7 +479,7 @@ class Settings(BaseSettings):
     
     # API
     api_host: str = "0.0.0.0"
-    api_port: int = 8000
+    api_port: int = 8765
     debug: bool = False
     
     # CORS
@@ -522,9 +522,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 8000
+EXPOSE 8765
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8765"]
 '''
         
         return dockerfile

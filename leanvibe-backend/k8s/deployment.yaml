@@ -38,7 +38,7 @@ spec:
         tier: backend
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8000"
+        prometheus.io/port: "8765"
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: leanvibe-backend

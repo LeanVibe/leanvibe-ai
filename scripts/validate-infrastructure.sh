@@ -399,18 +399,18 @@ validate_health_endpoints() {
     echo -e "\n${BLUE}🏥 Validating Health Endpoints${NC}"
     
     # Check if backend is running locally
-    if curl -s http://localhost:8000/health >/dev/null 2>&1; then
+    if curl -s http://localhost:8765/health >/dev/null 2>&1; then
         log_result "Basic Health Endpoint" "PASS"
         
         # Check detailed health endpoint
-        if curl -s http://localhost:8000/production/health/detailed >/dev/null 2>&1; then
+        if curl -s http://localhost:8765/production/health/detailed >/dev/null 2>&1; then
             log_result "Detailed Health Endpoint" "PASS"
         else
             log_result "Detailed Health Endpoint" "WARN" "Endpoint not accessible"
         fi
         
         # Check metrics endpoint
-        if curl -s http://localhost:8000/production/metrics >/dev/null 2>&1; then
+        if curl -s http://localhost:8765/production/metrics >/dev/null 2>&1; then
             log_result "Metrics Endpoint" "PASS"
         else
             log_result "Metrics Endpoint" "WARN" "Endpoint not accessible"

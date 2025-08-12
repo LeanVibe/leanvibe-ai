@@ -136,13 +136,13 @@ async def get_sessions():
 
 if __name__ == "__main__":
     print("🌟 LeanVibe Test Server for iOS Integration")
-    print("🔗 Starting server at http://localhost:8000")
+    print("🔗 Starting server at http://localhost:8765")
     print("📱 iOS app can connect to this server for testing")
     
     uvicorn.run(
         app, 
         host="0.0.0.0", 
-        port=8000, 
+        port=8765, 
         log_level="info",
         access_log=True
     )

@@ -133,8 +133,8 @@ leanvibe-frontend/
 ## API Integration
 
 ### Backend Connectivity
-- **Base URL**: `http://localhost:8000` (configurable)
-- **WebSocket**: `ws://localhost:8000/ws` for real-time updates
+- **Base URL**: `http://localhost:8765` (configurable)
+- **WebSocket**: `ws://localhost:8765/ws` for real-time updates
 - **Authentication**: JWT Bearer tokens
 - **Error handling**: Comprehensive error recovery
 - **Type safety**: Full TypeScript coverage
@@ -185,8 +185,8 @@ leanvibe-frontend/
 ```bash
 # Development
 NODE_ENV=development
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
+NEXT_PUBLIC_API_URL=http://localhost:8765
+NEXT_PUBLIC_WS_URL=ws://localhost:8765/ws
 
 # Production (example)
 NODE_ENV=production

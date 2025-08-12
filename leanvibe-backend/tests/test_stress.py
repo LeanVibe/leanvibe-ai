@@ -18,7 +18,7 @@ class TestBasicStress:
     @pytest.mark.asyncio
     async def test_concurrent_api_requests(self):
         """Test that API handles 10 concurrent users without crashing"""
-        base_url = "http://localhost:8000"
+        base_url = "http://localhost:8765"
         
         # Check if server is running
         try:
@@ -122,12 +122,12 @@ class TestBasicStress:
         import websockets
         import json
         
-        ws_url = "ws://localhost:8000/ws/test-client"
+        ws_url = "ws://localhost:8765/ws/test-client"
         
         # Skip if server not running
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get("http://localhost:8000/health")
+                response = await client.get("http://localhost:8765/health")
                 if response.status_code != 200:
                     pytest.skip("Server not running")
         except:

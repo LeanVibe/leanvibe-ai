@@ -15,7 +15,7 @@ scrape_configs:
   # LeanVibe Backend Application
   - job_name: 'leanvibe-backend'
     static_configs:
-      - targets: ['leanvibe-backend:8000']
+      - targets: ['leanvibe-backend:8765']
     metrics_path: '/production/metrics'
     scrape_interval: 30s
     scrape_timeout: 10s
@@ -28,7 +28,7 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: leanvibe-backend:8000
+        replacement: leanvibe-backend:8765
 
   # PostgreSQL Database Metrics
   - job_name: 'postgres'

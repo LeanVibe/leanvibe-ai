@@ -173,14 +173,14 @@ RUN useradd --create-home --shell /bin/bash app \\
 USER app
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8765
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \\
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:8765/health || exit 1
 
 # Start application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]'''
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8765"]'''
         
         # Frontend Dockerfile
         configs["frontend/Dockerfile"] = '''FROM node:18-alpine AS builder
@@ -240,7 +240,7 @@ CMD ["nginx", "-g", "daemon off;"]'''
     
     # API proxy
     location /api/ {
-        proxy_pass http://backend:8000/;
+        proxy_pass http://backend:8765/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -264,7 +264,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8765:8765"
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/mvp
       - SECRET_KEY=your-secret-key-here
@@ -273,7 +273,7 @@ services:
       - postgres
     volumes:
       - ./backend:/app
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8765", "--reload"]
 
   frontend:
     build:
@@ -392,7 +392,7 @@ spec:
       - name: backend
         image: mvp-backend:latest
         ports:
-        - containerPort: 8000
+        - containerPort: 8765
         env:
         - name: DATABASE_URL
           valueFrom:
@@ -407,13 +407,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 8000
+            port: 8765
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health
-            port: 8000
+            port: 8765
           initialDelaySeconds: 5
           periodSeconds: 5
         resources:
@@ -475,8 +475,8 @@ spec:
   selector:
     app: backend
   ports:
-  - port: 8000
-    targetPort: 8000
+  - port: 8765
+    targetPort: 8765
   type: ClusterIP
 ---
 apiVersion: v1
@@ -517,7 +517,7 @@ spec:
           service:
             name: backend-service
             port:
-              number: 8000
+              number: 8765
       - path: /
         pathType: Prefix
         backend:
@@ -646,7 +646,7 @@ API_PORT=8000
 DEBUG=false
 
 # Frontend
-REACT_APP_API_URL=http://localhost:8000
+REACT_APP_API_URL=http://localhost:8765
 
 # Redis (optional)
 REDIS_URL=redis://localhost:6379
@@ -689,7 +689,7 @@ echo "Starting local development environment..."
 docker-compose up --build -d
 
 echo "Services starting..."
-echo "Backend: http://localhost:8000"
+echo "Backend: http://localhost:8765"
 echo "Frontend: http://localhost:3000"
 echo "Database: localhost:5432"
 
@@ -698,7 +698,7 @@ echo "Waiting for services to be ready..."
 sleep 10
 
 # Check backend health
-curl -f http://localhost:8000/health || echo "Backend not ready yet"
+curl -f http://localhost:8765/health || echo "Backend not ready yet"
 
 # Check frontend health
 curl -f http://localhost:3000/health || echo "Frontend not ready yet"
@@ -772,8 +772,8 @@ The application consists of:
 
 # Access the application
 # Frontend: http://localhost:3000
-# Backend API: http://localhost:8000
-# API Documentation: http://localhost:8000/docs
+# Backend API: http://localhost:8765
+# API Documentation: http://localhost:8765/docs
 ```
 
 ### Individual Services

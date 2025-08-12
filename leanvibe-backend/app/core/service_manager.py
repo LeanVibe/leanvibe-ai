@@ -168,7 +168,8 @@ class ServiceManager:
                 
             elif service_name == 'vector':
                 from ..services.vector_store_service import VectorStoreService
-                service = VectorStoreService(use_http=True, host="localhost", port=8000)
+                # ChromaDB default HTTP port is 8001
+                service = VectorStoreService(use_http=True, host="localhost", port=8001)
                 result = await service.initialize()
                 if result:
                     self.services['vector'] = service

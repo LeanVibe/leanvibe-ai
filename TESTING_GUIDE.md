@@ -579,7 +579,7 @@ class TestPerformance:
     @pytest.mark.performance
     def test_api_response_times(self):
         """Test API endpoints meet response time requirements."""
-        base_url = "http://localhost:8000"
+        base_url = "http://localhost:8765"
         headers = {"Authorization": "Bearer test-api-key"}
         
         endpoints = [
@@ -624,7 +624,7 @@ class TestPerformance:
     @pytest.mark.performance
     async def test_concurrent_load(self):
         """Test system behavior under concurrent load."""
-        base_url = "http://localhost:8000"
+        base_url = "http://localhost:8765"
         headers = {"Authorization": "Bearer test-api-key"}
         
         async def make_request(session, task_id):

@@ -132,7 +132,7 @@ class DocumentationGenerator:
                 "description": "Staging Environment"
             },
             {
-                "url": "http://localhost:8000",
+                "url": "http://localhost:8765",
                 "description": "Development Server"
             }
         ]
@@ -180,7 +180,7 @@ class DocumentationGenerator:
             "",
             "- **Production:** `https://api.leanvibe.ai/v1`",
             "- **Staging:** `https://staging-api.leanvibe.ai/v1`",
-            "- **Development:** `http://localhost:8000`",
+            "- **Development:** `http://localhost:8765`",
             "",
             "## Rate Limits",
             "",

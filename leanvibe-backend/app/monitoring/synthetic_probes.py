@@ -169,7 +169,7 @@ class BaseSyntheticProbe:
 class HealthProbe(BaseSyntheticProbe):
     """Health probe validates /health endpoint (<1s SLA)"""
     
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8765"):
         super().__init__(
             name="health_probe",
             sla_budget=SLABudget(
@@ -216,7 +216,7 @@ class HealthProbe(BaseSyntheticProbe):
 class MetricsProbe(BaseSyntheticProbe):
     """Metrics probe validates /monitoring/health endpoint (<2s SLA)"""
     
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8765"):
         super().__init__(
             name="metrics_probe", 
             sla_budget=SLABudget(
@@ -256,7 +256,7 @@ class MetricsProbe(BaseSyntheticProbe):
 class WebSocketProbe(BaseSyntheticProbe):
     """WebSocket probe validates WebSocket handshake (<5s SLA)"""
     
-    def __init__(self, base_url: str = "ws://localhost:8000"):
+    def __init__(self, base_url: str = "ws://localhost:8765"):
         super().__init__(
             name="websocket_probe",
             sla_budget=SLABudget(
@@ -310,7 +310,7 @@ class WebSocketProbe(BaseSyntheticProbe):
 class APIProbe(BaseSyntheticProbe):
     """API probe validates core API endpoints (<3s each)"""
     
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8765"):
         super().__init__(
             name="api_probe",
             sla_budget=SLABudget(
@@ -392,7 +392,7 @@ class APIProbe(BaseSyntheticProbe):
 class SyntheticProbeRunner:
     """Orchestrates execution of all synthetic probes"""
     
-    def __init__(self, base_url: str = "http://localhost:8000"):
+    def __init__(self, base_url: str = "http://localhost:8765"):
         self.base_url = base_url
         self.websocket_url = base_url.replace("http://", "ws://")
         

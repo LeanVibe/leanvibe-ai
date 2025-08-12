@@ -260,9 +260,9 @@ class TenantMiddleware:
 
 ```bash
 # Test different tenant detection methods
-curl -H "X-Tenant-ID: test-tenant-123" http://localhost:8000/api/v1/projects
-curl -H "Host: acme.leanvibe.com" http://localhost:8000/api/v1/projects
-curl -H "Authorization: Bearer jwt-with-tenant-claim" http://localhost:8000/api/v1/projects
+curl -H "X-Tenant-ID: test-tenant-123" http://localhost:8765/api/v1/projects
+curl -H "Host: acme.leanvibe.com" http://localhost:8765/api/v1/projects
+curl -H "Authorization: Bearer jwt-with-tenant-claim" http://localhost:8765/api/v1/projects
 
 # Validate implementation
 ./tutorials/validate-step.sh 1.2
@@ -435,31 +435,31 @@ async def get_project(
 
 ```bash
 # Create two different tenants
-TENANT_A=$(curl -X POST http://localhost:8000/tenants \
+TENANT_A=$(curl -X POST http://localhost:8765/tenants \
   -H "Content-Type: application/json" \
   -d '{"organization_name": "Acme Corp", "subdomain": "acme"}' | jq -r '.id')
 
-TENANT_B=$(curl -X POST http://localhost:8000/tenants \
+TENANT_B=$(curl -X POST http://localhost:8765/tenants \
   -H "Content-Type: application/json" \
   -d '{"organization_name": "TechCorp", "subdomain": "tech"}' | jq -r '.id')
 
 # Create projects for each tenant
-curl -X POST http://localhost:8000/api/v1/projects \
+curl -X POST http://localhost:8765/api/v1/projects \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: $TENANT_A" \
   -d '{"name": "Acme Project", "description": "Secret Acme project"}'
 
-curl -X POST http://localhost:8000/api/v1/projects \
+curl -X POST http://localhost:8765/api/v1/projects \
   -H "Content-Type: application/json" \
   -H "X-Tenant-ID: $TENANT_B" \
   -d '{"name": "Tech Project", "description": "Secret Tech project"}'
 
 # Test tenant isolation
 echo "Tenant A projects:"
-curl -H "X-Tenant-ID: $TENANT_A" http://localhost:8000/api/v1/projects
+curl -H "X-Tenant-ID: $TENANT_A" http://localhost:8765/api/v1/projects
 
 echo "Tenant B projects:"
-curl -H "X-Tenant-ID: $TENANT_B" http://localhost:8000/api/v1/projects
+curl -H "X-Tenant-ID: $TENANT_B" http://localhost:8765/api/v1/projects
 
 # Validate isolation
 ./tutorials/validate-step.sh 1.3
@@ -1223,7 +1223,7 @@ class AdvancedBillingSystem:
 ./tutorials/setup-billing.sh --tenant acme-corp --plan professional
 
 # Record various usage types
-curl -X POST http://localhost:8000/api/v1/billing/usage \
+curl -X POST http://localhost:8765/api/v1/billing/usage \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1236,7 +1236,7 @@ curl -X POST http://localhost:8000/api/v1/billing/usage \
 ./tutorials/test-overage.sh
 
 # Check billing analytics
-curl http://localhost:8000/api/v1/billing/analytics/usage \
+curl http://localhost:8765/api/v1/billing/analytics/usage \
   -H "Authorization: Bearer {token}"
 
 # Validate billing system
@@ -1688,7 +1688,7 @@ class L3AutonomousAgent:
 ./tutorials/start-tutorial.sh ai-l3-agent
 
 # Create development task for AI agent
-curl -X POST http://localhost:8000/api/v1/tasks \
+curl -X POST http://localhost:8765/api/v1/tasks \
   -H "Authorization: Bearer {token}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1715,7 +1715,7 @@ curl -X POST http://localhost:8000/api/v1/tasks \
 # 🎉 [100%] Task completed successfully
 
 # Review generated code
-curl http://localhost:8000/api/v1/tasks/{task_id}/code
+curl http://localhost:8765/api/v1/tasks/{task_id}/code
 
 # Validate AI implementation
 ./tutorials/validate-step.sh 6.1
@@ -2133,7 +2133,7 @@ docker-compose -f tutorials/docker-compose.tutorial.yml up -d
 
 echo "✅ Tutorial environment ready!"
 echo "📚 Access tutorials at: http://localhost:3000"
-echo "🔧 API available at: http://localhost:8000"
+echo "🔧 API available at: http://localhost:8765"
 echo "📊 Monitoring at: http://localhost:9090"
 ```
 

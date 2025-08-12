@@ -262,7 +262,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Backend not starting?**
 ```bash
 cd leanvibe-backend
-lsof -ti:8000 | xargs kill -9  # Kill existing processes
+lsof -ti:8765 | xargs kill -9  # Kill existing processes
 uv sync                        # Sync dependencies
 ./start.sh                     # Restart
 ```

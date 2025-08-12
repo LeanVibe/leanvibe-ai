@@ -17,7 +17,7 @@ metadata:
     service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "https"
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:region:account-id:certificate/cert-id"
     prometheus.io/scrape: "true"
-    prometheus.io/port: "8000"
+    prometheus.io/port: "8765"
     prometheus.io/path: "/metrics"
 spec:
   type: LoadBalancer
@@ -59,7 +59,7 @@ spec:
   clusterIP: None
   ports:
   - name: http
-    port: 8000
+    port: 8765
     targetPort: http
     protocol: TCP
   selector:
@@ -228,7 +228,7 @@ metadata:
   annotations:
     description: "Internal service for metrics collection"
     prometheus.io/scrape: "true"
-    prometheus.io/port: "8000"
+    prometheus.io/port: "8765"
     prometheus.io/path: "/metrics"
 spec:
   type: ClusterIP

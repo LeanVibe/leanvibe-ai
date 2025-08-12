@@ -69,7 +69,7 @@ class VectorStoreService:
                  db_path: str = ".leanvibe_cache/chroma_db",
                  use_http: bool = False,
                  host: str = "localhost", 
-                 port: int = 8000):
+                 port: int = 8001):
         self.db_path = Path(db_path)
         self.use_http = use_http
         self.host = host

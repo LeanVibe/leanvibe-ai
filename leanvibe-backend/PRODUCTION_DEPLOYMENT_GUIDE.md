@@ -216,7 +216,7 @@ spec:
           name: leanvibe-production
     ports:
     - protocol: TCP
-      port: 8000
+      port: 8765
   egress:
   - to:
     - namespaceSelector:
@@ -387,7 +387,7 @@ USER leanvibe
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
+  CMD curl -f http://localhost:8765/health || exit 1
 
 # Run application
 CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
@@ -1200,7 +1200,7 @@ kubectl rollout status deployment/${DEPLOYMENT}-green -n $NAMESPACE --timeout=60
 # Run health checks on green deployment
 echo "Running health checks on green deployment..."
 GREEN_POD=$(kubectl get pods -n $NAMESPACE -l app=${DEPLOYMENT}-green -o jsonpath='{.items[0].metadata.name}')
-kubectl port-forward $GREEN_POD 8080:8000 -n $NAMESPACE &
+kubectl port-forward $GREEN_POD 8080:8765 -n $NAMESPACE &
 PORT_FORWARD_PID=$!
 
 sleep 5

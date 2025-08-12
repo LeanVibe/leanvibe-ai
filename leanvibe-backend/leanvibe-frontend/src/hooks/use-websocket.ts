@@ -22,7 +22,7 @@ interface WebSocketState {
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
   const {
-    url = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000/ws',
+    url = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8765/ws',
     onMessage,
     onPipelineUpdate,
     onNotification,

@@ -150,8 +150,8 @@ async def test_containerization_readiness():
                 "COPY requirements.txt .",
                 "RUN pip install -r requirements.txt", 
                 "COPY . .",
-                "EXPOSE 8000",
-                'CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]'
+                "EXPOSE 8765",
+                'CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8765"]'
             ]
             
             print(f"   📋 Docker requirements identified: {len(docker_requirements)} steps")

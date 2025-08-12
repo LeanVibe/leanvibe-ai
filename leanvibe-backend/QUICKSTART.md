@@ -54,13 +54,13 @@ health
 # Expected: ✅ All services ready, enterprise features enabled
 
 # Access your Enterprise SaaS Platform
-echo "🏢 Enterprise Admin Dashboard: http://localhost:8000/admin"
-echo "📊 Billing Dashboard: http://localhost:8000/billing"
-echo "👥 Multi-Tenant Management: http://localhost:8000/tenants"
-echo "🔐 Authentication Setup: http://localhost:8000/auth/sso"
+echo "🏢 Enterprise Admin Dashboard: http://localhost:8765/admin"
+echo "📊 Billing Dashboard: http://localhost:8765/billing"
+echo "👥 Multi-Tenant Management: http://localhost:8765/tenants"
+echo "🔐 Authentication Setup: http://localhost:8765/auth/sso"
 
 # Quick enterprise validation
-curl http://localhost:8000/health/enterprise
+curl http://localhost:8765/health/enterprise
 # Expected: {"status": "healthy", "enterprise_ready": true, "tenants": 3}
 ```
 
@@ -71,11 +71,11 @@ curl http://localhost:8000/health/enterprise
 ### Multi-Tenant Architecture in Action
 ```bash
 # View your pre-configured enterprise tenants
-curl http://localhost:8000/api/v1/tenants | jq '.'
+curl http://localhost:8765/api/v1/tenants | jq '.'
 # Shows: Acme Corp, TechStart Inc, Global Enterprises
 
 # Create a new enterprise tenant
-curl -X POST http://localhost:8000/api/v1/tenants \
+curl -X POST http://localhost:8765/api/v1/tenants \
   -H "Content-Type: application/json" \
   -d '{
     "organization_name": "Your Enterprise Corp",
@@ -85,13 +85,13 @@ curl -X POST http://localhost:8000/api/v1/tenants \
   }' | jq '.'
 
 # View tenant isolation in action
-curl "http://localhost:8000/api/v1/tenants/{tenant_id}/resources" | jq '.'
+curl "http://localhost:8765/api/v1/tenants/{tenant_id}/resources" | jq '.'
 ```
 
 ### Enterprise Authentication Ready
 ```bash
 # Check SSO providers configuration
-curl http://localhost:8000/api/v1/auth/sso/providers | jq '.'
+curl http://localhost:8765/api/v1/auth/sso/providers | jq '.'
 # Shows: Google, Microsoft, Okta, SAML ready for configuration
 
 # View MFA settings
@@ -110,21 +110,21 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 ### Sophisticated Billing System
 ```bash
 # View subscription tiers and pricing
-curl http://localhost:8000/api/v1/billing/plans | jq '.'
+curl http://localhost:8765/api/v1/billing/plans | jq '.'
 # Shows: Developer ($50), Team ($200), Enterprise ($800)
 
 # Check real-time usage tracking
-curl http://localhost:8000/api/v1/billing/usage/current | jq '.'
+curl http://localhost:8765/api/v1/billing/usage/current | jq '.'
 
 # View enterprise billing dashboard
-curl http://localhost:8000/api/v1/billing/analytics/mrr | jq '.'
+curl http://localhost:8765/api/v1/billing/analytics/mrr | jq '.'
 # Shows Monthly Recurring Revenue analytics
 ```
 
 ### L3 AI Development Engine
 ```bash
 # Test the autonomous coding agent
-curl -X POST http://localhost:8000/api/v1/tasks/create \
+curl -X POST http://localhost:8765/api/v1/tasks/create \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Create user management API endpoint",
@@ -134,7 +134,7 @@ curl -X POST http://localhost:8000/api/v1/tasks/create \
   }' | jq '.'
 
 # Check AI agent progress
-curl http://localhost:8000/api/v1/tasks/{task_id}/status | jq '.'
+curl http://localhost:8765/api/v1/tasks/{task_id}/status | jq '.'
 # Watch the AI write, test, and deploy code autonomously
 ```
 
@@ -296,20 +296,20 @@ qd
 # Shows: tenant growth, MRR trends, feature usage, AI productivity
 
 # Enterprise health monitoring
-curl http://localhost:8000/health/enterprise | jq '.'
+curl http://localhost:8765/health/enterprise | jq '.'
 # Shows: multi-tenant status, billing health, AI agent performance
 ```
 
 ### Multi-Tenant Operations Dashboard
 ```bash
 # View tenant analytics
-curl http://localhost:8000/api/v1/analytics/tenants | jq '.'
+curl http://localhost:8765/api/v1/analytics/tenants | jq '.'
 
 # Monitor billing performance
-curl http://localhost:8000/api/v1/billing/analytics/dashboard | jq '.'
+curl http://localhost:8765/api/v1/billing/analytics/dashboard | jq '.'
 
 # Check AI development productivity
-curl http://localhost:8000/api/v1/tasks/analytics/productivity | jq '.'
+curl http://localhost:8765/api/v1/tasks/analytics/productivity | jq '.'
 ```
 
 ### Enterprise Quality & Compliance Status
@@ -332,7 +332,7 @@ qr
 ### Enterprise Tenant Management
 ```bash
 # Create enterprise tenant with custom configuration
-curl -X POST http://localhost:8000/api/v1/tenants/enterprise \
+curl -X POST http://localhost:8765/api/v1/tenants/enterprise \
   -H "Content-Type: application/json" \
   -d '{
     "organization_name": "Fortune 500 Corp",
@@ -344,7 +344,7 @@ curl -X POST http://localhost:8000/api/v1/tenants/enterprise \
   }' | jq '.'
 
 # Configure tenant-specific SSO
-curl -X PUT http://localhost:8000/api/v1/tenants/{tenant_id}/sso \
+curl -X PUT http://localhost:8765/api/v1/tenants/{tenant_id}/sso \
   -H "Content-Type: application/json" \
   -d '{
     "provider": "saml",
@@ -357,7 +357,7 @@ curl -X PUT http://localhost:8000/api/v1/tenants/{tenant_id}/sso \
 ### Enterprise Billing Operations
 ```bash
 # Setup custom enterprise pricing
-curl -X POST http://localhost:8000/api/v1/billing/enterprise-plans \
+curl -X POST http://localhost:8765/api/v1/billing/enterprise-plans \
   -H "Content-Type: application/json" \
   -d '{
     "tenant_id": "fortune-500-corp",
@@ -371,13 +371,13 @@ curl -X POST http://localhost:8000/api/v1/billing/enterprise-plans \
   }' | jq '.'
 
 # Monitor enterprise usage and billing
-curl http://localhost:8000/api/v1/billing/enterprise/{tenant_id}/usage | jq '.'
+curl http://localhost:8765/api/v1/billing/enterprise/{tenant_id}/usage | jq '.'
 ```
 
 ### L3 AI Agent Enterprise Features
 ```bash
 # Deploy enterprise AI coding agent with custom model
-curl -X POST http://localhost:8000/api/v1/ai/enterprise/deploy \
+curl -X POST http://localhost:8765/api/v1/ai/enterprise/deploy \
   -H "Content-Type: application/json" \
   -d '{
     "tenant_id": "fortune-500-corp",
@@ -389,7 +389,7 @@ curl -X POST http://localhost:8000/api/v1/ai/enterprise/deploy \
   }' | jq '.'
 
 # Monitor enterprise AI productivity
-curl http://localhost:8000/api/v1/ai/analytics/enterprise/{tenant_id} | jq '.'
+curl http://localhost:8765/api/v1/ai/analytics/enterprise/{tenant_id} | jq '.'
 ```
 
 ### Contract Evolution

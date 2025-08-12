@@ -47,7 +47,7 @@ echo "========================================"
 
 # 1. Quick health assessment
 echo "📊 Checking system health..."
-HEALTH_STATUS=$(curl -s --connect-timeout 5 http://localhost:8000/health 2>/dev/null || echo "UNREACHABLE")
+HEALTH_STATUS=$(curl -s --connect-timeout 5 http://localhost:8765/health 2>/dev/null || echo "UNREACHABLE")
 
 if [[ "$HEALTH_STATUS" == "UNREACHABLE" ]]; then
     echo "❌ System completely unreachable - initiating emergency rollback"
@@ -65,7 +65,7 @@ python scripts/validate_neo4j.py --emergency || echo "⚠️ Database issues det
 
 # 4. AI service check
 echo "🧠 Checking AI service..."
-curl -s http://localhost:8000/health/ai | grep -q "healthy" || echo "⚠️ AI service issues"
+curl -s http://localhost:8765/health/ai | grep -q "healthy" || echo "⚠️ AI service issues"
 
 # 5. WebSocket connectivity
 echo "🔗 Checking WebSocket..."
@@ -184,7 +184,7 @@ echo "============================="
 python -c "import gc; print(f'Collected: {gc.collect()} objects')"
 
 # 2. Clear AI model caches
-curl -X POST http://localhost:8000/admin/clear-model-cache
+curl -X POST http://localhost:8765/admin/clear-model-cache
 
 # 3. Restart if memory usage critical
 MEMORY_PERCENT=$(python -c "import psutil; print(psutil.virtual_memory().percent)")
@@ -444,7 +444,7 @@ leanvibe config validate-auth
 
 # 4. Check CLI version compatibility
 leanvibe --version
-curl -s http://localhost:8000/version
+curl -s http://localhost:8765/version
 ```
 
 **Automated Recovery:**
@@ -545,7 +545,7 @@ echo "Validating model availability..."
 python scripts/setup_real_inference.py --validate-only
 
 # 4. Test AI service after recovery
-curl -X POST http://localhost:8000/api/v1/ai/chat \
+curl -X POST http://localhost:8765/api/v1/ai/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "test", "session_id": "recovery_test"}' \
   --timeout 30
@@ -581,7 +581,7 @@ export OMP_NUM_THREADS=4
 
 # 3. Restart AI service with optimizations
 echo "Restarting AI service..."
-curl -X POST http://localhost:8000/admin/restart-ai-service
+curl -X POST http://localhost:8765/admin/restart-ai-service
 
 # 4. Benchmark performance
 echo "Running performance benchmark..."
@@ -680,7 +680,7 @@ case $ISSUE_TYPE in
     "performance")
         echo "🚀 Performance Recovery Procedures"
         python tools/perf_regression.py --auto-fix
-        curl -X POST http://localhost:8000/admin/optimize-performance
+        curl -X POST http://localhost:8765/admin/optimize-performance
         ;;
         
     "connectivity")
@@ -697,7 +697,7 @@ case $ISSUE_TYPE in
         
     "ai")
         echo "🧠 AI Service Recovery Procedures"
-        curl -X POST http://localhost:8000/admin/restart-ai-service
+        curl -X POST http://localhost:8765/admin/restart-ai-service
         python scripts/validate_ai_service.py --comprehensive
         ;;
         
@@ -729,7 +729,7 @@ recover_backend() {
     echo "🔧 Backend Recovery"
     
     # 1. Health check
-    if curl -f -s http://localhost:8000/health >/dev/null; then
+    if curl -f -s http://localhost:8765/health >/dev/null; then
         echo "✅ Backend responding"
     else
         echo "⚠️ Backend unresponsive - restarting"
@@ -739,7 +739,7 @@ recover_backend() {
         
         # Wait for startup
         for i in {1..30}; do
-            if curl -f -s http://localhost:8000/health >/dev/null; then
+            if curl -f -s http://localhost:8765/health >/dev/null; then
                 break
             fi
             sleep 2
@@ -747,7 +747,7 @@ recover_backend() {
     fi
     
     # 2. Clear caches
-    curl -X POST http://localhost:8000/admin/clear-cache >/dev/null 2>&1
+    curl -X POST http://localhost:8765/admin/clear-cache >/dev/null 2>&1
     
     # 3. Validate services
     python scripts/validate_all_dependencies.py --essential-only
@@ -972,7 +972,7 @@ Quarterly Improvement Planning:
 
 ```yaml
 ✅ System Health:
-  [ ] curl http://localhost:8000/health returns 200
+  [ ] curl http://localhost:8765/health returns 200
   [ ] All core services respond to health checks
   [ ] Database connectivity confirmed
   [ ] AI service responds to basic prompts
@@ -1032,7 +1032,7 @@ Quarterly Improvement Planning:
 
 ```bash
 # System health and status
-curl http://localhost:8000/health/complete | jq '.'
+curl http://localhost:8765/health/complete | jq '.'
 ./deploy/synthetic_probes.sh production --comprehensive
 python tools/quality_ratchet.py --report
 
@@ -1046,7 +1046,7 @@ python scripts/validate_neo4j.py --comprehensive
 python scripts/analyze_db_performance.py --slow-queries
 
 # AI service diagnostics
-curl -X POST http://localhost:8000/api/v1/ai/chat \
+curl -X POST http://localhost:8765/api/v1/ai/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "diagnostic test", "session_id": "diag"}' \
   --timeout 10
@@ -1130,10 +1130,10 @@ CLI Configuration:
 
 ```yaml
 Backend Services:
-  - Main API: http://localhost:8000
-  - Health Check: http://localhost:8000/health
-  - WebSocket: ws://localhost:8000/ws
-  - Admin API: http://localhost:8000/admin
+  - Main API: http://localhost:8765
+  - Health Check: http://localhost:8765/health
+  - WebSocket: ws://localhost:8765/ws
+  - Admin API: http://localhost:8765/admin
 
 Database Services:
   - Neo4j HTTP: http://localhost:7474
@@ -1141,9 +1141,9 @@ Database Services:
   - Redis: redis://localhost:6379
 
 Development Tools:
-  - Monitoring Dashboard: http://localhost:8000/monitoring/dashboard
-  - API Documentation: http://localhost:8000/docs
-  - Metrics Endpoint: http://localhost:8000/metrics
+  - Monitoring Dashboard: http://localhost:8765/monitoring/dashboard
+  - API Documentation: http://localhost:8765/docs
+  - Metrics Endpoint: http://localhost:8765/metrics
 ```
 
 ---

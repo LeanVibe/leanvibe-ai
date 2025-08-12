@@ -50,7 +50,7 @@ LeanVibe provides production-ready integrations with the most common enterprise 
      "app_name": "LeanVibe Enterprise",
      "sign_in_redirect_uris": [
        "https://your-leanvibe-domain.com/auth/okta/callback",
-       "http://localhost:8000/auth/okta/callback"
+       "http://localhost:8765/auth/okta/callback"
      ],
      "sign_out_redirect_uris": [
        "https://your-leanvibe-domain.com/auth/logout"

@@ -421,7 +421,7 @@ data:
     - job_name: 'stripe-api'
       metrics_path: /external/stripe/metrics
       static_configs:
-      - targets: ['leanvibe-backend:8000']
+      - targets: ['leanvibe-backend:8765']
       scrape_interval: 60s
     
     - job_name: 'aws-resources'

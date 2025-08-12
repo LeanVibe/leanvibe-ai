@@ -38,7 +38,7 @@ pip install fastapi uvicorn pydantic aiofiles httpx
 python app/main.py
 ```
 
-The backend will start at `http://localhost:8000`
+The backend will start at `http://localhost:8765`
 
 ### Step 3: Test Your Setup
 
@@ -120,7 +120,7 @@ leanvibe status --detailed
 ollama list
 
 # Check if backend is running
-curl http://localhost:8000/health
+curl http://localhost:8765/health
 
 # Restart services if needed
 ollama serve &

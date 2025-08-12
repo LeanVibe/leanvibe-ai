@@ -22,7 +22,7 @@ This guide covers environment configuration for LeanVibe across development, sta
    ```bash
    cd leanvibe-backend
    # Preferred
-   python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+   python -m uvicorn app.main:app --host 0.0.0.0 --port 8765
    # Or quick script
    ./start.sh
    ```
@@ -41,7 +41,7 @@ This guide covers environment configuration for LeanVibe across development, sta
 ```bash
 LEANVIBE_ENV=development
 LEANVIBE_HOST=localhost
-LEANVIBE_PORT=8000
+LEANVIBE_PORT=8765
 LEANVIBE_MLX_STRATEGY=MOCK
 LEANVIBE_ENABLE_LOGGING=true
 ```
@@ -58,7 +58,7 @@ LEANVIBE_ENABLE_LOGGING=true
 ```bash
 LEANVIBE_ENV=staging
 LEANVIBE_HOST=0.0.0.0
-LEANVIBE_PORT=8000
+LEANVIBE_PORT=8765
 LEANVIBE_MLX_STRATEGY=PRAGMATIC
 LEANVIBE_SECRET_KEY=your-staging-secret
 LEANVIBE_DATABASE_URL=postgresql://...
@@ -76,7 +76,7 @@ LEANVIBE_DATABASE_URL=postgresql://...
 ```bash
 LEANVIBE_ENV=production
 LEANVIBE_HOST=0.0.0.0
-LEANVIBE_PORT=8000
+LEANVIBE_PORT=8765
 LEANVIBE_MLX_STRATEGY=PRODUCTION
 LEANVIBE_SECRET_KEY=your-production-secret
 LEANVIBE_DATABASE_URL=postgresql://...
@@ -180,10 +180,10 @@ RUN pip install -r requirements.txt
 # Set environment
 ENV LEANVIBE_ENV=production
 ENV LEANVIBE_HOST=0.0.0.0
-ENV LEANVIBE_PORT=8000
+ENV LEANVIBE_PORT=8765
 
 # Start server
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8765"]
 ```
 
 **Environment Variables:**

@@ -9,7 +9,7 @@ services:
       target: production
     container_name: leanvibe-backend
     ports:
-      - "8000:8000"
+      - "8765:8765"
     environment:
       # Database Configuration
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-leanvibe123}@postgres:5432/leanvibe_production
@@ -28,7 +28,7 @@ services:
       
       # Application Configuration
       - LOG_LEVEL=INFO
-      - LEANVIBE_API_PORT=8000
+      - LEANVIBE_API_PORT=8765
       - LEANVIBE_HOST=0.0.0.0
       
       # Feature Flags

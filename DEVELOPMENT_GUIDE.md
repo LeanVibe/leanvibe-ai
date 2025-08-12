@@ -46,14 +46,14 @@ cd leanvibe-ai
 ./start_leanvibe.sh
 
 # 3. Verify installation
-curl http://localhost:8000/health
+curl http://localhost:8765/health
 
 # 4. Connect iOS app
 # Open leanvibe-ios/LeanVibe.xcodeproj in Xcode and run
 ```
 
 ### What You Get Immediately
-✅ **Working Backend** - REST API with WebSocket support at http://localhost:8000/docs  
+✅ **Working Backend** - REST API with WebSocket support at http://localhost:8765/docs  
 ✅ **iOS App** - Full-featured SwiftUI app with voice commands  
 ✅ **CLI Tool** - Command-line interface with shortcuts  
 ✅ **AI Ready** - Mock AI service (real models available via MLX)
@@ -574,7 +574,7 @@ cd leanvibe-backend
 python -m uvicorn app.main:app --reload --log-level debug
 
 # Check server health
-curl http://localhost:8000/health
+curl http://localhost:8765/health
 
 # View server logs
 tail -f backend.log
@@ -594,10 +594,10 @@ xcrun simctl spawn booted log stream --predicate 'process == "LeanVibe"'
 #### WebSocket Debugging
 ```bash
 # Test WebSocket connection
-wscat -c ws://localhost:8000/ws
+wscat -c ws://localhost:8765/ws
 
 # Monitor WebSocket events
-python scripts/websocket_debug.py --url ws://localhost:8000/ws
+python scripts/websocket_debug.py --url ws://localhost:8765/ws
 ```
 
 ### Production Debugging
@@ -867,7 +867,7 @@ gc.set_debug(gc.DEBUG_LEAK)
 - [API Documentation](https://api.leanvibe.ai/docs) - Interactive API docs
 
 ### Tools and Utilities
-- [Quality Dashboard](http://localhost:8000/quality) - Development metrics
+- [Quality Dashboard](http://localhost:8765/quality) - Development metrics
 - [Coverage Report](htmlcov/index.html) - Test coverage analysis
 - [Performance Profiles](test_results/) - Performance analysis
 

@@ -1,8 +1,8 @@
 ## Repository index
 
-Generated: 2025-08-12T08:39:08.033179Z
+Generated: 2025-08-12T09:55:37.421990Z
 
-Total tracked files: 1319
+Total tracked files: 1324
 
 ### Top-level directories
 - .claude: 34
@@ -21,7 +21,7 @@ Total tracked files: 1319
 - DEPLOYMENT_GUIDE.md: 1
 - DEVELOPMENT_GUIDE.md: 1
 - docker-compose.yml: 1
-- docs: 317
+- docs: 322
 - DOCUMENTATION_TECHNICAL_DEBT_CLEANUP_REPORT.md: 1
 - ENTERPRISE_TRANSFORMATION_PLAN.md: 1
 - FINAL_CONSOLIDATION_SUCCESS_REPORT.md: 1
@@ -30,7 +30,7 @@ Total tracked files: 1319
 - install.ps1: 1
 - install.sh: 1
 - install_simple.sh: 1
-- leanvibe-backend: 552
+- leanvibe-backend: 551
 - leanvibe-cli: 58
 - leanvibe-ios: 298
 - monitoring: 2
@@ -42,7 +42,7 @@ Total tracked files: 1319
 - project-schema.yaml: 1
 - quick_validate.sh: 1
 - README.md: 1
-- scripts: 9
+- scripts: 10
 - SECURITY.md: 1
 - security_audit_report.json: 1
 - services.sh: 1
@@ -57,10 +57,10 @@ Total tracked files: 1319
 - validation_screenshots: 1
 
 ### Categories
-- docs: 450
+- docs: 453
 - code_python: 428
 - code_swift: 200
-- config: 83
+- config: 85
 - other: 42
 - image: 37
 - code_typescript: 28

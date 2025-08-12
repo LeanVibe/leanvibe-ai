@@ -926,7 +926,7 @@ def main():
     else:
         # Start the server
         import uvicorn
-        uvicorn.run(app, host="0.0.0.0", port=8000)
+        uvicorn.run(app, host="0.0.0.0", port=8765)
 
 
 async def handle_cli_query(query: str) -> str:
@@ -968,4 +968,4 @@ async def handle_cli_query(query: str) -> str:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8765)

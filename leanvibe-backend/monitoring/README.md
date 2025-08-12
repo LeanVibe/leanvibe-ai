@@ -71,14 +71,14 @@ A comprehensive observability-as-tests system for LeanVibe backend following XP 
 ### 1. Start the Backend
 ```bash
 cd /Users/bogdan/work/leanvibe-ai/leanvibe-backend
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8765
 ```
 
 ### 2. Access Monitoring
-- **Dashboard**: http://localhost:8000/monitoring/dashboard
-- **Health API**: http://localhost:8000/monitoring/health
-- **Metrics**: http://localhost:8000/monitoring/metrics
-- **Probes**: http://localhost:8000/monitoring/probes
+- **Dashboard**: http://localhost:8765/monitoring/dashboard
+- **Health API**: http://localhost:8765/monitoring/health
+- **Metrics**: http://localhost:8765/monitoring/metrics
+- **Probes**: http://localhost:8765/monitoring/probes
 
 ### 3. Test Monitoring System
 ```bash

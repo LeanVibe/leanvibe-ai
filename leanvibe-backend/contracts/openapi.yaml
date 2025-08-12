@@ -11,9 +11,9 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: http://localhost:8000
+  - url: http://localhost:8765
     description: Development server
-  - url: http://0.0.0.0:8000
+  - url: http://0.0.0.0:8765
     description: Local network server
 
 tags:

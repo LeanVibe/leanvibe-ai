@@ -746,7 +746,7 @@ python tools/operations_dashboard.py --daily
 
 ```bash
 # System Health
-curl http://localhost:8000/health/complete
+curl http://localhost:8765/health/complete
 ./deploy/synthetic_probes.sh production --comprehensive
 
 # Quality Validation  

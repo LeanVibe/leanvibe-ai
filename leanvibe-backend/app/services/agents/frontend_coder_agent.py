@@ -366,7 +366,7 @@ import Navigation from './components/Navigation.vue';
         api_service = '''import axios from 'axios';
 
 // API Configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8765';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

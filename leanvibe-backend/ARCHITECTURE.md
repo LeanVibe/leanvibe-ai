@@ -293,13 +293,13 @@ spec:
         readinessProbe:
           httpGet:
             path: /health
-            port: 8000
+            port: 8765
           initialDelaySeconds: 30
           periodSeconds: 10
         livenessProbe:
           httpGet:
             path: /health
-            port: 8000
+            port: 8765
           initialDelaySeconds: 60
           periodSeconds: 30
 ```

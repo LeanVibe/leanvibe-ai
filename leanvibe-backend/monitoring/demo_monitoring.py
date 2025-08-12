@@ -68,7 +68,7 @@ class MonitoringDemo:
         await self.demo_health_dashboard()
         
         print("\n✅ Complete monitoring system demonstration finished!")
-        print("🌐 Access the live dashboard at: http://localhost:8000/monitoring/dashboard")
+        print("🌐 Access the live dashboard at: http://localhost:8765/monitoring/dashboard")
     
     async def demo_synthetic_probes(self):
         """Demonstrate synthetic probe execution"""
@@ -77,7 +77,7 @@ class MonitoringDemo:
         
         # Note: These probes will fail when backend isn't running
         print("Running synthetic probes against LeanVibe backend...")
-        print("(Note: Backend should be running at localhost:8000 for full demo)")
+        print("(Note: Backend should be running at localhost:8765 for full demo)")
         
         start_time = time.time()
         
@@ -361,10 +361,10 @@ class MonitoringDemo:
                 print(f"  WebSocket: {ws_status.upper()}")
             
             print(f"\n🌐 Dashboard Access:")
-            print(f"  HTML Dashboard: http://localhost:8000/monitoring/dashboard")
-            print(f"  JSON API: http://localhost:8000/monitoring/dashboard/data")
-            print(f"  Metrics: http://localhost:8000/monitoring/metrics")
-            print(f"  Probe Results: http://localhost:8000/monitoring/probes")
+            print(f"  HTML Dashboard: http://localhost:8765/monitoring/dashboard")
+            print(f"  JSON API: http://localhost:8765/monitoring/dashboard/data")
+            print(f"  Metrics: http://localhost:8765/monitoring/metrics")
+            print(f"  Probe Results: http://localhost:8765/monitoring/probes")
         
         except Exception as e:
             print(f"⚠️ Dashboard demo requires backend running: {e}")

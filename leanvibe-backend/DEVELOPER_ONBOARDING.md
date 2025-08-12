@@ -61,7 +61,7 @@ cd leanvibe-backend
 ./start.sh
 
 # Verify setup
-curl http://localhost:8000/health
+curl http://localhost:8765/health
 # Expected: {"status": "healthy"}
 ```
 
@@ -151,7 +151,7 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
 #### 4. Test Your SaaS Application (5 minutes)
 ```bash
 # Test user registration
-curl -X POST http://localhost:8000/api/v1/users \
+curl -X POST http://localhost:8765/api/v1/users \
   -H "Content-Type: application/json" \
   -d '{
     "email": "developer@myapp.com",
@@ -386,7 +386,7 @@ class TenantMiddleware:
 
 ```bash
 # Create first tenant
-curl -X POST http://localhost:8000/api/v1/tenants \
+curl -X POST http://localhost:8765/api/v1/tenants \
   -H "Content-Type: application/json" \
   -d '{
     "organization_name": "Acme Corporation",
@@ -395,7 +395,7 @@ curl -X POST http://localhost:8000/api/v1/tenants \
   }'
 
 # Create second tenant
-curl -X POST http://localhost:8000/api/v1/tenants \
+curl -X POST http://localhost:8765/api/v1/tenants \
   -H "Content-Type: application/json" \
   -d '{
     "organization_name": "Tech Startup Inc",
@@ -404,7 +404,7 @@ curl -X POST http://localhost:8000/api/v1/tenants \
   }'
 
 # Test tenant isolation
-curl http://localhost:8000/api/v1/tenants/{tenant_id} \
+curl http://localhost:8765/api/v1/tenants/{tenant_id} \
   -H "X-Tenant-ID: {tenant_id}"
 ```
 
@@ -764,7 +764,7 @@ async def verify_mfa(verify_data: MFAVerifyRequest, current_user = Depends(get_c
 
 ```bash
 # Test regular login with MFA
-curl -X POST http://localhost:8000/api/v1/auth/login \
+curl -X POST http://localhost:8765/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@acme.com",
@@ -774,7 +774,7 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
   }'
 
 # Test SSO configuration
-curl -X POST http://localhost:8000/api/v1/auth/sso/providers \
+curl -X POST http://localhost:8765/api/v1/auth/sso/providers \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer {admin_token}" \
   -d '{
@@ -786,7 +786,7 @@ curl -X POST http://localhost:8000/api/v1/auth/sso/providers \
   }'
 
 # Test MFA setup
-curl -X POST http://localhost:8000/api/v1/auth/mfa/setup \
+curl -X POST http://localhost:8765/api/v1/auth/mfa/setup \
   -H "Authorization: Bearer {user_token}"
 ```
 
@@ -1181,10 +1181,10 @@ async def get_revenue_analytics(
 
 ```bash
 # Get available plans
-curl http://localhost:8000/api/v1/billing/plans
+curl http://localhost:8765/api/v1/billing/plans
 
 # Record usage
-curl -X POST http://localhost:8000/api/v1/billing/usage \
+curl -X POST http://localhost:8765/api/v1/billing/usage \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer {user_token}" \
   -d '{
@@ -1194,11 +1194,11 @@ curl -X POST http://localhost:8000/api/v1/billing/usage \
   }'
 
 # Get usage analytics
-curl "http://localhost:8000/api/v1/billing/usage/analytics?start_date=2024-01-01&end_date=2024-01-31" \
+curl "http://localhost:8765/api/v1/billing/usage/analytics?start_date=2024-01-01&end_date=2024-01-31" \
   -H "Authorization: Bearer {user_token}"
 
 # Get revenue analytics (admin only)
-curl http://localhost:8000/api/v1/billing/revenue/analytics \
+curl http://localhost:8765/api/v1/billing/revenue/analytics \
   -H "Authorization: Bearer {admin_token}"
 ```
 

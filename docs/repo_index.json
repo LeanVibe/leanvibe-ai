@@ -1,17 +1,17 @@
 {
-  "generated_at": "2025-08-12T08:39:08.033179Z",
+  "generated_at": "2025-08-12T09:55:37.421990Z",
   "repo_root": "/Users/bogdan/work/leanvibe-ai",
-  "total_files": 1319,
+  "total_files": 1324,
   "counts_by_category": {
     "code_javascript": 4,
     "code_python": 428,
     "code_swift": 200,
     "code_typescript": 28,
-    "config": 83,
+    "config": 85,
     "css": 3,
     "database": 1,
     "docker": 6,
-    "docs": 450,
+    "docs": 453,
     "html": 1,
     "image": 37,
     "lock": 2,
@@ -53,18 +53,18 @@
     "deploy": 3,
     "deploy-leanvibe.sh": 1,
     "docker-compose.yml": 1,
-    "docs": 317,
+    "docs": 322,
     "fix_backend_services.py": 1,
     "install.ps1": 1,
     "install.sh": 1,
     "install_simple.sh": 1,
-    "leanvibe-backend": 552,
+    "leanvibe-backend": 551,
     "leanvibe-cli": 58,
     "leanvibe-ios": 298,
     "monitoring": 2,
     "project-schema.yaml": 1,
     "quick_validate.sh": 1,
-    "scripts": 9,
+    "scripts": 10,
     "security_audit_report.json": 1,
     "services.sh": 1,
     "start_leanvibe.sh": 1,
@@ -252,7 +252,6 @@
       "leanvibe-backend/app/services/task_service.py",
       "leanvibe-backend/app/services/technical_debt_analyzer.py",
       "leanvibe-backend/app/services/tenant_service.py",
-      "leanvibe-backend/app/services/tenant_service_old.py",
       "leanvibe-backend/app/services/transformers_compatibility.py",
       "leanvibe-backend/app/services/transformers_phi3_service.py",
       "leanvibe-backend/app/services/tree_sitter_parsers.py",
@@ -504,6 +503,7 @@
       "scripts/encrypt_secrets.py",
       "scripts/fix_naming_inconsistency.py",
       "scripts/generate_app_icons.py",
+      "scripts/generate_repo_index.py",
       "scripts/pre_commit_quality_gate.py",
       "scripts/tech_debt_analyzer.py",
       "tests/integration/test_multi_device_sync.py",
@@ -750,6 +750,8 @@
       ".github/workflows/ci-cd.yml",
       ".github/workflows/deploy-production.yml",
       ".github/workflows/security-audit.yml",
+      "docs/CONSOLIDATION_MANIFEST.json",
+      "docs/repo_index.json",
       "leanvibe-backend/.claude/memory/context_usage.json",
       "leanvibe-backend/.claude/memory/project_state.json",
       "leanvibe-backend/.github/branch-protection-develop.json",
@@ -903,11 +905,14 @@
       "docs/01_memory_bank/06_progress.md",
       "docs/AI_AGENT_MANAGEMENT_METHODOLOGY.md",
       "docs/CLEANUP_SUMMARY.md",
+      "docs/CORE_INDEX.md",
       "docs/IMPLEMENTATION_HISTORY.md",
+      "docs/INDEX.md",
       "docs/INTEGRATION_CONSOLIDATION_PLAN.md",
       "docs/MOBILE_APP_ENHANCEMENT_PLAN.md",
       "docs/MOBILE_PLAN.md",
       "docs/PLAN.md",
+      "docs/PORTS.md",
       "docs/PRODUCTION_HARDENING_PLAN.md",
       "docs/PROMPT.md",
       "docs/STATUS_REALITY_CHECK.md",
@@ -3426,7 +3431,22 @@
             "children": null
           },
           {
+            "name": "CONSOLIDATION_MANIFEST.json",
+            "type": "file",
+            "children": null
+          },
+          {
+            "name": "CORE_INDEX.md",
+            "type": "file",
+            "children": null
+          },
+          {
             "name": "IMPLEMENTATION_HISTORY.md",
+            "type": "file",
+            "children": null
+          },
+          {
+            "name": "INDEX.md",
             "type": "file",
             "children": null
           },
@@ -3466,12 +3486,22 @@
             "children": null
           },
           {
+            "name": "PORTS.md",
+            "type": "file",
+            "children": null
+          },
+          {
             "name": "PRODUCTION_HARDENING_PLAN.md",
             "type": "file",
             "children": null
           },
           {
             "name": "PROMPT.md",
+            "type": "file",
+            "children": null
+          },
+          {
+            "name": "repo_index.json",
             "type": "file",
             "children": null
           },
@@ -4485,11 +4515,6 @@
                   },
                   {
                     "name": "tenant_service.py",
-                    "type": "file",
-                    "children": null
-                  },
-                  {
-                    "name": "tenant_service_old.py",
                     "type": "file",
                     "children": null
                   },
@@ -8976,6 +9001,11 @@
           },
           {
             "name": "generate_app_icons.py",
+            "type": "file",
+            "children": null
+          },
+          {
+            "name": "generate_repo_index.py",
             "type": "file",
             "children": null
           },

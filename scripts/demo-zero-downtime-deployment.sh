@@ -21,7 +21,7 @@ NAMESPACE="leanvibe-demo"
 SERVICE_NAME="leanvibe-backend"
 CURRENT_VERSION="v1.0.0"
 NEW_VERSION="v1.1.0"
-HEALTH_CHECK_URL="http://localhost:8000/health"
+HEALTH_CHECK_URL="http://localhost:8765/health"
 LOAD_TEST_DURATION=60
 TRAFFIC_SPLIT_STAGES=(10 25 50 75 100)
 

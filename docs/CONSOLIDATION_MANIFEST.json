@@ -1,26 +1,34 @@
 {
-  "ports_normalized_to_8000": {
+  "ports_normalized_to_8765": {
     "files_updated": [
       "leanvibe-backend/app/config/settings.py",
-      "leanvibe-backend/app/core/service_manager.py",
-      "leanvibe-backend/app/services/vector_store_service.py",
-      "CONFIGURATION.md",
-      "DEPLOYMENT_GUIDE.md",
-      "OPERATIONS_PLAYBOOK.md",
-      "MONITORING.md"
+      "leanvibe-backend/Dockerfile",
+      "leanvibe-backend/docker-compose.yml",
+      "leanvibe-backend/app/main.py",
+      "leanvibe-backend/nginx/nginx.conf",
+      "leanvibe-backend/monitoring/prometheus.yml",
+      "leanvibe-backend/k8s/service.yaml",
+      "leanvibe-backend/k8s/deployment.yaml",
+      "leanvibe-backend/README.md",
+      "leanvibe-backend/FRONTEND_IMPLEMENTATION_REPORT.md",
+      "leanvibe-backend/tests/integration/test_websocket_realtime_features.py",
+      "scripts/demo-zero-downtime-deployment.sh",
+      "scripts/validate-infrastructure.sh",
+      "README.md",
+      "DEVELOPMENT_GUIDE.md",
+      "CONFIGURATION.md"
     ],
     "remaining_references": [
-      "leanvibe-backend/test_server.py",
-      "leanvibe-backend/validate_integration.py",
-      "leanvibe-backend/tests/*",
-      "services.sh",
-      "docs/archive/**",
-      "leanvibe-backend/src/core/secure_config.py",
-      "leanvibe-backend/src/core/secrets_manager.py",
-      "leanvibe-backend/start.sh",
-      "leanvibe-ios/** (tests mention 8001 for connection storage)"
+      "leanvibe-backend/docs/**",
+      "leanvibe-backend/contracts/**",
+      "leanvibe-backend/tests/**",
+      "docs/**",
+      "docker-compose.yml",
+      "leanvibe-cli/**",
+      "scripts/**",
+      "docs/archive/**"
     ],
-    "notes": "8001 appears to have been used for ChromaDB and test scaffolding; leaving archived docs/tests for now."
+    "notes": "Backend standardized on 8765; vector store (ChromaDB) on 8001. Remaining references in archives and non-core docs will be updated incrementally."
   },
   "absolute_paths_replaced": {
     "files_updated": [

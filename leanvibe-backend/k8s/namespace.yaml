@@ -91,13 +91,13 @@ spec:
           name: ingress-nginx
     ports:
     - protocol: TCP
-      port: 8000
+      port: 8765
   # Allow inter-pod communication within namespace
   - from:
     - podSelector: {}
     ports:
     - protocol: TCP
-      port: 8000
+      port: 8765
     - protocol: TCP
       port: 7687  # Neo4j
     - protocol: TCP

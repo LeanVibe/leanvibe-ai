@@ -68,7 +68,7 @@ RUN mkdir -p /app/logs /app/data /app/.sessions && \
 USER leanvibe
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8765
 
 # Health check using production health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
@@ -77,7 +77,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Production command with optimized settings
 CMD ["uvicorn", "app.main:app", \
      "--host", "0.0.0.0", \
-     "--port", "8000", \
+     "--port", "8765", \
      "--workers", "4", \
      "--loop", "uvloop", \
      "--http", "httptools", \
@@ -100,6 +100,6 @@ USER leanvibe
 # Development command with hot reload
 CMD ["uvicorn", "app.main:app", \
      "--host", "0.0.0.0", \
-     "--port", "8000", \
+     "--port", "8765", \
      "--reload", \
      "--reload-dir", "/app/app"]

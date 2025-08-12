@@ -107,7 +107,7 @@ pp              # Push with PR verification
 qd              # View metrics and trends
 
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8765/health
 # {"status": "healthy", "autonomous_ready": true}
 ```
 

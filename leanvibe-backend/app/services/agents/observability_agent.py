@@ -178,7 +178,7 @@ scrape_configs:
 
   - job_name: 'backend'
     static_configs:
-      - targets: ['backend:8000']
+      - targets: ['backend:8765']
     metrics_path: '/metrics'
     scrape_interval: 10s
 
@@ -1120,7 +1120,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 8000
+            port: 8765
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
@@ -1128,7 +1128,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 8000
+            port: 8765
           initialDelaySeconds: 5
           periodSeconds: 5
           timeoutSeconds: 3
@@ -1339,7 +1339,7 @@ docker-compose logs -f backend | grep ERROR
 
 ### Debugging Steps
 
-1. Check application health: `curl http://localhost:8000/health/detailed`
+1. Check application health: `curl http://localhost:8765/health/detailed`
 2. Review recent logs: `docker-compose logs --tail=100 backend`
 3. Check metrics in Grafana dashboards
 4. Review active alerts in Alertmanager

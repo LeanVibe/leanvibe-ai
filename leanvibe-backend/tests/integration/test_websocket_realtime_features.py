@@ -110,7 +110,7 @@ class WebSocketConnectionTester:
                 # Create test client
                 test_client = WebSocketTestClient('test-client-1')
                 connection_start = time.time()
-                await test_client.connect('ws://localhost:8000/ws/test-client-1')
+                await test_client.connect('ws://localhost:8765/ws/test-client-1')
                 connection_time = time.time() - connection_start
                 
                 return {
@@ -148,7 +148,7 @@ class WebSocketConnectionTester:
                 connections_start = time.time()
                 for client_id in client_ids:
                     client = WebSocketTestClient(client_id)
-                    await client.connect(f'ws://localhost:8000/ws/{client_id}')
+                    await client.connect(f'ws://localhost:8765/ws/{client_id}')
                     test_clients.append(client)
                     connection_results.append(client.connected)
                     mock_manager.active_connections[client_id] = client
@@ -224,7 +224,7 @@ class WebSocketConnectionTester:
             ]
             
             test_client = WebSocketTestClient('message-test-client')
-            await test_client.connect('ws://localhost:8000/ws/message-test-client')
+            await test_client.connect('ws://localhost:8765/ws/message-test-client')
             
             message_results = []
             total_message_time = 0
@@ -567,7 +567,7 @@ class ClientSessionTester:
                 test_client = WebSocketTestClient(client_id)
                 
                 # Initial connection
-                await test_client.connect(f'ws://localhost:8000/ws/{client_id}')
+                await test_client.connect(f'ws://localhost:8765/ws/{client_id}')
                 connection_established = test_client.connected
                 
                 # Simulate disconnection
@@ -581,7 +581,7 @@ class ClientSessionTester:
                 
                 # Simulate reconnection
                 reconnect_start = time.time()
-                await test_client.connect(f'ws://localhost:8000/ws/{client_id}')
+                await test_client.connect(f'ws://localhost:8765/ws/{client_id}')
                 reconnection_data = await mock_service.client_reconnected(client_id, {})
                 reconnect_time = time.time() - reconnect_start
                 
@@ -670,7 +670,7 @@ class IOSIntegrationTester:
             ]
             
             ios_client = WebSocketTestClient('ios-client-primary')
-            await ios_client.connect('ws://localhost:8000/ws/ios-client-primary')
+            await ios_client.connect('ws://localhost:8765/ws/ios-client-primary')
             
             scenario_results = []
             total_ios_time = 0
@@ -741,7 +741,7 @@ class WebSocketPerformanceTester:
             for i in range(connection_count):
                 client_id = f'perf-client-{i+1}'
                 client = WebSocketTestClient(client_id)
-                task = asyncio.create_task(client.connect(f'ws://localhost:8000/ws/{client_id}'))
+                task = asyncio.create_task(client.connect(f'ws://localhost:8765/ws/{client_id}'))
                 connection_tasks.append((client, task))
             
             # Wait for all connections
@@ -888,13 +888,13 @@ async def test_websocket_error_handling():
             elif scenario == 'message_parsing_error':
                 # Simulate JSON parsing error
                 test_client = WebSocketTestClient('error-test')
-                await test_client.connect('ws://localhost:8000/ws/error-test')
+                await test_client.connect('ws://localhost:8765/ws/error-test')
                 # Invalid JSON would be handled by the server
                 error_handled = True
             elif scenario == 'client_disconnection':
                 # Simulate abrupt disconnection
                 test_client = WebSocketTestClient('disconnect-test')
-                await test_client.connect('ws://localhost:8000/ws/disconnect-test')
+                await test_client.connect('ws://localhost:8765/ws/disconnect-test')
                 await test_client.disconnect()
                 error_handled = True
             else:

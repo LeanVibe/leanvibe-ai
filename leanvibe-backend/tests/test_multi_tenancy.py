@@ -218,7 +218,7 @@ class TestTenantMiddleware:
             ("test-corp.leanvibe.ai", "test-corp"), 
             ("www.leanvibe.ai", None),  # Skip www
             ("api.leanvibe.ai", None),  # Skip api
-            ("localhost:8000", None),   # Skip localhost
+            ("localhost:8765", None),   # Skip localhost
         ]
         
         for host, expected_slug in test_cases:
