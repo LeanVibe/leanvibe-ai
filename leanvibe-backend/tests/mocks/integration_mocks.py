@@ -1003,3 +1003,168 @@ def integration_mocks():
     mocks = setup_integration_mocks()
     yield mocks
     teardown_integration_mocks()
+
+
+# Additional Mock Services for E2E Testing
+class MockEmailService:
+    """Mock email service for testing email verification and notifications"""
+    
+    def __init__(self):
+        self.sent_emails = []
+        self.verification_tokens = {}
+        self.delivery_delay = 0.01
+    
+    async def send_verification_email(self, email: str, token: str) -> bool:
+        """Send email verification"""
+        self.verification_tokens[email] = token
+        await asyncio.sleep(self.delivery_delay)
+        self.sent_emails.append({
+            "recipient": email,
+            "subject": "Verify Your Email",
+            "token": token,
+            "sent_at": time.time()
+        })
+        return True
+    
+    async def get_verification_token(self, email: str) -> str:
+        """Get verification token for email"""
+        return self.verification_tokens.get(email, "mock_token_123")
+    
+    async def check_error_notifications(self, tenant_id: str) -> bool:
+        """Check if error notifications were sent"""
+        return True  # Mock always returns True
+    
+    def clear_emails(self):
+        """Clear sent emails"""
+        self.sent_emails.clear()
+        self.verification_tokens.clear()
+
+
+class MockAIService:
+    """Mock AI service for testing ML/AI interactions"""
+    
+    def __init__(self):
+        self.response_delay = 0.1
+        self.generation_history = []
+    
+    async def analyze_interview(self, interview_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Mock interview analysis"""
+        await asyncio.sleep(self.response_delay)
+        return {
+            "complexity_score": 85.0,
+            "feasibility_score": 90.0,
+            "technical_requirements": {
+                "estimated_dev_time": 6,
+                "complexity_level": "medium"
+            }
+        }
+    
+    async def generate_blueprint(self, analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """Mock blueprint generation"""
+        await asyncio.sleep(self.response_delay * 2)
+        return {
+            "architecture_type": "microservices",
+            "components": [
+                {"name": "frontend", "type": "React"},
+                {"name": "backend", "type": "Node.js"},
+                {"name": "database", "type": "PostgreSQL"}
+            ]
+        }
+    
+    async def generate_code_files(self, blueprint: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Mock code generation"""
+        await asyncio.sleep(self.response_delay * 3)
+        return [
+            {
+                "name": "app.js",
+                "type": "source",
+                "content": "// Mock generated code",
+                "lines_of_code": 50
+            },
+            {
+                "name": "app.test.js",
+                "type": "test",
+                "content": "// Mock test code",
+                "lines_of_code": 25
+            }
+        ]
+    
+    def clear_history(self):
+        """Clear generation history"""
+        self.generation_history.clear()
+
+
+class MockWebSocketClient:
+    """Mock WebSocket client for testing real-time communication"""
+    
+    def __init__(self):
+        self.connected = False
+        self.messages = []
+    
+    async def connect(self, url: str) -> bool:
+        """Mock WebSocket connection"""
+        await asyncio.sleep(0.1)
+        self.connected = True
+        return True
+    
+    async def send(self, message: Dict[str, Any]) -> bool:
+        """Send message"""
+        if not self.connected:
+            return False
+        self.messages.append({"type": "sent", "data": message})
+        return True
+    
+    async def receive(self, timeout: float = 5.0) -> Dict[str, Any]:
+        """Receive message"""
+        await asyncio.sleep(0.1)
+        return {"type": "ack", "status": "received"}
+    
+    async def disconnect(self):
+        """Disconnect"""
+        self.connected = False
+
+
+class MockRedisClient:
+    """Mock Redis client for caching"""
+    
+    def __init__(self):
+        self.data = {}
+        self.connected = False
+    
+    async def connect(self) -> bool:
+        """Connect to Redis"""
+        self.connected = True
+        return True
+    
+    async def set(self, key: str, value: Any, expire: int = None) -> bool:
+        """Set value"""
+        self.data[key] = value
+        return True
+    
+    async def get(self, key: str) -> Any:
+        """Get value"""
+        return self.data.get(key)
+    
+    def clear_all(self):
+        """Clear all data"""
+        self.data.clear()
+
+
+class MockFileSystemService:
+    """Mock file system service"""
+    
+    def __init__(self):
+        self.files = {}
+    
+    async def write_file(self, path: str, content: bytes) -> bool:
+        """Write file"""
+        self.files[path] = content
+        return True
+    
+    async def read_file(self, path: str) -> bytes:
+        """Read file"""
+        return self.files.get(path, b"mock file content")
+    
+    def clear_all(self):
+        """Clear all files"""
+        self.files.clear()

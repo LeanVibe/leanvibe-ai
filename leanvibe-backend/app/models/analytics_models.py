@@ -236,12 +236,11 @@ class AIAnalytics(BaseModel):
     cost_per_inference: float = Field(ge=0.0, description="Average cost per inference")
     optimization_opportunities: List[str] = Field(description="AI optimization recommendations")
     
-    model_config = {"protected_namespaces": ()}
-    
     class Config:
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
+        protected_namespaces = ()
 
 
 class CustomMetric(BaseModel):
