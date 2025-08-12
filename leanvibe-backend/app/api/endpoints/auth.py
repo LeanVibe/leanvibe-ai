@@ -719,8 +719,7 @@ async def get_auth_providers(
 # User profile management endpoints
 @router.get("/users/me", response_model=User)
 async def get_current_user_profile(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> User:
     """
     Get current user profile information
@@ -737,9 +736,10 @@ async def get_current_user_profile(
         # Verify token
         payload = await auth_service.verify_token(credentials.credentials)
         user_id = UUID(payload["user_id"])
+        tenant_id = UUID(payload["tenant_id"])
         
         # Get user
-        user = await auth_service.get_user_by_id(user_id, tenant.id)
+        user = await auth_service.get_user_by_id(user_id, tenant_id)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -764,8 +764,7 @@ async def get_current_user_profile(
 @router.put("/users/me", response_model=User)
 async def update_current_user_profile(
     user_update: UserUpdate,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> User:
     """
     Update current user profile information
@@ -782,9 +781,10 @@ async def update_current_user_profile(
         # Verify token
         payload = await auth_service.verify_token(credentials.credentials)
         user_id = UUID(payload["user_id"])
+        tenant_id = UUID(payload["tenant_id"])
         
         # Update user
-        updated_user = await auth_service.update_user(user_id, user_update, tenant.id)
+        updated_user = await auth_service.update_user(user_id, user_update, tenant_id)
         
         return updated_user
         
@@ -809,8 +809,7 @@ async def update_current_user_profile(
 @router.put("/users/me/password", response_model=Dict[str, str])
 async def change_current_user_password(
     password_data: Dict[str, str],
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> Dict[str, str]:
     """
     Change current user password
@@ -843,9 +842,10 @@ async def change_current_user_password(
         # Verify token
         payload = await auth_service.verify_token(credentials.credentials)
         user_id = UUID(payload["user_id"])
+        tenant_id = UUID(payload["tenant_id"])
         
         # Change password
-        success = await auth_service.change_password(user_id, current_password, new_password, tenant.id)
+        success = await auth_service.change_password(user_id, current_password, new_password, tenant_id)
         
         if not success:
             raise HTTPException(

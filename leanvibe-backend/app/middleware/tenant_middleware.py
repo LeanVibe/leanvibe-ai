@@ -305,6 +305,11 @@ def require_tenant() -> Tenant:
     return tenant
 
 
+def optional_tenant() -> Optional[Tenant]:
+    """Get tenant context if available, return None otherwise"""
+    return tenant_context.tenant
+
+
 def require_user() -> UUID:
     """Require valid user context, raise exception if not available"""
     user_id = tenant_context.user_id

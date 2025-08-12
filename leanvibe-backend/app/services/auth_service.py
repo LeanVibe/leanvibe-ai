@@ -180,7 +180,7 @@ class AuthenticationService:
                     f"User not found: {login_request.email}",
                     False,
                     user_email=login_request.email,
-                    metadata={"reason": "user_not_found"}
+                    event_metadata={"reason": "user_not_found"}
                 )
                 raise InvalidCredentialsError("Invalid credentials")
             
@@ -193,7 +193,7 @@ class AuthenticationService:
                     False,
                     user_id=user.id,
                     user_email=user.email,
-                    metadata={"reason": "user_inactive", "status": user.status}
+                    event_metadata={"reason": "user_inactive", "status": user.status}
                 )
                 raise InvalidCredentialsError("Account is not active")
             
@@ -206,7 +206,7 @@ class AuthenticationService:
                     False,
                     user_id=user.id,
                     user_email=user.email,
-                    metadata={"reason": "account_locked", "locked_until": user.locked_until.isoformat()}
+                    event_metadata={"reason": "account_locked", "locked_until": user.locked_until.isoformat()}
                 )
                 raise InvalidCredentialsError("Account is temporarily locked")
             
@@ -245,7 +245,7 @@ class AuthenticationService:
                         False,
                         user_id=user.id,
                         user_email=user.email,
-                        metadata={"mfa_method": login_request.mfa_method}
+                        event_metadata={"mfa_method": login_request.mfa_method}
                     )
                     raise InvalidCredentialsError("Invalid MFA code")
             
@@ -265,7 +265,7 @@ class AuthenticationService:
                 user_id=user.id,
                 user_email=user.email,
                 ip_address=login_request.ip_address,
-                metadata={
+                event_metadata={
                     "provider": login_request.provider,
                     "mfa_verified": user.mfa_enabled,
                     "session_id": str(session.id)

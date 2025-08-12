@@ -20,6 +20,7 @@ from .api.endpoints.config import router as config_router
 from .api.endpoints.synthetic_monitoring import router as synthetic_monitoring_router
 from .api.endpoints.graph_analysis import router as graph_analysis_router
 from .api.endpoints.health import router as health_router
+from .api.endpoints.auth import router as auth_router
 from .api.models import CodeCompletionRequest
 from .core.connection_manager import ConnectionManager
 from .models.event_models import ClientPreferences, EventType
@@ -80,8 +81,12 @@ app = FastAPI(
     
     ### Authentication
     
-    Currently operates in development mode with no authentication required.
-    Production deployment will include API key authentication.
+    Enterprise-grade authentication system with multi-tenant support:
+    - **Local Authentication**: Email/password with secure password policies
+    - **SSO Integration**: Google, Microsoft, Okta, and SAML providers
+    - **Multi-Factor Authentication**: TOTP, SMS, and email verification
+    - **Role-Based Access Control**: Tenant-scoped permissions and roles
+    - **Audit Logging**: Comprehensive security event tracking
     
     ### Rate Limiting
     
@@ -144,6 +149,10 @@ app = FastAPI(
         {
             "name": "graph-analysis",
             "description": "Neo4j graph database endpoints for code relationship analysis, architectural insights, and dependency mapping.",
+        },
+        {
+            "name": "authentication",
+            "description": "Enterprise authentication and authorization endpoints. Supports local authentication, SSO, MFA, and multi-tenant security.",
         }
     ],
     openapi_url="/api/v1/openapi.json",
@@ -181,6 +190,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Register API routers
 app.include_router(code_completion_router)
 app.include_router(tasks_router)
@@ -194,6 +204,7 @@ app.include_router(config_router)  # Configuration API for iOS app integration
 app.include_router(synthetic_monitoring_router)  # Synthetic probes and observability monitoring
 app.include_router(graph_analysis_router)  # Neo4j graph database analysis endpoints
 app.include_router(health_router)  # Production health check endpoints
+app.include_router(auth_router)  # Authentication and authorization endpoints
 
 
 # Code completion WebSocket handler

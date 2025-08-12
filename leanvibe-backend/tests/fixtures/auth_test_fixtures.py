@@ -92,7 +92,7 @@ async def secondary_tenant(test_db: AsyncSession) -> TenantORM:
         slug="secondary-org",
         admin_email="admin@secondary-org.com",
         status=TenantStatus.ACTIVE,
-        plan=TenantPlan.PROFESSIONAL
+        plan=TenantPlan.TEAM
     )
     test_db.add(tenant)
     await test_db.commit()

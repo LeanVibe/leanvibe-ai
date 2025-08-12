@@ -33,7 +33,13 @@ class TestProtectedEndpoints:
             elif method == "PUT":
                 response = auth_test_client.put(endpoint, json={})
             elif method == "POST":
-                response = auth_test_client.post(endpoint, json={})
+                # Provide valid request body structure for POST endpoints
+                if "/mfa/setup" in endpoint:
+                    response = auth_test_client.post(endpoint, json={"method": "totp"})
+                elif "/mfa/verify" in endpoint:
+                    response = auth_test_client.post(endpoint, json={"code": "123456", "method": "totp"})
+                else:
+                    response = auth_test_client.post(endpoint, json={})
             
             assert response.status_code == 401
             data = response.json()
