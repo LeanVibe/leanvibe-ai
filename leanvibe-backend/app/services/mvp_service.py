@@ -458,19 +458,94 @@ class MVPService:
                 self._projects_by_tenant[mvp_project.tenant_id].append(mvp_project.id)
             logger.info(f"Saved MVP project {mvp_project.id} to in-memory storage (DB unavailable)")
 
-    # In-memory logs API
+    # In-memory logs API with DB persistence (best-effort)
     def _add_log(self, mvp_project_id: UUID, *, level: str, message: str, stage: str):
+        """Append a log entry in-memory and persist to DB best-effort.
+
+        DB persistence resolves latest pipeline execution for the project
+        and writes a PipelineExecutionLogORM row. If DB is unavailable or no
+        execution exists yet for this project, only in-memory storage is used.
+        """
+        # Always keep in-memory fallback
         try:
             from datetime import datetime as _dt
             if mvp_project_id not in self._generation_logs:
                 self._generation_logs[mvp_project_id] = []
             self._generation_logs[mvp_project_id].append({
                 "timestamp": _dt.utcnow(),
-                "level": level.upper(),
-                "message": message,
-                "stage": stage,
+                "level": str(level).upper(),
+                "message": str(message),
+                "stage": str(stage),
             })
         except Exception:
+            # Swallow any in-memory logging errors
+            pass
+
+        # Best-effort async DB persistence (do not block caller)
+        try:
+            import asyncio as _asyncio
+            _asyncio.create_task(self._persist_log_db(
+                mvp_project_id=mvp_project_id,
+                level=str(level).upper(),
+                message=str(message),
+                stage=str(stage)
+            ))
+        except Exception:
+            # If no event loop or scheduling fails, ignore silently
+            pass
+
+    async def _persist_log_db(self, mvp_project_id: UUID, *, level: str, message: str, stage: str):
+        """Persist a log entry to the database if possible.
+
+        Resolves the latest PipelineExecutionORM for the given project to obtain
+        execution_id and tenant_id. If no execution exists, attempts to fetch
+        tenant_id from MVPProjectORM and skips DB write if execution is missing.
+        """
+        try:
+            from sqlalchemy import select, desc
+            from ..models.orm_models import (
+                MVPProjectORM,
+                PipelineExecutionORM,
+                PipelineExecutionLogORM,
+            )
+            from ..core.database import get_database_session
+
+            async for session in get_database_session():
+                # Find latest execution for this project
+                exec_stmt = (
+                    select(PipelineExecutionORM)
+                    .where(PipelineExecutionORM.mvp_project_id == mvp_project_id)
+                    .order_by(desc(PipelineExecutionORM.started_at))
+                    .limit(1)
+                )
+                exec_result = await session.execute(exec_stmt)
+                exec_row = exec_result.scalar_one_or_none()
+
+                if not exec_row:
+                    # No execution available yet; skip DB persistence
+                    break
+
+                tenant_id = exec_row.tenant_id
+                # Insert log row
+                log_row = PipelineExecutionLogORM(
+                    execution_id=exec_row.id,
+                    tenant_id=tenant_id,
+                    mvp_project_id=mvp_project_id,
+                    level=level,
+                    message=message,
+                    stage=stage,
+                )
+                session.add(log_row)
+                # Flush then commit to persist outside session scope
+                await session.flush()
+                try:
+                    await session.commit()
+                except Exception:
+                    # Some engines autocommit; ignore commit failures
+                    pass
+                break
+        except Exception:
+            # Best-effort: ignore DB errors to avoid impacting runtime
             pass
 
     async def get_generation_logs(self, mvp_project_id: UUID) -> List[Dict[str, Any]]:

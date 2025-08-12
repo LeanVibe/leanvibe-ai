@@ -468,7 +468,8 @@ class PipelineExecutionLogORM(Base):
     level = Column(String(16), nullable=False, index=True)
     message = Column(Text, nullable=False)
     stage = Column(String(64), nullable=True)
-    metadata = Column(JSON, nullable=True)
+    # 'metadata' is reserved by SQLAlchemy declarative; map column name to different attribute
+    log_metadata = Column('metadata', JSON, nullable=True)
     
     __table_args__ = (
         Index('idx_exec_logs_exec_time', 'execution_id', 'timestamp'),

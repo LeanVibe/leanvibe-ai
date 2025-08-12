@@ -21,6 +21,9 @@ from ...services.mvp_service import mvp_service
 from ...services.auth_service import auth_service
 from ...middleware.tenant_middleware import get_current_tenant, require_tenant
 from ...core.exceptions import InsufficientPermissionsError
+from ...core.database import get_database_session
+from sqlalchemy import select
+from ...models.orm_models import PipelineExecutionLogORM as _LogORM
 
 logger = logging.getLogger(__name__)
 
@@ -770,12 +773,56 @@ async def get_pipeline_logs(
                 detail="Access denied to pipeline"
             )
         
-        # Retrieve logs from MVP service in-memory store
+        # Try DB-first
+        db_logs: List[PipelineLogEntry] = []
+        try:
+            async for session in get_database_session():
+                stmt = (
+                    select(_LogORM)
+                    .where(_LogORM.mvp_project_id == pipeline_id)
+                    .where(_LogORM.tenant_id == tenant.id)
+                    .order_by(_LogORM.timestamp.asc())
+                    .offset(offset)
+                    .limit(limit)
+                )
+                if level_filter:
+                    stmt = stmt.where(_LogORM.level == level_filter.upper())
+                if stage_filter:
+                    stmt = stmt.where(_LogORM.stage == stage_filter.value)
+                result = await session.execute(stmt)
+                rows = result.scalars().all()
+                for row in rows:
+                    # Map stage string to PipelineStage if possible
+                    stage = {
+                        "blueprint_generation": PipelineStage.BLUEPRINT_GENERATION,
+                        "backend": PipelineStage.BACKEND_DEVELOPMENT,
+                        "backend_development": PipelineStage.BACKEND_DEVELOPMENT,
+                        "frontend": PipelineStage.FRONTEND_DEVELOPMENT,
+                        "frontend_development": PipelineStage.FRONTEND_DEVELOPMENT,
+                        "infrastructure": PipelineStage.INFRASTRUCTURE_SETUP,
+                        "infrastructure_setup": PipelineStage.INFRASTRUCTURE_SETUP,
+                        "deployment": PipelineStage.DEPLOYMENT,
+                    }.get((row.stage or "").lower(), PipelineStage.BLUEPRINT_GENERATION)
+
+                    db_logs.append(PipelineLogEntry(
+                        timestamp=row.timestamp,
+                        level=row.level,
+                        message=row.message,
+                        stage=stage
+                    ))
+                break
+        except Exception:
+            # Ignore DB errors and fallback to in-memory
+            db_logs = []
+
+        if db_logs:
+            return db_logs
+
+        # Fallback: Retrieve from MVP service in-memory store
         raw_logs = await mvp_service.get_generation_logs(pipeline_id)
-        logs: List[PipelineLogEntry] = []
+        mem_logs: List[PipelineLogEntry] = []
         for entry in raw_logs:
             try:
-                # Map stage string to PipelineStage if possible
                 stage_str = str(entry.get("stage", "")).lower()
                 stage = {
                     "blueprint_generation": PipelineStage.BLUEPRINT_GENERATION,
@@ -788,7 +835,7 @@ async def get_pipeline_logs(
                     "deployment": PipelineStage.DEPLOYMENT,
                 }.get(stage_str, PipelineStage.BLUEPRINT_GENERATION)
 
-                logs.append(PipelineLogEntry(
+                mem_logs.append(PipelineLogEntry(
                     timestamp=entry["timestamp"],
                     level=str(entry.get("level", "INFO")),
                     message=str(entry.get("message", "")),
@@ -796,17 +843,14 @@ async def get_pipeline_logs(
                 ))
             except Exception:
                 continue
-        
-        # Apply filters
+
+        # Apply filters to in-memory fallback
         if level_filter:
-            logs = [log for log in logs if log.level == level_filter.upper()]
+            mem_logs = [log for log in mem_logs if log.level == level_filter.upper()]
         if stage_filter:
-            logs = [log for log in logs if log.stage == stage_filter]
-        
-        # Apply pagination
-        paginated_logs = logs[offset:offset + limit]
-        
-        return paginated_logs
+            mem_logs = [log for log in mem_logs if log.stage == stage_filter]
+
+        return mem_logs[offset:offset + limit]
         
     except HTTPException:
         raise
