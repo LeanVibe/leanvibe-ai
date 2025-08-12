@@ -11,11 +11,15 @@ if (typeof (global as any).fetch === 'undefined') {
 }
 
 // Mock next/navigation where needed by components using app router
-;(global as any).jest = (global as any).jest || require('jest-mock')
-;(global as any).jest.mock('next/navigation', () => {
-  const j = (global as any).jest
-  return {
-    useRouter: () => ({ push: j.fn(), replace: j.fn(), back: j.fn() }),
-    useSearchParams: () => new URLSearchParams(),
-  }
-})
+try {
+  const { mock, fn } = require('jest-mock')
+  ;(global as any).jest = { mock, fn }
+  ;(global as any).jest.mock('next/navigation', () => {
+    return {
+      useRouter: () => ({ push: fn(), replace: fn(), back: fn() }),
+      useSearchParams: () => new URLSearchParams(),
+    }
+  })
+} catch (_) {
+  // Ignore if jest-mock not available in this context
+}
