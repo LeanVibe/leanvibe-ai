@@ -21,7 +21,8 @@ from ...models.mvp_models import (
     MVPStatus, TechnicalBlueprint
 )
 from ...services.mvp_service import mvp_service
-from ...services.storage import local_storage_service
+from ...services.storage import get_storage_service
+from ...auth.permissions import require_permission, Permission
 from ...services.auth_service import auth_service
 from ...middleware.tenant_middleware import get_current_tenant, require_tenant
 from ...core.exceptions import InsufficientPermissionsError
@@ -36,6 +37,7 @@ security = HTTPBearer()
 async def list_projects(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_READ)),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     status_filter: Optional[MVPStatus] = Query(None),
@@ -99,7 +101,8 @@ async def list_projects(
 async def get_project(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_READ))
 ) -> MVPProjectResponse:
     """
     Get detailed project information by ID
@@ -150,7 +153,8 @@ async def update_project(
     project_id: UUID,
     update_request: MVPProjectUpdateRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
 ) -> MVPProjectResponse:
     """
     Update project metadata and configuration
@@ -218,7 +222,8 @@ async def update_project(
 async def delete_project(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_DELETE))
 ):
     """
     Delete project and all associated data
@@ -271,7 +276,8 @@ async def delete_project(
 async def duplicate_project(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
 ) -> MVPProjectResponse:
     """
     Create a duplicate copy of an existing project
@@ -336,7 +342,8 @@ async def duplicate_project(
 async def get_project_blueprint(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_READ))
 ) -> BlueprintResponse:
     """
     Get project's technical blueprint
@@ -400,7 +407,8 @@ async def update_project_blueprint(
     project_id: UUID,
     update_request: BlueprintUpdateRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
 ) -> BlueprintResponse:
     """
     Update project's technical blueprint
@@ -469,7 +477,8 @@ async def update_project_blueprint(
 async def get_blueprint_history(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_READ))
 ) -> List[BlueprintResponse]:
     """
     Get blueprint version history
@@ -527,7 +536,8 @@ async def approve_blueprint(
     project_id: UUID,
     approval_request: BlueprintApprovalRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
 ) -> BlueprintResponse:
     """
     Approve technical blueprint for generation
@@ -605,7 +615,8 @@ async def request_blueprint_revision(
     project_id: UUID,
     revision_request: Dict[str, str],
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
 ) -> BlueprintResponse:
     """
     Request blueprint revision with feedback
@@ -677,6 +688,7 @@ async def list_project_files(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_READ)),
     path_filter: Optional[str] = Query(None, description="Filter files by path"),
     file_type: Optional[str] = Query(None, description="Filter by file type")
 ) -> List[ProjectFileInfo]:
@@ -716,7 +728,8 @@ async def list_project_files(
             )
         
         # List from storage service
-        storage_files = local_storage_service.list_files(project_id)
+        storage = get_storage_service()
+        storage_files = storage.list_files(project_id)
         files: List[ProjectFileInfo] = []
         for f in storage_files:
             if path_filter and path_filter not in f.path:
@@ -749,7 +762,8 @@ async def download_project_file(
     project_id: UUID,
     file_path: str,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_READ))
 ) -> Response:
     """
     Download a specific generated file
@@ -790,15 +804,22 @@ async def download_project_file(
                 detail="Project has not generated files yet"
             )
         
+        storage = get_storage_service()
+        # If S3, prefer presigned URL redirect
         try:
-            buffer, media_type = local_storage_service.get_file(project_id, file_path)
+            from ...services.storage.s3_storage_service import S3StorageService
+            if isinstance(storage, S3StorageService):
+                url = storage.presign_download(project_id, file_path)
+                # 307 Temporary Redirect to presigned URL
+                return Response(status_code=307, headers={"Location": url})
+        except Exception:
+            pass
+        # Local storage
+        try:
+            buffer, media_type = storage.get_file(project_id, file_path)
         except FileNotFoundError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
-        return Response(
-            content=buffer.getvalue(),
-            media_type=media_type,
-            headers={"Content-Disposition": f"attachment; filename={file_path.split('/')[-1]}"}
-        )
+        return Response(content=buffer.getvalue(), media_type=media_type, headers={"Content-Disposition": f"attachment; filename={file_path.split('/')[-1]}"})
         
     except HTTPException:
         raise
@@ -815,6 +836,7 @@ async def download_project_archive(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_READ)),
     format: str = Query("zip", description="Archive format (zip, tar)")
 ) -> StreamingResponse:
     """

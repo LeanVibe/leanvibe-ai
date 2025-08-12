@@ -24,6 +24,8 @@ from ...core.exceptions import InsufficientPermissionsError
 from ...core.database import get_database_session
 from sqlalchemy import select
 from ...models.orm_models import PipelineExecutionLogORM as _LogORM
+from ...auth.permissions import require_permission, Permission
+from ...services.audit_service import audit_service
 
 logger = logging.getLogger(__name__)
 
@@ -420,7 +422,8 @@ async def start_pipeline(
 async def pause_pipeline(
     pipeline_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
 ) -> PipelineResponse:
     """
     Pause pipeline execution
@@ -464,6 +467,13 @@ async def pause_pipeline(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Unable to pause pipeline at this time"
             )
+        # Audit
+        await audit_service.log(
+            tenant_id=tenant.id,
+            action="pipeline_pause",
+            resource_type="pipeline",
+            resource_id=str(pipeline_id),
+        )
         updated_project = await mvp_service.get_mvp_project(pipeline_id)
         pipeline_response = await _mvp_project_to_pipeline_response(updated_project)
         return pipeline_response
@@ -482,7 +492,8 @@ async def pause_pipeline(
 async def resume_pipeline(
     pipeline_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
 ) -> PipelineResponse:
     """
     Resume paused pipeline execution
@@ -518,6 +529,12 @@ async def resume_pipeline(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Unable to resume pipeline at this time"
             )
+        await audit_service.log(
+            tenant_id=tenant.id,
+            action="pipeline_resume",
+            resource_type="pipeline",
+            resource_id=str(pipeline_id),
+        )
         updated_project = await mvp_service.get_mvp_project(pipeline_id)
         pipeline_response = await _mvp_project_to_pipeline_response(updated_project)
         return pipeline_response

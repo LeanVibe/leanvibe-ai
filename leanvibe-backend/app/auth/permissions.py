@@ -7,6 +7,8 @@ import logging
 from typing import Dict, List, Optional
 from fastapi import HTTPException, Depends, Request
 from ..middleware.tenant_middleware import get_current_tenant, get_current_user_id
+from ..core.database import get_database_session
+from ..models.orm_models import TenantMemberORM
 
 logger = logging.getLogger(__name__)
 
@@ -84,10 +86,39 @@ class Role:
 
 
 async def get_user_permissions(user_id: str, tenant_id: str = None) -> List[str]:
-    """Get user permissions for the given tenant (mock implementation)"""
-    # This would typically query the database for user roles and permissions
-    # For now, return mock permissions
-    return [Permission.TENANT_READ, Permission.PROJECT_READ, Permission.TASK_READ]
+    """Get user permissions for the given tenant.
+
+    Best-effort DB lookup of `TenantMemberORM` to resolve role and map to permissions.
+    Falls back to read-only permissions if lookup fails.
+    """
+    try:
+        if not user_id or not tenant_id:
+            return []
+        role_name: Optional[str] = None
+        async for session in get_database_session():
+            result = await session.execute(
+                select(TenantMemberORM).where(
+                    (TenantMemberORM.user_id == user_id) & (TenantMemberORM.tenant_id == tenant_id)
+                )
+            )
+            member = result.scalar_one_or_none()
+            if member:
+                role_name = (member.role or '').lower()
+            break
+        # Map roles to permissions
+        if role_name == Role.SYSTEM_ADMIN["name"]:
+            return Role.SYSTEM_ADMIN["permissions"]
+        if role_name == Role.TENANT_ADMIN["name"]:
+            return Role.TENANT_ADMIN["permissions"]
+        if role_name == Role.TENANT_USER["name"]:
+            return Role.TENANT_USER["permissions"]
+        if role_name == Role.TENANT_VIEWER["name"]:
+            return Role.TENANT_VIEWER["permissions"]
+        # Default minimal permissions
+        return [Permission.TENANT_READ, Permission.PROJECT_READ, Permission.TASK_READ]
+    except Exception:
+        # Fail-safe: read-only
+        return [Permission.TENANT_READ, Permission.PROJECT_READ, Permission.TASK_READ]
 
 
 async def check_permission(permission: str, user_id: str = None, tenant_id: str = None) -> bool:
@@ -118,8 +149,16 @@ async def require_permission(permission: str):
                 detail="Authentication required"
             )
         
-        # For now, allow all authenticated users (will implement properly with auth system)
-        return {"user_id": user_id, "tenant_id": tenant_id, "permissions": [permission]}
+        # Enforce permission
+        from sqlalchemy import select  # local import to avoid global dependency early
+        perms = []
+        try:
+            perms = await get_user_permissions(str(user_id), str(tenant_id) if tenant_id else None)
+        except Exception:
+            perms = []
+        if Permission.ADMIN_ALL in perms or permission in perms:
+            return {"user_id": user_id, "tenant_id": tenant_id, "permissions": perms}
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
     
     return permission_dependency
 

@@ -21,6 +21,8 @@ from ...middleware.tenant_middleware import get_current_tenant, require_tenant
 from ...core.database import get_database_session
 from ...models.orm_models import MVPProjectORM
 from sqlalchemy import select
+from ...auth.permissions import require_permission, Permission
+from ...services.audit_service import audit_service
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +38,8 @@ _interviews_by_tenant: Dict[UUID, List[UUID]] = {}
 async def create_interview(
     interview_request: InterviewCreateRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
 ) -> InterviewResponse:
     """
     Create new founder interview session
@@ -114,6 +117,7 @@ async def create_interview(
 async def list_interviews(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_READ)),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     completed_only: bool = Query(False)
@@ -197,7 +201,8 @@ async def list_interviews(
 async def get_interview(
     interview_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_READ))
 ) -> InterviewResponse:
     """
     Get detailed interview information by ID
@@ -258,7 +263,8 @@ async def update_interview(
     interview_id: UUID,
     update_request: InterviewUpdateRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
 ) -> InterviewResponse:
     """
     Update interview information and responses
@@ -370,7 +376,8 @@ async def update_interview(
 async def validate_interview(
     interview_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_READ))
 ) -> InterviewValidationResponse:
     """
     Validate interview completeness and quality
@@ -459,7 +466,8 @@ async def submit_interview(
     interview_id: UUID,
     submission_request: InterviewSubmissionRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    tenant = Depends(require_tenant)
+    tenant = Depends(require_tenant),
+    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
 ) -> InterviewResponse:
     """
     Submit completed interview for processing
@@ -537,6 +545,13 @@ async def submit_interview(
             created_by=user_id
         )
         
+        # Audit submit
+        await audit_service.log(
+            tenant_id=tenant.id,
+            action="interview_submit",
+            resource_type="interview",
+            resource_id=str(interview_id),
+        )
         logger.info(f"Interview {interview_id} submitted successfully")
         return response
         
