@@ -93,7 +93,7 @@ class PerformanceMonitor:
             print(f"❌ Error measuring test execution: {e}")
             return {}
     
-    def measure_api_performance(self, base_url: str = "http://localhost:8000") -> Dict[str, float]:
+    def measure_api_performance(self, base_url: str = "http://localhost:8765") -> Dict[str, float]:
         """Measure API endpoint performance"""
         print("🌐 Measuring API performance...")
         
@@ -166,7 +166,7 @@ class PerformanceMonitor:
             
             while (time.time() - start_wait) < max_wait:
                 try:
-                    response = requests.get("http://localhost:8000/health", timeout=1)
+                    response = requests.get("http://localhost:8765/health", timeout=1)
                     if response.status_code == 200:
                         startup_time = (time.time() - start_time) * 1000  # Convert to ms
                         process.terminate()

@@ -72,7 +72,7 @@ EXPOSE 8000
 
 # Health check using production health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/production/health/live || exit 1
+    CMD curl -f http://localhost:8765/production/health/live || exit 1
 
 # Production command with optimized settings
 CMD ["uvicorn", "app.main:app", \

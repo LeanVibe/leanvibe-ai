@@ -103,8 +103,8 @@ load_environment_config() {
             fi
             ;;
         *)
-            export BASE_URL="http://localhost:8000"
-            export WS_URL="ws://localhost:8000/ws"
+            export BASE_URL="http://localhost:8765"
+            export WS_URL="ws://localhost:8765/ws"
             export API_KEY="test-api-key"
             ;;
     esac
