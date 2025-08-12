@@ -26,6 +26,7 @@ from ...auth.permissions import require_permission, Permission
 from ...services.auth_service import auth_service
 from ...middleware.tenant_middleware import get_current_tenant, require_tenant
 from ...core.exceptions import InsufficientPermissionsError
+from ...services.audit_service import audit_service
 
 logger = logging.getLogger(__name__)
 
@@ -597,6 +598,14 @@ async def approve_blueprint(
             approved_by=user_id,
             approval_notes=approval_request.notes
         )
+        # Audit blueprint approval
+        await audit_service.log(
+            tenant_id=tenant.id,
+            action="blueprint_approve",
+            resource_type="project_blueprint",
+            resource_id=str(project_id),
+            details={"notes": approval_request.notes}
+        )
         
         return blueprint_response
         
@@ -810,6 +819,14 @@ async def download_project_file(
             from ...services.storage.s3_storage_service import S3StorageService
             if isinstance(storage, S3StorageService):
                 url = storage.presign_download(project_id, file_path)
+                # Audit S3 presigned download
+                await audit_service.log(
+                    tenant_id=tenant.id,
+                    action="file_download",
+                    resource_type="project_file",
+                    resource_id=f"{project_id}/{file_path}",
+                    details={"file_path": file_path}
+                )
                 # 307 Temporary Redirect to presigned URL
                 return Response(status_code=307, headers={"Location": url})
         except Exception:
@@ -819,6 +836,14 @@ async def download_project_file(
             buffer, media_type = storage.get_file(project_id, file_path)
         except FileNotFoundError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+        # Audit local download
+        await audit_service.log(
+            tenant_id=tenant.id,
+            action="file_download",
+            resource_type="project_file",
+            resource_id=f"{project_id}/{file_path}",
+            details={"file_path": file_path}
+        )
         return Response(content=buffer.getvalue(), media_type=media_type, headers={"Content-Disposition": f"attachment; filename={file_path.split('/')[-1]}"})
         
     except HTTPException:
@@ -900,6 +925,14 @@ async def download_project_archive(
             zip_buffer.seek(0)
             safe_name = mvp_project.project_name.replace(" ", "_").lower()
             filename = f"{safe_name}_{project_id.hex[:8]}.zip"
+            # Audit project archive download
+            await audit_service.log(
+                tenant_id=tenant.id,
+                action="project_archive_download",
+                resource_type="project_archive",
+                resource_id=str(project_id),
+                details={"format": format}
+            )
             return StreamingResponse(
                 BytesIO(zip_buffer.getvalue()),
                 media_type="application/zip",
