@@ -6,7 +6,7 @@ This directory contains all backend-related documentation for the LeanVibe AI pl
 
 ### 🏗️ Architecture & System Design
 
-#### [`ARCHITECTURE.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/ARCHITECTURE.md)
+#### [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 **Complete system architecture documentation**
 - High-level system overview with Mermaid diagrams
 - Core architecture principles (real-time analysis, graph-based relationships)
@@ -15,7 +15,7 @@ This directory contains all backend-related documentation for the LeanVibe AI pl
 - Data layer design (Neo4j Graph DB, file system, caching)
 - External tool integrations (Tree-sitter, Mermaid.js, MLX)
 
-#### [`leanvibe-architecture.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/leanvibe-architecture.md)
+#### [`leanvibe-architecture.md`](./leanvibe-architecture.md)
 **Historical architecture documentation**
 - Evolution of the LeanVibe platform architecture
 - Legacy system components and migration paths
@@ -23,7 +23,7 @@ This directory contains all backend-related documentation for the LeanVibe AI pl
 
 ### 🤖 AI Agent Integration
 
-#### [`L3_AGENT_INTEGRATION.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/L3_AGENT_INTEGRATION.md)
+#### [`L3_AGENT_INTEGRATION.md`](./L3_AGENT_INTEGRATION.md)
 **Complete L3 Agent Framework Implementation** ✅ **COMPLETED**
 - Pydantic.ai integration with structured autonomous agent system
 - Session management with multi-session support and state persistence
@@ -35,7 +35,7 @@ This directory contains all backend-related documentation for the LeanVibe AI pl
 
 ### 🚀 Sprint Deliverables
 
-#### [`SPRINT_1_5_SUMMARY.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/SPRINT_1_5_SUMMARY.md)
+#### [`SPRINT_1_5_SUMMARY.md`](./SPRINT_1_5_SUMMARY.md)
 **Reconnection Handling with State Synchronization** ✅ **COMPLETED**
 - WebSocket reconnection system with state preservation
 - Missed event tracking and replay functionality
@@ -47,21 +47,21 @@ This directory contains all backend-related documentation for the LeanVibe AI pl
 
 ### 🔌 API Documentation
 
-#### [`01_Backend_API_Enhancement.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/01_Backend_API_Enhancement.md)
+#### [`01_Backend_API_Enhancement.md`](./01_Backend_API_Enhancement.md)
 **Core API Enhancement Specifications**
 - REST API endpoint definitions and enhancements
 - Authentication and authorization improvements
 - Rate limiting and performance optimization strategies
 - Error handling and response standardization
 
-#### [`02_Backend_Task_Management_APIs.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/02_Backend_Task_Management_APIs.md)
+#### [`02_Backend_Task_Management_APIs.md`](./02_Backend_Task_Management_APIs.md)
 **Task Management API Implementation**
 - Task CRUD operations and lifecycle management
 - Project and task relationship APIs
 - Status tracking and progress monitoring endpoints
 - Bulk operations and batch processing capabilities
 
-#### [`04_Backend_Task_APIs_Critical.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/04_Backend_Task_APIs_Critical.md)
+#### [`04_Backend_Task_APIs_Critical.md`](./04_Backend_Task_APIs_Critical.md)
 **Critical Task API Components**
 - Essential task management functionality
 - High-priority API endpoints for core operations
@@ -70,34 +70,34 @@ This directory contains all backend-related documentation for the LeanVibe AI pl
 
 ### 🧪 Testing & Quality Assurance
 
-#### [`07_Kanban_Backend_Integration_Testing.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/07_Kanban_Backend_Integration_Testing.md)
+#### [`07_Kanban_Backend_Integration_Testing.md`](./07_Kanban_Backend_Integration_Testing.md)
 **Kanban Board Backend Integration Testing**
 - Integration test strategies for Kanban functionality
 - Backend API testing for task board operations
 - Real-time update testing and WebSocket validation
 - Performance testing for large project datasets
 
-#### [`backend_testing_implementation_prompt.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/backend_testing_implementation_prompt.md)
+#### [`backend_testing_implementation_prompt.md`](./backend_testing_implementation_prompt.md)
 **Backend Testing Implementation Guidelines**
 - Testing framework setup and configuration
 - Unit test patterns and best practices
 - Integration testing strategies and tools
 - Automated testing pipeline configuration
 
-#### [`complete_backend_testing_execution_prompt.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/complete_backend_testing_execution_prompt.md)
+#### [`complete_backend_testing_execution_prompt.md`](./complete_backend_testing_execution_prompt.md)
 **Comprehensive Backend Testing Execution Plan**
 - Complete testing execution workflow
 - Test coverage requirements and validation
 - CI/CD integration for automated testing
 - Quality gates and deployment criteria
 
-#### [`unified_backend_testing_execution_prompt.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/unified_backend_testing_execution_prompt.md)
+#### [`unified_backend_testing_execution_prompt.md`](./unified_backend_testing_execution_prompt.md)
 **Unified Testing Strategy**
 - Standardized testing approach across all backend components
 - Cross-service integration testing protocols
 - Performance benchmarking and load testing strategies
 
-#### [`gemini_backend_testing_analysis.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/gemini_backend_testing_analysis.md)
+#### [`gemini_backend_testing_analysis.md`](./gemini_backend_testing_analysis.md)
 **Gemini AI Analysis of Backend Testing**
 - AI-generated testing insights and recommendations
 - Automated test case generation suggestions
@@ -105,7 +105,7 @@ This directory contains all backend-related documentation for the LeanVibe AI pl
 
 ### 🔧 Integration & Development
 
-#### [`integration_lessons_learned.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/integration_lessons_learned.md)
+#### [`integration_lessons_learned.md`](./integration_lessons_learned.md)
 **Critical Integration Lessons and Best Practices**
 - **Golden Rules**: No build = no commit, interface contracts are sacred
 - Common integration failure patterns and solutions
@@ -138,19 +138,19 @@ This directory contains all backend-related documentation for the LeanVibe AI pl
 
 | Component | Status | Documentation | Key Features |
 |-----------|--------|---------------|--------------|
-| **L3 Agent** | ✅ Complete | [`L3_AGENT_INTEGRATION.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/L3_AGENT_INTEGRATION.md) | Autonomous coding, confidence scoring, session persistence |
-| **Reconnection System** | ✅ Complete | [`SPRINT_1_5_SUMMARY.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/SPRINT_1_5_SUMMARY.md) | WebSocket reconnection, state preservation, missed events |
-| **Task APIs** | 🚧 In Progress | [`02_Backend_Task_Management_APIs.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/02_Backend_Task_Management_APIs.md) | CRUD operations, lifecycle management, bulk processing |
-| **Integration Testing** | 📋 Planned | [`07_Kanban_Backend_Integration_Testing.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/07_Kanban_Backend_Integration_Testing.md) | Kanban testing, API validation, performance testing |
-| **Architecture** | 📚 Reference | [`ARCHITECTURE.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/ARCHITECTURE.md) | System design, service breakdown, data layer design |
+| **L3 Agent** | ✅ Complete | [`L3_AGENT_INTEGRATION.md`](./L3_AGENT_INTEGRATION.md) | Autonomous coding, confidence scoring, session persistence |
+| **Reconnection System** | ✅ Complete | [`SPRINT_1_5_SUMMARY.md`](./SPRINT_1_5_SUMMARY.md) | WebSocket reconnection, state preservation, missed events |
+| **Task APIs** | 🚧 In Progress | [`02_Backend_Task_Management_APIs.md`](./02_Backend_Task_Management_APIs.md) | CRUD operations, lifecycle management, bulk processing |
+| **Integration Testing** | 📋 Planned | [`07_Kanban_Backend_Integration_Testing.md`](./07_Kanban_Backend_Integration_Testing.md) | Kanban testing, API validation, performance testing |
+| **Architecture** | 📚 Reference | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | System design, service breakdown, data layer design |
 
 ## 🔍 Search and Discovery
 
-- **Core Functionality**: Start with [`L3_AGENT_INTEGRATION.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/L3_AGENT_INTEGRATION.md) for current capabilities
-- **System Overview**: See [`ARCHITECTURE.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/ARCHITECTURE.md) for complete system design
-- **API Development**: Check [`02_Backend_Task_Management_APIs.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/02_Backend_Task_Management_APIs.md) for API specifications
-- **Testing Strategy**: Review [`complete_backend_testing_execution_prompt.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/complete_backend_testing_execution_prompt.md) for testing approach
-- **Integration Issues**: Reference [`integration_lessons_learned.md`](/Users/bogdan/work/leanvibe-ai/docs/organized/backend/integration_lessons_learned.md) for common pitfalls and solutions
+- **Core Functionality**: Start with [`L3_AGENT_INTEGRATION.md`](./L3_AGENT_INTEGRATION.md) for current capabilities
+- **System Overview**: See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for complete system design
+- **API Development**: Check [`02_Backend_Task_Management_APIs.md`](./02_Backend_Task_Management_APIs.md) for API specifications
+- **Testing Strategy**: Review [`complete_backend_testing_execution_prompt.md`](./complete_backend_testing_execution_prompt.md) for testing approach
+- **Integration Issues**: Reference [`integration_lessons_learned.md`](./integration_lessons_learned.md) for common pitfalls and solutions
 
 ## 📞 Support and Contribution
 
