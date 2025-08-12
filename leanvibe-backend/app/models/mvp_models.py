@@ -23,6 +23,7 @@ class MVPStatus(str, Enum):
     DEPLOYED = "deployed"                   # MVP is live and operational
     PAUSED = "paused"                       # MVP generation/deployment paused
     FAILED = "failed"                       # MVP generation failed
+    CANCELLED = "cancelled"                 # MVP generation cancelled
     ARCHIVED = "archived"                   # MVP archived by founder
 
 
@@ -318,3 +319,127 @@ class MVPMetrics(BaseModel):
     collected_at: datetime = Field(default_factory=datetime.utcnow)
     
     model_config = ConfigDict(extra="ignore")
+
+
+# API Request/Response Models for REST API
+
+class MVPProjectCreateRequest(BaseModel):
+    """Request model for creating new MVP projects via API"""
+    project_name: str = Field(min_length=1, max_length=100, description="Name for the MVP project")
+    description: Optional[str] = Field(None, max_length=500, description="Project description")
+    interview: FounderInterview = Field(description="Complete founder interview data")
+    preferred_tech_stack: Optional[MVPTechStack] = Field(None)
+    
+    model_config = ConfigDict(extra="ignore")
+
+
+class MVPProjectUpdateRequest(BaseModel):
+    """Request model for updating MVP project information"""
+    project_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    interview: Optional[FounderInterview] = Field(None)
+    
+    model_config = ConfigDict(extra="ignore")
+
+
+class MVPProjectResponse(BaseModel):
+    """Response model for MVP project information"""
+    id: UUID = Field(description="Unique project identifier")
+    project_name: str = Field(description="Name of the MVP project")
+    description: Optional[str] = Field(description="Project description")
+    status: MVPStatus = Field(description="Current project status")
+    slug: str = Field(description="URL-safe project identifier")
+    interview: Optional[FounderInterview] = Field(description="Founder interview data")
+    blueprint: Optional[TechnicalBlueprint] = Field(description="Technical blueprint")
+    created_at: datetime = Field(description="Project creation timestamp")
+    updated_at: datetime = Field(description="Last update timestamp")
+    completed_at: Optional[datetime] = Field(description="Completion timestamp")
+    tenant_id: UUID = Field(description="Tenant identifier")
+    error_message: Optional[str] = Field(description="Error message if failed")
+    generation_duration: Optional[float] = Field(description="Generation duration in seconds")
+    
+    model_config = ConfigDict(extra="ignore")
+
+
+class BlueprintResponse(BaseModel):
+    """Response model for technical blueprint information"""
+    project_id: UUID = Field(description="Associated project ID")
+    blueprint: TechnicalBlueprint = Field(description="Technical blueprint details")
+    approved: bool = Field(description="Whether blueprint is approved")
+    created_at: datetime = Field(description="Blueprint creation timestamp")
+    updated_at: datetime = Field(description="Last update timestamp")
+    approved_by: Optional[UUID] = Field(None, description="User who approved blueprint")
+    approval_notes: Optional[str] = Field(None, description="Approval notes")
+    revision_notes: Optional[str] = Field(None, description="Revision request notes")
+    
+    model_config = ConfigDict(extra="ignore")
+
+
+class BlueprintUpdateRequest(BaseModel):
+    """Request model for updating technical blueprint"""
+    blueprint: TechnicalBlueprint = Field(description="Updated technical blueprint")
+    revision_notes: Optional[str] = Field(None, description="Notes about the revision")
+    
+    model_config = ConfigDict(extra="ignore")
+
+
+class BlueprintApprovalRequest(BaseModel):
+    """Request model for approving technical blueprint"""
+    approved: bool = Field(description="Approval decision")
+    notes: Optional[str] = Field(None, description="Approval notes")
+    requested_changes: Optional[List[str]] = Field(None, description="Requested changes if not approved")
+    
+    model_config = ConfigDict(extra="ignore")
+
+
+class ProjectFileInfo(BaseModel):
+    """Information about generated project files"""
+    path: str = Field(description="File path within project")
+    name: str = Field(description="File name")
+    size: int = Field(description="File size in bytes")
+    file_type: str = Field(description="File type/extension")
+    created_at: datetime = Field(description="File creation timestamp")
+    modified_at: datetime = Field(description="Last modification timestamp")
+    download_url: str = Field(description="URL to download the file")
+    checksum: Optional[str] = Field(None, description="File checksum for integrity")
+    
+    model_config = ConfigDict(extra="ignore")
+
+
+class ProjectArchiveResponse(BaseModel):
+    """Response model for project archive information"""
+    project_id: UUID = Field(description="Project identifier")
+    archive_format: str = Field(description="Archive format (zip, tar)")
+    file_count: int = Field(description="Number of files in archive")
+    total_size: int = Field(description="Total archive size in bytes")
+    created_at: datetime = Field(description="Archive creation timestamp")
+    download_url: str = Field(description="URL to download archive")
+    expires_at: Optional[datetime] = Field(None, description="Download link expiration")
+    
+    model_config = ConfigDict(extra="ignore")
+
+
+class DeploymentRequest(BaseModel):
+    """Request model for deploying MVP project"""
+    environment: str = Field(description="Deployment environment (staging, production)")
+    custom_domain: Optional[str] = Field(None, description="Custom domain for deployment")
+    environment_variables: Optional[Dict[str, str]] = Field(None, description="Environment variables")
+    scaling_config: Optional[Dict[str, Any]] = Field(None, description="Scaling configuration")
+    
+    model_config = ConfigDict(extra="ignore")
+
+
+class DeploymentResponse(BaseModel):
+    """Response model for deployment information"""
+    deployment_id: str = Field(description="Unique deployment identifier")
+    environment: str = Field(description="Deployment environment")
+    status: str = Field(description="Deployment status")
+    url: str = Field(description="Deployed application URL")
+    deployed_at: datetime = Field(description="Deployment timestamp")
+    health_check_url: Optional[str] = Field(None, description="Health check endpoint")
+    logs_url: Optional[str] = Field(None, description="Deployment logs URL")
+    
+    model_config = ConfigDict(extra="ignore")
+
+
+# End of MVP Models

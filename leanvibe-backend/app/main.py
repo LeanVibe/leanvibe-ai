@@ -21,6 +21,19 @@ from .api.endpoints.synthetic_monitoring import router as synthetic_monitoring_r
 from .api.endpoints.graph_analysis import router as graph_analysis_router
 from .api.endpoints.health import router as health_router
 from .api.endpoints.auth import router as auth_router
+
+# Import new Phase 2C API routers
+from .api.endpoints.pipelines import router as pipelines_router
+from .api.endpoints.mvp_projects import router as mvp_projects_router
+from .api.endpoints.interviews import router as interviews_router
+from .api.endpoints.analytics import router as analytics_router
+
+# Import API middleware
+from .middleware.api_middleware import (
+    RequestIDMiddleware, RequestLoggingMiddleware, RateLimitingMiddleware,
+    SecurityHeadersMiddleware, RequestValidationMiddleware, ErrorHandlingMiddleware,
+    CompressionMiddleware, CacheControlMiddleware
+)
 from .api.models import CodeCompletionRequest
 from .core.connection_manager import ConnectionManager
 from .models.event_models import ClientPreferences, EventType
@@ -191,7 +204,18 @@ app.add_middleware(
 )
 
 
-# Register API routers
+
+# Add comprehensive middleware stack
+app.add_middleware(CacheControlMiddleware)
+app.add_middleware(CompressionMiddleware)
+app.add_middleware(ErrorHandlingMiddleware)
+app.add_middleware(RequestValidationMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RateLimitingMiddleware, default_rate_limit=100)
+app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(RequestIDMiddleware)
+
+# Register API routers - Core functionality
 app.include_router(code_completion_router)
 app.include_router(tasks_router)
 app.include_router(health_mlx_router)
@@ -205,6 +229,12 @@ app.include_router(synthetic_monitoring_router)  # Synthetic probes and observab
 app.include_router(graph_analysis_router)  # Neo4j graph database analysis endpoints
 app.include_router(health_router)  # Production health check endpoints
 app.include_router(auth_router)  # Authentication and authorization endpoints
+
+# Register new REST API routers - Phase 2C
+app.include_router(pipelines_router)  # Autonomous pipeline management
+app.include_router(mvp_projects_router)  # MVP project management
+app.include_router(interviews_router)  # Founder interview management
+app.include_router(analytics_router)  # Analytics and metrics
 
 
 # Code completion WebSocket handler

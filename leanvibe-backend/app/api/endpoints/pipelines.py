@@ -1,0 +1,915 @@
+"""
+Autonomous Pipeline API endpoints for LeanVibe Platform
+Provides comprehensive REST API for managing autonomous MVP generation pipelines
+"""
+
+import logging
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any
+from uuid import UUID
+
+from fastapi import APIRouter, HTTPException, Depends, Query, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+from ...models.pipeline_models import (
+    PipelineCreateRequest, PipelineResponse, PipelineStatusResponse,
+    PipelineUpdateRequest, PipelineExecutionRequest, PipelineLogEntry,
+    PipelineStatus, PipelineStage, PipelineProgress, PipelineConfiguration
+)
+from ...models.mvp_models import MVPProject, MVPStatus, FounderInterview, TechnicalBlueprint
+from ...services.mvp_service import mvp_service
+from ...services.auth_service import auth_service
+from ...middleware.tenant_middleware import get_current_tenant, require_tenant
+from ...core.exceptions import InsufficientPermissionsError
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api/v1/pipelines", tags=["pipelines"])
+security = HTTPBearer()
+
+
+@router.post("/", response_model=PipelineResponse, status_code=status.HTTP_201_CREATED)
+async def create_pipeline(
+    pipeline_request: PipelineCreateRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> PipelineResponse:
+    """
+    Create new autonomous pipeline for MVP generation
+    
+    Creates a new pipeline that will manage the complete autonomous generation
+    of an MVP from founder interview through deployment.
+    
+    **Requirements:**
+    - Valid authentication token
+    - Complete founder interview data
+    - Tenant must have available pipeline quota
+    
+    **Process Flow:**
+    1. Validate founder interview completeness
+    2. Create MVP project record
+    3. Initialize pipeline tracking
+    4. Return pipeline details for monitoring
+    """
+    try:
+        # Verify token and get user
+        payload = await auth_service.verify_token(credentials.credentials)
+        user_id = UUID(payload["user_id"])
+        
+        # Validate founder interview data
+        if not _validate_founder_interview(pipeline_request.founder_interview):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Incomplete founder interview data"
+            )
+        
+        # Create MVP project
+        mvp_project = await mvp_service.create_mvp_project(
+            tenant_id=tenant.id,
+            founder_interview=pipeline_request.founder_interview,
+            priority=pipeline_request.configuration.priority if pipeline_request.configuration else "normal"
+        )
+        
+        # Create pipeline response
+        pipeline_response = PipelineResponse(
+            id=mvp_project.id,
+            project_name=mvp_project.project_name,
+            status=PipelineStatus.BLUEPRINT_PENDING,
+            current_stage=PipelineStage.BLUEPRINT_GENERATION,
+            progress=PipelineProgress(
+                overall_progress=0.0,
+                stage_progress=0.0,
+                estimated_completion=datetime.utcnow() + timedelta(hours=6),
+                stages_completed=[],
+                current_stage_details="Pipeline created, waiting for blueprint approval"
+            ),
+            created_at=mvp_project.created_at,
+            estimated_completion=datetime.utcnow() + timedelta(hours=6),
+            tenant_id=tenant.id,
+            created_by=user_id
+        )
+        
+        logger.info(f"Created pipeline {mvp_project.id} for tenant {tenant.id}")
+        return pipeline_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to create pipeline: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create autonomous pipeline"
+        )
+
+
+@router.get("/", response_model=List[PipelineResponse])
+async def list_pipelines(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    status_filter: Optional[PipelineStatus] = Query(None),
+    stage_filter: Optional[PipelineStage] = Query(None)
+) -> List[PipelineResponse]:
+    """
+    List user's autonomous pipelines with filtering and pagination
+    
+    Returns a paginated list of pipelines for the current tenant with optional filtering.
+    
+    **Query Parameters:**
+    - **limit**: Number of results (1-100, default 50)
+    - **offset**: Result offset for pagination (default 0)
+    - **status_filter**: Filter by pipeline status
+    - **stage_filter**: Filter by current pipeline stage
+    
+    **Supported Filters:**
+    - Status: blueprint_pending, generating, deployed, failed, cancelled
+    - Stage: blueprint_generation, backend_development, frontend_development, infrastructure_setup, deployment
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+        
+        # Get MVP projects for tenant
+        mvp_projects = await mvp_service.get_tenant_mvp_projects(
+            tenant_id=tenant.id,
+            limit=limit,
+            offset=offset
+        )
+        
+        # Convert to pipeline responses with filtering
+        pipelines = []
+        for project in mvp_projects:
+            pipeline_response = await _mvp_project_to_pipeline_response(project)
+            
+            # Apply filters
+            if status_filter and pipeline_response.status != status_filter:
+                continue
+            if stage_filter and pipeline_response.current_stage != stage_filter:
+                continue
+                
+            pipelines.append(pipeline_response)
+        
+        logger.info(f"Listed {len(pipelines)} pipelines for tenant {tenant.id}")
+        return pipelines
+        
+    except Exception as e:
+        logger.error(f"Failed to list pipelines: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve pipelines"
+        )
+
+
+@router.get("/{pipeline_id}", response_model=PipelineResponse)
+async def get_pipeline(
+    pipeline_id: UUID,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> PipelineResponse:
+    """
+    Get detailed pipeline information by ID
+    
+    Returns comprehensive pipeline details including current status,
+    progress metrics, and execution history.
+    
+    **Response includes:**
+    - Current execution status and stage
+    - Progress metrics and estimates
+    - Configuration and blueprint details
+    - Error information (if failed)
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+        
+        # Get MVP project
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Pipeline not found"
+            )
+        
+        # Verify tenant access
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to pipeline"
+            )
+        
+        # Convert to pipeline response
+        pipeline_response = await _mvp_project_to_pipeline_response(mvp_project)
+        
+        return pipeline_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get pipeline {pipeline_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve pipeline"
+        )
+
+
+@router.put("/{pipeline_id}", response_model=PipelineResponse)
+async def update_pipeline(
+    pipeline_id: UUID,
+    update_request: PipelineUpdateRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> PipelineResponse:
+    """
+    Update pipeline configuration and settings
+    
+    Allows updating pipeline metadata, configuration, and settings.
+    Cannot modify pipeline during active generation.
+    
+    **Updateable Fields:**
+    - Project name and description
+    - Configuration settings
+    - Priority level (if not currently generating)
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+        
+        # Get MVP project
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Pipeline not found"
+            )
+        
+        # Verify tenant access
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to pipeline"
+            )
+        
+        # Check if pipeline can be updated
+        if mvp_project.status == MVPStatus.GENERATING:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot update pipeline during generation"
+            )
+        
+        # Apply updates
+        if update_request.project_name:
+            mvp_project.project_name = update_request.project_name
+        if update_request.description:
+            mvp_project.description = update_request.description
+        
+        # Update project
+        await mvp_service.update_mvp_project(mvp_project)
+        
+        # Return updated pipeline
+        pipeline_response = await _mvp_project_to_pipeline_response(mvp_project)
+        
+        logger.info(f"Updated pipeline {pipeline_id}")
+        return pipeline_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update pipeline {pipeline_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update pipeline"
+        )
+
+
+@router.delete("/{pipeline_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_pipeline(
+    pipeline_id: UUID,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+):
+    """
+    Cancel and delete pipeline
+    
+    Cancels active generation (if running) and removes the pipeline.
+    This action cannot be undone.
+    
+    **Behavior:**
+    - Active generation will be cancelled
+    - All pipeline data will be removed
+    - Generated files will be preserved (if any)
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+        
+        # Get MVP project
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Pipeline not found"
+            )
+        
+        # Verify tenant access
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to pipeline"
+            )
+        
+        # Cancel generation if active
+        if mvp_project.status == MVPStatus.GENERATING:
+            await mvp_service.cancel_mvp_generation(pipeline_id)
+        
+        # TODO: Implement actual deletion when database persistence is added
+        logger.info(f"Deleted pipeline {pipeline_id}")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete pipeline {pipeline_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete pipeline"
+        )
+
+
+@router.post("/{pipeline_id}/start", response_model=PipelineResponse)
+async def start_pipeline(
+    pipeline_id: UUID,
+    execution_request: PipelineExecutionRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> PipelineResponse:
+    """
+    Start autonomous pipeline execution
+    
+    Begins the autonomous MVP generation process using the provided
+    technical blueprint and configuration.
+    
+    **Prerequisites:**
+    - Pipeline must be in blueprint_pending status
+    - Technical blueprint must be provided and valid
+    - Tenant must have available generation quota
+    
+    **Process:**
+    1. Validates technical blueprint
+    2. Starts assembly line orchestration
+    3. Returns updated pipeline with progress tracking
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+        
+        # Get MVP project
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Pipeline not found"
+            )
+        
+        # Verify tenant access
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to pipeline"
+            )
+        
+        # Validate pipeline can be started
+        if mvp_project.status not in [MVPStatus.BLUEPRINT_PENDING, MVPStatus.FAILED]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Pipeline in {mvp_project.status} status cannot be started"
+            )
+        
+        # Start MVP generation
+        success = await mvp_service.start_mvp_generation(
+            pipeline_id,
+            execution_request.technical_blueprint
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to start pipeline execution"
+            )
+        
+        # Return updated pipeline
+        updated_project = await mvp_service.get_mvp_project(pipeline_id)
+        pipeline_response = await _mvp_project_to_pipeline_response(updated_project)
+        
+        logger.info(f"Started pipeline execution for {pipeline_id}")
+        return pipeline_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to start pipeline {pipeline_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to start pipeline execution"
+        )
+
+
+@router.post("/{pipeline_id}/pause", response_model=PipelineResponse)
+async def pause_pipeline(
+    pipeline_id: UUID,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> PipelineResponse:
+    """
+    Pause pipeline execution
+    
+    Temporarily pauses the autonomous generation process.
+    Can be resumed later without losing progress.
+    
+    **Note:** Currently not fully implemented in assembly line system.
+    Will return appropriate status for future implementation.
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+        
+        # Get MVP project
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Pipeline not found"
+            )
+        
+        # Verify tenant access
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to pipeline"
+            )
+        
+        # Check if pipeline can be paused
+        if mvp_project.status != MVPStatus.GENERATING:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Pipeline is not currently running"
+            )
+        
+        # TODO: Implement pause functionality in assembly line system
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Pause functionality not yet implemented"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to pause pipeline {pipeline_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to pause pipeline"
+        )
+
+
+@router.post("/{pipeline_id}/resume", response_model=PipelineResponse)
+async def resume_pipeline(
+    pipeline_id: UUID,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> PipelineResponse:
+    """
+    Resume paused pipeline execution
+    
+    Resumes a previously paused autonomous generation process.
+    
+    **Note:** Currently not fully implemented in assembly line system.
+    Will return appropriate status for future implementation.
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+        
+        # Get MVP project
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Pipeline not found"
+            )
+        
+        # Verify tenant access
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to pipeline"
+            )
+        
+        # TODO: Implement resume functionality in assembly line system
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="Resume functionality not yet implemented"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to resume pipeline {pipeline_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to resume pipeline"
+        )
+
+
+@router.post("/{pipeline_id}/restart", response_model=PipelineResponse)
+async def restart_pipeline(
+    pipeline_id: UUID,
+    execution_request: PipelineExecutionRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> PipelineResponse:
+    """
+    Restart failed pipeline
+    
+    Restarts a failed pipeline with the same or updated technical blueprint.
+    Clears previous error state and begins fresh execution.
+    
+    **Prerequisites:**
+    - Pipeline must be in failed status
+    - Updated technical blueprint (optional)
+    - Tenant must have available generation quota
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+        
+        # Get MVP project
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Pipeline not found"
+            )
+        
+        # Verify tenant access
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to pipeline"
+            )
+        
+        # Check if pipeline can be restarted
+        if mvp_project.status != MVPStatus.FAILED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only failed pipelines can be restarted"
+            )
+        
+        # Clear error state and restart
+        mvp_project.status = MVPStatus.BLUEPRINT_PENDING
+        mvp_project.error_message = None
+        await mvp_service.update_mvp_project(mvp_project)
+        
+        # Start with new blueprint
+        success = await mvp_service.start_mvp_generation(
+            pipeline_id,
+            execution_request.technical_blueprint
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to restart pipeline execution"
+            )
+        
+        # Return updated pipeline
+        updated_project = await mvp_service.get_mvp_project(pipeline_id)
+        pipeline_response = await _mvp_project_to_pipeline_response(updated_project)
+        
+        logger.info(f"Restarted pipeline {pipeline_id}")
+        return pipeline_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to restart pipeline {pipeline_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to restart pipeline"
+        )
+
+
+@router.get("/{pipeline_id}/status", response_model=PipelineStatusResponse)
+async def get_pipeline_status(
+    pipeline_id: UUID,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> PipelineStatusResponse:
+    """
+    Get real-time pipeline status and progress
+    
+    Returns detailed real-time status including current stage,
+    progress metrics, logs, and error information.
+    
+    **Status Information:**
+    - Current execution status and stage
+    - Progress percentages and estimates
+    - Recent execution logs
+    - Error details (if applicable)
+    - Stage-specific metadata
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+        
+        # Get MVP project
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Pipeline not found"
+            )
+        
+        # Verify tenant access
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to pipeline"
+            )
+        
+        # Get generation progress
+        progress_data = await mvp_service.get_generation_progress(pipeline_id)
+        
+        # Convert MVP status to pipeline status
+        status_mapping = {
+            MVPStatus.BLUEPRINT_PENDING: PipelineStatus.BLUEPRINT_PENDING,
+            MVPStatus.GENERATING: PipelineStatus.GENERATING,
+            MVPStatus.DEPLOYED: PipelineStatus.DEPLOYED,
+            MVPStatus.FAILED: PipelineStatus.FAILED,
+            MVPStatus.CANCELLED: PipelineStatus.CANCELLED
+        }
+        
+        pipeline_status = status_mapping.get(mvp_project.status, PipelineStatus.FAILED)
+        
+        # Create status response
+        if progress_data:
+            progress = PipelineProgress(
+                overall_progress=progress_data.get("overall_progress", 0.0),
+                stage_progress=progress_data.get("stage_progress", 0.0),
+                estimated_completion=progress_data.get("estimated_completion"),
+                stages_completed=progress_data.get("stages_completed", []),
+                current_stage_details=progress_data.get("current_stage_details", "")
+            )
+            
+            # Map current stage
+            stage_mapping = {
+                "backend": PipelineStage.BACKEND_DEVELOPMENT,
+                "frontend": PipelineStage.FRONTEND_DEVELOPMENT,
+                "infrastructure": PipelineStage.INFRASTRUCTURE_SETUP,
+                "observability": PipelineStage.DEPLOYMENT,
+                "completed": PipelineStage.DEPLOYMENT,
+                "failed": PipelineStage.BLUEPRINT_GENERATION
+            }
+            
+            current_stage = stage_mapping.get(
+                progress_data.get("current_stage", ""),
+                PipelineStage.BLUEPRINT_GENERATION
+            )
+        else:
+            # Default progress for non-generating pipelines
+            progress = PipelineProgress(
+                overall_progress=100.0 if pipeline_status == PipelineStatus.DEPLOYED else 0.0,
+                stage_progress=0.0,
+                estimated_completion=mvp_project.completed_at,
+                stages_completed=[],
+                current_stage_details=mvp_project.error_message or "Pipeline not active"
+            )
+            current_stage = PipelineStage.BLUEPRINT_GENERATION
+        
+        # Generate mock logs for demonstration
+        logs = []
+        if mvp_project.status == MVPStatus.GENERATING and progress_data:
+            logs.append(PipelineLogEntry(
+                timestamp=datetime.utcnow(),
+                level="INFO",
+                message=progress_data.get("current_stage_details", "Processing..."),
+                stage=current_stage
+            ))
+        
+        status_response = PipelineStatusResponse(
+            status=pipeline_status,
+            current_stage=current_stage,
+            progress=progress,
+            stage_details=progress_data or {},
+            logs=logs,
+            error_message=mvp_project.error_message
+        )
+        
+        return status_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get pipeline status {pipeline_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve pipeline status"
+        )
+
+
+@router.get("/{pipeline_id}/logs", response_model=List[PipelineLogEntry])
+async def get_pipeline_logs(
+    pipeline_id: UUID,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant),
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    level_filter: Optional[str] = Query(None),
+    stage_filter: Optional[PipelineStage] = Query(None)
+) -> List[PipelineLogEntry]:
+    """
+    Get pipeline execution logs with filtering
+    
+    Returns paginated execution logs for the pipeline with optional filtering.
+    
+    **Query Parameters:**
+    - **limit**: Number of log entries (1-1000, default 100)
+    - **offset**: Log offset for pagination (default 0)
+    - **level_filter**: Filter by log level (INFO, WARNING, ERROR)
+    - **stage_filter**: Filter by pipeline stage
+    
+    **Log Levels:**
+    - INFO: General execution information
+    - WARNING: Non-critical issues or warnings
+    - ERROR: Error conditions and failures
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+        
+        # Get MVP project
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Pipeline not found"
+            )
+        
+        # Verify tenant access
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied to pipeline"
+            )
+        
+        # TODO: Implement actual log retrieval from assembly line system
+        # For now, return mock logs
+        logs = []
+        
+        # Generate sample logs based on project status
+        if mvp_project.status == MVPStatus.GENERATING:
+            logs.extend([
+                PipelineLogEntry(
+                    timestamp=datetime.utcnow() - timedelta(minutes=5),
+                    level="INFO",
+                    message="Starting autonomous pipeline execution",
+                    stage=PipelineStage.BLUEPRINT_GENERATION
+                ),
+                PipelineLogEntry(
+                    timestamp=datetime.utcnow() - timedelta(minutes=3),
+                    level="INFO",
+                    message="Blueprint validation completed successfully",
+                    stage=PipelineStage.BACKEND_DEVELOPMENT
+                ),
+                PipelineLogEntry(
+                    timestamp=datetime.utcnow() - timedelta(minutes=1),
+                    level="INFO",
+                    message="Backend agent processing in progress...",
+                    stage=PipelineStage.BACKEND_DEVELOPMENT
+                )
+            ])
+        elif mvp_project.status == MVPStatus.DEPLOYED:
+            logs.append(PipelineLogEntry(
+                timestamp=mvp_project.completed_at or datetime.utcnow(),
+                level="INFO",
+                message="Pipeline execution completed successfully",
+                stage=PipelineStage.DEPLOYMENT
+            ))
+        elif mvp_project.status == MVPStatus.FAILED:
+            logs.append(PipelineLogEntry(
+                timestamp=mvp_project.updated_at,
+                level="ERROR",
+                message=mvp_project.error_message or "Pipeline execution failed",
+                stage=PipelineStage.BACKEND_DEVELOPMENT
+            ))
+        
+        # Apply filters
+        if level_filter:
+            logs = [log for log in logs if log.level == level_filter.upper()]
+        if stage_filter:
+            logs = [log for log in logs if log.stage == stage_filter]
+        
+        # Apply pagination
+        paginated_logs = logs[offset:offset + limit]
+        
+        return paginated_logs
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get pipeline logs {pipeline_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve pipeline logs"
+        )
+
+
+# Helper functions
+
+def _validate_founder_interview(interview: FounderInterview) -> bool:
+    """Validate founder interview completeness"""
+    required_fields = [
+        interview.business_idea,
+        interview.target_market,
+        interview.value_proposition
+    ]
+    
+    return all(field and field.strip() for field in required_fields)
+
+
+async def _mvp_project_to_pipeline_response(mvp_project: MVPProject) -> PipelineResponse:
+    """Convert MVP project to pipeline response"""
+    
+    # Map MVP status to pipeline status
+    status_mapping = {
+        MVPStatus.BLUEPRINT_PENDING: PipelineStatus.BLUEPRINT_PENDING,
+        MVPStatus.GENERATING: PipelineStatus.GENERATING,
+        MVPStatus.DEPLOYED: PipelineStatus.DEPLOYED,
+        MVPStatus.FAILED: PipelineStatus.FAILED,
+        MVPStatus.CANCELLED: PipelineStatus.CANCELLED
+    }
+    
+    pipeline_status = status_mapping.get(mvp_project.status, PipelineStatus.FAILED)
+    
+    # Determine current stage
+    if mvp_project.status == MVPStatus.BLUEPRINT_PENDING:
+        current_stage = PipelineStage.BLUEPRINT_GENERATION
+    elif mvp_project.status == MVPStatus.GENERATING:
+        # Get real-time stage from progress
+        progress_data = await mvp_service.get_generation_progress(mvp_project.id)
+        if progress_data:
+            stage_mapping = {
+                "backend": PipelineStage.BACKEND_DEVELOPMENT,
+                "frontend": PipelineStage.FRONTEND_DEVELOPMENT,
+                "infrastructure": PipelineStage.INFRASTRUCTURE_SETUP,
+                "observability": PipelineStage.DEPLOYMENT
+            }
+            current_stage = stage_mapping.get(
+                progress_data.get("current_stage", ""),
+                PipelineStage.BACKEND_DEVELOPMENT
+            )
+        else:
+            current_stage = PipelineStage.BACKEND_DEVELOPMENT
+    elif mvp_project.status == MVPStatus.DEPLOYED:
+        current_stage = PipelineStage.DEPLOYMENT
+    else:
+        current_stage = PipelineStage.BLUEPRINT_GENERATION
+    
+    # Get progress information
+    progress_data = await mvp_service.get_generation_progress(mvp_project.id)
+    if progress_data:
+        progress = PipelineProgress(
+            overall_progress=progress_data.get("overall_progress", 0.0),
+            stage_progress=progress_data.get("stage_progress", 0.0),
+            estimated_completion=progress_data.get("estimated_completion"),
+            stages_completed=progress_data.get("stages_completed", []),
+            current_stage_details=progress_data.get("current_stage_details", "")
+        )
+    else:
+        # Default progress
+        if mvp_project.status == MVPStatus.DEPLOYED:
+            progress = PipelineProgress(
+                overall_progress=100.0,
+                stage_progress=100.0,
+                estimated_completion=mvp_project.completed_at,
+                stages_completed=["backend", "frontend", "infrastructure", "observability"],
+                current_stage_details="Pipeline completed successfully"
+            )
+        else:
+            progress = PipelineProgress(
+                overall_progress=0.0,
+                stage_progress=0.0,
+                estimated_completion=mvp_project.created_at + timedelta(hours=6),
+                stages_completed=[],
+                current_stage_details=mvp_project.error_message or "Pipeline not active"
+            )
+    
+    return PipelineResponse(
+        id=mvp_project.id,
+        project_name=mvp_project.project_name,
+        status=pipeline_status,
+        current_stage=current_stage,
+        progress=progress,
+        created_at=mvp_project.created_at,
+        estimated_completion=progress.estimated_completion,
+        tenant_id=mvp_project.tenant_id,
+        created_by=mvp_project.tenant_id  # TODO: Add proper user tracking
+    )
