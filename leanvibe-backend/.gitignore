@@ -1,0 +1,9 @@
+# Security - Environment files
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+# Security - Secrets
+secrets/
+private/
