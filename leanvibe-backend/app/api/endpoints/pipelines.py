@@ -454,11 +454,16 @@ async def pause_pipeline(
                 detail="Pipeline is not currently running"
             )
         
-        # TODO: Implement pause functionality in assembly line system
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Pause functionality not yet implemented"
-        )
+        # Pause via MVP service
+        paused = await mvp_service.pause_mvp_generation(pipeline_id)
+        if not paused:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unable to pause pipeline at this time"
+            )
+        updated_project = await mvp_service.get_mvp_project(pipeline_id)
+        pipeline_response = await _mvp_project_to_pipeline_response(updated_project)
+        return pipeline_response
         
     except HTTPException:
         raise
@@ -503,11 +508,16 @@ async def resume_pipeline(
                 detail="Access denied to pipeline"
             )
         
-        # TODO: Implement resume functionality in assembly line system
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Resume functionality not yet implemented"
-        )
+        # Resume via MVP service
+        resumed = await mvp_service.resume_mvp_generation(pipeline_id)
+        if not resumed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unable to resume pipeline at this time"
+            )
+        updated_project = await mvp_service.get_mvp_project(pipeline_id)
+        pipeline_response = await _mvp_project_to_pipeline_response(updated_project)
+        return pipeline_response
         
     except HTTPException:
         raise
@@ -760,46 +770,32 @@ async def get_pipeline_logs(
                 detail="Access denied to pipeline"
             )
         
-        # TODO: Implement actual log retrieval from assembly line system
-        # For now, return mock logs
-        logs = []
-        
-        # Generate sample logs based on project status
-        if mvp_project.status == MVPStatus.GENERATING:
-            logs.extend([
-                PipelineLogEntry(
-                    timestamp=datetime.utcnow() - timedelta(minutes=5),
-                    level="INFO",
-                    message="Starting autonomous pipeline execution",
-                    stage=PipelineStage.BLUEPRINT_GENERATION
-                ),
-                PipelineLogEntry(
-                    timestamp=datetime.utcnow() - timedelta(minutes=3),
-                    level="INFO",
-                    message="Blueprint validation completed successfully",
-                    stage=PipelineStage.BACKEND_DEVELOPMENT
-                ),
-                PipelineLogEntry(
-                    timestamp=datetime.utcnow() - timedelta(minutes=1),
-                    level="INFO",
-                    message="Backend agent processing in progress...",
-                    stage=PipelineStage.BACKEND_DEVELOPMENT
-                )
-            ])
-        elif mvp_project.status == MVPStatus.DEPLOYED:
-            logs.append(PipelineLogEntry(
-                timestamp=mvp_project.completed_at or datetime.utcnow(),
-                level="INFO",
-                message="Pipeline execution completed successfully",
-                stage=PipelineStage.DEPLOYMENT
-            ))
-        elif mvp_project.status == MVPStatus.FAILED:
-            logs.append(PipelineLogEntry(
-                timestamp=mvp_project.updated_at,
-                level="ERROR",
-                message=mvp_project.error_message or "Pipeline execution failed",
-                stage=PipelineStage.BACKEND_DEVELOPMENT
-            ))
+        # Retrieve logs from MVP service in-memory store
+        raw_logs = await mvp_service.get_generation_logs(pipeline_id)
+        logs: List[PipelineLogEntry] = []
+        for entry in raw_logs:
+            try:
+                # Map stage string to PipelineStage if possible
+                stage_str = str(entry.get("stage", "")).lower()
+                stage = {
+                    "blueprint_generation": PipelineStage.BLUEPRINT_GENERATION,
+                    "backend": PipelineStage.BACKEND_DEVELOPMENT,
+                    "backend_development": PipelineStage.BACKEND_DEVELOPMENT,
+                    "frontend": PipelineStage.FRONTEND_DEVELOPMENT,
+                    "frontend_development": PipelineStage.FRONTEND_DEVELOPMENT,
+                    "infrastructure": PipelineStage.INFRASTRUCTURE_SETUP,
+                    "infrastructure_setup": PipelineStage.INFRASTRUCTURE_SETUP,
+                    "deployment": PipelineStage.DEPLOYMENT,
+                }.get(stage_str, PipelineStage.BLUEPRINT_GENERATION)
+
+                logs.append(PipelineLogEntry(
+                    timestamp=entry["timestamp"],
+                    level=str(entry.get("level", "INFO")),
+                    message=str(entry.get("message", "")),
+                    stage=stage
+                ))
+            except Exception:
+                continue
         
         # Apply filters
         if level_filter:

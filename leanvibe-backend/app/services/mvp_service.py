@@ -34,6 +34,7 @@ class MVPService:
         self.orchestrator = AssemblyLineOrchestrator()
         self.orchestrator.register_all_agents()
         self._generation_progress: Dict[UUID, Dict[str, Any]] = {}
+        self._generation_logs: Dict[UUID, List[Dict[str, Any]]] = {}
         # In-memory storage for testing (will be replaced with proper database)
         self._projects_storage: Dict[UUID, MVPProject] = {}
         self._projects_by_tenant: Dict[UUID, List[UUID]] = {}
@@ -113,6 +114,8 @@ class MVPService:
                 "stages_completed": [],
                 "current_stage_details": "Initializing assembly line system..."
             }
+            self._generation_logs[mvp_project_id] = []
+            self._add_log(mvp_project_id, level="INFO", message="Pipeline start requested", stage="blueprint_generation")
             
             # Start assembly line in background
             asyncio.create_task(self._run_assembly_line(mvp_project_id, technical_blueprint))
@@ -220,6 +223,38 @@ class MVPService:
         except Exception as e:
             logger.error(f"Failed to cancel MVP generation: {e}")
             return False
+
+    async def pause_mvp_generation(self, mvp_project_id: UUID) -> bool:
+        """Pause generation between agent stages."""
+        try:
+            mvp_project = await self._get_mvp_project(mvp_project_id)
+            if not mvp_project or mvp_project.status != MVPStatus.GENERATING:
+                return False
+            paused = await self.orchestrator.pause_generation(mvp_project_id)
+            if paused:
+                mvp_project.status = MVPStatus.PAUSED
+                await self._update_mvp_project(mvp_project)
+                self._add_log(mvp_project_id, level="INFO", message="Pipeline paused", stage="backend_development")
+            return paused
+        except Exception as e:
+            logger.error(f"Failed to pause MVP generation: {e}")
+            return False
+
+    async def resume_mvp_generation(self, mvp_project_id: UUID) -> bool:
+        """Resume generation after pause."""
+        try:
+            mvp_project = await self._get_mvp_project(mvp_project_id)
+            if not mvp_project or mvp_project.status != MVPStatus.PAUSED:
+                return False
+            resumed = await self.orchestrator.resume_generation(mvp_project_id)
+            if resumed:
+                mvp_project.status = MVPStatus.GENERATING
+                await self._update_mvp_project(mvp_project)
+                self._add_log(mvp_project_id, level="INFO", message="Pipeline resumed", stage="backend_development")
+            return resumed
+        except Exception as e:
+            logger.error(f"Failed to resume MVP generation: {e}")
+            return False
     
     # Private methods
     
@@ -249,12 +284,18 @@ class MVPService:
                 if success:
                     mvp_project.status = MVPStatus.DEPLOYED
                     mvp_project.completed_at = datetime.utcnow()
-                    mvp_project.generation_duration = (
-                        datetime.utcnow() - mvp_project.generation_started_at
-                    ).total_seconds()
+                    # generation_started_at may not be set in mock; protect calculation
+                    try:
+                        mvp_project.generation_duration = (
+                            datetime.utcnow() - mvp_project.generation_started_at
+                        ).total_seconds()  # type: ignore[attr-defined]
+                    except Exception:
+                        pass
+                    self._add_log(mvp_project_id, level="INFO", message="Pipeline completed successfully", stage="deployment")
                 else:
                     mvp_project.status = MVPStatus.FAILED
                     mvp_project.error_message = "Assembly line execution failed"
+                    self._add_log(mvp_project_id, level="ERROR", message=mvp_project.error_message, stage="backend_development")
                 
                 await self._update_mvp_project(mvp_project)
             
@@ -274,6 +315,7 @@ class MVPService:
                     mvp_project.status = MVPStatus.FAILED
                     mvp_project.error_message = str(e)
                     await self._update_mvp_project(mvp_project)
+                    self._add_log(mvp_project_id, level="ERROR", message=f"Pipeline failed: {e}", stage="backend_development")
             except Exception as update_error:
                 logger.error(f"Failed to update project after assembly line failure: {update_error}")
     
@@ -308,15 +350,18 @@ class MVPService:
         
         progress_data["overall_progress"] = (completed_weight + current_weight) * 100
         
-        # Update stage details
+        # Update stage details and add logs
         if status == AgentStatus.RUNNING:
             progress_data["current_stage_details"] = f"Executing {agent_type.value} agent ({progress:.1f}%)"
+            self._add_log(mvp_project_id, level="INFO", message=progress_data["current_stage_details"], stage=agent_type.value)
         elif status == AgentStatus.COMPLETED:
             if agent_type not in completed_stages:
                 progress_data["stages_completed"].append(agent_type)
             progress_data["current_stage_details"] = f"Completed {agent_type.value} agent"
+            self._add_log(mvp_project_id, level="INFO", message=progress_data["current_stage_details"], stage=agent_type.value)
         elif status == AgentStatus.FAILED:
             progress_data["current_stage_details"] = f"Failed at {agent_type.value} agent"
+            self._add_log(mvp_project_id, level="ERROR", message=progress_data["current_stage_details"], stage=agent_type.value)
     
     async def _validate_mvp_creation_quota(self, tenant_id: UUID):
         """Validate that tenant can create new MVP projects"""
@@ -360,6 +405,24 @@ class MVPService:
             self._projects_by_tenant[mvp_project.tenant_id].append(mvp_project.id)
         
         logger.info(f"Saved MVP project {mvp_project.id} to in-memory storage")
+
+    # In-memory logs API
+    def _add_log(self, mvp_project_id: UUID, *, level: str, message: str, stage: str):
+        try:
+            from datetime import datetime as _dt
+            if mvp_project_id not in self._generation_logs:
+                self._generation_logs[mvp_project_id] = []
+            self._generation_logs[mvp_project_id].append({
+                "timestamp": _dt.utcnow(),
+                "level": level.upper(),
+                "message": message,
+                "stage": stage,
+            })
+        except Exception:
+            pass
+
+    async def get_generation_logs(self, mvp_project_id: UUID) -> List[Dict[str, Any]]:
+        return list(self._generation_logs.get(mvp_project_id, []))
     
     async def _update_mvp_project(self, mvp_project: MVPProject):
         """Update MVP project in database"""

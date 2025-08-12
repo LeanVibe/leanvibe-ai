@@ -20,7 +20,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { AuthGuard } from '@/components/auth/auth-guard'
-import { usePipelines } from '@/hooks/use-pipelines'
+import { usePipelines, usePausePipeline, useResumePipeline } from '@/hooks/use-pipelines'
 import { formatDate, formatDuration } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -123,6 +123,11 @@ function DashboardStats() {
 }
 
 function RecentPipelines() {
+  const { data: pipelinesResp } = usePipelines()
+  const pause = usePausePipeline()
+  const resume = useResumePipeline()
+  const pipelines = pipelinesResp?.data ?? []
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -136,7 +141,7 @@ function RecentPipelines() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {mockRecentPipelines.map((pipeline) => (
+          {pipelines.map((pipeline) => (
             <div
               key={pipeline.id}
               className="flex items-center justify-between space-x-4 rounded-lg border p-4"
@@ -144,15 +149,12 @@ function RecentPipelines() {
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium">{pipeline.project_name}</h3>
-                  <StatusBadge status={pipeline.status} />
+                  <StatusBadge status={pipeline.status as any} />
                 </div>
                 <div className="space-y-1">
-                  <div className="text-sm text-muted-foreground">
-                    {pipeline.current_step}
-                  </div>
-                  {pipeline.status === 'in_progress' && (
+                  {pipeline.progress && (
                     <Progress 
-                      value={pipeline.progress_percentage} 
+                      value={pipeline.progress.overall_progress || 0} 
                       showValue 
                       size="sm" 
                     />
@@ -167,11 +169,28 @@ function RecentPipelines() {
                   View
                 </Button>
               </Link>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pause.isPending || (pipeline.status as any) !== 'generating'}
+                  onClick={() => pause.mutate(pipeline.id)}
+                >
+                  Pause
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={resume.isPending || (pipeline.status as any) !== 'paused'}
+                  onClick={() => resume.mutate(pipeline.id)}
+                >
+                  Resume
+                </Button>
+              </div>
             </div>
           ))}
         </div>
         
-        {mockRecentPipelines.length === 0 && (
+        {pipelines.length === 0 && (
           <EmptyState
             icon={Workflow}
             title="No pipelines yet"

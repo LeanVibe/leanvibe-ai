@@ -29,17 +29,40 @@ export interface RegisterRequest {
 }
 
 // Pipeline types
+export interface PipelineProgressInfo {
+  overall_progress: number
+  stage_progress?: number
+  estimated_completion?: string
+  stages_completed?: string[]
+  current_stage_details?: string
+}
+
 export interface Pipeline {
   id: string
   project_name: string
-  status: 'queued' | 'in_progress' | 'completed' | 'failed' | 'paused'
-  progress_percentage: number
-  current_step: string
-  estimated_completion: string
+  // Backend statuses normalized + legacy client statuses
+  status:
+    | 'blueprint_pending'
+    | 'generating'
+    | 'deployed'
+    | 'failed'
+    | 'cancelled'
+    | 'paused'
+    | 'queued'
+    | 'in_progress'
+    | 'completed'
+  // Optional fields to accommodate backend response shape
+  progress_percentage?: number
+  current_step?: string
+  progress?: PipelineProgressInfo
+  current_stage?: string
+  estimated_completion?: string
   created_at: string
-  updated_at: string
-  configuration: PipelineConfiguration
+  updated_at?: string
+  configuration?: PipelineConfiguration
   deliverables?: PipelineDeliverables
+  tenant_id?: string
+  created_by?: string
 }
 
 export interface PipelineConfiguration {

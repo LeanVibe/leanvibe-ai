@@ -187,6 +187,8 @@ class AssemblyLineOrchestrator:
         self.agents: Dict[AgentType, BaseAIAgent] = {}
         self.quality_gates: Dict[AgentType, List[Callable]] = {}
         self.progress_tracking: Dict[UUID, GenerationProgress] = {}
+        # Pause/Resume control flags per project
+        self._paused_projects: Dict[UUID, bool] = {}
         
     def register_agent(self, agent: BaseAIAgent):
         """Register an AI agent with the orchestrator"""
@@ -235,6 +237,8 @@ class AssemblyLineOrchestrator:
                 estimated_completion_at=self._estimate_completion_time(blueprint)
             )
             self.progress_tracking[mvp_project_id] = progress
+            # Clear pause flag on new start
+            self._paused_projects[mvp_project_id] = False
             
             # Execute assembly line
             success = await self._execute_assembly_line(mvp_project_id, blueprint, priority)
@@ -273,6 +277,11 @@ class AssemblyLineOrchestrator:
         accumulated_output = {"blueprint": blueprint.model_dump()}
         
         for agent_type in execution_order:
+            # If paused, wait until resumed before starting next agent
+            while self._paused_projects.get(mvp_project_id, False):
+                logger.info(f"Assembly line paused for project {mvp_project_id}; waiting to resume...")
+                await asyncio.sleep(0.5)
+
             success = await self._execute_agent_with_quality_gates(
                 mvp_project_id, agent_type, accumulated_output, priority
             )
@@ -427,6 +436,23 @@ class AssemblyLineOrchestrator:
             return True
         
         return False
+
+    # Pause/Resume controls
+    async def pause_generation(self, mvp_project_id: UUID) -> bool:
+        """Pause generation at the next safe checkpoint (between agents)."""
+        if mvp_project_id not in self.progress_tracking:
+            return False
+        self._paused_projects[mvp_project_id] = True
+        logger.info(f"Pause requested for project {mvp_project_id}")
+        return True
+
+    async def resume_generation(self, mvp_project_id: UUID) -> bool:
+        """Resume a previously paused generation."""
+        if mvp_project_id not in self.progress_tracking:
+            return False
+        self._paused_projects[mvp_project_id] = False
+        logger.info(f"Resume requested for project {mvp_project_id}")
+        return True
     
     # Helper methods
     async def _validate_generation_request(self, mvp_project_id: UUID) -> bool:
