@@ -21,6 +21,7 @@ from ...models.mvp_models import (
     MVPStatus, TechnicalBlueprint
 )
 from ...services.mvp_service import mvp_service
+from ...services.storage import local_storage_service
 from ...services.auth_service import auth_service
 from ...middleware.tenant_middleware import get_current_tenant, require_tenant
 from ...core.exceptions import InsufficientPermissionsError
@@ -714,55 +715,23 @@ async def list_project_files(
                 detail="Access denied to project"
             )
         
-        # TODO: Implement actual file listing from assembly line system
-        # For now, return mock file list
-        files = []
-        
-        if mvp_project.status == MVPStatus.DEPLOYED:
-            mock_files = [
-                {
-                    "path": "backend/app/main.py",
-                    "name": "main.py",
-                    "size": 5432,
-                    "type": "python",
-                    "created_at": mvp_project.created_at,
-                    "modified_at": mvp_project.updated_at
-                },
-                {
-                    "path": "frontend/src/App.js",
-                    "name": "App.js",
-                    "size": 3210,
-                    "type": "javascript",
-                    "created_at": mvp_project.created_at,
-                    "modified_at": mvp_project.updated_at
-                },
-                {
-                    "path": "docker-compose.yml",
-                    "name": "docker-compose.yml",
-                    "size": 1456,
-                    "type": "yaml",
-                    "created_at": mvp_project.created_at,
-                    "modified_at": mvp_project.updated_at
-                }
-            ]
-            
-            for file_data in mock_files:
-                # Apply filters
-                if path_filter and path_filter not in file_data["path"]:
-                    continue
-                if file_type and not file_data["path"].endswith(f".{file_type}"):
-                    continue
-                
-                files.append(ProjectFileInfo(
-                    path=file_data["path"],
-                    name=file_data["name"],
-                    size=file_data["size"],
-                    file_type=file_data["type"],
-                    created_at=file_data["created_at"],
-                    modified_at=file_data["modified_at"],
-                    download_url=f"/api/v1/projects/{project_id}/files/{file_data['path']}"
-                ))
-        
+        # List from storage service
+        storage_files = local_storage_service.list_files(project_id)
+        files: List[ProjectFileInfo] = []
+        for f in storage_files:
+            if path_filter and path_filter not in f.path:
+                continue
+            if file_type and not f.path.endswith(f".{file_type}"):
+                continue
+            files.append(ProjectFileInfo(
+                path=f.path,
+                name=f.path.split("/")[-1],
+                size=f.size,
+                file_type=(f.content_type.split("/")[-1] if f.content_type else "unknown"),
+                created_at=mvp_project.created_at,
+                modified_at=f.modified_at,
+                download_url=f"/api/v1/projects/{project_id}/files/{f.path}"
+            ))
         return files
         
     except HTTPException:
@@ -821,36 +790,14 @@ async def download_project_file(
                 detail="Project has not generated files yet"
             )
         
-        # TODO: Implement actual file retrieval from assembly line system
-        # For now, return mock file content
-        if file_path == "backend/app/main.py":
-            content = '''"""
-Generated MVP Backend - LeanVibe Platform
-Auto-generated FastAPI application
-"""
-
-from fastapi import FastAPI
-
-app = FastAPI(title="Generated MVP")
-
-@app.get("/")
-async def root():
-    return {"message": "Generated MVP is running!"}
-'''
-            media_type = "text/plain"
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="File not found"
-            )
-        
-        # Return file content
+        try:
+            buffer, media_type = local_storage_service.get_file(project_id, file_path)
+        except FileNotFoundError:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
         return Response(
-            content=content,
+            content=buffer.getvalue(),
             media_type=media_type,
-            headers={
-                "Content-Disposition": f"attachment; filename={file_path.split('/')[-1]}"
-            }
+            headers={"Content-Disposition": f"attachment; filename={file_path.split('/')[-1]}"}
         )
         
     except HTTPException:
@@ -919,51 +866,18 @@ async def download_project_archive(
         # TODO: Implement actual archive creation from assembly line system
         # For now, create a mock ZIP archive
         if format == "zip":
+            # Build ZIP from storage service
             zip_buffer = BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-                # Add mock files
-                zip_file.writestr("backend/app/main.py", '''"""
-Generated MVP Backend - LeanVibe Platform
-Auto-generated FastAPI application
-"""
-
-from fastapi import FastAPI
-
-app = FastAPI(title="Generated MVP")
-
-@app.get("/")
-async def root():
-    return {"message": "Generated MVP is running!"}
-''')
-                zip_file.writestr("frontend/src/App.js", '''import React from 'react';
-
-function App() {
-  return (
-    <div className="App">
-      <h1>Generated MVP</h1>
-      <p>Welcome to your auto-generated MVP!</p>
-    </div>
-  );
-}
-
-export default App;
-''')
-                zip_file.writestr("README.md", f'''# {mvp_project.project_name}
-
-Auto-generated MVP by LeanVibe Platform
-
-## Description
-{mvp_project.description}
-
-## Generated: {mvp_project.completed_at}
-''')
-            
+                for f in local_storage_service.list_files(project_id):
+                    try:
+                        data_buf, _ct = local_storage_service.get_file(project_id, f.path)
+                        zip_file.writestr(f.path, data_buf.getvalue())
+                    except FileNotFoundError:
+                        continue
             zip_buffer.seek(0)
-            
-            # Create filename
             safe_name = mvp_project.project_name.replace(" ", "_").lower()
             filename = f"{safe_name}_{project_id.hex[:8]}.zip"
-            
             return StreamingResponse(
                 BytesIO(zip_buffer.getvalue()),
                 media_type="application/zip",
