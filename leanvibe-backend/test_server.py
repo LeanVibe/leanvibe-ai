@@ -195,6 +195,6 @@ async def handle_voice_command(message: dict) -> dict:
 if __name__ == "__main__":
     import uvicorn
     print("🚀 Starting LeanVibe Test Server...")
-    print("📱 iOS WebSocket endpoint: ws://localhost:8001/ws")
-    print("🔍 Health check: http://localhost:8001/health")
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    print("📱 iOS WebSocket endpoint: ws://localhost:8765/ws")
+    print("🔍 Health check: http://localhost:8765/health")
+    uvicorn.run(app, host="0.0.0.0", port=8765)
