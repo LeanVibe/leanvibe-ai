@@ -6,7 +6,7 @@ Updated to use SQLAlchemy ORM models
 
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession

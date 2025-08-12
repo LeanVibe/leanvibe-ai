@@ -13,7 +13,8 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from ...models.auth_models import (
-    LoginRequest, LoginResponse, UserCreate, User, MFASetupRequest, MFASetupResponse
+    LoginRequest, LoginResponse, UserCreate, UserUpdate, User, 
+    MFASetupRequest, MFASetupResponse, UserStatus
 )
 from ...services.auth_service import auth_service
 from ...middleware.tenant_middleware import get_current_tenant, require_tenant
@@ -25,6 +26,249 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
 security = HTTPBearer(auto_error=False)
+
+
+@router.post("/register", response_model=Dict[str, str])
+async def register(
+    user_data: UserCreate,
+    request: Request,
+    tenant = Depends(require_tenant)
+) -> Dict[str, str]:
+    """
+    Register a new user with email verification
+    
+    Creates a new user account and sends email verification.
+    Supports company founder information for MVP Factory tenants.
+    """
+    try:
+        # Validate password strength
+        if user_data.password and len(user_data.password) < 8:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must be at least 8 characters long"
+            )
+        
+        # Set tenant ID from current tenant
+        user_data.tenant_id = tenant.id
+        
+        # Create user
+        user = await auth_service.create_user(user_data)
+        
+        # Generate email verification token
+        verification_token = await auth_service.generate_email_verification_token(user.id)
+        
+        # Send verification email (would integrate with email service)
+        await _send_verification_email(user.email, verification_token, tenant.organization_name)
+        
+        logger.info(f"User registered: {user.email} in tenant {tenant.id}")
+        
+        return {
+            "message": "User registered successfully",
+            "email": user.email,
+            "verification_required": True
+        }
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Registration error for {user_data.email}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed"
+        )
+
+
+@router.post("/verify-email/{token}", response_model=Dict[str, str])
+async def verify_email(
+    token: str,
+    tenant = Depends(require_tenant)
+) -> Dict[str, str]:
+    """
+    Verify email address using verification token
+    
+    Activates user account after successful email verification.
+    """
+    try:
+        # Verify email token
+        success = await auth_service.verify_email_token(token, tenant.id)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired verification token"
+            )
+        
+        return {
+            "message": "Email verified successfully",
+            "account_activated": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Email verification error for token {token}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Email verification failed"
+        )
+
+
+@router.post("/resend-verification", response_model=Dict[str, str])
+async def resend_verification(
+    email_data: Dict[str, str],
+    tenant = Depends(require_tenant)
+) -> Dict[str, str]:
+    """
+    Resend email verification
+    
+    Generates new verification token and sends email.
+    """
+    try:
+        email = email_data.get("email")
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is required"
+            )
+        
+        # Get user
+        user = await auth_service.get_user_by_email(email, tenant.id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        if user.status == UserStatus.ACTIVE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already verified"
+            )
+        
+        # Generate new verification token
+        verification_token = await auth_service.generate_email_verification_token(user.id)
+        
+        # Send verification email
+        await _send_verification_email(user.email, verification_token, tenant.organization_name)
+        
+        return {
+            "message": "Verification email sent",
+            "email": user.email
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Resend verification error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to resend verification email"
+        )
+
+
+@router.post("/forgot-password", response_model=Dict[str, str])
+async def forgot_password(
+    email_data: Dict[str, str],
+    tenant = Depends(require_tenant)
+) -> Dict[str, str]:
+    """
+    Initiate password reset process
+    
+    Sends password reset email with secure token.
+    """
+    try:
+        email = email_data.get("email")
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is required"
+            )
+        
+        # Get user (don't reveal if user exists for security)
+        user = await auth_service.get_user_by_email(email, tenant.id)
+        
+        if user:
+            # Generate password reset token
+            reset_token = await auth_service.generate_password_reset_token(user.id)
+            
+            # Send password reset email
+            await _send_password_reset_email(user.email, reset_token, tenant.organization_name)
+        
+        # Always return success to prevent email enumeration
+        return {
+            "message": "If the email exists, a password reset link has been sent",
+            "email": email
+        }
+        
+    except Exception as e:
+        logger.error(f"Forgot password error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to process password reset request"
+        )
+
+
+@router.post("/reset-password", response_model=Dict[str, str])
+async def reset_password(
+    reset_data: Dict[str, str],
+    tenant = Depends(require_tenant)
+) -> Dict[str, str]:
+    """
+    Reset password using reset token
+    
+    Updates user password after validating reset token.
+    """
+    try:
+        token = reset_data.get("token")
+        new_password = reset_data.get("password")
+        
+        if not token or not new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Token and new password are required"
+            )
+        
+        # Validate password strength
+        if len(new_password) < 8:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must be at least 8 characters long"
+            )
+        
+        # Reset password
+        success = await auth_service.reset_password(token, new_password, tenant.id)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired reset token"
+            )
+        
+        return {
+            "message": "Password reset successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Password reset error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Password reset failed"
+        )
+
+
+async def _send_verification_email(email: str, token: str, organization_name: str):
+    """Send email verification email (mock implementation)"""
+    # This would integrate with the email service
+    logger.info(f"Sending verification email to {email} with token {token}")
+
+
+async def _send_password_reset_email(email: str, token: str, organization_name: str):
+    """Send password reset email (mock implementation)"""  
+    # This would integrate with the email service
+    logger.info(f"Sending password reset email to {email} with token {token}")
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -469,4 +713,160 @@ async def get_auth_providers(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get authentication providers"
+        )
+
+
+# User profile management endpoints
+@router.get("/users/me", response_model=User)
+async def get_current_user_profile(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> User:
+    """
+    Get current user profile information
+    
+    Returns complete user profile for the authenticated user.
+    """
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required"
+        )
+    
+    try:
+        # Verify token
+        payload = await auth_service.verify_token(credentials.credentials)
+        user_id = UUID(payload["user_id"])
+        
+        # Get user
+        user = await auth_service.get_user_by_id(user_id, tenant.id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        return user
+        
+    except TokenExpiredError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired"
+        )
+    except Exception as e:
+        logger.error(f"Get current user error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get user information"
+        )
+
+
+@router.put("/users/me", response_model=User)
+async def update_current_user_profile(
+    user_update: UserUpdate,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> User:
+    """
+    Update current user profile information
+    
+    Allows users to update their profile information.
+    """
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required"
+        )
+    
+    try:
+        # Verify token
+        payload = await auth_service.verify_token(credentials.credentials)
+        user_id = UUID(payload["user_id"])
+        
+        # Update user
+        updated_user = await auth_service.update_user(user_id, user_update, tenant.id)
+        
+        return updated_user
+        
+    except TokenExpiredError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Update user error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update user information"
+        )
+
+
+@router.put("/users/me/password", response_model=Dict[str, str])
+async def change_current_user_password(
+    password_data: Dict[str, str],
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant)
+) -> Dict[str, str]:
+    """
+    Change current user password
+    
+    Requires current password verification for security.
+    """
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required"
+        )
+    
+    try:
+        current_password = password_data.get("current_password")
+        new_password = password_data.get("new_password")
+        
+        if not current_password or not new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Both current and new password are required"
+            )
+        
+        # Validate new password strength
+        if len(new_password) < 8:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="New password must be at least 8 characters long"
+            )
+        
+        # Verify token
+        payload = await auth_service.verify_token(credentials.credentials)
+        user_id = UUID(payload["user_id"])
+        
+        # Change password
+        success = await auth_service.change_password(user_id, current_password, new_password, tenant.id)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid current password"
+            )
+        
+        return {
+            "message": "Password changed successfully"
+        }
+        
+    except TokenExpiredError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Change password error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to change password"
         )

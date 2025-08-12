@@ -18,6 +18,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from ..core.database import Base
 from .tenant_models import TenantStatus, TenantPlan, TenantDataResidency, TenantType
 from .task_models import TaskStatus, TaskPriority
+from .auth_models import UserStatus, UserRole, AuthProvider, SessionStatus, MFAMethod
 
 
 class TenantORM(Base):
@@ -445,3 +446,307 @@ CREATE POLICY member_isolation_policy ON tenant_members
 CREATE POLICY admin_bypass_policy ON tasks
     USING (current_setting('app.user_role', true) = 'superadmin');
 """
+
+
+class UserORM(Base):
+    """SQLAlchemy ORM model for users with enterprise authentication"""
+    __tablename__ = "users"
+    
+    # Primary key and identification
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
+    tenant_id = Column(PG_UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False, index=True)
+    
+    # Basic user information
+    email = Column(String(255), nullable=False, index=True)
+    first_name = Column(String(50), nullable=False)
+    last_name = Column(String(50), nullable=False)
+    display_name = Column(String(100), nullable=True)
+    
+    # Authentication
+    password_hash = Column(String(255), nullable=True)  # For local auth
+    auth_provider = Column(SQLEnum(AuthProvider), default=AuthProvider.LOCAL, nullable=False, index=True)
+    external_id = Column(String(255), nullable=True, index=True)  # External provider user ID
+    
+    # Status and permissions
+    status = Column(SQLEnum(UserStatus), default=UserStatus.PENDING_ACTIVATION, nullable=False, index=True)
+    role = Column(SQLEnum(UserRole), default=UserRole.DEVELOPER, nullable=False, index=True)
+    permissions = Column(JSON, nullable=False, default=list)
+    
+    # Multi-factor authentication
+    mfa_enabled = Column(Boolean, default=False, nullable=False)
+    mfa_methods = Column(JSON, nullable=False, default=list)  # List of MFAMethod values
+    mfa_secret = Column(String(255), nullable=True)  # TOTP secret key
+    backup_codes = Column(JSON, nullable=False, default=list)  # MFA backup codes
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_login_at = Column(DateTime, nullable=True, index=True)
+    password_changed_at = Column(DateTime, nullable=True)
+    
+    # Security settings
+    require_password_change = Column(Boolean, default=False, nullable=False)
+    login_attempts = Column(Integer, default=0, nullable=False)
+    locked_until = Column(DateTime, nullable=True)
+    
+    # Profile information
+    profile = Column(JSON, nullable=False, default=dict)
+    preferences = Column(JSON, nullable=False, default=dict)
+    
+    # Email verification
+    email_verified = Column(Boolean, default=False, nullable=False)
+    email_verification_token = Column(String(255), nullable=True)
+    email_verification_expires = Column(DateTime, nullable=True)
+    
+    # Password reset
+    password_reset_token = Column(String(255), nullable=True)
+    password_reset_expires = Column(DateTime, nullable=True)
+    
+    # Relationships
+    tenant = relationship("TenantORM")
+    user_sessions = relationship("UserSessionORM", back_populates="user", cascade="all, delete-orphan")
+    
+    # Indexes for performance and tenant isolation
+    __table_args__ = (
+        # Unique email within tenant
+        Index('idx_user_tenant_email', 'tenant_id', 'email', unique=True),
+        Index('idx_user_tenant_status', 'tenant_id', 'status'),
+        Index('idx_user_tenant_role', 'tenant_id', 'role'),
+        Index('idx_user_provider_external', 'auth_provider', 'external_id'),
+        Index('idx_user_verification_token', 'email_verification_token'),
+        Index('idx_user_reset_token', 'password_reset_token'),
+        CheckConstraint('created_at <= updated_at', name='chk_user_timestamps'),
+        CheckConstraint("email LIKE '%@%'", name='chk_user_email_format'),
+        CheckConstraint('login_attempts >= 0', name='chk_login_attempts_positive'),
+    )
+    
+    @validates('email')
+    def validate_email(self, key, email):
+        """Validate email format"""
+        if not email or '@' not in email:
+            raise ValueError('Invalid email address')
+        return email.lower()
+    
+    @hybrid_property
+    def is_active(self):
+        """Check if user is active"""
+        return self.status == UserStatus.ACTIVE
+    
+    @hybrid_property
+    def is_locked(self):
+        """Check if user account is locked"""
+        return self.locked_until and self.locked_until > datetime.utcnow()
+    
+    @hybrid_property
+    def full_name(self):
+        """Get user's full name"""
+        return f"{self.first_name} {self.last_name}"
+    
+    def __repr__(self):
+        return f"<UserORM(id={self.id}, tenant_id={self.tenant_id}, email={self.email}, status={self.status})>"
+
+
+class UserSessionORM(Base):
+    """SQLAlchemy ORM model for user sessions"""
+    __tablename__ = "user_sessions"
+    
+    # Primary identification
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
+    user_id = Column(PG_UUID(as_uuid=True), ForeignKey('users.id'), nullable=False, index=True)
+    tenant_id = Column(PG_UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False, index=True)
+    
+    # Session details
+    status = Column(SQLEnum(SessionStatus), default=SessionStatus.ACTIVE, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    last_activity_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Security information
+    ip_address = Column(String(45), nullable=True)  # IPv6 support
+    user_agent = Column(Text, nullable=True)
+    location = Column(JSON, nullable=True)  # Geographic location data
+    
+    # Authentication method used for this session
+    auth_method = Column(SQLEnum(AuthProvider), nullable=False, index=True)
+    mfa_verified = Column(Boolean, default=False, nullable=False)
+    
+    # Token information (hashed for security)
+    access_token_hash = Column(String(64), nullable=False, index=True)  # SHA-256 hash
+    refresh_token_hash = Column(String(64), nullable=True, index=True)  # SHA-256 hash
+    
+    # Relationships
+    user = relationship("UserORM", back_populates="user_sessions")
+    tenant = relationship("TenantORM")
+    
+    # Indexes for performance and security
+    __table_args__ = (
+        Index('idx_session_tenant_user', 'tenant_id', 'user_id'),
+        Index('idx_session_tenant_status', 'tenant_id', 'status'),
+        Index('idx_session_expires', 'expires_at'),
+        Index('idx_session_activity', 'last_activity_at'),
+        Index('idx_session_access_token', 'access_token_hash'),
+        Index('idx_session_refresh_token', 'refresh_token_hash'),
+        CheckConstraint('created_at <= expires_at', name='chk_session_timestamps'),
+        CheckConstraint('created_at <= last_activity_at', name='chk_session_activity'),
+    )
+    
+    @hybrid_property
+    def is_active(self):
+        """Check if session is active and not expired"""
+        return (
+            self.status == SessionStatus.ACTIVE and 
+            self.expires_at > datetime.utcnow()
+        )
+    
+    @hybrid_property
+    def is_expired(self):
+        """Check if session has expired"""
+        return self.expires_at <= datetime.utcnow()
+    
+    def __repr__(self):
+        return f"<UserSessionORM(id={self.id}, user_id={self.user_id}, status={self.status}, expires={self.expires_at})>"
+
+
+class PasswordPolicyORM(Base):
+    """SQLAlchemy ORM model for tenant password policies"""
+    __tablename__ = "password_policies"
+    
+    # Primary identification
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
+    tenant_id = Column(PG_UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False, unique=True, index=True)
+    
+    # Password requirements
+    min_length = Column(Integer, default=12, nullable=False)
+    require_uppercase = Column(Boolean, default=True, nullable=False)
+    require_lowercase = Column(Boolean, default=True, nullable=False)
+    require_digits = Column(Boolean, default=True, nullable=False)
+    require_special = Column(Boolean, default=True, nullable=False)
+    special_chars = Column(String(50), default="!@#$%^&*", nullable=False)
+    
+    # Security settings
+    max_age_days = Column(Integer, default=90, nullable=False)
+    history_count = Column(Integer, default=5, nullable=False)
+    lockout_attempts = Column(Integer, default=5, nullable=False)
+    lockout_duration_minutes = Column(Integer, default=30, nullable=False)
+    
+    # Common password checks
+    prevent_common_passwords = Column(Boolean, default=True, nullable=False)
+    prevent_personal_info = Column(Boolean, default=True, nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    tenant = relationship("TenantORM")
+    
+    # Constraints
+    __table_args__ = (
+        CheckConstraint('min_length >= 6 AND min_length <= 128', name='chk_min_length_range'),
+        CheckConstraint('max_age_days >= 30 AND max_age_days <= 365', name='chk_max_age_range'),
+        CheckConstraint('history_count >= 0 AND history_count <= 24', name='chk_history_range'),
+        CheckConstraint('lockout_attempts >= 3 AND lockout_attempts <= 20', name='chk_lockout_attempts_range'),
+        CheckConstraint('lockout_duration_minutes >= 5 AND lockout_duration_minutes <= 1440', name='chk_lockout_duration_range'),
+        CheckConstraint('created_at <= updated_at', name='chk_policy_timestamps'),
+    )
+    
+    def __repr__(self):
+        return f"<PasswordPolicyORM(tenant_id={self.tenant_id}, min_length={self.min_length})>"
+
+
+class SSOConfigurationORM(Base):
+    """SQLAlchemy ORM model for SSO provider configurations"""
+    __tablename__ = "sso_configurations"
+    
+    # Primary identification
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
+    tenant_id = Column(PG_UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False, index=True)
+    
+    # Provider details
+    provider = Column(SQLEnum(AuthProvider), nullable=False, index=True)
+    provider_name = Column(String(100), nullable=False)
+    enabled = Column(Boolean, default=True, nullable=False)
+    
+    # OAuth2/OpenID Connect settings
+    client_id = Column(String(255), nullable=True)
+    client_secret = Column(String(500), nullable=True)  # Encrypted in production
+    auth_url = Column(String(500), nullable=True)
+    token_url = Column(String(500), nullable=True)
+    userinfo_url = Column(String(500), nullable=True)
+    scopes = Column(JSON, nullable=False, default=list)
+    
+    # SAML settings
+    saml_entity_id = Column(String(255), nullable=True)
+    saml_sso_url = Column(String(500), nullable=True)
+    saml_x509_cert = Column(Text, nullable=True)
+    saml_metadata_url = Column(String(500), nullable=True)
+    
+    # User mapping
+    attribute_mapping = Column(JSON, nullable=False, default=dict)
+    
+    # Auto-provisioning settings
+    auto_provision_users = Column(Boolean, default=True, nullable=False)
+    default_role = Column(SQLEnum(UserRole), default=UserRole.DEVELOPER, nullable=False)
+    allowed_domains = Column(JSON, nullable=False, default=list)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    tenant = relationship("TenantORM")
+    
+    # Indexes and constraints
+    __table_args__ = (
+        Index('idx_sso_tenant_provider', 'tenant_id', 'provider', unique=True),
+        Index('idx_sso_enabled', 'enabled'),
+        CheckConstraint('created_at <= updated_at', name='chk_sso_timestamps'),
+    )
+    
+    def __repr__(self):
+        return f"<SSOConfigurationORM(tenant_id={self.tenant_id}, provider={self.provider}, enabled={self.enabled})>"
+
+
+class AuthAuditLogORM(Base):
+    """SQLAlchemy ORM model for authentication audit logs"""
+    __tablename__ = "auth_audit_logs"
+    
+    # Primary identification
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
+    tenant_id = Column(PG_UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False, index=True)
+    
+    # Event details
+    event_type = Column(String(50), nullable=False, index=True)
+    event_description = Column(String(500), nullable=False)
+    success = Column(Boolean, nullable=False, index=True)
+    
+    # User context
+    user_id = Column(PG_UUID(as_uuid=True), ForeignKey('users.id'), nullable=True, index=True)
+    user_email = Column(String(255), nullable=True, index=True)
+    
+    # Security context
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(Text, nullable=True)
+    location = Column(JSON, nullable=True)
+    
+    # Additional metadata
+    event_metadata = Column(JSON, nullable=False, default=dict)
+    
+    # Timestamp
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    
+    # Relationships
+    tenant = relationship("TenantORM")
+    user = relationship("UserORM")
+    
+    # Indexes for audit queries
+    __table_args__ = (
+        Index('idx_auth_audit_tenant_event', 'tenant_id', 'event_type'),
+        Index('idx_auth_audit_tenant_user', 'tenant_id', 'user_id'),
+        Index('idx_auth_audit_tenant_success', 'tenant_id', 'success'),
+        Index('idx_auth_audit_timestamp', 'timestamp'),
+        Index('idx_auth_audit_user_event', 'user_id', 'event_type'),
+    )
+    
+    def __repr__(self):
+        return f"<AuthAuditLogORM(tenant_id={self.tenant_id}, event={self.event_type}, timestamp={self.timestamp})>"
