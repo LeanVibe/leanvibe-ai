@@ -417,6 +417,67 @@ class MVPMetricsORM(Base):
         return f"<MVPMetricsORM(mvp_id={self.mvp_project_id}, collected_at={self.collected_at})>"
 
 
+# ------------------------
+# Pipeline Execution Models
+# ------------------------
+
+
+class PipelineExecutionORM(Base):
+    """Pipeline execution tracking ORM model"""
+    __tablename__ = "pipeline_executions"
+    
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
+    mvp_project_id = Column(PG_UUID(as_uuid=True), ForeignKey('mvp_projects.id'), nullable=False, index=True)
+    tenant_id = Column(PG_UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False, index=True)
+    
+    current_stage = Column(String(64), nullable=False, default="interview_received", index=True)
+    status = Column(String(64), nullable=False, default="initializing", index=True)
+    
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    completed_at = Column(DateTime, nullable=True)
+    current_stage_started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    stages_completed = Column(JSON, nullable=False, default=list)
+    stage_durations = Column(JSON, nullable=False, default=dict)
+    
+    overall_progress = Column(Float, default=0.0, nullable=False)
+    current_stage_progress = Column(Float, default=0.0, nullable=False)
+    
+    error_message = Column(Text, nullable=True)
+    retry_count = Column(Integer, default=0, nullable=False)
+    
+    __table_args__ = (
+        Index('idx_exec_project_time', 'mvp_project_id', 'started_at'),
+        Index('idx_exec_tenant_status', 'tenant_id', 'status'),
+    )
+    
+    def __repr__(self):
+        return f"<PipelineExecutionORM(id={self.id}, project={self.mvp_project_id}, status={self.status})>"
+
+
+class PipelineExecutionLogORM(Base):
+    """Pipeline execution log entries"""
+    __tablename__ = "pipeline_execution_logs"
+    
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
+    execution_id = Column(PG_UUID(as_uuid=True), ForeignKey('pipeline_executions.id'), nullable=False, index=True)
+    tenant_id = Column(PG_UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False, index=True)
+    mvp_project_id = Column(PG_UUID(as_uuid=True), ForeignKey('mvp_projects.id'), nullable=False, index=True)
+    
+    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    level = Column(String(16), nullable=False, index=True)
+    message = Column(Text, nullable=False)
+    stage = Column(String(64), nullable=True)
+    metadata = Column(JSON, nullable=True)
+    
+    __table_args__ = (
+        Index('idx_exec_logs_exec_time', 'execution_id', 'timestamp'),
+        Index('idx_exec_logs_tenant_time', 'tenant_id', 'timestamp'),
+    )
+    
+    def __repr__(self):
+        return f"<PipelineExecutionLogORM(exec={self.execution_id}, level={self.level})>"
+
 # Row-Level Security Policies (Applied via migrations)
 """
 These policies will be implemented in Alembic migrations:

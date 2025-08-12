@@ -9,14 +9,15 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import and_
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 # from ..core.database import get_db  # Will be imported when needed to avoid circular dependencies
 from ..models.mvp_models import MVPProject, MVPStatus, TechnicalBlueprint, FounderInterview
-# from ..models.orm_models import MVPProjectORM, TenantORM  # Temporarily disabled to avoid database dependency
+from ..models.orm_models import MVPProjectORM  # ORM model for persistence
 from ..models.tenant_models import TenantType, TenantPlan
 from ..services.assembly_line_system import AssemblyLineOrchestrator, AgentType, AgentStatus
+from ..core.database import get_database_session
 # from ..services.tenant_service import tenant_service  # Will be imported when proper integration is added
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ class MVPService:
         self.orchestrator.register_all_agents()
         self._generation_progress: Dict[UUID, Dict[str, Any]] = {}
         self._generation_logs: Dict[UUID, List[Dict[str, Any]]] = {}
-        # In-memory storage for testing (will be replaced with proper database)
+        # In-memory storage retained as fallback; primary persistence via database
         self._projects_storage: Dict[UUID, MVPProject] = {}
         self._projects_by_tenant: Dict[UUID, List[UUID]] = {}
     
@@ -68,7 +69,7 @@ class MVPService:
                 updated_at=datetime.utcnow()
             )
             
-            # Save to database
+            # Persist
             await self._save_mvp_project(mvp_project)
             
             logger.info(f"Created MVP project {project_id} for tenant {tenant_id}")
@@ -149,18 +150,29 @@ class MVPService:
     ) -> List[MVPProject]:
         """Get all MVP projects for a tenant"""
         try:
-            # In-memory storage implementation
-            project_ids = self._projects_by_tenant.get(tenant_id, [])
-            
-            # Apply offset and limit
-            paginated_ids = project_ids[offset:offset + limit]
-            
-            # Get projects
-            projects = []
-            for project_id in paginated_ids:
-                if project_id in self._projects_storage:
-                    projects.append(self._projects_storage[project_id])
-            
+            # Primary: load from database
+            projects: List[MVPProject] = []
+            try:
+                async for session in get_database_session():
+                    stmt = (
+                        select(MVPProjectORM)
+                        .where(MVPProjectORM.tenant_id == tenant_id)
+                        .order_by(MVPProjectORM.created_at.desc())
+                        .offset(offset)
+                        .limit(limit)
+                    )
+                    result = await session.execute(stmt)
+                    rows = result.scalars().all()
+                    for row in rows:
+                        projects.append(self._orm_to_model(row))
+                    break
+            except Exception:
+                # Fallback to in-memory if DB not available
+                project_ids = self._projects_by_tenant.get(tenant_id, [])
+                paginated_ids = project_ids[offset:offset + limit]
+                for project_id in paginated_ids:
+                    if project_id in self._projects_storage:
+                        projects.append(self._projects_storage[project_id])
             return projects
                 
         except Exception as e:
@@ -362,6 +374,26 @@ class MVPService:
         elif status == AgentStatus.FAILED:
             progress_data["current_stage_details"] = f"Failed at {agent_type.value} agent"
             self._add_log(mvp_project_id, level="ERROR", message=progress_data["current_stage_details"], stage=agent_type.value)
+
+        # Persist progress to database (best-effort)
+        try:
+            async for session in get_database_session():
+                stmt = select(MVPProjectORM).where(MVPProjectORM.id == mvp_project_id)
+                result = await session.execute(stmt)
+                row = result.scalar_one_or_none()
+                if row:
+                    # Map enum keys to strings for JSON
+                    row.generation_progress = {
+                        "current_stage": agent_type.value,
+                        "stage_progress": progress_data.get("stage_progress", 0.0),
+                        "overall_progress": progress_data.get("overall_progress", 0.0),
+                        "stages_completed": [s.value if hasattr(s, 'value') else str(s) for s in progress_data.get("stages_completed", [])],
+                        "current_stage_details": progress_data.get("current_stage_details", ""),
+                    }
+                    await session.flush()
+                break
+        except Exception:
+            pass
     
     async def _validate_mvp_creation_quota(self, tenant_id: UUID):
         """Validate that tenant can create new MVP projects"""
@@ -394,17 +426,37 @@ class MVPService:
     
     async def _save_mvp_project(self, mvp_project: MVPProject):
         """Save MVP project to database"""
-        # In-memory storage implementation
-        self._projects_storage[mvp_project.id] = mvp_project
-        
-        # Add to tenant index
-        if mvp_project.tenant_id not in self._projects_by_tenant:
-            self._projects_by_tenant[mvp_project.tenant_id] = []
-        
-        if mvp_project.id not in self._projects_by_tenant[mvp_project.tenant_id]:
-            self._projects_by_tenant[mvp_project.tenant_id].append(mvp_project.id)
-        
-        logger.info(f"Saved MVP project {mvp_project.id} to in-memory storage")
+        # Persist to database
+        try:
+            async for session in get_database_session():
+                orm = MVPProjectORM(
+                    id=mvp_project.id,
+                    tenant_id=mvp_project.tenant_id,
+                    project_name=mvp_project.project_name,
+                    slug=mvp_project.slug,
+                    description=mvp_project.description,
+                    status=mvp_project.status.value if hasattr(mvp_project.status, 'value') else str(mvp_project.status),
+                    interview_data=(mvp_project.interview.model_dump() if mvp_project.interview else None),
+                    blueprint_data=(mvp_project.blueprint.model_dump() if mvp_project.blueprint else None),
+                    generation_progress=mvp_project.generation_progress.model_dump() if mvp_project.generation_progress else {},
+                    deployment_url=mvp_project.deployment_url,
+                    created_at=mvp_project.created_at,
+                    updated_at=mvp_project.updated_at,
+                    completed_at=mvp_project.completed_at,
+                    deployed_at=mvp_project.deployed_at,
+                )
+                session.add(orm)
+                await session.flush()
+                break
+            logger.info(f"Saved MVP project {mvp_project.id} to database")
+        except Exception:
+            # Fallback to in-memory
+            self._projects_storage[mvp_project.id] = mvp_project
+            if mvp_project.tenant_id not in self._projects_by_tenant:
+                self._projects_by_tenant[mvp_project.tenant_id] = []
+            if mvp_project.id not in self._projects_by_tenant[mvp_project.tenant_id]:
+                self._projects_by_tenant[mvp_project.tenant_id].append(mvp_project.id)
+            logger.info(f"Saved MVP project {mvp_project.id} to in-memory storage (DB unavailable)")
 
     # In-memory logs API
     def _add_log(self, mvp_project_id: UUID, *, level: str, message: str, stage: str):
@@ -426,20 +478,94 @@ class MVPService:
     
     async def _update_mvp_project(self, mvp_project: MVPProject):
         """Update MVP project in database"""
-        # In-memory storage implementation
-        if mvp_project.id in self._projects_storage:
+        try:
+            async for session in get_database_session():
+                stmt = select(MVPProjectORM).where(MVPProjectORM.id == mvp_project.id)
+                result = await session.execute(stmt)
+                row = result.scalar_one_or_none()
+                if not row:
+                    # Create if missing
+                    await self._save_mvp_project(mvp_project)
+                    break
+                row.project_name = mvp_project.project_name
+                row.slug = mvp_project.slug
+                row.description = mvp_project.description
+                row.status = mvp_project.status.value if hasattr(mvp_project.status, 'value') else str(mvp_project.status)
+                row.interview_data = (mvp_project.interview.model_dump() if mvp_project.interview else None)
+                row.blueprint_data = (mvp_project.blueprint.model_dump() if mvp_project.blueprint else None)
+                row.generation_progress = mvp_project.generation_progress.model_dump() if mvp_project.generation_progress else {}
+                row.deployment_url = mvp_project.deployment_url
+                row.completed_at = mvp_project.completed_at
+                row.deployed_at = mvp_project.deployed_at
+                await session.flush()
+                logger.info(f"Updated MVP project {mvp_project.id} in database")
+                break
+        except Exception:
+            # Fallback to in-memory
             self._projects_storage[mvp_project.id] = mvp_project
-            logger.info(f"Updated MVP project {mvp_project.id} status to {mvp_project.status}")
-        else:
-            logger.warning(f"Attempted to update non-existent MVP project {mvp_project.id}")
+            logger.info(f"Updated MVP project {mvp_project.id} in memory")
     
     async def _get_mvp_project(self, mvp_project_id: UUID) -> Optional[MVPProject]:
         """Get MVP project from database"""
-        # In-memory storage implementation
+        # Try database first
+        try:
+            async for session in get_database_session():
+                stmt = select(MVPProjectORM).where(MVPProjectORM.id == mvp_project_id)
+                result = await session.execute(stmt)
+                row = result.scalar_one_or_none()
+                if row:
+                    return self._orm_to_model(row)
+                break
+        except Exception:
+            pass
+        # Fallback
         return self._projects_storage.get(mvp_project_id)
     
     # ORM conversion method will be added when proper database integration is implemented
-    # def _orm_to_mvp_project(self, orm_project: MVPProjectORM) -> MVPProject:
+    def _orm_to_model(self, orm: MVPProjectORM) -> MVPProject:
+        """Convert ORM to domain model MVPProject"""
+        try:
+            interview = None
+            blueprint = None
+            if orm.interview_data:
+                interview = FounderInterview(**orm.interview_data)
+            if orm.blueprint_data:
+                blueprint = TechnicalBlueprint(**orm.blueprint_data)
+            progress = orm.generation_progress or {}
+            mvp = MVPProject(
+                id=orm.id,
+                tenant_id=orm.tenant_id,
+                project_name=orm.project_name,
+                slug=orm.slug,
+                description=orm.description,
+                status=MVPStatus(orm.status) if orm.status else MVPStatus.BLUEPRINT_PENDING,
+                created_at=orm.created_at,
+                updated_at=orm.updated_at,
+                completed_at=orm.completed_at,
+                deployed_at=orm.deployed_at,
+                interview=interview,
+                blueprint=blueprint,
+            )
+            # Populate progress
+            if progress:
+                try:
+                    mvp.generation_progress.overall_progress_percent = int(progress.get("overall_progress", 0))
+                    mvp.generation_progress.current_stage = str(progress.get("current_stage", "blueprint"))
+                except Exception:
+                    pass
+            return mvp
+        except Exception as e:
+            logger.warning(f"Failed to convert ORM to model: {e}")
+            return MVPProject(
+                id=orm.id,
+                tenant_id=orm.tenant_id,
+                project_name=orm.project_name,
+                slug=orm.slug,
+                description=orm.description,
+                status=MVPStatus(orm.status) if orm.status else MVPStatus.BLUEPRINT_PENDING,
+                created_at=orm.created_at,
+                updated_at=orm.updated_at,
+            )
     
     # Public Database Persistence Methods (Production Ready)
     

@@ -18,13 +18,16 @@ from ...models.interview_models import (
 from ...models.mvp_models import FounderInterview, BusinessRequirement, MVPIndustry
 from ...services.auth_service import auth_service
 from ...middleware.tenant_middleware import get_current_tenant, require_tenant
+from ...core.database import get_database_session
+from ...models.orm_models import MVPProjectORM
+from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/interviews", tags=["interviews"])
 security = HTTPBearer()
 
-# In-memory storage for interviews (will be replaced with proper database)
+# In-memory storage retained as fallback (primary persistence uses MVPProjectORM.interview_data)
 _interviews_storage: Dict[UUID, FounderInterview] = {}
 _interviews_by_tenant: Dict[UUID, List[UUID]] = {}
 
@@ -64,11 +67,27 @@ async def create_interview(
             industry=interview_request.industry or MVPIndustry.OTHER
         )
         
-        # Store interview
-        _interviews_storage[interview_id] = interview
-        if tenant.id not in _interviews_by_tenant:
-            _interviews_by_tenant[tenant.id] = []
-        _interviews_by_tenant[tenant.id].append(interview_id)
+        # Persist interview as draft in MVPProject table (interview_data only)
+        try:
+            async for session in get_database_session():
+                orm = MVPProjectORM(
+                    id=interview_id,
+                    tenant_id=tenant.id,
+                    project_name=f"Interview {interview_id.hex[:8]}",
+                    slug=f"interview-{interview_id.hex[:8]}",
+                    description=(interview.business_idea[:200] if interview.business_idea else "Founder interview"),
+                    status="blueprint_pending",
+                    interview_data=interview.model_dump(),
+                    generation_progress={},
+                )
+                session.add(orm)
+                await session.flush()
+                break
+        except Exception:
+            _interviews_storage[interview_id] = interview
+            if tenant.id not in _interviews_by_tenant:
+                _interviews_by_tenant[tenant.id] = []
+            _interviews_by_tenant[tenant.id].append(interview_id)
         
         # Create response
         response = InterviewResponse(
@@ -114,35 +133,54 @@ async def list_interviews(
         payload = await auth_service.verify_token(credentials.credentials)
         user_id = UUID(payload["user_id"])
         
-        # Get interviews for tenant
-        interview_ids = _interviews_by_tenant.get(tenant.id, [])
-        
-        # Apply pagination
-        paginated_ids = interview_ids[offset:offset + limit]
-        
-        # Build response list
-        interviews = []
-        for interview_id in paginated_ids:
-            if interview_id in _interviews_storage:
-                interview = _interviews_storage[interview_id]
-                
-                # Apply filters
-                if completed_only and not interview.completed_at:
-                    continue
-                
-                # Determine completion status
-                completion_status = _get_completion_status(interview)
-                validation_results = _validate_interview_completeness(interview)
-                
-                response = InterviewResponse(
-                    id=interview_id,
-                    interview=interview,
-                    completion_status=completion_status,
-                    validation_results=validation_results,
-                    tenant_id=tenant.id,
-                    created_by=user_id  # TODO: Store actual creator
+        interviews: List[InterviewResponse] = []
+        try:
+            async for session in get_database_session():
+                stmt = (
+                    select(MVPProjectORM)
+                    .where(MVPProjectORM.tenant_id == tenant.id)
+                    .order_by(MVPProjectORM.created_at.desc())
+                    .offset(offset)
+                    .limit(limit)
                 )
-                interviews.append(response)
+                result = await session.execute(stmt)
+                rows = result.scalars().all()
+                for row in rows:
+                    if not row.interview_data:
+                        continue
+                    interview = FounderInterview(**row.interview_data)
+                    if completed_only and not interview.completed_at:
+                        continue
+                    completion_status = _get_completion_status(interview)
+                    validation_results = _validate_interview_completeness(interview)
+                    interviews.append(InterviewResponse(
+                        id=row.id,
+                        interview=interview,
+                        completion_status=completion_status,
+                        validation_results=validation_results,
+                        tenant_id=tenant.id,
+                        created_by=user_id
+                    ))
+                break
+        except Exception:
+            # fallback to in-memory
+            interview_ids = _interviews_by_tenant.get(tenant.id, [])
+            paginated_ids = interview_ids[offset:offset + limit]
+            for iid in paginated_ids:
+                if iid in _interviews_storage:
+                    interview = _interviews_storage[iid]
+                    if completed_only and not interview.completed_at:
+                        continue
+                    completion_status = _get_completion_status(interview)
+                    validation_results = _validate_interview_completeness(interview)
+                    interviews.append(InterviewResponse(
+                        id=iid,
+                        interview=interview,
+                        completion_status=completion_status,
+                        validation_results=validation_results,
+                        tenant_id=tenant.id,
+                        created_by=user_id
+                    ))
         
         logger.info(f"Listed {len(interviews)} interviews for tenant {tenant.id}")
         return interviews
@@ -172,21 +210,23 @@ async def get_interview(
         payload = await auth_service.verify_token(credentials.credentials)
         user_id = UUID(payload["user_id"])
         
-        # Get interview
-        if interview_id not in _interviews_storage:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Interview not found"
-            )
-        
-        interview = _interviews_storage[interview_id]
-        
-        # Verify tenant access
-        if tenant.id not in _interviews_by_tenant or interview_id not in _interviews_by_tenant[tenant.id]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to interview"
-            )
+        # Load from DB
+        interview: Optional[FounderInterview] = None
+        try:
+            async for session in get_database_session():
+                stmt = select(MVPProjectORM).where(MVPProjectORM.id == interview_id, MVPProjectORM.tenant_id == tenant.id)
+                result = await session.execute(stmt)
+                row = result.scalar_one_or_none()
+                if row and row.interview_data:
+                    interview = FounderInterview(**row.interview_data)
+                break
+        except Exception:
+            pass
+        if interview is None:
+            if interview_id in _interviews_storage and interview_id in _interviews_by_tenant.get(tenant.id, []):
+                interview = _interviews_storage[interview_id]
+            else:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview not found")
         
         # Get completion status and validation
         completion_status = _get_completion_status(interview)
@@ -289,8 +329,18 @@ async def update_interview(
             interview.completed_at = datetime.utcnow()
             interview.duration_minutes = int((interview.completed_at - interview.started_at).total_seconds() / 60)
         
-        # Store updated interview
-        _interviews_storage[interview_id] = interview
+        # Persist to DB
+        try:
+            async for session in get_database_session():
+                stmt = select(MVPProjectORM).where(MVPProjectORM.id == interview_id, MVPProjectORM.tenant_id == tenant.id)
+                result = await session.execute(stmt)
+                row = result.scalar_one_or_none()
+                if row:
+                    row.interview_data = interview.model_dump()
+                    await session.flush()
+                break
+        except Exception:
+            _interviews_storage[interview_id] = interview
         
         # Create response
         validation_results = _validate_interview_completeness(interview)
@@ -338,21 +388,23 @@ async def validate_interview(
         # Verify token
         await auth_service.verify_token(credentials.credentials)
         
-        # Get interview
-        if interview_id not in _interviews_storage:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Interview not found"
-            )
-        
-        interview = _interviews_storage[interview_id]
-        
-        # Verify tenant access
-        if tenant.id not in _interviews_by_tenant or interview_id not in _interviews_by_tenant[tenant.id]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied to interview"
-            )
+        # Load interview
+        interview: Optional[FounderInterview] = None
+        try:
+            async for session in get_database_session():
+                stmt = select(MVPProjectORM).where(MVPProjectORM.id == interview_id, MVPProjectORM.tenant_id == tenant.id)
+                result = await session.execute(stmt)
+                row = result.scalar_one_or_none()
+                if row and row.interview_data:
+                    interview = FounderInterview(**row.interview_data)
+                break
+        except Exception:
+            pass
+        if interview is None:
+            if interview_id in _interviews_storage and interview_id in _interviews_by_tenant.get(tenant.id, []):
+                interview = _interviews_storage[interview_id]
+            else:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interview not found")
         
         # Perform validation
         validation_results = _validate_interview_completeness(interview)
@@ -365,7 +417,17 @@ async def validate_interview(
         if not interview.requirements:
             requirements = _extract_business_requirements(interview)
             interview.requirements = requirements
-            _interviews_storage[interview_id] = interview
+            try:
+                async for session in get_database_session():
+                    stmt = select(MVPProjectORM).where(MVPProjectORM.id == interview_id, MVPProjectORM.tenant_id == tenant.id)
+                    result = await session.execute(stmt)
+                    row = result.scalar_one_or_none()
+                    if row:
+                        row.interview_data = interview.model_dump()
+                        await session.flush()
+                    break
+            except Exception:
+                _interviews_storage[interview_id] = interview
         
         response = InterviewValidationResponse(
             interview_id=interview_id,
@@ -453,7 +515,17 @@ async def submit_interview(
         interview.complexity_score = _calculate_complexity_score(interview)
         
         # Store updated interview
-        _interviews_storage[interview_id] = interview
+        try:
+            async for session in get_database_session():
+                stmt = select(MVPProjectORM).where(MVPProjectORM.id == interview_id, MVPProjectORM.tenant_id == tenant.id)
+                result = await session.execute(stmt)
+                row = result.scalar_one_or_none()
+                if row:
+                    row.interview_data = interview.model_dump()
+                    await session.flush()
+                break
+        except Exception:
+            _interviews_storage[interview_id] = interview
         
         # Create response
         response = InterviewResponse(

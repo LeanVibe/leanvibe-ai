@@ -26,6 +26,8 @@ from ..services.email_service import email_service
 from ..services.blueprint_refinement_service import blueprint_refinement_service
 from ..services.mvp_service import mvp_service
 from ..services.monitoring_service import monitoring_service
+from ..models.orm_models import PipelineExecutionORM, PipelineExecutionLogORM
+from ..core.database import get_database_session
 
 logger = logging.getLogger(__name__)
 
@@ -205,6 +207,25 @@ class PipelineOrchestrationService:
         try:
             execution.status = PipelineStatus.RUNNING
             await self._update_execution(execution)
+            # Persist execution start
+            try:
+                async for session in get_database_session():
+                    orm = PipelineExecutionORM(
+                        id=execution.id,
+                        mvp_project_id=execution.mvp_project_id,
+                        tenant_id=execution.tenant_id,
+                        current_stage=execution.current_stage.value,
+                        status=execution.status.value,
+                        stages_completed=[s.value for s in execution.stages_completed],
+                        stage_durations=execution.stage_durations,
+                        overall_progress=execution.overall_progress,
+                        current_stage_progress=execution.current_stage_progress,
+                    )
+                    session.add(orm)
+                    await session.flush()
+                    break
+            except Exception:
+                pass
             
             # Stage 1: Blueprint Generation
             await self._execute_blueprint_generation_stage(execution)
@@ -246,6 +267,20 @@ class PipelineOrchestrationService:
             execution.status = PipelineStatus.FAILED
             execution.error_message = str(e)
             await self._update_execution(execution)
+            # Persist failure
+            try:
+                async for session in get_database_session():
+                    from sqlalchemy import select
+                    result = await session.execute(select(PipelineExecutionORM).where(PipelineExecutionORM.id == execution.id))
+                    row = result.scalar_one_or_none()
+                    if row:
+                        row.status = execution.status.value
+                        row.error_message = execution.error_message
+                        row.completed_at = execution.completed_at
+                        await session.flush()
+                    break
+            except Exception:
+                pass
     
     async def _execute_blueprint_generation_stage(self, execution: PipelineExecution):
         """Execute blueprint generation stage"""
@@ -533,6 +568,19 @@ class PipelineOrchestrationService:
         execution.current_stage_started_at = datetime.utcnow()
         execution.current_stage_progress = 0.0
         await self._update_execution(execution)
+        # Persist transition
+        try:
+            async for session in get_database_session():
+                from sqlalchemy import select
+                result = await session.execute(select(PipelineExecutionORM).where(PipelineExecutionORM.id == execution.id))
+                row = result.scalar_one_or_none()
+                if row:
+                    row.current_stage = stage.value
+                    row.current_stage_started_at = execution.current_stage_started_at
+                    await session.flush()
+                break
+        except Exception:
+            pass
         
         logger.info(f"Pipeline {execution.id} transitioned to stage: {stage}")
     
@@ -547,6 +595,20 @@ class PipelineOrchestrationService:
         
         execution.current_stage_progress = 100.0
         await self._update_execution(execution)
+        # Persist progress
+        try:
+            async for session in get_database_session():
+                from sqlalchemy import select
+                result = await session.execute(select(PipelineExecutionORM).where(PipelineExecutionORM.id == execution.id))
+                row = result.scalar_one_or_none()
+                if row:
+                    row.stages_completed = [s.value for s in execution.stages_completed]
+                    row.stage_durations = execution.stage_durations
+                    row.current_stage_progress = execution.current_stage_progress
+                    await session.flush()
+                break
+        except Exception:
+            pass
         
         logger.info(f"Pipeline {execution.id} completed stage: {stage} ({stage_duration:.1f}s)")
     
