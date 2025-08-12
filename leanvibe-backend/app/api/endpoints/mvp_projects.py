@@ -38,7 +38,7 @@ security = HTTPBearer()
 async def list_projects(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_READ)),
+    _perm = Depends(require_permission(Permission.PROJECT_READ)),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     status_filter: Optional[MVPStatus] = Query(None),
@@ -103,7 +103,7 @@ async def get_project(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_READ))
+    _perm = Depends(require_permission(Permission.PROJECT_READ))
 ) -> MVPProjectResponse:
     """
     Get detailed project information by ID
@@ -155,7 +155,7 @@ async def update_project(
     update_request: MVPProjectUpdateRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
+    _perm = Depends(require_permission(Permission.PROJECT_WRITE))
 ) -> MVPProjectResponse:
     """
     Update project metadata and configuration
@@ -224,7 +224,7 @@ async def delete_project(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_DELETE))
+    _perm = Depends(require_permission(Permission.PROJECT_DELETE))
 ):
     """
     Delete project and all associated data
@@ -278,7 +278,7 @@ async def duplicate_project(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
+    _perm = Depends(require_permission(Permission.PROJECT_WRITE))
 ) -> MVPProjectResponse:
     """
     Create a duplicate copy of an existing project
@@ -344,7 +344,7 @@ async def get_project_blueprint(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_READ))
+    _perm = Depends(require_permission(Permission.PROJECT_READ))
 ) -> BlueprintResponse:
     """
     Get project's technical blueprint
@@ -409,7 +409,7 @@ async def update_project_blueprint(
     update_request: BlueprintUpdateRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
+    _perm = Depends(require_permission(Permission.PROJECT_WRITE))
 ) -> BlueprintResponse:
     """
     Update project's technical blueprint
@@ -479,7 +479,7 @@ async def get_blueprint_history(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_READ))
+    _perm = Depends(require_permission(Permission.PROJECT_READ))
 ) -> List[BlueprintResponse]:
     """
     Get blueprint version history
@@ -538,7 +538,7 @@ async def approve_blueprint(
     approval_request: BlueprintApprovalRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
+    _perm = Depends(require_permission(Permission.PROJECT_WRITE))
 ) -> BlueprintResponse:
     """
     Approve technical blueprint for generation
@@ -625,7 +625,7 @@ async def request_blueprint_revision(
     revision_request: Dict[str, str],
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
+    _perm = Depends(require_permission(Permission.PROJECT_WRITE))
 ) -> BlueprintResponse:
     """
     Request blueprint revision with feedback
@@ -697,7 +697,7 @@ async def list_project_files(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_READ)),
+    _perm = Depends(require_permission(Permission.PROJECT_READ)),
     path_filter: Optional[str] = Query(None, description="Filter files by path"),
     file_type: Optional[str] = Query(None, description="Filter by file type")
 ) -> List[ProjectFileInfo]:
@@ -772,7 +772,7 @@ async def download_project_file(
     file_path: str,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_READ))
+    _perm = Depends(require_permission(Permission.PROJECT_READ))
 ) -> Response:
     """
     Download a specific generated file
@@ -861,7 +861,7 @@ async def download_project_archive(
     project_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_READ)),
+    _perm = Depends(require_permission(Permission.PROJECT_READ)),
     format: str = Query("zip", description="Archive format (zip, tar)")
 ) -> StreamingResponse:
     """

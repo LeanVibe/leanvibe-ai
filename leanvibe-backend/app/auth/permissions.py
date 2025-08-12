@@ -136,22 +136,24 @@ async def check_permission(permission: str, user_id: str = None, tenant_id: str 
     return permission in user_permissions
 
 
-async def require_permission(permission: str):
-    """Dependency to require specific permission"""
-    def permission_dependency(request: Request):
+def require_permission(permission: str):
+    """Dependency to require specific permission.
+
+    Returns an async dependency function suitable for FastAPI Depends without
+    requiring `await` at the call site.
+    """
+    async def permission_dependency(request: Request):
         # Get current user and tenant from middleware
         user_id = getattr(request.state, 'user_id', None)
         tenant_id = getattr(request.state, 'tenant_id', None)
-        
+
         if not user_id:
             raise HTTPException(
                 status_code=401,
                 detail="Authentication required"
             )
-        
+
         # Enforce permission
-        from sqlalchemy import select  # local import to avoid global dependency early
-        perms = []
         try:
             perms = await get_user_permissions(str(user_id), str(tenant_id) if tenant_id else None)
         except Exception:
@@ -159,7 +161,7 @@ async def require_permission(permission: str):
         if Permission.ADMIN_ALL in perms or permission in perms:
             return {"user_id": user_id, "tenant_id": tenant_id, "permissions": perms}
         raise HTTPException(status_code=403, detail="Insufficient permissions")
-    
+
     return permission_dependency
 
 

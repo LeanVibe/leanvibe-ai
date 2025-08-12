@@ -423,7 +423,7 @@ async def pause_pipeline(
     pipeline_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
+    _perm = Depends(require_permission(Permission.PROJECT_WRITE))
 ) -> PipelineResponse:
     """
     Pause pipeline execution
@@ -493,7 +493,7 @@ async def resume_pipeline(
     pipeline_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
+    _perm = Depends(require_permission(Permission.PROJECT_WRITE))
 ) -> PipelineResponse:
     """
     Resume paused pipeline execution

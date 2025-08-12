@@ -31,7 +31,7 @@ security = HTTPBearer()
 async def get_pipeline_analytics(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.TENANT_READ)),
+    _perm = Depends(require_permission(Permission.TENANT_READ)),
     time_range: str = Query("30d", description="Time range: 7d, 30d, 90d, 1y"),
     include_predictions: bool = Query(False, description="Include predictive analytics")
 ) -> PipelineAnalyticsResponse:
@@ -109,7 +109,7 @@ async def get_pipeline_analytics(
 async def get_tenant_analytics(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.TENANT_READ)),
+    _perm = Depends(require_permission(Permission.TENANT_READ)),
     time_range: str = Query("30d", description="Time range: 7d, 30d, 90d, 1y")
 ) -> TenantAnalyticsResponse:
     """
@@ -168,7 +168,7 @@ async def get_tenant_analytics(
 @router.get("/system", response_model=SystemAnalyticsResponse)
 async def get_system_analytics(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    _perm = Depends(await require_permission(Permission.ADMIN_ALL)),
+    _perm = Depends(require_permission(Permission.ADMIN_ALL)),
     time_range: str = Query("30d", description="Time range: 7d, 30d, 90d, 1y"),
     include_detailed_metrics: bool = Query(False, description="Include detailed system metrics")
 ) -> SystemAnalyticsResponse:
@@ -229,7 +229,7 @@ async def get_system_analytics(
 async def get_usage_metrics(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.TENANT_READ)),
+    _perm = Depends(require_permission(Permission.TENANT_READ)),
     time_range: str = Query("30d", description="Time range: 7d, 30d, 90d, 1y"),
     metric_types: Optional[List[str]] = Query(None, description="Specific metrics to include"),
     granularity: str = Query("daily", description="Data granularity: hourly, daily, weekly")
@@ -291,7 +291,7 @@ async def get_usage_metrics(
 async def get_performance_metrics(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.TENANT_READ)),
+    _perm = Depends(require_permission(Permission.TENANT_READ)),
     time_range: str = Query("30d", description="Time range: 7d, 30d, 90d, 1y"),
     service_filter: Optional[str] = Query(None, description="Filter by service: api, pipeline, storage")
 ) -> PerformanceMetricsResponse:
@@ -346,7 +346,7 @@ async def get_performance_metrics(
 async def get_user_engagement_metrics(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.TENANT_READ)),
+    _perm = Depends(require_permission(Permission.TENANT_READ)),
     time_range: str = Query("30d", description="Time range: 7d, 30d, 90d, 1y")
 ) -> UserEngagementMetrics:
     """
@@ -400,7 +400,7 @@ async def export_analytics(
     export_request: Dict[str, Any],
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.TENANT_READ))
+    _perm = Depends(require_permission(Permission.TENANT_READ))
 ) -> Dict[str, str]:
     """
     Export analytics data in various formats

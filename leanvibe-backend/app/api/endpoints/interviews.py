@@ -39,7 +39,7 @@ async def create_interview(
     interview_request: InterviewCreateRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
+    _perm = Depends(require_permission(Permission.PROJECT_WRITE))
 ) -> InterviewResponse:
     """
     Create new founder interview session
@@ -117,7 +117,7 @@ async def create_interview(
 async def list_interviews(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_READ)),
+    _perm = Depends(require_permission(Permission.PROJECT_READ)),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     completed_only: bool = Query(False)
@@ -202,7 +202,7 @@ async def get_interview(
     interview_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_READ))
+    _perm = Depends(require_permission(Permission.PROJECT_READ))
 ) -> InterviewResponse:
     """
     Get detailed interview information by ID
@@ -264,7 +264,7 @@ async def update_interview(
     update_request: InterviewUpdateRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
+    _perm = Depends(require_permission(Permission.PROJECT_WRITE))
 ) -> InterviewResponse:
     """
     Update interview information and responses
@@ -377,7 +377,7 @@ async def validate_interview(
     interview_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_READ))
+    _perm = Depends(require_permission(Permission.PROJECT_READ))
 ) -> InterviewValidationResponse:
     """
     Validate interview completeness and quality
@@ -467,7 +467,7 @@ async def submit_interview(
     submission_request: InterviewSubmissionRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(await require_permission(Permission.PROJECT_WRITE))
+    _perm = Depends(require_permission(Permission.PROJECT_WRITE))
 ) -> InterviewResponse:
     """
     Submit completed interview for processing
