@@ -598,22 +598,15 @@ class MVPService:
         """Get MVP project from database (best-effort), fallback to in-memory."""
         try:
             async for session in get_database_session():
-                try:
-                    stmt = select(MVPProjectORM).where(MVPProjectORM.id == mvp_project_id)
-                    result = await session.execute(stmt)
-                    row = result.scalar_one_or_none()
-                    if row:
-                        return self._orm_to_model(row)
-                finally:
-                    # Ensure session is closed/advanced to avoid generator issues in tests
-                    try:
-                        await session.close()
-                    except Exception:
-                        pass
+                stmt = select(MVPProjectORM).where(MVPProjectORM.id == mvp_project_id)
+                result = await session.execute(stmt)
+                row = result.scalar_one_or_none()
+                if row:
+                    return self._orm_to_model(row)
                 break
         except Exception:
             # Ignore DB engine/driver issues in light tests
-            pass
+            return self._projects_storage.get(mvp_project_id)
         return self._projects_storage.get(mvp_project_id)
     
     # ORM conversion method will be added when proper database integration is implemented

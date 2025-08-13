@@ -7,7 +7,7 @@ import logging
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends, Query, Path
+from fastapi import APIRouter, HTTPException, Depends, Query, Path, Request
 from fastapi.responses import JSONResponse
 
 from ...models.tenant_models import (
@@ -20,6 +20,9 @@ from ...auth.permissions import require_permission, Permission
 from ...core.exceptions import (
     TenantNotFoundError, TenantQuotaExceededError, InvalidTenantError
 )
+from ...core.database import get_database_session
+from sqlalchemy import select
+from ...models.orm_models import TenantMemberORM
 
 logger = logging.getLogger(__name__)
 
@@ -217,6 +220,71 @@ async def delete_tenant(
     except Exception as e:
         logger.error(f"Failed to delete tenant {tenant_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete tenant")
+
+
+# Admin: list tenant members
+@router.get("/{tenant_id}/members")
+async def list_tenant_members(
+    tenant_id: UUID = Path(..., description="Tenant ID"),
+    _admin = Depends(require_permission(Permission.ADMIN_ALL)),
+) -> List[dict]:
+    async for session in get_database_session():
+        result = await session.execute(select(TenantMemberORM).where(TenantMemberORM.tenant_id == tenant_id))
+        rows = result.scalars().all()
+        return [
+            {
+                "id": str(r.id),
+                "tenant_id": str(r.tenant_id),
+                "user_id": str(r.user_id),
+                "email": r.email,
+                "role": r.role,
+                "status": r.status,
+            }
+            for r in rows
+        ]
+
+
+# Admin: update member role
+@router.put("/{tenant_id}/members/{user_id}/role")
+async def update_tenant_member_role(
+    tenant_id: UUID,
+    user_id: UUID,
+    role: str = Query(..., description="New role"),
+    request: Request = None,
+    _admin = Depends(require_permission(Permission.ADMIN_ALL)),
+):
+    async for session in get_database_session():
+        result = await session.execute(
+            select(TenantMemberORM).where(
+                TenantMemberORM.tenant_id == tenant_id,
+                TenantMemberORM.user_id == user_id,
+            )
+        )
+        member = result.scalar_one_or_none()
+        if not member:
+            raise HTTPException(status_code=404, detail="Member not found")
+        old_role = member.role
+        member.role = role
+        await session.flush()
+        # Audit
+        try:
+            from ...services.audit_service import audit_service
+            await audit_service.log(
+                tenant_id=tenant_id,
+                action="tenant_role_change",
+                resource_type="tenant_member",
+                resource_id=str(member.id),
+                details={
+                    "user_id": str(user_id),
+                    "old_role": old_role,
+                    "new_role": role,
+                    "ip": request.client.host if request and request.client else None,
+                    "ua": request.headers.get("user-agent") if request else None,
+                },
+            )
+        except Exception:
+            pass
+        return {"status": "ok", "old_role": old_role, "new_role": role}
 
 
 # Tenant self-service endpoints (require tenant context)
