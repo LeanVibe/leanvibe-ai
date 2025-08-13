@@ -4,6 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useProject, useDirectoryEntries, downloadProjectFile, useDownloadArchive } from '@/hooks/use-projects'
+import apiClient from '@/lib/api-client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -15,6 +16,7 @@ export default function ProjectDetailPage() {
   const [sort, setSort] = React.useState<'name' | 'size' | 'modified'>('name')
   const { data: entries } = useDirectoryEntries(id, { path, sort })
   const downloadArchive = useDownloadArchive()
+  const [preview, setPreview] = React.useState<{ url: string; type: string } | null>(null)
 
   const project = (projectResp as any)?.data ?? projectResp
 
@@ -66,7 +68,14 @@ export default function ProjectDetailPage() {
                   {f.is_dir ? (
                     <Button size="sm" variant="ghost" onClick={() => setPath(f.path)}>Open</Button>
                   ) : (
-                    <Button size="sm" variant="outline" onClick={() => downloadProjectFile(id, f.path)}>Download</Button>
+                    <>
+                      <Button size="sm" variant="ghost" onClick={async () => {
+                        const res = await apiClient.previewProjectFile(id, f.path)
+                        const url = URL.createObjectURL(res.blob)
+                        setPreview({ url, type: res.contentType || 'text/plain' })
+                      }}>Preview</Button>
+                      <Button size="sm" variant="outline" onClick={() => downloadProjectFile(id, f.path)}>Download</Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -77,6 +86,24 @@ export default function ProjectDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {preview && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Preview</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {preview.type.startsWith('image/') ? (
+              <img src={preview.url} alt="preview" className="max-h-96" />
+            ) : (
+              <iframe src={preview.url} className="h-96 w-full rounded border" />
+            )}
+            <div className="mt-2">
+              <Button size="sm" variant="ghost" onClick={() => { URL.revokeObjectURL(preview.url); setPreview(null) }}>Close</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

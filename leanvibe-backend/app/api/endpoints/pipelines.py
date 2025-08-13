@@ -1112,19 +1112,26 @@ async def _mvp_project_to_pipeline_response(mvp_project: MVPProject) -> Pipeline
 @router.get("/{pipeline_id}/logs/tail")
 async def tail_pipeline_logs(
     pipeline_id: UUID,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     tenant = Depends(require_tenant),
     level_filter: Optional[str] = Query(None, description="INFO|WARNING|ERROR"),
     stage_filter: Optional[PipelineStage] = Query(None),
     search: Optional[str] = Query(None, max_length=200),
     once: bool = Query(False, description="Emit current batch and close (for testing/polling)"),
+    token: Optional[str] = Query(None, description="Alt auth for SSE when headers unavailable"),
 ):
     """Server-Sent Events stream for live pipeline logs with basic filters.
 
     For CI/tests, pass once=true to emit a single batch and close the stream.
     """
     try:
-        await auth_service.verify_token(credentials.credentials)
+        # Support SSE without auth headers by allowing token query param
+        if token:
+            await auth_service.verify_token(token)
+        elif credentials:
+            await auth_service.verify_token(credentials.credentials)
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing auth token")
         mvp_project = await mvp_service.get_mvp_project(pipeline_id)
         if not mvp_project:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pipeline not found")

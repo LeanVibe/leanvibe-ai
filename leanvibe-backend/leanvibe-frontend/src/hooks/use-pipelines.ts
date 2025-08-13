@@ -98,6 +98,9 @@ export function useLogsTail(
     if (level) params.set('level_filter', level)
     if (stage) params.set('stage_filter', stage)
     if (search) params.set('search', search)
+    // Attach bearer token as query for SSE if present
+    const token = (typeof window !== 'undefined') ? localStorage.getItem('access_token') : null
+    if (token) params.set('token', token)
 
     const url = `${base}/api/v1/pipelines/${id}/logs/tail?${params.toString()}`
     const source = new EventSource(url, { withCredentials: false })
