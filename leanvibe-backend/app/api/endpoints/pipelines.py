@@ -1181,9 +1181,9 @@ async def tail_pipeline_logs(
                     yield line.encode("utf-8")
                 if once:
                     break
-                # Small sleep to avoid busy loop
-                import asyncio as _asyncio
-                await _asyncio.sleep(0.25)
+                # Small jittered sleep to avoid busy loop
+                import asyncio as _asyncio, random as _rand
+                await _asyncio.sleep(0.2 + _rand.random() * 0.2)
 
         return StreamingResponse(event_generator(), media_type="text/event-stream")
     except HTTPException:

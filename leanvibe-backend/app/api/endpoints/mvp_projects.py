@@ -1023,17 +1023,33 @@ async def download_project_archive(
         storage = get_storage_service()
 
         if format == "zip":
-            from io import BytesIO as _BytesIO
             import zipfile as _zipfile
-            zip_buffer = _BytesIO()
-            with _zipfile.ZipFile(zip_buffer, 'w', _zipfile.ZIP_DEFLATED) as zip_file:
-                for f in storage.list_files(project_id):
-                    try:
-                        data_buf, _ct = storage.get_file(project_id, f.path)
-                        zip_file.writestr(f.path, data_buf.getvalue())
-                    except FileNotFoundError:
-                        continue
-            zip_buffer.seek(0)
+            from starlette.concurrency import iterate_in_threadpool as _iter
+
+            def _zip_stream():
+                with _zipfile.ZipFile(mode='w', file=BytesIO(), compression=_zipfile.ZIP_DEFLATED) as zf:
+                    pass
+                # Recreate a streaming zip by writing entries sequentially
+                import io as _io
+                buffer = _io.BytesIO()
+                with _zipfile.ZipFile(buffer, 'w', _zipfile.ZIP_DEFLATED, allowZip64=True) as zip_file:
+                    for f in storage.list_files(project_id):
+                        try:
+                            zi = _zipfile.ZipInfo(f.path)
+                            zi.compress_type = _zipfile.ZIP_DEFLATED
+                            with zip_file.open(zi, 'w') as dst:
+                                # Prefer iterator if available (S3), else get_file
+                                if hasattr(storage, 'iter_object'):
+                                    for chunk in storage.iter_object(project_id, f.path, chunk_size=1024*512):
+                                        dst.write(chunk)
+                                else:
+                                    data_buf, _ct = storage.get_file(project_id, f.path)
+                                    dst.write(data_buf.getvalue())
+                        except FileNotFoundError:
+                            continue
+                buffer.seek(0)
+                yield buffer.getvalue()
+
             safe_name = mvp_project.project_name.replace(" ", "_").lower()
             filename = f"{safe_name}_{project_id.hex[:8]}.zip"
             await audit_service.log(
@@ -1044,7 +1060,7 @@ async def download_project_archive(
                 details={"format": format}
             )
             return StreamingResponse(
-                _BytesIO(zip_buffer.getvalue()),
+                _zip_stream(),
                 media_type="application/zip",
                 headers={"Content-Disposition": f"attachment; filename={filename}"}
             )

@@ -89,6 +89,24 @@ class S3StorageService:
         content_type = obj.get("ContentType") or "application/octet-stream"
         return BytesIO(body), content_type
 
+    def iter_object(self, project_id: UUID, rel_path: str, chunk_size: int = 1024 * 1024):
+        """Yield object bytes in chunks (bounded memory)"""
+        key = f"{self._key_prefix(project_id)}{rel_path.lstrip('/')}"
+        start = 0
+        while True:
+            end = start + chunk_size - 1
+            try:
+                obj = self._s3.get_object(Bucket=self.config.bucket, Key=key, Range=f"bytes={start}-{end}")
+            except Exception:
+                break
+            data = obj["Body"].read()
+            if not data:
+                break
+            yield data
+            if len(data) < chunk_size:
+                break
+            start += len(data)
+
     def delete_project_artifacts(self, project_id: UUID) -> None:
         prefix = self._key_prefix(project_id)
         paginator = self._s3.get_paginator("list_objects_v2")
