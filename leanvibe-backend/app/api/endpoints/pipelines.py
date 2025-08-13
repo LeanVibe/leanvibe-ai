@@ -10,6 +10,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import StreamingResponse
 
 from ...models.pipeline_models import (
     PipelineCreateRequest, PipelineResponse, PipelineStatusResponse,
@@ -1106,3 +1107,79 @@ async def _mvp_project_to_pipeline_response(mvp_project: MVPProject) -> Pipeline
         tenant_id=mvp_project.tenant_id,
         created_by=mvp_project.tenant_id  # TODO: Add proper user tracking
     )
+
+
+@router.get("/{pipeline_id}/logs/tail")
+async def tail_pipeline_logs(
+    pipeline_id: UUID,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant),
+    level_filter: Optional[str] = Query(None, description="INFO|WARNING|ERROR"),
+    stage_filter: Optional[PipelineStage] = Query(None),
+    search: Optional[str] = Query(None, max_length=200),
+    once: bool = Query(False, description="Emit current batch and close (for testing/polling)"),
+):
+    """Server-Sent Events stream for live pipeline logs with basic filters.
+
+    For CI/tests, pass once=true to emit a single batch and close the stream.
+    """
+    try:
+        await auth_service.verify_token(credentials.credentials)
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pipeline not found")
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to pipeline")
+
+        async def event_generator():
+            last_ts = None
+            # Single pass for once mode; simple loop otherwise (limited)
+            max_iterations = 1 if once else 50
+            iteration = 0
+            while iteration < max_iterations:
+                iteration += 1
+                try:
+                    raw_logs = await mvp_service.get_generation_logs(pipeline_id)
+                except Exception:
+                    raw_logs = []
+                # Filter and order by timestamp
+                def _matches(entry: dict) -> bool:
+                    if level_filter and str(entry.get("level", "")).upper() != level_filter.upper():
+                        return False
+                    if stage_filter and str(entry.get("stage", "")).lower() not in {stage_filter.value, stage_filter.name.lower()}:
+                        return False
+                    if search and search.lower() not in str(entry.get("message", "")).lower():
+                        return False
+                    if last_ts and entry.get("timestamp") and entry["timestamp"] <= last_ts:
+                        return False
+                    return True
+
+                batch = [e for e in raw_logs if _matches(e)]
+                # Advance cursor to latest timestamp in batch
+                if batch:
+                    latest_ts = max((e.get("timestamp") for e in batch if e.get("timestamp")), default=None)
+                    if latest_ts:
+                        last_ts = latest_ts
+                # Emit SSE lines
+                for e in batch:
+                    # Minimal JSON to keep payload small
+                    payload = {
+                        "timestamp": (e.get("timestamp").isoformat() if e.get("timestamp") else None),
+                        "level": e.get("level"),
+                        "stage": e.get("stage"),
+                        "message": e.get("message"),
+                    }
+                    line = f"data: {payload}\n\n"
+                    yield line.encode("utf-8")
+                if once:
+                    break
+                # Small sleep to avoid busy loop
+                import asyncio as _asyncio
+                await _asyncio.sleep(0.25)
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to tail logs for pipeline {pipeline_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to tail logs")
