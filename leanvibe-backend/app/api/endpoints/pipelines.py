@@ -27,6 +27,7 @@ from sqlalchemy import select, func
 from ...models.orm_models import PipelineExecutionLogORM as _LogORM
 from ...auth.permissions import require_permission, Permission
 from ...services.audit_service import audit_service
+from ...auth.rate_limit import rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -1119,6 +1120,7 @@ async def tail_pipeline_logs(
     search: Optional[str] = Query(None, max_length=200),
     once: bool = Query(False, description="Emit current batch and close (for testing/polling)"),
     token: Optional[str] = Query(None, description="Alt auth for SSE when headers unavailable"),
+    _rl: None = Depends(rate_limit("logs_tail", capacity=50, refill_interval_seconds=1.0)),
 ):
     """Server-Sent Events stream for live pipeline logs with basic filters.
 
