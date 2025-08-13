@@ -21,7 +21,7 @@ from ...models.mvp_models import (
     MVPStatus, TechnicalBlueprint
 )
 from ...services.mvp_service import mvp_service
-from ...services.storage import get_storage_service
+from ...services.storage import get_storage_service, get_storage_capabilities
 from ...auth.permissions import require_permission, Permission
 from ...services.auth_service import auth_service
 from ...middleware.tenant_middleware import get_current_tenant, require_tenant
@@ -31,6 +31,18 @@ from ...services.audit_service import audit_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
+@router.get("/storage/capabilities")
+async def get_storage_info(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant),
+    _perm = Depends(require_permission(Permission.PROJECT_READ))
+):
+    try:
+        await auth_service.verify_token(credentials.credentials)
+        return get_storage_capabilities()
+    except Exception as e:
+        logger.error(f"Failed to get storage capabilities: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get storage capabilities")
 security = HTTPBearer()
 
 
@@ -819,7 +831,6 @@ async def download_project_file(
             from ...services.storage.s3_storage_service import S3StorageService
             if isinstance(storage, S3StorageService):
                 url = storage.presign_download(project_id, file_path)
-                # Audit S3 presigned download
                 await audit_service.log(
                     tenant_id=tenant.id,
                     action="file_download",
@@ -827,7 +838,6 @@ async def download_project_file(
                     resource_id=f"{project_id}/{file_path}",
                     details={"file_path": file_path}
                 )
-                # 307 Temporary Redirect to presigned URL
                 return Response(status_code=307, headers={"Location": url})
         except Exception:
             pass

@@ -24,3 +24,15 @@ def get_storage_service() -> StorageService:
         except Exception:
             return local_storage_service
     return local_storage_service
+
+
+def get_storage_capabilities() -> dict:
+    """Return current storage provider and capabilities."""
+    provider = os.getenv("LEANVIBE_STORAGE_PROVIDER", "local").lower()
+    caps = {
+        "provider": provider,
+        "presign_download": provider == "s3",
+        "range_supported": provider == "s3",
+        "server_zip_archive": provider == "local",
+    }
+    return caps
