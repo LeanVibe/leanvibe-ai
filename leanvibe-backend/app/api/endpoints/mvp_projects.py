@@ -465,7 +465,12 @@ async def update_project_blueprint(
                 detail="Cannot update blueprint during generation"
             )
         
-        # Update blueprint
+        # Record previous version if exists, then update
+        if mvp_project.blueprint:
+            try:
+                mvp_service.record_blueprint_revision(project_id, mvp_project.blueprint)
+            except Exception:
+                pass
         mvp_project.blueprint = update_request.blueprint
         mvp_project.status = MVPStatus.BLUEPRINT_PENDING  # Reset to pending for re-approval
         
@@ -527,18 +532,29 @@ async def get_blueprint_history(
                 detail="Access denied to project"
             )
         
-        # TODO: Implement actual blueprint versioning
-        history = []
+        # Combine in-memory history with current blueprint (current last)
+        versions = []
+        try:
+            prior = mvp_service.get_blueprint_history_inmemory(project_id)
+            for bp in prior:
+                versions.append(BlueprintResponse(
+                    project_id=project_id,
+                    blueprint=bp,
+                    approved=False,
+                    created_at=mvp_project.created_at,
+                    updated_at=mvp_project.updated_at
+                ))
+        except Exception:
+            pass
         if mvp_project.blueprint:
-            history.append(BlueprintResponse(
+            versions.append(BlueprintResponse(
                 project_id=project_id,
                 blueprint=mvp_project.blueprint,
                 approved=mvp_project.status != MVPStatus.BLUEPRINT_PENDING,
                 created_at=mvp_project.created_at,
                 updated_at=mvp_project.updated_at
             ))
-        
-        return history
+        return versions
         
     except HTTPException:
         raise

@@ -39,6 +39,8 @@ class MVPService:
         # In-memory storage retained as fallback; primary persistence via database
         self._projects_storage: Dict[UUID, MVPProject] = {}
         self._projects_by_tenant: Dict[UUID, List[UUID]] = {}
+        # In-memory blueprint version history per project (newest last)
+        self._blueprint_history: Dict[UUID, List[TechnicalBlueprint]] = {}
     
     async def create_mvp_project(
         self,
@@ -137,6 +139,18 @@ class MVPService:
                 logger.error(f"Failed to update project status after error: {update_error}")
             
             raise MVPServiceError(f"Failed to start MVP generation: {str(e)}")
+
+    # Blueprint revision history API (in-memory, best-effort)
+    def record_blueprint_revision(self, mvp_project_id: UUID, blueprint: TechnicalBlueprint) -> None:
+        try:
+            if mvp_project_id not in self._blueprint_history:
+                self._blueprint_history[mvp_project_id] = []
+            self._blueprint_history[mvp_project_id].append(blueprint)
+        except Exception:
+            pass
+
+    def get_blueprint_history_inmemory(self, mvp_project_id: UUID) -> List[TechnicalBlueprint]:
+        return list(self._blueprint_history.get(mvp_project_id, []))
     
     async def get_mvp_project(self, mvp_project_id: UUID) -> Optional[MVPProject]:
         """Get MVP project by ID"""
