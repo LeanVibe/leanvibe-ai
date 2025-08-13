@@ -794,6 +794,62 @@ async def list_project_files(
         )
 
 
+@router.get("/{project_id}/files:list")
+async def list_project_directory(
+    project_id: UUID,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant),
+    _perm = Depends(require_permission(Permission.PROJECT_READ)),
+    path: Optional[str] = Query(None, description="Directory path to list (relative)"),
+    sort: Optional[str] = Query("name", description="Sort by name|size|modified"),
+) -> List[Dict[str, Any]]:
+    try:
+        await auth_service.verify_token(credentials.credentials)
+        mvp_project = await mvp_service.get_mvp_project(project_id)
+        if not mvp_project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to project")
+
+        storage = get_storage_service()
+        all_files = storage.list_files(project_id)
+        prefix = (path or "").strip("/\\")
+        entries_map: Dict[str, Dict[str, Any]] = {}
+
+        for f in all_files:
+            rel = f.path
+            if prefix and not rel.startswith(prefix + "/") and rel != prefix:
+                continue
+            tail = rel[len(prefix):].lstrip("/") if prefix else rel
+            if "/" in tail:
+                top = tail.split("/", 1)[0]
+                key = (prefix + "/" + top) if prefix else top
+                if key not in entries_map:
+                    entries_map[key] = {"name": top, "path": (prefix + "/" + top).strip("/"), "is_dir": True}
+            else:
+                entries_map[rel] = {
+                    "name": tail,
+                    "path": rel,
+                    "is_dir": False,
+                    "size": f.size,
+                    "modified_at": f.modified_at.isoformat() if getattr(f, "modified_at", None) else None,
+                }
+
+        entries = list(entries_map.values())
+        if sort == "size":
+            entries.sort(key=lambda e: (e.get("is_dir", False), e.get("size", 0)))
+        elif sort == "modified":
+            entries.sort(key=lambda e: (e.get("is_dir", False), e.get("modified_at") or ""))
+        else:
+            entries.sort(key=lambda e: (not e.get("is_dir", False), e.get("name", "")))
+        return entries
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to list directory for project {project_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to list directory")
+
+
 # File download or preview endpoint
 @router.get("/{project_id}/files/{file_path:path}")
 async def download_project_file(
