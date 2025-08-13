@@ -1169,7 +1169,8 @@ async def tail_pipeline_logs(
                         "stage": e.get("stage"),
                         "message": e.get("message"),
                     }
-                    line = f"data: {payload}\n\n"
+                    import json as _json
+                    line = f"data: {_json.dumps(payload)}\n\n"
                     yield line.encode("utf-8")
                 if once:
                     break

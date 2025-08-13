@@ -298,6 +298,15 @@ class ApiClient {
     return response.data
   }
 
+  async getProjectDirectory(id: string, opts?: { path?: string; sort?: 'name' | 'size' | 'modified' }): Promise<any[]> {
+    const params = new URLSearchParams()
+    if (opts?.path) params.set('path', opts.path)
+    if (opts?.sort) params.set('sort', opts.sort)
+    const suffix = params.toString() ? `?${params.toString()}` : ''
+    const response = await this.request<any[]>(`/projects/${id}/files:list${suffix}`)
+    return (response as any).data ?? (response as any)
+  }
+
   async downloadProjectFile(id: string, path: string): Promise<Blob> {
     const response = await fetch(`${this.baseURL}/api/v1/projects/${id}/files/${encodeURIComponent(path)}`, {
       headers: {
@@ -310,6 +319,20 @@ class ApiClient {
     }
 
     return response.blob()
+  }
+
+  async previewProjectFile(id: string, path: string): Promise<{ blob: Blob; contentType: string | null }> {
+    const response = await fetch(`${this.baseURL}/api/v1/projects/${id}/files/${encodeURIComponent(path)}?preview=true`, {
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+    })
+    if (!response.ok) {
+      throw new Error('Preview failed')
+    }
+    const blob = await response.blob()
+    const contentType = response.headers.get('Content-Type')
+    return { blob, contentType }
   }
 
   async downloadProjectArchive(id: string): Promise<Blob> {

@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useProject, useProjectFiles, downloadProjectFile, useDownloadArchive } from '@/hooks/use-projects'
+import { useProject, useDirectoryEntries, downloadProjectFile, useDownloadArchive } from '@/hooks/use-projects'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -11,7 +11,9 @@ export default function ProjectDetailPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id as string
   const { data: projectResp } = useProject(id)
-  const { data: files } = useProjectFiles(id)
+  const [path, setPath] = React.useState<string>('')
+  const [sort, setSort] = React.useState<'name' | 'size' | 'modified'>('name')
+  const { data: entries } = useDirectoryEntries(id, { path, sort })
   const downloadArchive = useDownloadArchive()
 
   const project = (projectResp as any)?.data ?? projectResp
@@ -33,19 +35,43 @@ export default function ProjectDetailPage() {
           <CardTitle>Files</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-2 flex items-center gap-2 text-sm">
+            <button className="underline" onClick={() => setPath('')}>root</button>
+            {path && path.split('/').map((seg, idx, arr) => {
+              const p = arr.slice(0, idx + 1).join('/')
+              return (
+                <span key={p} className="flex items-center gap-2">
+                  <span>/</span>
+                  <button className="underline" onClick={() => setPath(p)}>{seg}</button>
+                </span>
+              )
+            })}
+            <div className="ml-auto flex items-center gap-2">
+              <label className="text-xs text-muted-foreground">Sort</label>
+              <select className="rounded border px-2 py-1" value={sort} onChange={(e) => setSort(e.target.value as any)}>
+                <option value="name">Name</option>
+                <option value="size">Size</option>
+                <option value="modified">Modified</option>
+              </select>
+            </div>
+          </div>
           <div className="space-y-2">
-            {(files || []).map((f: any) => (
+            {(entries || []).map((f: any) => (
               <div key={f.path} className="flex items-center justify-between rounded border p-2">
                 <div className="truncate">
                   <div className="text-sm font-medium">{f.name}</div>
                   <div className="text-xs text-muted-foreground">{f.path}</div>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => downloadProjectFile(id, f.path)}>Download</Button>
+                  {f.is_dir ? (
+                    <Button size="sm" variant="ghost" onClick={() => setPath(f.path)}>Open</Button>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => downloadProjectFile(id, f.path)}>Download</Button>
+                  )}
                 </div>
               </div>
             ))}
-            {(!files || files.length === 0) && (
+            {(!entries || entries.length === 0) && (
               <div className="text-sm text-muted-foreground">No files found.</div>
             )}
           </div>

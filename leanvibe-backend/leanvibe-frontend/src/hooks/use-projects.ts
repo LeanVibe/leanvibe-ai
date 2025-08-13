@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import * as React from 'react'
 import { apiClient } from '@/lib/api-client'
 import type { ListParams, Project, ProjectFile } from '@/types/api'
 
@@ -37,6 +38,16 @@ export function useProjectFiles(id: string, enabled = true) {
     },
     enabled: !!id && enabled,
     refetchInterval: 10_000,
+  })
+}
+
+export function useDirectoryEntries(id: string, opts?: { path?: string; sort?: 'name' | 'size' | 'modified' }) {
+  const { path, sort } = opts || {}
+  return useQuery<any[]>({
+    queryKey: [...projectKeys.files(id), 'dir', path || '', sort || 'name'],
+    queryFn: () => apiClient.getProjectDirectory(id, { path, sort }),
+    enabled: !!id,
+    staleTime: 10_000,
   })
 }
 

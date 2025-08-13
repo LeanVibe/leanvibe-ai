@@ -2,7 +2,12 @@ import { render, screen } from '@testing-library/react'
 import { PipelineLogsPanel } from '@/components/pipelines/PipelineLogsPanel'
 
 jest.mock('@/hooks/use-pipelines', () => ({
-  usePipelineLogs: () => ({ data: { data: [{ timestamp: new Date().toISOString(), level: 'INFO', message: 'Test log' }] }, isLoading: false })
+  useLogsTail: () => ({
+    events: [{ timestamp: new Date().toISOString(), level: 'INFO', message: 'Test log' }],
+    isConnected: true,
+    error: null,
+    clear: () => {},
+  }),
 }))
 
 test('renders logs', () => {

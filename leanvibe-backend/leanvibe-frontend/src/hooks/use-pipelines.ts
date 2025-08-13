@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import * as React from 'react'
 import { apiClient } from '@/lib/api-client'
 import { 
   Pipeline, 
@@ -65,6 +66,75 @@ export function usePipelineLogs(id: string, enabled = true) {
     refetchInterval: 5000, // 5 seconds
     staleTime: 1000,
   })
+}
+
+// Live SSE tail for logs
+export type TailLogEvent = {
+  timestamp: string | null
+  level: string
+  stage?: string
+  message: string
+}
+
+export function useLogsTail(
+  id: string,
+  options?: {
+    level?: string
+    stage?: string
+    search?: string
+    paused?: boolean
+  }
+) {
+  const [events, setEvents] = React.useState<TailLogEvent[]>([])
+  const [error, setError] = React.useState<string | null>(null)
+  const [isConnected, setIsConnected] = React.useState(false)
+  const { level, stage, search, paused } = options || {}
+
+  React.useEffect(() => {
+    if (!id || paused) return
+
+    const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    const params = new URLSearchParams()
+    if (level) params.set('level_filter', level)
+    if (stage) params.set('stage_filter', stage)
+    if (search) params.set('search', search)
+
+    const url = `${base}/api/v1/pipelines/${id}/logs/tail?${params.toString()}`
+    const source = new EventSource(url, { withCredentials: false })
+    setIsConnected(true)
+    setError(null)
+
+    source.onmessage = (evt) => {
+      try {
+        const data: TailLogEvent = JSON.parse(evt.data)
+        setEvents((prev) => [...prev, data])
+      } catch (e) {
+        // ignore parse errors
+      }
+    }
+
+    source.onerror = () => {
+      setIsConnected(false)
+      setError('Connection error')
+      source.close()
+    }
+
+    return () => {
+      source.close()
+      setIsConnected(false)
+    }
+  }, [id, level, stage, search, paused])
+
+  const api = React.useMemo(
+    () => ({
+      clear: () => setEvents([]),
+      pause: () => {},
+      resume: () => {},
+    }),
+    []
+  )
+
+  return { events, error, isConnected, ...api }
 }
 
 export function useCreatePipeline() {
