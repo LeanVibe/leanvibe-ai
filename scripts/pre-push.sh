@@ -111,6 +111,7 @@ done
 if [[ $had_findings -eq 1 ]]; then
   echo ""
   echo "Blocking push. If this is intentional, sanitize or use placeholders."
+  echo "If findings are from deployment helper scripts (scripts/setup-secrets.sh), ensure they only reference env vars."
   echo "Tip: Export STRICT_PREPUSH=1 to scan all tracked files."
   exit 1
 fi
