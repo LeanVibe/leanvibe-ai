@@ -89,6 +89,20 @@ class S3StorageService:
         content_type = obj.get("ContentType") or "application/octet-stream"
         return BytesIO(body), content_type
 
+    def delete_project_artifacts(self, project_id: UUID) -> None:
+        prefix = self._key_prefix(project_id)
+        paginator = self._s3.get_paginator("list_objects_v2")
+        keys = []
+        for page in paginator.paginate(Bucket=self.config.bucket, Prefix=prefix):
+            for obj in page.get("Contents", []):
+                keys.append({"Key": obj["Key"]})
+                # Batch delete in chunks of 1000
+                if len(keys) >= 1000:
+                    self._s3.delete_objects(Bucket=self.config.bucket, Delete={"Objects": keys})
+                    keys = []
+        if keys:
+            self._s3.delete_objects(Bucket=self.config.bucket, Delete={"Objects": keys})
+
 
 # Singleton
 s3_storage_service = S3StorageService() if boto3 else None

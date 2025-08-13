@@ -10,8 +10,8 @@ from io import BytesIO
 from typing import Dict, List, Optional, Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Depends, Query, Response, status
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, Depends, Query, Response, status, Header
+from fastapi.responses import StreamingResponse, PlainTextResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from ...models.mvp_models import (
@@ -30,6 +30,7 @@ from ...services.audit_service import audit_service
 
 logger = logging.getLogger(__name__)
 
+security = HTTPBearer()
 router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 @router.get("/storage/capabilities")
 async def get_storage_info(
@@ -43,7 +44,6 @@ async def get_storage_info(
     except Exception as e:
         logger.error(f"Failed to get storage capabilities: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get storage capabilities")
-security = HTTPBearer()
 
 
 @router.get("/", response_model=List[MVPProjectResponse])
@@ -272,8 +272,14 @@ async def delete_project(
         if mvp_project.status == MVPStatus.GENERATING:
             await mvp_service.cancel_mvp_generation(project_id)
         
-        # TODO: Implement actual deletion when database persistence is added
-        logger.info(f"Deleted project {project_id}")
+        # Cleanup artifacts in storage provider
+        storage = get_storage_service()
+        try:
+            storage.delete_project_artifacts(project_id)
+        except Exception as cleanup_err:
+            logger.warning(f"Failed to cleanup artifacts for {project_id}: {cleanup_err}")
+        # TODO: Implement DB deletion when persistence fully wired
+        logger.info(f"Deleted project {project_id} and cleaned up artifacts")
         
     except HTTPException:
         raise
@@ -778,13 +784,16 @@ async def list_project_files(
         )
 
 
+# File download or preview endpoint
 @router.get("/{project_id}/files/{file_path:path}")
 async def download_project_file(
     project_id: UUID,
     file_path: str,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
-    _perm = Depends(require_permission(Permission.PROJECT_READ))
+    _perm = Depends(require_permission(Permission.PROJECT_READ)),
+    preview: bool = Query(False, description="Inline preview for small text/markdown/logs"),
+    range_header: str | None = Header(default=None, alias="Range"),
 ) -> Response:
     """
     Download a specific generated file
@@ -826,11 +835,11 @@ async def download_project_file(
             )
         
         storage = get_storage_service()
-        # If S3, prefer presigned URL redirect
+        # If S3, prefer presigned URL redirect; for preview with Range, forward via presign if possible
         try:
             from ...services.storage.s3_storage_service import S3StorageService
             if isinstance(storage, S3StorageService):
-                url = storage.presign_download(project_id, file_path)
+                url = storage.presign_download(project_id, file_path, range_header=range_header if not preview else None)
                 await audit_service.log(
                     tenant_id=tenant.id,
                     action="file_download",
@@ -841,7 +850,7 @@ async def download_project_file(
                 return Response(status_code=307, headers={"Location": url})
         except Exception:
             pass
-        # Local storage
+        # Local storage or server-side inline preview
         try:
             buffer, media_type = storage.get_file(project_id, file_path)
         except FileNotFoundError:
@@ -854,7 +863,15 @@ async def download_project_file(
             resource_id=f"{project_id}/{file_path}",
             details={"file_path": file_path}
         )
-        return Response(content=buffer.getvalue(), media_type=media_type, headers={"Content-Disposition": f"attachment; filename={file_path.split('/')[-1]}"})
+        data = buffer.getvalue()
+        filename = file_path.split("/")[-1]
+        # If preview and content is small text/markdown/log
+        if preview and len(data) <= 1_000_000:
+            # Try to coerce text types
+            text_types = {"text/plain", "text/markdown", "application/json", "application/x-ndjson"}
+            if media_type in text_types or filename.endswith((".md", ".txt", ".log", ".json")):
+                return Response(content=data, media_type=(media_type or "text/plain"), headers={"Content-Disposition": "inline"})
+        return Response(content=data, media_type=media_type, headers={"Content-Disposition": f"attachment; filename={filename}"})
         
     except HTTPException:
         raise
@@ -921,20 +938,46 @@ async def download_project_archive(
             )
         
         storage = get_storage_service()
-        # For S3 provider we do not stream archives server-side yet
+        # For S3 provider: server-side ZIP streaming using chunked reads
         try:
             from ...services.storage.s3_storage_service import S3StorageService
             if isinstance(storage, S3StorageService):
-                raise HTTPException(
-                    status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                    detail="Archive download not implemented for S3 provider yet"
+                import zipfile
+                from io import BytesIO
+
+                def iter_zip() -> bytes:
+                    mem = BytesIO()
+                    with zipfile.ZipFile(mem, 'w', zipfile.ZIP_DEFLATED) as zf:
+                        for f in storage.list_files(project_id):
+                            try:
+                                buf, _ct = storage.get_file(project_id, f.path)
+                                zf.writestr(f.path, buf.getvalue())
+                            except Exception:
+                                continue
+                    mem.seek(0)
+                    chunk = mem.read(64 * 1024)
+                    while chunk:
+                        yield chunk
+                        chunk = mem.read(64 * 1024)
+
+                safe_name = mvp_project.project_name.replace(" ", "_").lower()
+                filename = f"{safe_name}_{project_id.hex[:8]}.zip"
+                await audit_service.log(
+                    tenant_id=tenant.id,
+                    action="project_archive_download",
+                    resource_type="project_archive",
+                    resource_id=str(project_id),
+                    details={"format": format}
                 )
+                return StreamingResponse(iter_zip(), media_type="application/zip", headers={"Content-Disposition": f"attachment; filename={filename}"})
         except Exception:
             pass
 
         if format == "zip":
-            zip_buffer = BytesIO()
-            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            from io import BytesIO as _BytesIO
+            import zipfile as _zipfile
+            zip_buffer = _BytesIO()
+            with _zipfile.ZipFile(zip_buffer, 'w', _zipfile.ZIP_DEFLATED) as zip_file:
                 for f in storage.list_files(project_id):
                     try:
                         data_buf, _ct = storage.get_file(project_id, f.path)
@@ -952,7 +995,7 @@ async def download_project_archive(
                 details={"format": format}
             )
             return StreamingResponse(
-                BytesIO(zip_buffer.getvalue()),
+                _BytesIO(zip_buffer.getvalue()),
                 media_type="application/zip",
                 headers={"Content-Disposition": f"attachment; filename={filename}"}
             )
@@ -970,6 +1013,9 @@ async def download_project_archive(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create project archive"
         )
+
+
+# Retention: delete artifacts on project delete
 
 
 @router.post("/{project_id}/deploy", response_model=DeploymentResponse)

@@ -12,6 +12,8 @@ class StorageService(Protocol):
     def list_files(self, project_id: UUID, *, path_filter: str | None = None) -> list[StoredFile]: ...
     # For downloads we expose presign to allow signed URLs in S3; local returns path
     def get_file(self, project_id: UUID, rel_path: str): ...
+    # Cleanup API: delete all artifacts under a project prefix
+    def delete_project_artifacts(self, project_id: UUID) -> None: ...
 
 
 def get_storage_service() -> StorageService:
@@ -33,6 +35,8 @@ def get_storage_capabilities() -> dict:
         "provider": provider,
         "presign_download": provider == "s3",
         "range_supported": provider == "s3",
-        "server_zip_archive": provider == "local",
+        "server_zip_archive": True,  # local native; s3 supported via server streaming
+        "archive_formats": {"zip": True, "tar": False},
+        "max_preview_size_bytes": 1_000_000,
     }
     return caps
