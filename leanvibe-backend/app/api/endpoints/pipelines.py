@@ -22,7 +22,7 @@ from ...services.auth_service import auth_service
 from ...middleware.tenant_middleware import get_current_tenant, require_tenant
 from ...core.exceptions import InsufficientPermissionsError
 from ...core.database import get_database_session
-from sqlalchemy import select
+from sqlalchemy import select, func
 from ...models.orm_models import PipelineExecutionLogORM as _LogORM
 from ...auth.permissions import require_permission, Permission
 from ...services.audit_service import audit_service
@@ -31,6 +31,77 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/pipelines", tags=["pipelines"])
 security = HTTPBearer()
+@router.get("/{pipeline_id}/logs/summary")
+async def get_pipeline_logs_summary(
+    pipeline_id: UUID,
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    tenant = Depends(require_tenant),
+    start_time: Optional[datetime] = Query(None),
+    end_time: Optional[datetime] = Query(None)
+) -> Dict[str, Any]:
+    """
+    Get aggregated log summary (counts by level and stage) for a pipeline.
+    """
+    try:
+        # Verify token
+        await auth_service.verify_token(credentials.credentials)
+
+        # Verify project access
+        mvp_project = await mvp_service.get_mvp_project(pipeline_id)
+        if not mvp_project:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pipeline not found")
+        if mvp_project.tenant_id != tenant.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to pipeline")
+
+        # DB-first aggregation
+        summary = {"by_level": {}, "by_stage": {}, "total": 0}
+        try:
+            async for session in get_database_session():
+                base = select(_LogORM).where(_LogORM.mvp_project_id == pipeline_id, _LogORM.tenant_id == tenant.id)
+                if start_time:
+                    base = base.where(_LogORM.timestamp >= start_time)
+                if end_time:
+                    base = base.where(_LogORM.timestamp <= end_time)
+
+                # Count total
+                total = await session.execute(select(func.count()).select_from(base.subquery()))
+                summary["total"] = int(total.scalar() or 0)
+
+                # Counts by level
+                rows = await session.execute(
+                    select(_LogORM.level, func.count()).select_from(base.subquery()).group_by(_LogORM.level)
+                )
+                for level, count in rows.all():
+                    summary["by_level"][level] = int(count)
+
+                # Counts by stage
+                rows = await session.execute(
+                    select(_LogORM.stage, func.count()).select_from(base.subquery()).group_by(_LogORM.stage)
+                )
+                for stage, count in rows.all():
+                    summary["by_stage"][stage or "unknown"] = int(count)
+                break
+        except Exception:
+            # Fallback: in-memory
+            raw_logs = await mvp_service.get_generation_logs(pipeline_id)
+            for entry in raw_logs:
+                ts = entry.get("timestamp")
+                if start_time and ts and ts < start_time:
+                    continue
+                if end_time and ts and ts > end_time:
+                    continue
+                summary["total"] += 1
+                level = str(entry.get("level", "INFO")).upper()
+                stage = str(entry.get("stage", "unknown"))
+                summary["by_level"][level] = summary["by_level"].get(level, 0) + 1
+                summary["by_stage"][stage] = summary["by_stage"].get(stage, 0) + 1
+
+        return summary
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to summarize pipeline logs {pipeline_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to summarize pipeline logs")
 
 
 @router.post("/", response_model=PipelineResponse, status_code=status.HTTP_201_CREATED)
@@ -752,8 +823,13 @@ async def get_pipeline_logs(
     tenant = Depends(require_tenant),
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    level_filter: Optional[str] = Query(None),
-    stage_filter: Optional[PipelineStage] = Query(None)
+    level_filter: Optional[str] = Query(None, description="Filter by level (INFO, WARNING, ERROR)"),
+    stage_filter: Optional[PipelineStage] = Query(None, description="Filter by stage"),
+    start_time: Optional[datetime] = Query(None, description="Start time (ISO8601)"),
+    end_time: Optional[datetime] = Query(None, description="End time (ISO8601)"),
+    search: Optional[str] = Query(None, max_length=200, description="Search in message"),
+    sort: str = Query("asc", pattern="^(asc|desc)$", description="Sort by timestamp asc|desc"),
+    after_id: Optional[UUID] = Query(None, description="Seek pagination: return logs after this id (ignores offset)")
 ) -> List[PipelineLogEntry]:
     """
     Get pipeline execution logs with filtering
@@ -798,14 +874,32 @@ async def get_pipeline_logs(
                     select(_LogORM)
                     .where(_LogORM.mvp_project_id == pipeline_id)
                     .where(_LogORM.tenant_id == tenant.id)
-                    .order_by(_LogORM.timestamp.asc())
-                    .offset(offset)
-                    .limit(limit)
                 )
+                # Time window
+                if start_time:
+                    stmt = stmt.where(_LogORM.timestamp >= start_time)
+                if end_time:
+                    stmt = stmt.where(_LogORM.timestamp <= end_time)
                 if level_filter:
                     stmt = stmt.where(_LogORM.level == level_filter.upper())
                 if stage_filter:
                     stmt = stmt.where(_LogORM.stage == stage_filter.value)
+                if search:
+                    stmt = stmt.where(_LogORM.message.ilike(f"%{search}%"))
+                # Seek pagination by id (based on timestamp)
+                if after_id is not None:
+                    anchor = await session.get(_LogORM, after_id)
+                    if anchor is not None:
+                        stmt = stmt.where(_LogORM.timestamp > anchor.timestamp)
+                # Sort
+                if sort == "desc":
+                    stmt = stmt.order_by(_LogORM.timestamp.desc())
+                else:
+                    stmt = stmt.order_by(_LogORM.timestamp.asc())
+                # Offset only when not using seek
+                if after_id is None and offset:
+                    stmt = stmt.offset(offset)
+                stmt = stmt.limit(limit)
                 result = await session.execute(stmt)
                 rows = result.scalars().all()
                 for row in rows:
@@ -862,11 +956,28 @@ async def get_pipeline_logs(
                 continue
 
         # Apply filters to in-memory fallback
+        if start_time:
+            mem_logs = [log for log in mem_logs if log.timestamp >= start_time]
+        if end_time:
+            mem_logs = [log for log in mem_logs if log.timestamp <= end_time]
         if level_filter:
             mem_logs = [log for log in mem_logs if log.level == level_filter.upper()]
         if stage_filter:
             mem_logs = [log for log in mem_logs if log.stage == stage_filter]
-
+        if search:
+            mem_logs = [log for log in mem_logs if search.lower() in (log.message or "").lower()]
+        # Sort
+        reverse = (sort == "desc")
+        mem_logs.sort(key=lambda l: l.timestamp or datetime.min, reverse=reverse)
+        # Seek pagination on timestamp only
+        if after_id is not None:
+            # No ids in memory logs; approximate by skipping until after anchor timestamp from DB
+            async for session in get_database_session():
+                anchor = await session.get(_LogORM, after_id)
+                if anchor is not None:
+                    mem_logs = [l for l in mem_logs if l.timestamp and l.timestamp > anchor.timestamp]
+                break
+        # Offset/limit
         return mem_logs[offset:offset + limit]
         
     except HTTPException:
