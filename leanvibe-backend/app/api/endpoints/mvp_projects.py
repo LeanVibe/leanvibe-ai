@@ -910,22 +910,30 @@ async def download_project_archive(
                 detail="Unsupported archive format"
             )
         
-        # TODO: Implement actual archive creation from assembly line system
-        # For now, create a mock ZIP archive
+        storage = get_storage_service()
+        # For S3 provider we do not stream archives server-side yet
+        try:
+            from ...services.storage.s3_storage_service import S3StorageService
+            if isinstance(storage, S3StorageService):
+                raise HTTPException(
+                    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                    detail="Archive download not implemented for S3 provider yet"
+                )
+        except Exception:
+            pass
+
         if format == "zip":
-            # Build ZIP from storage service
             zip_buffer = BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-                for f in local_storage_service.list_files(project_id):
+                for f in storage.list_files(project_id):
                     try:
-                        data_buf, _ct = local_storage_service.get_file(project_id, f.path)
+                        data_buf, _ct = storage.get_file(project_id, f.path)
                         zip_file.writestr(f.path, data_buf.getvalue())
                     except FileNotFoundError:
                         continue
             zip_buffer.seek(0)
             safe_name = mvp_project.project_name.replace(" ", "_").lower()
             filename = f"{safe_name}_{project_id.hex[:8]}.zip"
-            # Audit project archive download
             await audit_service.log(
                 tenant_id=tenant.id,
                 action="project_archive_download",
