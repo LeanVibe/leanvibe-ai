@@ -80,6 +80,10 @@ scan_file() {
       while IFS= read -r hit; do
         local line_text
         line_text="${hit#*:}"
+        # Allow env-substitution literals in scripts (not secrets)
+        if grep -q '\${[A-Za-z_][A-Za-z0-9_]*}' <<<"$line_text"; then
+          continue
+        fi
         if [[ $is_docs -eq 1 ]]; then
           local allowed=0
           for allow in "${DOCS_ALLOWLIST[@]}"; do
