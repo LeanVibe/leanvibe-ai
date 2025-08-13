@@ -27,6 +27,7 @@ from .api.endpoints.pipelines import router as pipelines_router
 from .api.endpoints.mvp_projects import router as mvp_projects_router
 from .api.endpoints.interviews import router as interviews_router
 from .api.endpoints.analytics import router as analytics_router
+from .api.endpoints.audit import router as audit_router
 
 # Import API middleware
 from .middleware.api_middleware import (
@@ -235,6 +236,7 @@ app.include_router(pipelines_router)  # Autonomous pipeline management
 app.include_router(mvp_projects_router)  # MVP project management
 app.include_router(interviews_router)  # Founder interview management
 app.include_router(analytics_router)  # Analytics and metrics
+app.include_router(audit_router)  # Admin audit list
 
 
 # Code completion WebSocket handler

@@ -16,6 +16,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 
 from ...auth import api_key_dependency
+from ...auth.permissions import require_permission, Permission
 from ...core.logging_config import get_logger, set_request_context, generate_request_id
 from ...core.health_monitor import health_monitor, run_health_checks, get_service_health, get_current_alerts
 from ...core.performance_monitor import performance_monitor, get_performance_stats
@@ -39,7 +40,8 @@ async def setup_request_context():
 @router.get("/monitoring/health")
 async def get_comprehensive_health(
     request_id: str = Depends(setup_request_context),
-    authenticated: bool = Depends(api_key_dependency)
+    authenticated: bool = Depends(api_key_dependency),
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Dict[str, Any]:
     """
     Get comprehensive health status for all services and components
@@ -196,7 +198,8 @@ async def get_error_overview(
     duration_hours: int = Query(default=24, ge=1, le=168),
     severity: Optional[str] = Query(default=None, regex="^(low|medium|high|critical)$"),
     category: Optional[str] = Query(default=None),
-    request_id: str = Depends(setup_request_context)
+    request_id: str = Depends(setup_request_context),
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Dict[str, Any]:
     """
     Get comprehensive error tracking overview
@@ -322,7 +325,8 @@ async def get_error_overview(
 async def get_alerts(
     include_resolved: bool = Query(default=False),
     severity: Optional[str] = Query(default=None, regex="^(low|medium|high|critical)$"),
-    request_id: str = Depends(setup_request_context)
+    request_id: str = Depends(setup_request_context),
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Dict[str, Any]:
     """
     Get current alerts with optional filtering
@@ -433,7 +437,8 @@ async def get_alerts(
 async def acknowledge_alert(
     alert_id: str,
     acknowledged_by: str = Query(..., description="User acknowledging the alert"),
-    request_id: str = Depends(setup_request_context)
+    request_id: str = Depends(setup_request_context),
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Dict[str, Any]:
     """Acknowledge an alert"""
     try:
@@ -459,7 +464,8 @@ async def acknowledge_alert(
 @router.post("/monitoring/alerts/{alert_id}/resolve")
 async def resolve_alert(
     alert_id: str,
-    request_id: str = Depends(setup_request_context)
+    request_id: str = Depends(setup_request_context),
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Dict[str, Any]:
     """Resolve an alert"""
     try:
@@ -483,7 +489,8 @@ async def resolve_alert(
 
 @router.get("/monitoring/dashboard")
 async def get_dashboard_data(
-    request_id: str = Depends(setup_request_context)
+    request_id: str = Depends(setup_request_context),
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Dict[str, Any]:
     """
     Get comprehensive dashboard data combining all monitoring systems
@@ -616,7 +623,8 @@ async def get_dashboard_data(
 @router.get("/monitoring/websockets")
 async def get_websocket_overview(
     time_window_minutes: int = Query(default=60, ge=5, le=1440),  # 5 minutes to 24 hours
-    request_id: str = Depends(setup_request_context)
+    request_id: str = Depends(setup_request_context),
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Dict[str, Any]:
     """
     Get comprehensive WebSocket connection overview
@@ -654,7 +662,8 @@ async def get_websocket_overview(
 @router.get("/monitoring/websockets/{connection_id}")
 async def get_websocket_connection_detail(
     connection_id: str,
-    request_id: str = Depends(setup_request_context)
+    request_id: str = Depends(setup_request_context),
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Dict[str, Any]:
     """Get detailed information for a specific WebSocket connection"""
     try:

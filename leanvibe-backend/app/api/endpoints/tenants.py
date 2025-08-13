@@ -16,7 +16,7 @@ from ...models.tenant_models import (
 )
 from ...services.tenant_service import tenant_service
 from ...middleware.tenant_middleware import get_current_tenant, require_tenant
-from ...auth.permissions import require_admin_permissions
+from ...auth.permissions import require_permission, Permission
 from ...core.exceptions import (
     TenantNotFoundError, TenantQuotaExceededError, InvalidTenantError
 )
@@ -30,7 +30,7 @@ router = APIRouter(prefix="/api/v1/tenants", tags=["tenants"])
 @router.post("/", response_model=Tenant, status_code=201)
 async def create_tenant(
     tenant_data: TenantCreate,
-    _: dict = Depends(require_admin_permissions)
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Tenant:
     """
     Create a new tenant (Admin only)
@@ -56,7 +56,7 @@ async def list_tenants(
     plan: Optional[TenantPlan] = Query(None, description="Filter by subscription plan"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of tenants to return"),
     offset: int = Query(0, ge=0, description="Number of tenants to skip"),
-    _: dict = Depends(require_admin_permissions)
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> List[Tenant]:
     """
     List all tenants (Admin only)
@@ -80,7 +80,7 @@ async def list_tenants(
 @router.get("/{tenant_id}", response_model=Tenant)
 async def get_tenant(
     tenant_id: UUID = Path(..., description="Tenant ID"),
-    _: dict = Depends(require_admin_permissions)
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Tenant:
     """
     Get tenant by ID (Admin only)
@@ -102,7 +102,7 @@ async def get_tenant(
 async def update_tenant(
     tenant_id: UUID = Path(..., description="Tenant ID"),
     update_data: TenantUpdate = ...,
-    _: dict = Depends(require_admin_permissions)
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> Tenant:
     """
     Update tenant (Admin only)
@@ -126,7 +126,7 @@ async def update_tenant(
 async def suspend_tenant(
     tenant_id: UUID = Path(..., description="Tenant ID"),
     reason: Optional[str] = Query(None, description="Reason for suspension"),
-    _: dict = Depends(require_admin_permissions)
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> JSONResponse:
     """
     Suspend tenant (Admin only)
@@ -157,7 +157,7 @@ async def suspend_tenant(
 @router.post("/{tenant_id}/reactivate")
 async def reactivate_tenant(
     tenant_id: UUID = Path(..., description="Tenant ID"),
-    _: dict = Depends(require_admin_permissions)
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> JSONResponse:
     """
     Reactivate suspended tenant (Admin only)
@@ -188,7 +188,7 @@ async def reactivate_tenant(
 async def delete_tenant(
     tenant_id: UUID = Path(..., description="Tenant ID"),
     hard_delete: bool = Query(False, description="Permanently delete tenant data"),
-    _: dict = Depends(require_admin_permissions)
+    _admin = Depends(require_permission(Permission.ADMIN_ALL))
 ) -> JSONResponse:
     """
     Delete tenant (Admin only)

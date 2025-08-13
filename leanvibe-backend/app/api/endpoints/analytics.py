@@ -18,6 +18,7 @@ from ...models.analytics_models import (
 )
 from ...services.auth_service import auth_service
 from ...services.mvp_service import mvp_service
+from ...services.audit_service import audit_service
 from ...middleware.tenant_middleware import get_current_tenant, require_tenant
 from ...auth.permissions import require_permission, Permission
 
@@ -416,7 +417,8 @@ async def export_analytics(
     """
     try:
         # Verify token
-        await auth_service.verify_token(credentials.credentials)
+        payload = await auth_service.verify_token(credentials.credentials)
+        user_id = UUID(payload["user_id"]) if payload and payload.get("user_id") else None
         
         # Validate export request
         export_format = export_request.get("format", "csv")
@@ -432,6 +434,16 @@ async def export_analytics(
         # Generate export file
         export_id = f"export_{tenant.id.hex[:8]}_{int(datetime.utcnow().timestamp())}"
         
+        # Audit export initiation
+        await audit_service.log(
+            tenant_id=tenant.id,
+            action="analytics_export",
+            resource_type="analytics",
+            resource_id=export_id,
+            user_id=user_id,
+            details={"format": export_format, "metrics": metrics, "time_range": time_range},
+        )
+
         # TODO: Implement actual export generation
         # For now, return mock export information
         

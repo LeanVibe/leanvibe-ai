@@ -657,7 +657,8 @@ async def request_blueprint_revision(
     """
     try:
         # Verify token
-        await auth_service.verify_token(credentials.credentials)
+        payload = await auth_service.verify_token(credentials.credentials)
+        user_id = UUID(payload["user_id"]) if payload and payload.get("user_id") else None
         
         # Get MVP project
         mvp_project = await mvp_service.get_mvp_project(project_id)
@@ -686,6 +687,15 @@ async def request_blueprint_revision(
         priority = revision_request.get("priority", "normal")
         
         logger.info(f"Blueprint revision requested for project {project_id}: {feedback}")
+        # Audit revision request
+        await audit_service.log(
+            tenant_id=tenant.id,
+            action="blueprint_revision_request",
+            resource_type="project_blueprint",
+            resource_id=str(project_id),
+            user_id=user_id,
+            details={"priority": priority},
+        )
         
         blueprint_response = BlueprintResponse(
             project_id=project_id,
@@ -835,10 +845,9 @@ async def download_project_file(
             )
         
         storage = get_storage_service()
-        # If S3, prefer presigned URL redirect; for preview with Range, forward via presign if possible
-        try:
-            from ...services.storage.s3_storage_service import S3StorageService
-            if isinstance(storage, S3StorageService):
+        # If provider supports presign, redirect (S3)
+        if hasattr(storage, "presign_download"):
+            try:
                 url = storage.presign_download(project_id, file_path, range_header=range_header if not preview else None)
                 await audit_service.log(
                     tenant_id=tenant.id,
@@ -848,8 +857,8 @@ async def download_project_file(
                     details={"file_path": file_path}
                 )
                 return Response(status_code=307, headers={"Location": url})
-        except Exception:
-            pass
+            except Exception:
+                pass
         # Local storage or server-side inline preview
         try:
             buffer, media_type = storage.get_file(project_id, file_path)
@@ -938,40 +947,6 @@ async def download_project_archive(
             )
         
         storage = get_storage_service()
-        # For S3 provider: server-side ZIP streaming using chunked reads
-        try:
-            from ...services.storage.s3_storage_service import S3StorageService
-            if isinstance(storage, S3StorageService):
-                import zipfile
-                from io import BytesIO
-
-                def iter_zip() -> bytes:
-                    mem = BytesIO()
-                    with zipfile.ZipFile(mem, 'w', zipfile.ZIP_DEFLATED) as zf:
-                        for f in storage.list_files(project_id):
-                            try:
-                                buf, _ct = storage.get_file(project_id, f.path)
-                                zf.writestr(f.path, buf.getvalue())
-                            except Exception:
-                                continue
-                    mem.seek(0)
-                    chunk = mem.read(64 * 1024)
-                    while chunk:
-                        yield chunk
-                        chunk = mem.read(64 * 1024)
-
-                safe_name = mvp_project.project_name.replace(" ", "_").lower()
-                filename = f"{safe_name}_{project_id.hex[:8]}.zip"
-                await audit_service.log(
-                    tenant_id=tenant.id,
-                    action="project_archive_download",
-                    resource_type="project_archive",
-                    resource_id=str(project_id),
-                    details={"format": format}
-                )
-                return StreamingResponse(iter_zip(), media_type="application/zip", headers={"Content-Disposition": f"attachment; filename={filename}"})
-        except Exception:
-            pass
 
         if format == "zip":
             from io import BytesIO as _BytesIO
