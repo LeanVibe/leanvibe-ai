@@ -23,6 +23,7 @@ import { AuthGuard } from '@/components/auth/auth-guard'
 import { usePipelines, usePausePipeline, useResumePipeline } from '@/hooks/use-pipelines'
 import { formatDate, formatDuration } from '@/lib/utils'
 import Link from 'next/link'
+import { PipelineLogsPanel } from '@/components/pipelines/PipelineLogsPanel'
 
 // Mock data for demonstration
 const mockStats = {
@@ -142,10 +143,8 @@ function RecentPipelines() {
       <CardContent>
         <div className="space-y-4">
           {pipelines.map((pipeline) => (
-            <div
-              key={pipeline.id}
-              className="flex items-center justify-between space-x-4 rounded-lg border p-4"
-            >
+            <div key={pipeline.id} className="rounded-lg border p-4">
+              <div className="flex items-center justify-between space-x-4">
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium">{pipeline.project_name}</h3>
@@ -164,11 +163,12 @@ function RecentPipelines() {
                   </div>
                 </div>
               </div>
-              <Link href={`/pipelines/${pipeline.id}`}>
-                <Button variant="ghost" size="sm">
-                  View
-                </Button>
-              </Link>
+                <Link href={`/pipelines/${pipeline.id}`}>
+                  <Button variant="ghost" size="sm">
+                    View
+                  </Button>
+                </Link>
+              </div>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -185,6 +185,9 @@ function RecentPipelines() {
                 >
                   Resume
                 </Button>
+              </div>
+              <div className="mt-2 w-full">
+                <PipelineLogsPanel pipelineId={pipeline.id} />
               </div>
             </div>
           ))}

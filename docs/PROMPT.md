@@ -1,66 +1,71 @@
-You are a senior Cursor Agent joining an ongoing LeanVibe codebase. Your mission is to finalize persistence, logs, RBAC/audit, storage providers, analytics, and tests/CI to production quality.
+You are a senior Cursor Agent taking over an ongoing LeanVibe backend/frontend codebase. Your mandate is to finish the next four epics with disciplined prioritization, TDD, and vertical slices. Work pragmatically and ship value fast.
 
-Context highlights:
-- Backend: FastAPI with rich services; DB utilities in `app/core/database.py`; ORM models in `app/models/orm_models.py`.
-- We migrated MVP Projects and Interviews to DB:
-  - `app/services/mvp_service.py` uses DB first for MVPProject; persists generation progress JSON.
-  - `app/api/endpoints/interviews.py` stores interview data in `MVPProjectORM.interview_data` (DB-first).
-- Pipeline Execution persistence started:
-  - `PipelineExecutionORM` and `PipelineExecutionLogORM` added; orchestration persists lifecycle events best-effort.
-- Storage: endpoints now list/download/archive from a local storage abstraction; S3 not yet implemented.
-- Frontend: Next.js App Router; dashboard shows live pipelines with Pause/Resume and logs panel; projects UI; interview wizard; Playwright smoke tests and Jest passing.
+First-principles and priorities
+- Core truths:
+  - Users must start pipelines, view progress/logs, and download artifacts reliably.
+  - Enterprise environments require RBAC and auditable trails.
+  - Dev velocity depends on reliable pushes and a fast, truthful CI.
+- Assumptions to challenge:
+  - Only build features directly needed by core flows; avoid speculative complexity.
+  - Prefer DB-first reads with in-memory fallback only when necessary.
+- Method:
+  - TDD for critical paths: write failing test, implement minimal code, keep green.
+  - Vertical slices: endpoint → service → storage/DB → tests.
+  - Keep commits small, messages under 72 chars.
 
-Your Objectives (in order):
-1) Execution Logs – DB Write/Read
-- Implement DB writes for pipeline logs in `mvp_service._add_log`: resolve `execution_id` (latest for project) and `tenant_id`; insert `PipelineExecutionLogORM` entries. Keep in-memory append for fallback.
-- Update `/pipelines/{pipeline_id}/logs` to read DB-first with filters: level, stage, pagination (limit/offset), then fallback to in-memory logs. Ensure correct mapping to `PipelineLogEntry`.
-- Add indexes if needed (already present in ORM). Validate with a minimal integration test.
+Current state snapshot
+- Logs: DB write via `mvp_service._add_log` best-effort; DB-first read with filters/search/sort/seek; summary endpoint. Integration tests exist (`tests/integration/test_pipeline_logs_filters.py`).
+- Storage: Local + S3 abstraction; presigned S3 downloads; archives use provider abstraction; capabilities endpoint added.
+- RBAC/Audit: `require_permission` fixed; applied to key endpoints; audits for file download/archive/blueprint approve and pipeline pause/resume.
+- Global pre-push hook: fixed to use repo root and tracked-only scans; still flags tracked credential patterns. Further tuning needed.
 
-2) Migrations
-- Add Alembic migrations for:
-  - `pipeline_executions` and `pipeline_execution_logs` (full schema, indexes).
-  - Any missing indexes for `mvp_projects` used by new queries.
-- Provide a README snippet on running migrations locally.
+Your epics (in order)
 
-3) RBAC & Audit
-- Define role policy helpers (founder, collaborator, admin). Integrate checks in key endpoints: `pipelines.py`, `mvp_projects.py`, `interviews.py`, `analytics.py`.
-- Add audit writes (action, resource_type/id, metadata) for: pipeline pause/resume, downloads, approvals, and interview submit.
-- Provide minimal tests (unit/integration) for permission denials and audit side-effects.
+Epic 0: Pre-push reliability (quick win)
+- Restrict credential scans to changed files by default: use `git diff --cached --name-only` and `git grep` over that set; fallback to all tracked with env `STRICT_PREPUSH=1`.
+- Add allowlist for docs/examples (`docs/**`, `**/examples/**`) with non-secret placeholder values (e.g., `password=example`).
+- Add `VERSION` file with `0.1.0`.
+- Document `hooks` behavior in README.
 
-4) Storage Providers & Previews
-- Implement S3 provider with presigned URLs and range support under `app/services/storage/s3_storage_service.py`.
-- Introduce a simple provider interface (local|s3) with env-based selection.
-- Frontend: add previews for text/markdown/images/logs in project detail; use signed URLs.
+Epic 1: Storage: S3 ZIP streaming + previews + cleanup
+- Implement server-side ZIP streaming for S3 in `mvp_projects.py/download_project_archive`:
+  - Iterate provider `list_files(project_id)`, stream each object via chunked `get_object` to a `zipstream`-style writer or Python `zipfile` with a file-like that fetches chunks (keep memory bounded).
+  - Ensure content-disposition and audit log.
+- Preview endpoint for small files: `GET /api/v1/projects/{id}/files/{path}?preview=true`
+  - For text/markdown/logs under e.g., 1MB: inline `Content-Disposition`, correct MIME; S3: support `Range` header and forward partial response.
+- Retention: on project delete, call provider to delete all under project prefix (implement for Local + S3). Wire into `delete_project` in `mvp_projects.py`.
+- Tests: integration tests for ZIP streaming (local; S3 mocked), preview for small text/markdown, delete cleanup.
 
-5) Analytics & Observability
-- Ensure `monitoring.py` exposes pipeline/tenant metrics and websocket status as per docs; fill gaps.
-- Add `/analytics` frontend page with charts; use existing tokens/hooks.
+Epic 2: RBAC & Audit breadth
+- Replace TODO admin checks in `analytics.system`, `monitoring.py` endpoints, and `tenants.py` admin operations with `require_permission`.
+- Audit events: pipeline start/restart/cancel; blueprint revision request; analytics export; tenant role changes. Include `user_id`, IP, UA if available.
+- Admin audit list endpoint: `GET /api/v1/audit` with filters and pagination.
+- Tests: permission denials and audit entries creation.
 
-6) Testing & CI
-- Backend: add small integration tests for DB persistence and logs; mock legacy ML imports to avoid external deps.
-- Frontend: extend Playwright scenarios (auth, interview, pipeline start/pause/resume, file downloads) and Jest for new components.
-- Add CI workflow (GitHub Actions) to run unit + e2e, enforce coverage thresholds, and upload artifacts.
+Epic 3: CI baseline
+- GitHub Actions to run:
+  - Backend: setup Python, `alembic upgrade head`, run focused tests (skip archived/legacy); coverage >= 65%.
+  - Frontend: `npm ci`, Jest, Playwright smoke.
+  - Upload artifacts on failure.
+- Add `scripts/pre-push.sh` mirroring repo-specific checks; document replacing global hook.
 
-Constraints & Notes:
-- Respect existing coding style and patterns; retain in-memory fallbacks where used elsewhere.
-- Don’t break current APIs; additive changes only.
-- Avoid long-running background processes.
+Where to work (files)
+- Hooks: `~/.config/git/hooks/pre-push` (global), `scripts/pre-push.sh`, `README.md`.
+- Storage: `app/services/storage/*`, `app/api/endpoints/mvp_projects.py`.
+- Logs: `app/api/endpoints/pipelines.py`, tests under `leanvibe-backend/tests/integration/*`.
+- RBAC/Audit: `app/auth/permissions.py`, `app/api/endpoints/*`, `app/services/audit_service.py`, `app/models/orm_models.py`.
+- CI: `.github/workflows/*.yml` (create), `pyproject.toml`/`pytest.ini` filter patterns.
 
-Where to start (files):
-- DB logs write: `app/services/mvp_service.py` (`_add_log`) and latest `execution_id` lookup via `PipelineExecutionORM`.
-- Logs read: `app/api/endpoints/pipelines.py` (`get_pipeline_logs`).
-- Migrations: create Alembic revisions for new ORMs.
-- RBAC/Audit: `app/auth/permissions.py`, `app/api/endpoints/*`, add `AuditLogORM` writes.
-- Storage: `app/services/storage/*` (create S3 provider + interface), `mvp_projects.py` endpoints.
-- Analytics: `app/api/endpoints/monitoring.py` and frontend `/analytics` pages.
+TDD expectations
+- For each endpoint behavior change, add/adjust tests first.
+- Keep tests self-contained, SQLite-backed for DB, and mock external services (e.g., boto3 S3).
 
-Deliverables Checklist (must turn green):
-- [ ] DB log writes wired; DB-first log reads with filters/pagination
-- [ ] Alembic migrations created and documented
-- [ ] RBAC enforcement and audit logging for critical actions
-- [ ] S3 provider implemented; previews on frontend
-- [ ] Analytics endpoints + frontend page
-- [ ] Backend integration tests (no external ML deps); Frontend Playwright flows
-- [ ] CI workflow with coverage and artifact uploads
+Definition of done per epic
+- Epic 0: `git push` passes pre-push without `--no-verify` on a clean repo; README notes updated.
+- Epic 1: ZIP streaming works on S3 + Local; previews work; delete cleans artifacts; tests green.
+- Epic 2: RBAC coverage complete; audit events emitted; admin audit list present; tests green.
+- Epic 3: CI pipelines green on main; failing PRs block merges.
 
-Report progress in concise commits, keeping messages under 72 characters for the first line.
+Reporting
+- Keep commit messages descriptive and under 72 chars.
+- Summarize what changed and why in PR body.
