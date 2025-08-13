@@ -802,7 +802,7 @@ async def download_project_file(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     tenant = Depends(require_tenant),
     _perm = Depends(require_permission(Permission.PROJECT_READ)),
-    preview: bool = Query(False, description="Inline preview for small text/markdown/logs"),
+    preview: bool = Query(False, description="Inline preview for small text/markdown/logs/images"),
     range_header: str | None = Header(default=None, alias="Range"),
 ) -> Response:
     """
@@ -876,10 +876,12 @@ async def download_project_file(
         filename = file_path.split("/")[-1]
         # If preview and content is small text/markdown/log
         if preview and len(data) <= 1_000_000:
-            # Try to coerce text types
+            # Try to coerce text/markdown/log and small images
             text_types = {"text/plain", "text/markdown", "application/json", "application/x-ndjson"}
-            if media_type in text_types or filename.endswith((".md", ".txt", ".log", ".json")):
-                return Response(content=data, media_type=(media_type or "text/plain"), headers={"Content-Disposition": "inline"})
+            is_text = (media_type in text_types) or filename.endswith((".md", ".txt", ".log", ".json"))
+            is_image = (media_type or "").startswith("image/") or filename.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"))
+            if is_text or is_image:
+                return Response(content=data, media_type=(media_type or ("text/plain" if is_text else "image/png")), headers={"Content-Disposition": "inline"})
         return Response(content=data, media_type=media_type, headers={"Content-Disposition": f"attachment; filename={filename}"})
         
     except HTTPException:
