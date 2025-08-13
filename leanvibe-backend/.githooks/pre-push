@@ -37,6 +37,25 @@ done
 # Track start time
 start_time=$(date +%s)
 
+# 0. Credential scan (blocking)
+echo ""
+echo -e "${BLUE}🔐 Credential scan (changed files)${NC}"
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if [ -f "$repo_root/scripts/pre-push.sh" ]; then
+    set +e
+    bash "$repo_root/scripts/pre-push.sh"
+    scan_rc=$?
+    set -e
+    if [ $scan_rc -ne 0 ]; then
+        echo -e "${RED}❌ Credential scan failed. Push blocked.${NC}"
+        echo -e "${YELLOW}💡 If this is a false positive in docs/examples, use placeholders or allowlisted values.${NC}"
+        echo -e "${YELLOW}   To run a full scan locally: STRICT_PREPUSH=1 scripts/pre-push.sh${NC}"
+        exit 1
+    fi
+else
+    echo -e "${YELLOW}⚠️  Credential scan script missing at scripts/pre-push.sh; skipping.${NC}"
+fi
+
 # Function to run command with warning instead of failure
 run_check_warn() {
     local name="$1"

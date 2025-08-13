@@ -176,6 +176,20 @@ open leanvibe-ios/LeanVibe.xcodeproj
 # Use Xcode: Build (⌘+B), Test (⌘+U)
 ```
 
+### Git hooks behavior
+- Pre-commit runs fast lint/type/unit checks against staged Python files. Install with:
+  ```bash
+  make -C leanvibe-backend install-hooks
+  ```
+- Pre-push performs:
+  - Blocking credential scan on changed files via `scripts/pre-push.sh` (allowlist for `docs/**` and `**/examples/**` placeholders like `password=example`).
+  - Tier-1 tests and quality checks (warnings only; push allowed even if these warn).
+  - To scan all tracked files locally, run:
+    ```bash
+    STRICT_PREPUSH=1 scripts/pre-push.sh
+    ```
+  - To bypass hooks temporarily: `git push --no-verify` (avoid on main PRs).
+
 ### Branching Strategy
 - `main` - Production-ready code
 - `develop` - Integration branch
