@@ -1,0 +1,7 @@
+pytest
+pytest-asyncio
+pytest-cov
+sqlalchemy[asyncio]
+aiosqlite
+alembic
+boto3
