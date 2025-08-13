@@ -44,7 +44,8 @@ async def get_pipeline_logs_summary(
     """
     try:
         # Verify token
-        await auth_service.verify_token(credentials.credentials)
+        payload = await auth_service.verify_token(credentials.credentials)
+        user_id = UUID(payload["user_id"]) if payload and payload.get("user_id") else None
 
         # Verify project access
         mvp_project = await mvp_service.get_mvp_project(pipeline_id)
@@ -204,7 +205,8 @@ async def list_pipelines(
     """
     try:
         # Verify token
-        await auth_service.verify_token(credentials.credentials)
+        payload = await auth_service.verify_token(credentials.credentials)
+        user_id = UUID(payload["user_id"]) if payload and payload.get("user_id") else None
         
         # Get MVP projects for tenant
         mvp_projects = await mvp_service.get_tenant_mvp_projects(
@@ -399,6 +401,13 @@ async def delete_pipeline(
             await mvp_service.cancel_mvp_generation(pipeline_id)
         
         # TODO: Implement actual deletion when database persistence is added
+        await audit_service.log(
+            tenant_id=tenant.id,
+            action="pipeline_cancel",
+            resource_type="pipeline",
+            resource_id=str(pipeline_id),
+            user_id=user_id,
+        )
         logger.info(f"Deleted pipeline {pipeline_id}")
         
     except HTTPException:
@@ -476,6 +485,14 @@ async def start_pipeline(
         updated_project = await mvp_service.get_mvp_project(pipeline_id)
         pipeline_response = await _mvp_project_to_pipeline_response(updated_project)
         
+        # Audit
+        await audit_service.log(
+            tenant_id=tenant.id,
+            action="pipeline_start",
+            resource_type="pipeline",
+            resource_id=str(pipeline_id),
+            user_id=user_id,
+        )
         logger.info(f"Started pipeline execution for {pipeline_id}")
         return pipeline_response
         
@@ -507,7 +524,8 @@ async def pause_pipeline(
     """
     try:
         # Verify token
-        await auth_service.verify_token(credentials.credentials)
+        payload = await auth_service.verify_token(credentials.credentials)
+        user_id = UUID(payload["user_id"]) if payload and payload.get("user_id") else None
         
         # Get MVP project
         mvp_project = await mvp_service.get_mvp_project(pipeline_id)
@@ -685,6 +703,13 @@ async def restart_pipeline(
         updated_project = await mvp_service.get_mvp_project(pipeline_id)
         pipeline_response = await _mvp_project_to_pipeline_response(updated_project)
         
+        await audit_service.log(
+            tenant_id=tenant.id,
+            action="pipeline_restart",
+            resource_type="pipeline",
+            resource_id=str(pipeline_id),
+            user_id=user_id,
+        )
         logger.info(f"Restarted pipeline {pipeline_id}")
         return pipeline_response
         
