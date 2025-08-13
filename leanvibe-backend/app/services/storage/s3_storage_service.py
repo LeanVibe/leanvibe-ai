@@ -78,8 +78,16 @@ class S3StorageService:
 
     # For interface compatibility with local storage
     def get_file(self, project_id: UUID, rel_path: str):
-        # Return a small HTTP redirect tuple-like structure could be handled at endpoint layer
-        raise NotImplementedError("Use presign_download for S3")
+        """Return file content as BytesIO and best-effort content type.
+
+        Note: For large files, prefer `presign_download`. This is used by
+        server-side ZIP assembly where presign isn't applicable.
+        """
+        key = f"{self._key_prefix(project_id)}{rel_path.lstrip('/')}"
+        obj = self._s3.get_object(Bucket=self.config.bucket, Key=key)
+        body = obj["Body"].read()
+        content_type = obj.get("ContentType") or "application/octet-stream"
+        return BytesIO(body), content_type
 
 
 # Singleton
