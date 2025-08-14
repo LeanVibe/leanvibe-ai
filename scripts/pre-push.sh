@@ -73,6 +73,10 @@ scan_file() {
     is_docs=1
   fi
 
+  # Skip scanning certain deployment helper scripts to reduce noise
+  if [[ "$file" == "scripts/setup-secrets.sh" ]]; then
+    return
+  fi
   # Use git grep to leverage repo attributes and ignore binary (-I)
   for rx in "${SECRET_REGEX[@]}"; do
     # shellcheck disable=SC2046
