@@ -876,6 +876,7 @@ async def download_project_file(
     _perm = Depends(require_permission(Permission.PROJECT_READ)),
     preview: bool = Query(False, description="Inline preview for small text/markdown/logs/images"),
     range_header: str | None = Header(default=None, alias="Range"),
+    if_none_match: str | None = Header(default=None, alias="If-None-Match"),
 ) -> Response:
     """
     Download a specific generated file
@@ -918,7 +919,7 @@ async def download_project_file(
         
         storage = get_storage_service()
         # If provider supports presign, redirect (S3)
-        if hasattr(storage, "presign_download"):
+        if hasattr(storage, "presign_download") and not preview:
             try:
                 url = storage.presign_download(project_id, file_path, range_header=range_header if not preview else None)
                 await audit_service.log(
@@ -931,9 +932,13 @@ async def download_project_file(
                 return Response(status_code=307, headers={"Location": url})
             except Exception:
                 pass
-        # Local storage or server-side inline preview
+        # Local or server-side proxy for preview/partial content
         try:
-            buffer, media_type = storage.get_file(project_id, file_path)
+            if hasattr(storage, "get_file_with_range") and (preview or range_header):
+                buffer, media_type, extra_headers, status_code = storage.get_file_with_range(project_id, file_path, range_header or "")
+            else:
+                buffer, media_type = storage.get_file(project_id, file_path)
+                extra_headers, status_code = {}, 200
         except FileNotFoundError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
         # Audit local download
@@ -953,8 +958,12 @@ async def download_project_file(
             is_text = (media_type in text_types) or filename.endswith((".md", ".txt", ".log", ".json"))
             is_image = (media_type or "").startswith("image/") or filename.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"))
             if is_text or is_image:
-                return Response(content=data, media_type=(media_type or ("text/plain" if is_text else "image/png")), headers={"Content-Disposition": "inline"})
-        return Response(content=data, media_type=media_type, headers={"Content-Disposition": f"attachment; filename={filename}"})
+                hdrs = {"Content-Disposition": "inline"}
+                hdrs.update(extra_headers)
+                return Response(content=data, media_type=(media_type or ("text/plain" if is_text else "image/png")), headers=hdrs, status_code=status_code)
+        hdrs = {"Content-Disposition": f"attachment; filename={filename}"}
+        hdrs.update(extra_headers)
+        return Response(content=data, media_type=media_type, headers=hdrs, status_code=status_code)
         
     except HTTPException:
         raise

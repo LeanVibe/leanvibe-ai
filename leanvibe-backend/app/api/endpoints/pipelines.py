@@ -10,6 +10,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import Request
 from fastapi.responses import StreamingResponse
 
 from ...models.pipeline_models import (
@@ -1115,6 +1116,7 @@ async def tail_pipeline_logs(
     pipeline_id: UUID,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     tenant = Depends(require_tenant),
+    request: Request = None,
     level_filter: Optional[str] = Query(None, description="INFO|WARNING|ERROR"),
     stage_filter: Optional[PipelineStage] = Query(None),
     search: Optional[str] = Query(None, max_length=200),
@@ -1183,6 +1185,14 @@ async def tail_pipeline_logs(
                     yield line.encode("utf-8")
                 if once:
                     break
+                # Early exit on client disconnect
+                try:
+                    if request is not None:
+                        # Starlette's Request.is_disconnected is awaitable
+                        if await request.is_disconnected():
+                            break
+                except Exception:
+                    pass
                 # Small jittered sleep to avoid busy loop
                 import asyncio as _asyncio, random as _rand
                 await _asyncio.sleep(0.2 + _rand.random() * 0.2)

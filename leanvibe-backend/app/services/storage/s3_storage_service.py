@@ -17,6 +17,7 @@ except Exception:  # boto3 may not be installed in dev
     BotoConfig = None
 
 from .local_storage_service import StoredFile
+from io import BytesIO
 
 
 @dataclass
@@ -88,6 +89,27 @@ class S3StorageService:
         body = obj["Body"].read()
         content_type = obj.get("ContentType") or "application/octet-stream"
         return BytesIO(body), content_type
+
+    def get_file_with_range(self, project_id: UUID, rel_path: str, range_header: str):
+        """Return file (partial if Range provided) plus headers.
+
+        Returns (buffer, content_type, headers, status_code)
+        """
+        key = f"{self._key_prefix(project_id)}{rel_path.lstrip('/')}"
+        params = {"Bucket": self.config.bucket, "Key": key}
+        if range_header:
+            params["Range"] = range_header
+        obj = self._s3.get_object(**params)
+        body = obj["Body"].read()
+        content_type = obj.get("ContentType") or "application/octet-stream"
+        headers = {}
+        if "ETag" in obj:
+            headers["ETag"] = obj["ETag"]
+        if "ContentRange" in obj:
+            headers["Content-Range"] = obj["ContentRange"]
+            headers["Accept-Ranges"] = "bytes"
+        status_code = 206 if range_header else 200
+        return BytesIO(body), content_type, headers, status_code
 
     def iter_object(self, project_id: UUID, rel_path: str, chunk_size: int = 1024 * 1024):
         """Yield object bytes in chunks (bounded memory)"""

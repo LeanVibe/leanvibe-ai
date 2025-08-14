@@ -95,3 +95,15 @@ Definition of done per epic
 - S3 perf: moto tests pass; memory bounded; headers correct
 - Observability/CI: indexes present; SSE/rate limit in place; CI stable
 
+Status (as of this commit)
+- Epic 1: DONE. SSE tail integrated in UI with client filters; files UI with previews and downloads; Jest + it_light tests green.
+- Epic 2: DONE. Admin list/update member role endpoints with audits.
+- Epic 3: DONE. S3 `iter_object`; bounded ZIP streaming; SSE jitter.
+- Epic 4: PARTIAL. Index migration added; rate limit on SSE tail; remaining: early disconnect handling and CI consolidation (nightly + coverage gates).
+  - Update: SSE early disconnect now handled in pipelines tail; remaining: CI consolidation and Playwright smoke.
+
+Immediate next tasks (high value, low risk)
+- SSE early disconnect in `pipelines.tail_pipeline_logs` by detecting client disconnect and exiting generator.
+- Playwright smoke tests for logs panel and file preview (basic path).
+- CI consolidation: merge duplicate job sets and ensure caching across workflows.
+
